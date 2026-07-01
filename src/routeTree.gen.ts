@@ -9,38 +9,211 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
+import { Route as AuthRouteImport } from './routes/auth'
+import { Route as AuthenticatedRouteRouteImport } from './routes/_authenticated/route'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as WSlugRouteImport } from './routes/w.$slug'
+import { Route as RsvpTokenRouteImport } from './routes/rsvp.$token'
+import { Route as AuthenticatedWebsiteRouteImport } from './routes/_authenticated/website'
+import { Route as AuthenticatedVenuesRouteImport } from './routes/_authenticated/venues'
+import { Route as AuthenticatedVendorsRouteImport } from './routes/_authenticated/vendors'
+import { Route as AuthenticatedSeatingRouteImport } from './routes/_authenticated/seating'
+import { Route as AuthenticatedOnboardingRouteImport } from './routes/_authenticated/onboarding'
+import { Route as AuthenticatedMessagesRouteImport } from './routes/_authenticated/messages'
+import { Route as AuthenticatedGuestsRouteImport } from './routes/_authenticated/guests'
+import { Route as AuthenticatedEventsRouteImport } from './routes/_authenticated/events'
+import { Route as AuthenticatedDashboardRouteImport } from './routes/_authenticated/dashboard'
 
+const AuthRoute = AuthRouteImport.update({
+  id: '/auth',
+  path: '/auth',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AuthenticatedRouteRoute = AuthenticatedRouteRouteImport.update({
+  id: '/_authenticated',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const WSlugRoute = WSlugRouteImport.update({
+  id: '/w/$slug',
+  path: '/w/$slug',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const RsvpTokenRoute = RsvpTokenRouteImport.update({
+  id: '/rsvp/$token',
+  path: '/rsvp/$token',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AuthenticatedWebsiteRoute = AuthenticatedWebsiteRouteImport.update({
+  id: '/website',
+  path: '/website',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
+const AuthenticatedVenuesRoute = AuthenticatedVenuesRouteImport.update({
+  id: '/venues',
+  path: '/venues',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
+const AuthenticatedVendorsRoute = AuthenticatedVendorsRouteImport.update({
+  id: '/vendors',
+  path: '/vendors',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
+const AuthenticatedSeatingRoute = AuthenticatedSeatingRouteImport.update({
+  id: '/seating',
+  path: '/seating',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
+const AuthenticatedOnboardingRoute = AuthenticatedOnboardingRouteImport.update({
+  id: '/onboarding',
+  path: '/onboarding',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
+const AuthenticatedMessagesRoute = AuthenticatedMessagesRouteImport.update({
+  id: '/messages',
+  path: '/messages',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
+const AuthenticatedGuestsRoute = AuthenticatedGuestsRouteImport.update({
+  id: '/guests',
+  path: '/guests',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
+const AuthenticatedEventsRoute = AuthenticatedEventsRouteImport.update({
+  id: '/events',
+  path: '/events',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
+const AuthenticatedDashboardRoute = AuthenticatedDashboardRouteImport.update({
+  id: '/dashboard',
+  path: '/dashboard',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/auth': typeof AuthRoute
+  '/dashboard': typeof AuthenticatedDashboardRoute
+  '/events': typeof AuthenticatedEventsRoute
+  '/guests': typeof AuthenticatedGuestsRoute
+  '/messages': typeof AuthenticatedMessagesRoute
+  '/onboarding': typeof AuthenticatedOnboardingRoute
+  '/seating': typeof AuthenticatedSeatingRoute
+  '/vendors': typeof AuthenticatedVendorsRoute
+  '/venues': typeof AuthenticatedVenuesRoute
+  '/website': typeof AuthenticatedWebsiteRoute
+  '/rsvp/$token': typeof RsvpTokenRoute
+  '/w/$slug': typeof WSlugRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/auth': typeof AuthRoute
+  '/dashboard': typeof AuthenticatedDashboardRoute
+  '/events': typeof AuthenticatedEventsRoute
+  '/guests': typeof AuthenticatedGuestsRoute
+  '/messages': typeof AuthenticatedMessagesRoute
+  '/onboarding': typeof AuthenticatedOnboardingRoute
+  '/seating': typeof AuthenticatedSeatingRoute
+  '/vendors': typeof AuthenticatedVendorsRoute
+  '/venues': typeof AuthenticatedVenuesRoute
+  '/website': typeof AuthenticatedWebsiteRoute
+  '/rsvp/$token': typeof RsvpTokenRoute
+  '/w/$slug': typeof WSlugRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/_authenticated': typeof AuthenticatedRouteRouteWithChildren
+  '/auth': typeof AuthRoute
+  '/_authenticated/dashboard': typeof AuthenticatedDashboardRoute
+  '/_authenticated/events': typeof AuthenticatedEventsRoute
+  '/_authenticated/guests': typeof AuthenticatedGuestsRoute
+  '/_authenticated/messages': typeof AuthenticatedMessagesRoute
+  '/_authenticated/onboarding': typeof AuthenticatedOnboardingRoute
+  '/_authenticated/seating': typeof AuthenticatedSeatingRoute
+  '/_authenticated/vendors': typeof AuthenticatedVendorsRoute
+  '/_authenticated/venues': typeof AuthenticatedVenuesRoute
+  '/_authenticated/website': typeof AuthenticatedWebsiteRoute
+  '/rsvp/$token': typeof RsvpTokenRoute
+  '/w/$slug': typeof WSlugRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/'
+  fullPaths:
+    | '/'
+    | '/auth'
+    | '/dashboard'
+    | '/events'
+    | '/guests'
+    | '/messages'
+    | '/onboarding'
+    | '/seating'
+    | '/vendors'
+    | '/venues'
+    | '/website'
+    | '/rsvp/$token'
+    | '/w/$slug'
   fileRoutesByTo: FileRoutesByTo
-  to: '/'
-  id: '__root__' | '/'
+  to:
+    | '/'
+    | '/auth'
+    | '/dashboard'
+    | '/events'
+    | '/guests'
+    | '/messages'
+    | '/onboarding'
+    | '/seating'
+    | '/vendors'
+    | '/venues'
+    | '/website'
+    | '/rsvp/$token'
+    | '/w/$slug'
+  id:
+    | '__root__'
+    | '/'
+    | '/_authenticated'
+    | '/auth'
+    | '/_authenticated/dashboard'
+    | '/_authenticated/events'
+    | '/_authenticated/guests'
+    | '/_authenticated/messages'
+    | '/_authenticated/onboarding'
+    | '/_authenticated/seating'
+    | '/_authenticated/vendors'
+    | '/_authenticated/venues'
+    | '/_authenticated/website'
+    | '/rsvp/$token'
+    | '/w/$slug'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  AuthenticatedRouteRoute: typeof AuthenticatedRouteRouteWithChildren
+  AuthRoute: typeof AuthRoute
+  RsvpTokenRoute: typeof RsvpTokenRoute
+  WSlugRoute: typeof WSlugRoute
 }
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
+    '/auth': {
+      id: '/auth'
+      path: '/auth'
+      fullPath: '/auth'
+      preLoaderRoute: typeof AuthRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/_authenticated': {
+      id: '/_authenticated'
+      path: ''
+      fullPath: '/'
+      preLoaderRoute: typeof AuthenticatedRouteRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/': {
       id: '/'
       path: '/'
@@ -48,11 +221,119 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/w/$slug': {
+      id: '/w/$slug'
+      path: '/w/$slug'
+      fullPath: '/w/$slug'
+      preLoaderRoute: typeof WSlugRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/rsvp/$token': {
+      id: '/rsvp/$token'
+      path: '/rsvp/$token'
+      fullPath: '/rsvp/$token'
+      preLoaderRoute: typeof RsvpTokenRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/_authenticated/website': {
+      id: '/_authenticated/website'
+      path: '/website'
+      fullPath: '/website'
+      preLoaderRoute: typeof AuthenticatedWebsiteRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/venues': {
+      id: '/_authenticated/venues'
+      path: '/venues'
+      fullPath: '/venues'
+      preLoaderRoute: typeof AuthenticatedVenuesRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/vendors': {
+      id: '/_authenticated/vendors'
+      path: '/vendors'
+      fullPath: '/vendors'
+      preLoaderRoute: typeof AuthenticatedVendorsRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/seating': {
+      id: '/_authenticated/seating'
+      path: '/seating'
+      fullPath: '/seating'
+      preLoaderRoute: typeof AuthenticatedSeatingRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/onboarding': {
+      id: '/_authenticated/onboarding'
+      path: '/onboarding'
+      fullPath: '/onboarding'
+      preLoaderRoute: typeof AuthenticatedOnboardingRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/messages': {
+      id: '/_authenticated/messages'
+      path: '/messages'
+      fullPath: '/messages'
+      preLoaderRoute: typeof AuthenticatedMessagesRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/guests': {
+      id: '/_authenticated/guests'
+      path: '/guests'
+      fullPath: '/guests'
+      preLoaderRoute: typeof AuthenticatedGuestsRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/events': {
+      id: '/_authenticated/events'
+      path: '/events'
+      fullPath: '/events'
+      preLoaderRoute: typeof AuthenticatedEventsRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/dashboard': {
+      id: '/_authenticated/dashboard'
+      path: '/dashboard'
+      fullPath: '/dashboard'
+      preLoaderRoute: typeof AuthenticatedDashboardRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
   }
 }
 
+interface AuthenticatedRouteRouteChildren {
+  AuthenticatedDashboardRoute: typeof AuthenticatedDashboardRoute
+  AuthenticatedEventsRoute: typeof AuthenticatedEventsRoute
+  AuthenticatedGuestsRoute: typeof AuthenticatedGuestsRoute
+  AuthenticatedMessagesRoute: typeof AuthenticatedMessagesRoute
+  AuthenticatedOnboardingRoute: typeof AuthenticatedOnboardingRoute
+  AuthenticatedSeatingRoute: typeof AuthenticatedSeatingRoute
+  AuthenticatedVendorsRoute: typeof AuthenticatedVendorsRoute
+  AuthenticatedVenuesRoute: typeof AuthenticatedVenuesRoute
+  AuthenticatedWebsiteRoute: typeof AuthenticatedWebsiteRoute
+}
+
+const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
+  AuthenticatedDashboardRoute: AuthenticatedDashboardRoute,
+  AuthenticatedEventsRoute: AuthenticatedEventsRoute,
+  AuthenticatedGuestsRoute: AuthenticatedGuestsRoute,
+  AuthenticatedMessagesRoute: AuthenticatedMessagesRoute,
+  AuthenticatedOnboardingRoute: AuthenticatedOnboardingRoute,
+  AuthenticatedSeatingRoute: AuthenticatedSeatingRoute,
+  AuthenticatedVendorsRoute: AuthenticatedVendorsRoute,
+  AuthenticatedVenuesRoute: AuthenticatedVenuesRoute,
+  AuthenticatedWebsiteRoute: AuthenticatedWebsiteRoute,
+}
+
+const AuthenticatedRouteRouteWithChildren =
+  AuthenticatedRouteRoute._addFileChildren(AuthenticatedRouteRouteChildren)
+
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  AuthenticatedRouteRoute: AuthenticatedRouteRouteWithChildren,
+  AuthRoute: AuthRoute,
+  RsvpTokenRoute: RsvpTokenRoute,
+  WSlugRoute: WSlugRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
