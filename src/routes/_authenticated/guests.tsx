@@ -1,0 +1,322 @@
+import { createFileRoute } from "@tanstack/react-router";
+import { useMemo, useRef, useState } from "react";
+import Papa from "papaparse";
+import { AppShell } from "@/components/app-shell";
+import { useCurrentWedding, useEvents, useGuests, useInvites, useInvalidateWedding, type Guest, type Invite } from "@/lib/wedding-hooks";
+import { supabase } from "@/integrations/supabase/client";
+import { toast } from "sonner";
+import { Plus, Upload, Download, X, Trash2, Search, MessageCircle, Copy } from "lucide-react";
+
+export const Route = createFileRoute("/_authenticated/guests")({ component: GuestsPage });
+
+const DIETARY = ["Vegetarian","Vegan","Halal","Kosher","Jain","Gluten-free","Pescatarian"];
+const ALLERGIES = ["Nuts","Dairy","Shellfish","Eggs","Soy","Sesame","Wheat"];
+
+function GuestsPage() {
+  const { data: wedding } = useCurrentWedding();
+  const { data: events = [] } = useEvents(wedding?.id);
+  const { data: guests = [] } = useGuests(wedding?.id);
+  const { data: invites = [] } = useInvites(wedding?.id);
+  const invalidate = useInvalidateWedding();
+  const [editing, setEditing] = useState<Partial<Guest> | null>(null);
+  const [q, setQ] = useState("");
+  const [filterDiet, setFilterDiet] = useState<string | null>(null);
+  const fileRef = useRef<HTMLInputElement>(null);
+
+  const filtered = useMemo(() => {
+    return guests.filter((g) => {
+      if (q && !g.full_name.toLowerCase().includes(q.toLowerCase()) && !(g.email || "").toLowerCase().includes(q.toLowerCase())) return false;
+      if (filterDiet && !(g.dietary_tags?.includes(filterDiet) || g.food_allergies?.includes(filterDiet))) return false;
+      return true;
+    });
+  }, [guests, q, filterDiet]);
+
+  const inviteByGuest = useMemo(() => {
+    const m = new Map<string, Invite[]>();
+    invites.forEach((i) => { const l = m.get(i.guest_id) ?? []; l.push(i); m.set(i.guest_id, l); });
+    return m;
+  }, [invites]);
+
+  const importCsv = () => fileRef.current?.click();
+
+  const onCsv = (file: File) => {
+    if (!wedding) return;
+    Papa.parse<Record<string, string>>(file, {
+      header: true, skipEmptyLines: true,
+      complete: async (res) => {
+        const rows = res.data.filter((r) => r.name || r.full_name);
+        if (rows.length === 0) return toast.error("No rows with a name column found");
+        const inserts = rows.map((r) => ({
+          wedding_id: wedding.id,
+          full_name: r.name || r.full_name || "",
+          email: r.email || null,
+          phone: r.phone || r.whatsapp || null,
+          household_group: r.household || r.household_group || null,
+        }));
+        const { error } = await supabase.from("guests").insert(inserts);
+        if (error) return toast.error(error.message);
+        toast.success(`Imported ${inserts.length} guests`);
+        invalidate(wedding.id);
+      },
+    });
+  };
+
+  const exportCsv = () => {
+    const csv = Papa.unparse(guests.map((g) => ({
+      name: g.full_name, email: g.email, phone: g.phone, household: g.household_group,
+      dietary: g.dietary_tags?.join("; "), allergies: g.food_allergies?.join("; "),
+      notes: g.dietary_notes,
+    })));
+    const blob = new Blob([csv], { type: "text/csv" });
+    const a = document.createElement("a");
+    a.href = URL.createObjectURL(blob); a.download = "guests.csv"; a.click();
+  };
+
+  const save = async (g: Partial<Guest> & { invitedEventIds?: string[] }) => {
+    if (!wedding) return;
+    try {
+      const payload: any = {
+        wedding_id: wedding.id,
+        full_name: g.full_name, email: g.email || null, phone: g.phone || null,
+        household_group: g.household_group || null,
+        dietary_tags: g.dietary_tags ?? [], food_allergies: g.food_allergies ?? [],
+        dietary_notes: g.dietary_notes || null, accessibility_notes: g.accessibility_notes || null,
+      };
+      let guestId = g.id;
+      if (g.id) {
+        const { error } = await supabase.from("guests").update(payload).eq("id", g.id);
+        if (error) throw error;
+      } else {
+        const { data, error } = await supabase.from("guests").insert(payload).select().single();
+        if (error) throw error;
+        guestId = data.id;
+      }
+      if (guestId && g.invitedEventIds) {
+        // Remove invites not selected, add missing
+        const existing = inviteByGuest.get(guestId) ?? [];
+        const toRemove = existing.filter((i) => !g.invitedEventIds!.includes(i.event_id));
+        const toAdd = g.invitedEventIds.filter((eid) => !existing.some((i) => i.event_id === eid));
+        if (toRemove.length) await supabase.from("guest_event_invites").delete().in("id", toRemove.map((r) => r.id));
+        if (toAdd.length) await supabase.from("guest_event_invites").insert(toAdd.map((eid) => ({ guest_id: guestId!, event_id: eid })));
+      }
+      toast.success("Saved");
+      setEditing(null); invalidate(wedding.id);
+    } catch (err: any) { toast.error(err.message); }
+  };
+
+  const del = async (id: string) => {
+    if (!confirm("Remove this guest?")) return;
+    const { error } = await supabase.from("guests").delete().eq("id", id);
+    if (error) return toast.error(error.message);
+    invalidate(wedding?.id);
+  };
+
+  const copyRsvpLink = async (g: Guest) => {
+    const url = `${window.location.origin}/rsvp/${g.rsvp_token}`;
+    await navigator.clipboard.writeText(url);
+    toast.success("RSVP link copied");
+  };
+
+  const stats = {
+    total: guests.length,
+    attending: invites.filter((i) => i.rsvp_status === "attending").length,
+    pending: invites.filter((i) => i.rsvp_status === "pending").length,
+  };
+
+  return (
+    <AppShell
+      title="Guests"
+      subtitle="One row per person. Dietary tags, food allergies, per-event invites, RSVP status — all in one place."
+      actions={
+        <div className="flex gap-2 flex-wrap">
+          <input ref={fileRef} type="file" accept=".csv" className="hidden" onChange={(e) => e.target.files?.[0] && onCsv(e.target.files[0])} />
+          <button onClick={importCsv} className="inline-flex items-center gap-2 rounded-full border border-line px-4 py-2 text-sm hover:bg-stone"><Upload className="h-4 w-4" /> Import CSV</button>
+          <button onClick={exportCsv} className="inline-flex items-center gap-2 rounded-full border border-line px-4 py-2 text-sm hover:bg-stone"><Download className="h-4 w-4" /> Export</button>
+          <button onClick={() => setEditing({})} className="inline-flex items-center gap-2 rounded-full bg-ink text-paper px-5 py-2 text-sm hover:bg-clay"><Plus className="h-4 w-4" /> Add guest</button>
+        </div>
+      }
+    >
+      <div className="grid grid-cols-3 gap-3 mb-6">
+        <Stat label="Total guests" value={stats.total} />
+        <Stat label="Attending" value={stats.attending} accent />
+        <Stat label="Pending replies" value={stats.pending} />
+      </div>
+
+      <div className="flex flex-wrap gap-2 mb-4 items-center">
+        <div className="relative flex-1 min-w-[220px]">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+          <input value={q} onChange={(e) => setQ(e.target.value)} placeholder="Search name or email…" className="w-full rounded-full border border-line pl-10 pr-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-clay" />
+        </div>
+        <div className="flex gap-1 flex-wrap">
+          {[...DIETARY, ...ALLERGIES].map((t) => (
+            <button key={t} onClick={() => setFilterDiet(filterDiet === t ? null : t)}
+              className={`text-[11px] rounded-full border px-2.5 py-0.5 ${filterDiet === t ? "bg-clay text-paper border-clay" : "border-line hover:bg-stone text-muted-foreground"}`}>{t}</button>
+          ))}
+        </div>
+      </div>
+
+      {guests.length === 0 ? (
+        <div className="rounded-3xl border border-dashed border-line p-16 text-center">
+          <h3 className="font-serif text-2xl">No guests yet</h3>
+          <p className="mt-2 text-sm text-muted-foreground">Import a CSV with columns <code className="text-xs bg-stone px-1 rounded">name, email, phone, household</code>, or add them one by one.</p>
+        </div>
+      ) : (
+        <div className="paper-card overflow-hidden">
+          <table className="w-full text-sm">
+            <thead className="bg-stone/50 text-left text-xs uppercase tracking-widest text-muted-foreground">
+              <tr>
+                <th className="px-4 py-3">Guest</th>
+                <th className="px-4 py-3 hidden md:table-cell">Contact</th>
+                <th className="px-4 py-3 hidden lg:table-cell">Dietary</th>
+                <th className="px-4 py-3">Events</th>
+                <th className="px-4 py-3"></th>
+              </tr>
+            </thead>
+            <tbody>
+              {filtered.map((g) => {
+                const gi = inviteByGuest.get(g.id) ?? [];
+                return (
+                  <tr key={g.id} className="border-t border-line hover:bg-stone/30">
+                    <td className="px-4 py-3">
+                      <p className="font-medium">{g.full_name}</p>
+                      {g.household_group && <p className="text-xs text-muted-foreground">{g.household_group}</p>}
+                    </td>
+                    <td className="px-4 py-3 hidden md:table-cell text-xs text-muted-foreground">
+                      {g.email && <p>{g.email}</p>}
+                      {g.phone && <p>{g.phone}</p>}
+                    </td>
+                    <td className="px-4 py-3 hidden lg:table-cell">
+                      <div className="flex flex-wrap gap-1">
+                        {g.dietary_tags?.map((t) => <span key={t} className="text-[10px] bg-clay-soft text-clay rounded-full px-2 py-0.5">{t}</span>)}
+                        {g.food_allergies?.map((t) => <span key={t} className="text-[10px] bg-destructive/10 text-destructive rounded-full px-2 py-0.5">⚠ {t}</span>)}
+                      </div>
+                    </td>
+                    <td className="px-4 py-3">
+                      <div className="flex flex-wrap gap-1">
+                        {gi.length === 0 && <span className="text-xs text-muted-foreground">—</span>}
+                        {gi.map((i) => {
+                          const ev = events.find((e) => e.id === i.event_id);
+                          const color = i.rsvp_status === "attending" ? "text-clay" : i.rsvp_status === "declined" ? "text-destructive" : "text-muted-foreground";
+                          return <span key={i.id} className={`text-[10px] rounded-full border border-line px-2 py-0.5 ${color}`}>{ev?.name ?? "?"} · {i.rsvp_status}</span>;
+                        })}
+                      </div>
+                    </td>
+                    <td className="px-4 py-3">
+                      <div className="flex gap-1 justify-end">
+                        <button onClick={() => copyRsvpLink(g)} title="Copy RSVP link" className="p-2 rounded-full hover:bg-stone"><Copy className="h-3.5 w-3.5" /></button>
+                        {g.phone && <a href={`https://wa.me/${g.phone.replace(/[^0-9]/g, "")}?text=${encodeURIComponent(`Hi ${g.full_name}, please RSVP at ${window.location.origin}/rsvp/${g.rsvp_token}`)}`}
+                          target="_blank" rel="noreferrer" className="p-2 rounded-full hover:bg-stone" title="Open WhatsApp"><MessageCircle className="h-3.5 w-3.5" /></a>}
+                        <button onClick={() => setEditing(g)} className="text-xs rounded-full border border-line px-3 py-1 hover:bg-stone">Edit</button>
+                        <button onClick={() => del(g.id)} className="p-2 rounded-full hover:bg-stone text-muted-foreground"><Trash2 className="h-3.5 w-3.5" /></button>
+                      </div>
+                    </td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
+        </div>
+      )}
+
+      {editing && <GuestDialog guest={editing} events={events} existingInvites={editing.id ? (inviteByGuest.get(editing.id) ?? []) : []} onClose={() => setEditing(null)} onSave={save} />}
+    </AppShell>
+  );
+}
+
+function Stat({ label, value, accent }: { label: string; value: number; accent?: boolean }) {
+  return (
+    <div className="paper-card p-5">
+      <p className="text-[10px] uppercase tracking-widest text-muted-foreground">{label}</p>
+      <p className={`mt-2 font-serif text-3xl ${accent ? "text-clay" : ""}`}>{value}</p>
+    </div>
+  );
+}
+
+function GuestDialog({ guest, events, existingInvites, onClose, onSave }: {
+  guest: Partial<Guest>; events: any[]; existingInvites: Invite[]; onClose: () => void;
+  onSave: (g: Partial<Guest> & { invitedEventIds?: string[] }) => Promise<void>;
+}) {
+  const [form, setForm] = useState<Partial<Guest>>({ ...guest, dietary_tags: guest.dietary_tags ?? [], food_allergies: guest.food_allergies ?? [] });
+  const [invited, setInvited] = useState<string[]>(existingInvites.map((i) => i.event_id));
+  const [saving, setSaving] = useState(false);
+
+  const toggle = (arr: string[], v: string) => arr.includes(v) ? arr.filter((x) => x !== v) : [...arr, v];
+
+  const submit = async (e: React.FormEvent) => {
+    e.preventDefault(); setSaving(true);
+    await onSave({ ...form, invitedEventIds: invited });
+    setSaving(false);
+  };
+
+  return (
+    <div className="fixed inset-0 z-50 bg-ink/40 flex items-center justify-center p-4" onClick={onClose}>
+      <div className="bg-paper rounded-3xl max-w-xl w-full p-8 max-h-[92vh] overflow-y-auto" onClick={(e) => e.stopPropagation()}>
+        <div className="flex items-start justify-between">
+          <h3 className="font-serif text-2xl">{guest.id ? "Edit guest" : "Add guest"}</h3>
+          <button onClick={onClose}><X className="h-4 w-4" /></button>
+        </div>
+        <form onSubmit={submit} className="mt-6 space-y-4">
+          <F label="Full name" required value={form.full_name ?? ""} onChange={(v) => setForm({ ...form, full_name: v })} />
+          <div className="grid grid-cols-2 gap-3">
+            <F label="Email" type="email" value={form.email ?? ""} onChange={(v) => setForm({ ...form, email: v })} />
+            <F label="Phone (with country code)" value={form.phone ?? ""} onChange={(v) => setForm({ ...form, phone: v })} placeholder="+91 98…" />
+          </div>
+          <F label="Household / family group" value={form.household_group ?? ""} onChange={(v) => setForm({ ...form, household_group: v })} placeholder="e.g. Rao family" />
+
+          <div>
+            <p className="text-xs uppercase tracking-widest text-muted-foreground mb-2">Dietary tags</p>
+            <div className="flex flex-wrap gap-1.5">
+              {DIETARY.map((t) => (
+                <button type="button" key={t} onClick={() => setForm({ ...form, dietary_tags: toggle(form.dietary_tags ?? [], t) })}
+                  className={`text-xs rounded-full border px-3 py-1 ${form.dietary_tags?.includes(t) ? "bg-clay-soft border-clay text-clay" : "border-line hover:bg-stone"}`}>{t}</button>
+              ))}
+            </div>
+          </div>
+
+          <div>
+            <p className="text-xs uppercase tracking-widest text-muted-foreground mb-2">Food allergies</p>
+            <div className="flex flex-wrap gap-1.5">
+              {ALLERGIES.map((t) => (
+                <button type="button" key={t} onClick={() => setForm({ ...form, food_allergies: toggle(form.food_allergies ?? [], t) })}
+                  className={`text-xs rounded-full border px-3 py-1 ${form.food_allergies?.includes(t) ? "bg-destructive/10 border-destructive text-destructive" : "border-line hover:bg-stone"}`}>⚠ {t}</button>
+              ))}
+            </div>
+          </div>
+
+          <div>
+            <label className="text-xs uppercase tracking-widest text-muted-foreground">Dietary notes</label>
+            <textarea rows={2} value={form.dietary_notes ?? ""} onChange={(e) => setForm({ ...form, dietary_notes: e.target.value })}
+              className="mt-1 w-full rounded-2xl border border-line px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-clay" placeholder="e.g. severe peanut allergy — no cross-contact" />
+          </div>
+          <F label="Accessibility notes" value={form.accessibility_notes ?? ""} onChange={(v) => setForm({ ...form, accessibility_notes: v })} placeholder="e.g. wheelchair access needed" />
+
+          <div>
+            <p className="text-xs uppercase tracking-widest text-muted-foreground mb-2">Invited to</p>
+            {events.length === 0 ? <p className="text-xs text-muted-foreground">Add events first to invite this guest.</p> :
+              <div className="flex flex-wrap gap-1.5">
+                {events.map((e: any) => (
+                  <button type="button" key={e.id} onClick={() => setInvited(toggle(invited, e.id))}
+                    className={`text-xs rounded-full border px-3 py-1 ${invited.includes(e.id) ? "bg-ink text-paper border-ink" : "border-line hover:bg-stone"}`}>{e.name}</button>
+                ))}
+              </div>}
+          </div>
+
+          <div className="flex justify-end gap-2 pt-4">
+            <button type="button" onClick={onClose} className="rounded-full px-5 py-2 text-sm border border-line hover:bg-stone">Cancel</button>
+            <button disabled={saving} className="rounded-full bg-ink text-paper px-6 py-2 text-sm hover:bg-clay disabled:opacity-60">{saving ? "Saving…" : "Save guest"}</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  );
+}
+
+function F({ label, value, onChange, type = "text", placeholder, required }: { label: string; value: string; onChange: (v: string) => void; type?: string; placeholder?: string; required?: boolean }) {
+  return (
+    <label className="block">
+      <span className="text-xs uppercase tracking-widest text-muted-foreground">{label}</span>
+      <input type={type} required={required} value={value} onChange={(e) => onChange(e.target.value)} placeholder={placeholder}
+        className="mt-1 w-full rounded-2xl border border-line px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-clay" />
+    </label>
+  );
+}
