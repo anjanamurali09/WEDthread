@@ -18,7 +18,7 @@ function Onboarding() {
   const { data: wedding, isLoading } = useCurrentWedding();
   const [form, setForm] = useState({
     partner_a: "", partner_b: "",
-    destination_city: "", destination_country: "India",
+    destination_city: "", destination_country: "",
     est_guest_count: 100,
   });
   const [saving, setSaving] = useState(false);
@@ -70,8 +70,8 @@ function Onboarding() {
             <Field label="Partner B" value={form.partner_b} onChange={(v) => setForm({ ...form, partner_b: v })} required placeholder="e.g. James" />
           </div>
           <div className="grid md:grid-cols-2 gap-4">
-            <Field label="Destination city" value={form.destination_city} onChange={(v) => setForm({ ...form, destination_city: v })} placeholder="e.g. Udaipur" />
-            <Field label="Destination country" value={form.destination_country} onChange={(v) => setForm({ ...form, destination_country: v })} placeholder="India" />
+            <Field label="Destination city" value={form.destination_city} onChange={(v) => setForm({ ...form, destination_city: v })} placeholder="e.g. Udaipur, Lisbon, Cancún" />
+            <Field label="Destination country" value={form.destination_country} onChange={(v) => setForm({ ...form, destination_country: v })} placeholder="e.g. India, Portugal, Mexico" />
           </div>
           <Field label="Estimated guest count" type="number" value={String(form.est_guest_count)} onChange={(v) => setForm({ ...form, est_guest_count: Number(v) || 0 })} />
 

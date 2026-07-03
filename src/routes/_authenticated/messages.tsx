@@ -18,10 +18,10 @@ const KIND_LABELS: Record<string, string> = {
 };
 
 const DEFAULT_TEMPLATES = [
-  { kind: "save_the_date", name: "Save the date", body: "Hi {{name}}! {{partner_a}} & {{partner_b}} are getting married in {{destination}} — save the dates. Details coming soon 💌" },
+  { kind: "save_the_date", name: "Save the date", body: "Hi {{name}}! {{partner_a}} & {{partner_b}} are getting married in {{destination}}, save the dates. Details coming soon 💌" },
   { kind: "rsvp_request", name: "RSVP request", body: "Hi {{name}}, please RSVP for {{partner_a}} & {{partner_b}}'s wedding: {{rsvp_link}}" },
   { kind: "reminder", name: "T-7 reminder", body: "Hi {{name}}, our wedding is one week away! Review your events here: {{rsvp_link}}" },
-  { kind: "thank_you", name: "Thank you", body: "Thank you for celebrating with us, {{name}}. It meant the world. — {{partner_a}} & {{partner_b}}" },
+  { kind: "thank_you", name: "Thank you", body: "Thank you for celebrating with us, {{name}}. It meant the world., {{partner_a}} & {{partner_b}}" },
 ];
 
 function render(body: string, ctx: Record<string, string>) {
@@ -86,7 +86,7 @@ function MessagesPage() {
   return (
     <AppShell
       title="Messages"
-      subtitle="WhatsApp templates with merge tags. Preview per guest, then open in WhatsApp — one tap to send, no logins."
+      subtitle="WhatsApp templates with merge tags. Preview per guest, then open in WhatsApp, one tap to send, no logins."
       actions={
         <div className="flex gap-2">
           {templates.length === 0 && <button onClick={seedDefaults} className="rounded-full border border-line px-4 py-2 text-sm hover:bg-stone">Load starter templates</button>}
@@ -233,7 +233,7 @@ function SendDialog({ template, guests, events, invites, wedding, onClose }: any
         <label className="block mt-6"><span className="text-xs uppercase tracking-widest text-muted-foreground">Filter by event (optional)</span>
           <select value={eventId} onChange={(e) => { setEventId(e.target.value); setSelected(new Set()); }} className="mt-1 w-full rounded-2xl border border-line px-4 py-3 text-sm bg-paper">
             <option value="">All guests with a phone number</option>
-            {events.map((e: any) => <option key={e.id} value={e.id}>{e.name} — invitees</option>)}
+            {events.map((e: any) => <option key={e.id} value={e.id}>{e.name}, invitees</option>)}
           </select>
         </label>
 
@@ -265,7 +265,7 @@ function SendDialog({ template, guests, events, invites, wedding, onClose }: any
             Open {selected.size} WhatsApp chat{selected.size === 1 ? "" : "s"} <ExternalLink className="h-3 w-3" />
           </button>
         </div>
-        <p className="mt-3 text-[11px] text-muted-foreground">Vowzy opens each chat with the message pre-filled — you tap send in WhatsApp. This works with your personal number, no Twilio setup needed. (Business API auto-send coming soon.)</p>
+        <p className="mt-3 text-[11px] text-muted-foreground">Vowzy opens each chat with the message pre-filled, you tap send in WhatsApp. This works with your personal number, no Twilio setup needed. (Business API auto-send coming soon.)</p>
       </div>
     </div>
   );

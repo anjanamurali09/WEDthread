@@ -5,7 +5,7 @@ import { AppShell } from "@/components/app-shell";
 import { useCurrentWedding, useEvents, useGuests, useInvites, useInvalidateWedding, type Guest, type Invite } from "@/lib/wedding-hooks";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-import { Plus, Upload, Download, X, Trash2, Search, MessageCircle, Copy } from "lucide-react";
+import { Plus, Upload, Download, X, Trash2, Search, MessageCircle, Copy, FileText } from "lucide-react";
 
 export const Route = createFileRoute("/_authenticated/guests")({ component: GuestsPage });
 
@@ -39,20 +39,46 @@ function GuestsPage() {
 
   const importCsv = () => fileRef.current?.click();
 
+  const CSV_HEADERS = ["first_name","last_name","email","phone","household","dietary_tags","food_allergies","dietary_notes","accessibility_notes"];
+
+  const downloadTemplate = () => {
+    const sample = [{
+      first_name: "Aria", last_name: "Rao", email: "aria@example.com",
+      phone: "+91 98000 00000", household: "Rao family",
+      dietary_tags: "Vegetarian; Jain", food_allergies: "Nuts",
+      dietary_notes: "no cross-contact with peanuts",
+      accessibility_notes: "",
+    }];
+    const csv = Papa.unparse({ fields: CSV_HEADERS, data: sample.map((r) => CSV_HEADERS.map((h) => (r as any)[h] ?? "")) });
+    const blob = new Blob([csv], { type: "text/csv" });
+    const a = document.createElement("a");
+    a.href = URL.createObjectURL(blob); a.download = "vowzy-guest-template.csv"; a.click();
+  };
+
   const onCsv = (file: File) => {
     if (!wedding) return;
     Papa.parse<Record<string, string>>(file, {
       header: true, skipEmptyLines: true,
       complete: async (res) => {
-        const rows = res.data.filter((r) => r.name || r.full_name);
-        if (rows.length === 0) return toast.error("No rows with a name column found");
-        const inserts = rows.map((r) => ({
-          wedding_id: wedding.id,
-          full_name: r.name || r.full_name || "",
-          email: r.email || null,
-          phone: r.phone || r.whatsapp || null,
-          household_group: r.household || r.household_group || null,
-        }));
+        const rows = res.data.filter((r) => r.first_name || r.name || r.full_name);
+        if (rows.length === 0) return toast.error("No rows with a first_name or name column found");
+        const inserts = rows.map((r) => {
+          const fn = r.first_name || (r.name || r.full_name || "").split(" ")[0];
+          const ln = r.last_name || (r.name || r.full_name || "").split(" ").slice(1).join(" ") || null;
+          return {
+            wedding_id: wedding.id,
+            first_name: fn || null,
+            last_name: ln,
+            full_name: [fn, ln].filter(Boolean).join(" ") || r.name || r.full_name || "",
+            email: r.email || null,
+            phone: r.phone || r.whatsapp || null,
+            household_group: r.household || r.household_group || null,
+            dietary_tags: r.dietary_tags ? r.dietary_tags.split(/[;,]/).map((s) => s.trim()).filter(Boolean) : [],
+            food_allergies: r.food_allergies ? r.food_allergies.split(/[;,]/).map((s) => s.trim()).filter(Boolean) : [],
+            dietary_notes: r.dietary_notes || null,
+            accessibility_notes: r.accessibility_notes || null,
+          } as any;
+        });
         const { error } = await supabase.from("guests").insert(inserts);
         if (error) return toast.error(error.message);
         toast.success(`Imported ${inserts.length} guests`);
@@ -62,11 +88,16 @@ function GuestsPage() {
   };
 
   const exportCsv = () => {
-    const csv = Papa.unparse(guests.map((g) => ({
-      name: g.full_name, email: g.email, phone: g.phone, household: g.household_group,
-      dietary: g.dietary_tags?.join("; "), allergies: g.food_allergies?.join("; "),
-      notes: g.dietary_notes,
-    })));
+    const rows = guests.map((g: any) => ({
+      first_name: g.first_name ?? g.full_name?.split(" ")[0] ?? "",
+      last_name: g.last_name ?? g.full_name?.split(" ").slice(1).join(" ") ?? "",
+      email: g.email ?? "", phone: g.phone ?? "", household: g.household_group ?? "",
+      dietary_tags: (g.dietary_tags ?? []).join("; "),
+      food_allergies: (g.food_allergies ?? []).join("; "),
+      dietary_notes: g.dietary_notes ?? "",
+      accessibility_notes: g.accessibility_notes ?? "",
+    }));
+    const csv = Papa.unparse({ fields: CSV_HEADERS, data: rows.map((r) => CSV_HEADERS.map((h) => (r as any)[h])) });
     const blob = new Blob([csv], { type: "text/csv" });
     const a = document.createElement("a");
     a.href = URL.createObjectURL(blob); a.download = "guests.csv"; a.click();
@@ -75,9 +106,14 @@ function GuestsPage() {
   const save = async (g: Partial<Guest> & { invitedEventIds?: string[] }) => {
     if (!wedding) return;
     try {
+      const fn = (g as any).first_name ?? g.full_name?.split(" ")[0] ?? "";
+      const ln = (g as any).last_name ?? g.full_name?.split(" ").slice(1).join(" ") ?? null;
       const payload: any = {
         wedding_id: wedding.id,
-        full_name: g.full_name, email: g.email || null, phone: g.phone || null,
+        first_name: fn || null,
+        last_name: ln || null,
+        full_name: [fn, ln].filter(Boolean).join(" "),
+        email: g.email || null, phone: g.phone || null,
         household_group: g.household_group || null,
         dietary_tags: g.dietary_tags ?? [], food_allergies: g.food_allergies ?? [],
         dietary_notes: g.dietary_notes || null, accessibility_notes: g.accessibility_notes || null,
@@ -126,11 +162,12 @@ function GuestsPage() {
   return (
     <AppShell
       title="Guests"
-      subtitle="One row per person. Dietary tags, food allergies, per-event invites, RSVP status — all in one place."
+      subtitle="One row per person. Dietary tags, food allergies, per-event invites, RSVP status, all in one place."
       actions={
         <div className="flex gap-2 flex-wrap">
           <input ref={fileRef} type="file" accept=".csv" className="hidden" onChange={(e) => e.target.files?.[0] && onCsv(e.target.files[0])} />
-          <button onClick={importCsv} className="inline-flex items-center gap-2 rounded-full border border-line px-4 py-2 text-sm hover:bg-stone"><Upload className="h-4 w-4" /> Import CSV</button>
+          <button onClick={downloadTemplate} className="inline-flex items-center gap-2 rounded-full border border-line px-4 py-2 text-sm hover:bg-stone" title="Download the CSV template with all Add-guest fields as headers"><FileText className="h-4 w-4" /> CSV template</button>
+          <button onClick={importCsv} className="inline-flex items-center gap-2 rounded-full border border-line px-4 py-2 text-sm hover:bg-stone"><Upload className="h-4 w-4" /> Import</button>
           <button onClick={exportCsv} className="inline-flex items-center gap-2 rounded-full border border-line px-4 py-2 text-sm hover:bg-stone"><Download className="h-4 w-4" /> Export</button>
           <button onClick={() => setEditing({})} className="inline-flex items-center gap-2 rounded-full bg-ink text-paper px-5 py-2 text-sm hover:bg-clay"><Plus className="h-4 w-4" /> Add guest</button>
         </div>
@@ -156,9 +193,10 @@ function GuestsPage() {
       </div>
 
       {guests.length === 0 ? (
-        <div className="rounded-3xl border border-dashed border-line p-16 text-center">
-          <h3 className="font-serif text-2xl">No guests yet</h3>
-          <p className="mt-2 text-sm text-muted-foreground">Import a CSV with columns <code className="text-xs bg-stone px-1 rounded">name, email, phone, household</code>, or add them one by one.</p>
+        <div className="rounded-3xl bg-gradient-to-br from-blush-soft via-cream to-sage/20 border border-line p-12 text-center">
+          <h3 className="font-serif text-3xl">No guests yet</h3>
+          <p className="mt-3 text-sm text-ink/70 max-w-lg mx-auto">Add guests one by one, or download the CSV template and import a whole spreadsheet. The template has every Add-guest field as a column, so nothing gets lost.</p>
+          <button onClick={downloadTemplate} className="mt-6 inline-flex items-center gap-2 rounded-full bg-ink text-paper px-5 py-2.5 text-sm hover:bg-clay"><FileText className="h-4 w-4" /> Download CSV template</button>
         </div>
       ) : (
         <div className="paper-card overflow-hidden">
@@ -193,7 +231,7 @@ function GuestsPage() {
                     </td>
                     <td className="px-4 py-3">
                       <div className="flex flex-wrap gap-1">
-                        {gi.length === 0 && <span className="text-xs text-muted-foreground">—</span>}
+                        {gi.length === 0 && <span className="text-xs text-muted-foreground">-</span>}
                         {gi.map((i) => {
                           const ev = events.find((e) => e.id === i.event_id);
                           const color = i.rsvp_status === "attending" ? "text-clay" : i.rsvp_status === "declined" ? "text-destructive" : "text-muted-foreground";
@@ -256,7 +294,10 @@ function GuestDialog({ guest, events, existingInvites, onClose, onSave }: {
           <button onClick={onClose}><X className="h-4 w-4" /></button>
         </div>
         <form onSubmit={submit} className="mt-6 space-y-4">
-          <F label="Full name" required value={form.full_name ?? ""} onChange={(v) => setForm({ ...form, full_name: v })} />
+          <div className="grid grid-cols-2 gap-3">
+            <F label="First name" required value={(form as any).first_name ?? form.full_name?.split(" ")[0] ?? ""} onChange={(v) => setForm({ ...form, first_name: v } as any)} />
+            <F label="Last name" value={(form as any).last_name ?? form.full_name?.split(" ").slice(1).join(" ") ?? ""} onChange={(v) => setForm({ ...form, last_name: v } as any)} />
+          </div>
           <div className="grid grid-cols-2 gap-3">
             <F label="Email" type="email" value={form.email ?? ""} onChange={(v) => setForm({ ...form, email: v })} />
             <F label="Phone (with country code)" value={form.phone ?? ""} onChange={(v) => setForm({ ...form, phone: v })} placeholder="+91 98…" />
@@ -286,7 +327,7 @@ function GuestDialog({ guest, events, existingInvites, onClose, onSave }: {
           <div>
             <label className="text-xs uppercase tracking-widest text-muted-foreground">Dietary notes</label>
             <textarea rows={2} value={form.dietary_notes ?? ""} onChange={(e) => setForm({ ...form, dietary_notes: e.target.value })}
-              className="mt-1 w-full rounded-2xl border border-line px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-clay" placeholder="e.g. severe peanut allergy — no cross-contact" />
+              className="mt-1 w-full rounded-2xl border border-line px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-clay" placeholder="e.g. severe peanut allergy, no cross-contact" />
           </div>
           <F label="Accessibility notes" value={form.accessibility_notes ?? ""} onChange={(v) => setForm({ ...form, accessibility_notes: v })} placeholder="e.g. wheelchair access needed" />
 

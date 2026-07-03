@@ -48,10 +48,17 @@ function SeatingPage() {
 
   const addTable = async () => {
     if (!eventId) return;
-    const label = prompt("Table label?", `Table ${tables.length + 1}`);
-    if (!label) return;
-    const seatsN = Number(prompt("How many seats?", "8") ?? 8);
-    await supabase.from("wedding_tables").insert({ event_id: eventId, label, seats: seatsN, sort_order: tables.length });
+    await supabase.from("wedding_tables").insert({
+      event_id: eventId,
+      label: `Table ${tables.length + 1}`,
+      seats: 8,
+      sort_order: tables.length,
+    });
+    qc.invalidateQueries({ queryKey: ["tables", wedding?.id, eventId] });
+  };
+
+  const updateTable = async (id: string, patch: { label?: string; seats?: number }) => {
+    await supabase.from("wedding_tables").update(patch).eq("id", id);
     qc.invalidateQueries({ queryKey: ["tables", wedding?.id, eventId] });
   };
 
@@ -128,14 +135,24 @@ function SeatingPage() {
                   return (
                     <TableDrop key={t.id} id={t.id}>
                       <div className={`paper-card p-5 ${over ? "ring-2 ring-destructive" : ""}`}>
-                        <div className="flex items-start justify-between">
-                          <div>
-                            <p className="font-serif text-xl">{t.label}</p>
-                            <p className={`text-xs mt-0.5 ${over ? "text-destructive" : "text-muted-foreground"}`}>
-                              {at.length} / {t.seats} seats {over && "· over capacity"}
-                            </p>
+                        <div className="flex items-start justify-between gap-2">
+                          <div className="flex-1 min-w-0">
+                            <input
+                              value={t.label}
+                              onChange={(e) => updateTable(t.id, { label: e.target.value })}
+                              className="font-serif text-xl bg-transparent border-b border-transparent hover:border-line focus:border-clay focus:outline-none w-full"
+                            />
+                            <div className={`text-xs mt-1 flex items-center gap-2 ${over ? "text-destructive" : "text-muted-foreground"}`}>
+                              <span>{at.length} /</span>
+                              <input
+                                type="number" min={1} max={30} value={t.seats}
+                                onChange={(e) => updateTable(t.id, { seats: Math.max(1, Number(e.target.value) || 1) })}
+                                className="w-12 bg-transparent border-b border-transparent hover:border-line focus:border-clay focus:outline-none text-center"
+                              />
+                              <span>seats {over && "· over capacity"}</span>
+                            </div>
                           </div>
-                          <button onClick={() => removeTable(t.id)} className="p-1.5 rounded-full hover:bg-stone text-muted-foreground"><Trash2 className="h-3.5 w-3.5" /></button>
+                          <button onClick={() => removeTable(t.id)} className="p-1.5 rounded-full hover:bg-stone text-muted-foreground shrink-0"><Trash2 className="h-3.5 w-3.5" /></button>
                         </div>
                         {allergiesSet.size > 0 && (
                           <p className="mt-2 text-[11px] text-destructive inline-flex items-center gap-1"><AlertTriangle className="h-3 w-3" /> Allergies here: {[...allergiesSet].join(", ")}</p>

@@ -26,7 +26,7 @@ function Dashboard() {
   return (
     <AppShell
       title={`${wedding.partner_a} & ${wedding.partner_b}`}
-      subtitle={wedding.destination_city ? `${wedding.destination_city}${wedding.destination_country ? ", " + wedding.destination_country : ""} · ${wedding.est_guest_count ?? "—"} guests estimated` : "Set your destination in Events."}
+      subtitle={wedding.destination_city ? `${wedding.destination_city}${wedding.destination_country ? ", " + wedding.destination_country : ""} · ${wedding.est_guest_count ?? "-"} guests estimated` : "Set your destination in Events."}
     >
       {/* Event timeline */}
       <section className="paper-card p-6 md:p-8">
@@ -36,7 +36,7 @@ function Dashboard() {
         </div>
         {events.length === 0 ? (
           <div className="mt-6 rounded-2xl border border-dashed border-line p-8 text-center">
-            <p className="text-sm text-muted-foreground">No events yet. Add mehendi, sangeet, nikah, ceremony, reception — whatever your wedding has.</p>
+            <p className="text-sm text-muted-foreground">No events yet. Add mehendi, sangeet, nikah, ceremony, reception, whatever your wedding has.</p>
             <Link to="/events" className="mt-4 inline-flex rounded-full bg-ink text-paper px-5 py-2 text-sm hover:bg-clay">Add your first event</Link>
           </div>
         ) : (
@@ -61,7 +61,7 @@ function Dashboard() {
         <Tile to="/events" icon={CalendarDays} label="Events" value={String(events.length)} sub={events.length === 1 ? "ceremony" : "ceremonies"} />
         <Tile to="/guests" icon={Users} label="Guests" value={String(guests.length)} sub={`${attending} attending`} />
         <Tile to="/seating" icon={Grid3x3} label="RSVPs" value={`${totalInvites ? Math.round((rsvpd / totalInvites) * 100) : 0}%`} sub={`${rsvpd} of ${totalInvites} responded`} />
-        <Tile to="/website" icon={Globe} label="Website" value={wedding.site_published ? "Live" : "Draft"} sub={`/w/${wedding.slug ?? "—"}`} />
+        <Tile to="/website" icon={Globe} label="Website" value={wedding.site_published ? "Live" : "Draft"} sub={`/w/${wedding.slug ?? "-"}`} />
       </section>
 
       {/* Discover */}
@@ -69,13 +69,13 @@ function Dashboard() {
         <Link to="/venues" className="paper-card p-6 hover:shadow-md transition-shadow group">
           <p className="text-[10px] uppercase tracking-widest text-clay">Discover</p>
           <h3 className="font-serif text-2xl mt-1">Destination venues</h3>
-          <p className="mt-2 text-sm text-muted-foreground">Palaces, beach resorts, vineyards, hill retreats — filter by destination and capacity.</p>
+          <p className="mt-2 text-sm text-muted-foreground">Palaces, beach resorts, vineyards, hill retreats, filter by destination and capacity.</p>
           <span className="mt-4 inline-flex items-center gap-1 text-xs text-clay uppercase tracking-widest group-hover:gap-2 transition-all">Browse venues <ArrowRight className="h-3 w-3" /></span>
         </Link>
         <Link to="/vendors" className="paper-card p-6 hover:shadow-md transition-shadow group">
           <p className="text-[10px] uppercase tracking-widest text-clay">Discover</p>
           <h3 className="font-serif text-2xl mt-1">Vendors near your ceremonies</h3>
-          <p className="mt-2 text-sm text-muted-foreground">Planners, photographers, mehendi artists, florists — filtered by the destination you actually chose.</p>
+          <p className="mt-2 text-sm text-muted-foreground">Planners, photographers, mehendi artists, florists, filtered by the destination you actually chose.</p>
           <span className="mt-4 inline-flex items-center gap-1 text-xs text-clay uppercase tracking-widest group-hover:gap-2 transition-all">Browse vendors <ArrowRight className="h-3 w-3" /></span>
         </Link>
       </section>
@@ -86,7 +86,7 @@ function Dashboard() {
           <div>
             <p className="text-[10px] uppercase tracking-widest text-clay inline-flex items-center gap-1"><MessageCircle className="h-3 w-3" /> WhatsApp</p>
             <h3 className="font-serif text-2xl mt-1">Automated guest messages</h3>
-            <p className="mt-2 text-sm text-muted-foreground max-w-xl">Save-the-dates, RSVP requests, T-7 reminders and thank-yous. Schedule once — Vowzy sends them.</p>
+            <p className="mt-2 text-sm text-muted-foreground max-w-xl">Save-the-dates, RSVP requests, T-7 reminders and thank-yous. Schedule once, Vowzy sends them.</p>
           </div>
           <Link to="/messages" className="rounded-full bg-ink text-paper px-5 py-2 text-sm hover:bg-clay">Open messaging</Link>
         </div>

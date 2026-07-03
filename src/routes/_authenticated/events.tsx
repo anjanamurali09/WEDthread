@@ -8,7 +8,12 @@ import { Plus, Trash2, X, CalendarDays } from "lucide-react";
 
 export const Route = createFileRoute("/_authenticated/events")({ component: EventsPage });
 
-const SUGGESTIONS = ["Mehendi", "Haldi", "Sangeet", "Nikah", "Baraat", "Hindu Ceremony", "Church Ceremony", "Registry", "Reception", "Cocktail Hour", "Farewell Brunch"];
+const SUGGESTIONS = [
+  "Welcome party", "Mehendi", "Haldi", "Sangeet", "Rehearsal dinner",
+  "Nikah", "Baraat", "Hindu ceremony", "Church ceremony", "Chuppah", "Tea ceremony",
+  "Civil registry", "Cocktail hour", "Reception", "Pool party", "Beach ceremony",
+  "After-party", "Farewell brunch",
+];
 
 function EventsPage() {
   const { data: wedding } = useCurrentWedding();
@@ -21,6 +26,7 @@ function EventsPage() {
     const payload = {
       wedding_id: wedding.id,
       name: e.name!, event_date: e.event_date || null, event_time: e.event_time || null,
+      event_end_time: (e as any).event_end_time || null,
       venue_name: e.venue_name || null, address: e.address || null, city: e.city || null,
       country: e.country || null, description: e.description || null,
       sort_order: e.sort_order ?? events.length,
@@ -59,14 +65,19 @@ function EventsPage() {
     >
       {isLoading ? <p className="text-muted-foreground text-sm">Loading…</p> :
         events.length === 0 ? (
-          <div className="rounded-3xl border border-dashed border-line p-16 text-center">
-            <CalendarDays className="h-8 w-8 mx-auto text-clay" />
-            <h3 className="mt-4 font-serif text-2xl">No events yet</h3>
-            <p className="mt-2 text-sm text-muted-foreground max-w-md mx-auto">Start with the ceremonies your two families want. You're not limited to one.</p>
-            <div className="mt-6 flex flex-wrap justify-center gap-2">
-              {SUGGESTIONS.slice(0,5).map((s) => (
-                <button key={s} onClick={() => setEditing({ name: s })} className="rounded-full border border-line px-4 py-1.5 text-xs hover:bg-stone">{s}</button>
-              ))}
+          <div className="rounded-3xl bg-gradient-to-br from-blush-soft via-cream to-sage/20 border border-line p-10 md:p-14">
+            <div className="text-center">
+              <CalendarDays className="h-8 w-8 mx-auto text-clay" />
+              <h3 className="mt-4 font-serif text-3xl">No events yet</h3>
+              <p className="mt-2 text-sm text-ink/70 max-w-xl mx-auto">A wedding is rarely one day. Add a mehendi, a welcome cocktail, a beach ceremony, a pool party, a church service, a farewell brunch, whatever your two families are celebrating.</p>
+            </div>
+            <div className="mt-8">
+              <p className="text-center text-[11px] uppercase tracking-widest text-clay">Popular starts</p>
+              <div className="mt-4 flex flex-wrap justify-center gap-2">
+                {SUGGESTIONS.map((s) => (
+                  <button key={s} onClick={() => setEditing({ name: s })} className="rounded-full bg-paper border border-line px-4 py-1.5 text-xs hover:bg-clay hover:text-paper hover:border-clay transition-colors">+ {s}</button>
+                ))}
+              </div>
             </div>
           </div>
         ) : (
@@ -78,6 +89,7 @@ function EventsPage() {
                 <p className="text-xs text-muted-foreground mt-2">
                   {e.event_date ? new Date(e.event_date).toLocaleDateString(undefined, { weekday: "short", month: "long", day: "numeric", year: "numeric" }) : "Date TBD"}
                   {e.event_time ? ` · ${e.event_time.slice(0,5)}` : ""}
+                  {(e as any).event_end_time ? ` – ${(e as any).event_end_time.slice(0,5)}` : ""}
                 </p>
                 {e.venue_name && <p className="text-sm mt-3">{e.venue_name}</p>}
                 {(e.city || e.country) && <p className="text-xs text-muted-foreground">{[e.city, e.country].filter(Boolean).join(", ")}</p>}
@@ -126,9 +138,10 @@ function EventDialog({ event, onClose, onSave }: { event: Partial<Event>; onClos
               ))}
             </div>
           </div>
+          <F label="Date" type="date" value={form.event_date ?? ""} onChange={(v) => setForm({ ...form, event_date: v })} />
           <div className="grid grid-cols-2 gap-3">
-            <F label="Date" type="date" value={form.event_date ?? ""} onChange={(v) => setForm({ ...form, event_date: v })} />
-            <F label="Time" type="time" value={form.event_time ?? ""} onChange={(v) => setForm({ ...form, event_time: v })} />
+            <F label="Start time (optional)" type="time" value={form.event_time ?? ""} onChange={(v) => setForm({ ...form, event_time: v })} />
+            <F label="End time (optional)" type="time" value={(form as any).event_end_time ?? ""} onChange={(v) => setForm({ ...form, event_end_time: v } as any)} />
           </div>
           <F label="Venue name" value={form.venue_name ?? ""} onChange={(v) => setForm({ ...form, venue_name: v })} placeholder="e.g. Jag Mandir" />
           <F label="Address" value={form.address ?? ""} onChange={(v) => setForm({ ...form, address: v })} />
