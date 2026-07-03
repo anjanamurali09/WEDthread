@@ -89,6 +89,7 @@ function EventsPage() {
                 <p className="text-xs text-muted-foreground mt-2">
                   {e.event_date ? new Date(e.event_date).toLocaleDateString(undefined, { weekday: "short", month: "long", day: "numeric", year: "numeric" }) : "Date TBD"}
                   {e.event_time ? ` · ${e.event_time.slice(0,5)}` : ""}
+                  {(e as any).event_end_time ? ` – ${(e as any).event_end_time.slice(0,5)}` : ""}
                 </p>
                 {e.venue_name && <p className="text-sm mt-3">{e.venue_name}</p>}
                 {(e.city || e.country) && <p className="text-xs text-muted-foreground">{[e.city, e.country].filter(Boolean).join(", ")}</p>}
@@ -137,9 +138,10 @@ function EventDialog({ event, onClose, onSave }: { event: Partial<Event>; onClos
               ))}
             </div>
           </div>
+          <F label="Date" type="date" value={form.event_date ?? ""} onChange={(v) => setForm({ ...form, event_date: v })} />
           <div className="grid grid-cols-2 gap-3">
-            <F label="Date" type="date" value={form.event_date ?? ""} onChange={(v) => setForm({ ...form, event_date: v })} />
-            <F label="Time" type="time" value={form.event_time ?? ""} onChange={(v) => setForm({ ...form, event_time: v })} />
+            <F label="Start time (optional)" type="time" value={form.event_time ?? ""} onChange={(v) => setForm({ ...form, event_time: v })} />
+            <F label="End time (optional)" type="time" value={(form as any).event_end_time ?? ""} onChange={(v) => setForm({ ...form, event_end_time: v } as any)} />
           </div>
           <F label="Venue name" value={form.venue_name ?? ""} onChange={(v) => setForm({ ...form, venue_name: v })} placeholder="e.g. Jag Mandir" />
           <F label="Address" value={form.address ?? ""} onChange={(v) => setForm({ ...form, address: v })} />
