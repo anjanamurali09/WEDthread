@@ -17,7 +17,7 @@ const TEMPLATES = [
   { id: "night-garden", name: "Night Garden", desc: "Dark charcoal, botanical illustrations, gold text.", palette: ["#171817", "#E4C079", "#3B4B3F"] },
   { id: "kraft-journal", name: "Kraft Journal", desc: "Paper texture, hand-drawn dividers, warm brown.", palette: ["#EFE5D2", "#4A3520", "#B4854B"] },
   { id: "arabesque-lux", name: "Arabesque Lux", desc: "Cream with maroon geometric motifs.", palette: ["#F4EBDD", "#5B1A24", "#C79A5B"] },
-  { id: "citrus-bloom", name: "Citrus Bloom", desc: "Playful — mustard, coral, and off-white.", palette: ["#FEF8EC", "#E86A33", "#F2C14E"] },
+  { id: "citrus-bloom", name: "Citrus Bloom", desc: "Playful, mustard, coral, and off-white.", palette: ["#FEF8EC", "#E86A33", "#F2C14E"] },
   { id: "sanskrit-modern", name: "Sanskrit Modern", desc: "Devanagari-friendly typography, saffron accents.", palette: ["#FFF7EC", "#231F20", "#E76F00"] },
 ];
 
@@ -57,7 +57,7 @@ function WebsitePage() {
           <div className="flex items-center gap-3">
             <span className={`h-2.5 w-2.5 rounded-full ${wedding.site_published ? "bg-clay" : "bg-line"}`} />
             <div>
-              <p className="text-sm">{wedding.site_published ? "Live" : "Draft — not yet published"}</p>
+              <p className="text-sm">{wedding.site_published ? "Live" : "Draft, not yet published"}</p>
               <a href={url} target="_blank" rel="noreferrer" className="text-xs text-muted-foreground hover:text-clay inline-flex items-center gap-1">{url} <ExternalLink className="h-3 w-3" /></a>
             </div>
           </div>
@@ -82,7 +82,7 @@ function WebsitePage() {
                 <div className="flex-1 flex items-center justify-center p-4">
                   <div className="text-center">
                     <p className="font-serif text-2xl" style={{ color: t.palette[1] }}>Aria &amp; Rohan</p>
-                    <p className="text-[10px] tracking-widest uppercase mt-1" style={{ color: t.palette[2] }}>— together —</p>
+                    <p className="text-[10px] tracking-widest uppercase mt-1" style={{ color: t.palette[2] }}>- together -</p>
                   </div>
                 </div>
                 <div className="w-2" style={{ background: t.palette[2] }} />
@@ -101,7 +101,7 @@ function WebsitePage() {
 
       <div className="mt-10 paper-card p-6">
         <p className="text-[10px] uppercase tracking-widest text-clay">Coming soon</p>
-        <h3 className="font-serif text-xl mt-1">Custom subdomain — <span className="text-muted-foreground">yourname.vowzy.app</span></h3>
+        <h3 className="font-serif text-xl mt-1">Custom subdomain, <span className="text-muted-foreground">yourname.vowzy.app</span></h3>
         <p className="mt-2 text-sm text-muted-foreground">For launch, sites live at /w/{wedding.slug}. Subdomain routing is queued for the next release.</p>
       </div>
     </AppShell>

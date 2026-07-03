@@ -35,7 +35,7 @@ function Landing() {
             One plan.
           </h1>
           <p className="mt-6 text-lg text-ink/70 max-w-xl leading-relaxed">
-            Vowzy is the wedding platform built for couples whose story crosses continents. Plan mehendi, sangeet, nikah, church, registry, reception — as many events as your two families need, in whatever destination you choose.
+            Vowzy is the wedding platform built for couples whose story crosses continents. Plan mehendi, sangeet, nikah, church, registry, reception, as many events as your two families need, in whatever destination you choose.
           </p>
           <div className="mt-8 flex flex-wrap gap-3">
             <Link to="/auth" className="inline-flex items-center gap-2 rounded-full bg-ink text-paper px-6 py-3 text-sm font-medium hover:bg-clay transition-colors">
@@ -100,10 +100,10 @@ function Landing() {
         <div className="mt-16 grid md:grid-cols-2 lg:grid-cols-3 gap-6">
           {[
             { i: Calendar, t: "Unlimited ceremonies", b: "Add every event your two cultures ask for. Not a dropdown of 'ceremony' and 'reception'." },
-            { i: Users, t: "Smart guest lists", b: "Per-event invites, plus-ones, dietary tags, food allergies, accessibility notes — one row per human." },
+            { i: Users, t: "Smart guest lists", b: "Per-event invites, plus-ones, dietary tags, food allergies, accessibility notes, one row per human." },
             { i: Grid3x3Icon, t: "Drag-and-drop seating", b: "Layout tables for each event. See capacity, unseated attendees, dietary clusters at a glance." },
-            { i: MessageCircle, t: "WhatsApp automation", b: "Save-the-date, RSVP link, T-7 reminder, thank-you — scheduled and sent, not typed one by one." },
-            { i: Utensils, t: "Food & allergies at a table level", b: "Halal, kosher, jain, vegan, nut, dairy, shellfish — tracked, filterable, warned about at seating." },
+            { i: MessageCircle, t: "WhatsApp automation", b: "Save-the-date, RSVP link, T-7 reminder, thank-you, scheduled and sent, not typed one by one." },
+            { i: Utensils, t: "Food & allergies at a table level", b: "Halal, kosher, jain, vegan, nut, dairy, shellfish, tracked, filterable, warned about at seating." },
             { i: Globe2, t: "Destination-first", b: "Your wedding city ≠ your home city. Travel info, accommodations, and vendors serviced by destination." },
           ].map(({ i: Icon, t, b }) => (
             <div key={t} className="paper-card p-7">

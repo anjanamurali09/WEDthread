@@ -27,7 +27,7 @@ function VendorsPage() {
   );
 
   return (
-    <AppShell title="Vendors" subtitle="Planners, photographers, mehendi artists, florists — filtered by the destination you actually chose.">
+    <AppShell title="Vendors" subtitle="Planners, photographers, mehendi artists, florists, filtered by the destination you actually chose.">
       <div className="flex flex-wrap gap-2 mb-6">
         <div className="relative flex-1 min-w-[260px]">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
@@ -42,7 +42,7 @@ function VendorsPage() {
       {isLoading ? <p className="text-sm text-muted-foreground">Loading…</p> : filtered.length === 0 ? (
         <div className="rounded-3xl border border-dashed border-line p-16 text-center">
           <h3 className="font-serif text-2xl">Marketplace opens in Phase 2</h3>
-          <p className="mt-2 text-sm text-muted-foreground max-w-md mx-auto">We're focused on getting your planning perfect first. Vendors will onboard through a separate approved workflow — you'll browse and enquire right here.</p>
+          <p className="mt-2 text-sm text-muted-foreground max-w-md mx-auto">We're focused on getting your planning perfect first. Vendors will onboard through a separate approved workflow, you'll browse and enquire right here.</p>
         </div>
       ) : (
         <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-5">

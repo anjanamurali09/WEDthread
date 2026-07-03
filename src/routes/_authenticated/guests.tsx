@@ -126,7 +126,7 @@ function GuestsPage() {
   return (
     <AppShell
       title="Guests"
-      subtitle="One row per person. Dietary tags, food allergies, per-event invites, RSVP status — all in one place."
+      subtitle="One row per person. Dietary tags, food allergies, per-event invites, RSVP status, all in one place."
       actions={
         <div className="flex gap-2 flex-wrap">
           <input ref={fileRef} type="file" accept=".csv" className="hidden" onChange={(e) => e.target.files?.[0] && onCsv(e.target.files[0])} />
@@ -193,7 +193,7 @@ function GuestsPage() {
                     </td>
                     <td className="px-4 py-3">
                       <div className="flex flex-wrap gap-1">
-                        {gi.length === 0 && <span className="text-xs text-muted-foreground">—</span>}
+                        {gi.length === 0 && <span className="text-xs text-muted-foreground">-</span>}
                         {gi.map((i) => {
                           const ev = events.find((e) => e.id === i.event_id);
                           const color = i.rsvp_status === "attending" ? "text-clay" : i.rsvp_status === "declined" ? "text-destructive" : "text-muted-foreground";
@@ -286,7 +286,7 @@ function GuestDialog({ guest, events, existingInvites, onClose, onSave }: {
           <div>
             <label className="text-xs uppercase tracking-widest text-muted-foreground">Dietary notes</label>
             <textarea rows={2} value={form.dietary_notes ?? ""} onChange={(e) => setForm({ ...form, dietary_notes: e.target.value })}
-              className="mt-1 w-full rounded-2xl border border-line px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-clay" placeholder="e.g. severe peanut allergy — no cross-contact" />
+              className="mt-1 w-full rounded-2xl border border-line px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-clay" placeholder="e.g. severe peanut allergy, no cross-contact" />
           </div>
           <F label="Accessibility notes" value={form.accessibility_notes ?? ""} onChange={(v) => setForm({ ...form, accessibility_notes: v })} placeholder="e.g. wheelchair access needed" />
 

@@ -34,7 +34,7 @@ function RsvpPage() {
     const { error } = await supabase.rpc("submit_rsvp", { _token: token, _event_id: event_id, _status: status as any, _plus_ones: plus_ones });
     setSaving(null);
     if (error) return toast.error(error.message);
-    toast.success("Thanks — your response is saved");
+    toast.success("Thanks, your response is saved");
     load();
   };
 

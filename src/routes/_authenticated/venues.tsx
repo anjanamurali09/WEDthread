@@ -26,7 +26,7 @@ function VenuesPage() {
   );
 
   return (
-    <AppShell title="Venues" subtitle="Palaces, resorts, vineyards, hill retreats — shortlist for your destination and capacity.">
+    <AppShell title="Venues" subtitle="Palaces, resorts, vineyards, hill retreats, shortlist for your destination and capacity.">
       <div className="flex flex-wrap gap-2 mb-6">
         <div className="relative flex-1 min-w-[260px]">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
