@@ -5,7 +5,7 @@ import { AppShell } from "@/components/app-shell";
 import { useCurrentWedding, useEvents, useGuests, useInvites, useInvalidateWedding, type Guest, type Invite } from "@/lib/wedding-hooks";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-import { Plus, Upload, Download, X, Trash2, Search, MessageCircle, Copy } from "lucide-react";
+import { Plus, Upload, Download, X, Trash2, Search, MessageCircle, Copy, FileText } from "lucide-react";
 
 export const Route = createFileRoute("/_authenticated/guests")({ component: GuestsPage });
 
@@ -166,7 +166,8 @@ function GuestsPage() {
       actions={
         <div className="flex gap-2 flex-wrap">
           <input ref={fileRef} type="file" accept=".csv" className="hidden" onChange={(e) => e.target.files?.[0] && onCsv(e.target.files[0])} />
-          <button onClick={importCsv} className="inline-flex items-center gap-2 rounded-full border border-line px-4 py-2 text-sm hover:bg-stone"><Upload className="h-4 w-4" /> Import CSV</button>
+          <button onClick={downloadTemplate} className="inline-flex items-center gap-2 rounded-full border border-line px-4 py-2 text-sm hover:bg-stone" title="Download the CSV template with all Add-guest fields as headers"><FileText className="h-4 w-4" /> CSV template</button>
+          <button onClick={importCsv} className="inline-flex items-center gap-2 rounded-full border border-line px-4 py-2 text-sm hover:bg-stone"><Upload className="h-4 w-4" /> Import</button>
           <button onClick={exportCsv} className="inline-flex items-center gap-2 rounded-full border border-line px-4 py-2 text-sm hover:bg-stone"><Download className="h-4 w-4" /> Export</button>
           <button onClick={() => setEditing({})} className="inline-flex items-center gap-2 rounded-full bg-ink text-paper px-5 py-2 text-sm hover:bg-clay"><Plus className="h-4 w-4" /> Add guest</button>
         </div>
