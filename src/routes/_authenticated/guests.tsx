@@ -39,20 +39,46 @@ function GuestsPage() {
 
   const importCsv = () => fileRef.current?.click();
 
+  const CSV_HEADERS = ["first_name","last_name","email","phone","household","dietary_tags","food_allergies","dietary_notes","accessibility_notes"];
+
+  const downloadTemplate = () => {
+    const sample = [{
+      first_name: "Aria", last_name: "Rao", email: "aria@example.com",
+      phone: "+91 98000 00000", household: "Rao family",
+      dietary_tags: "Vegetarian; Jain", food_allergies: "Nuts",
+      dietary_notes: "no cross-contact with peanuts",
+      accessibility_notes: "",
+    }];
+    const csv = Papa.unparse({ fields: CSV_HEADERS, data: sample.map((r) => CSV_HEADERS.map((h) => (r as any)[h] ?? "")) });
+    const blob = new Blob([csv], { type: "text/csv" });
+    const a = document.createElement("a");
+    a.href = URL.createObjectURL(blob); a.download = "vowzy-guest-template.csv"; a.click();
+  };
+
   const onCsv = (file: File) => {
     if (!wedding) return;
     Papa.parse<Record<string, string>>(file, {
       header: true, skipEmptyLines: true,
       complete: async (res) => {
-        const rows = res.data.filter((r) => r.name || r.full_name);
-        if (rows.length === 0) return toast.error("No rows with a name column found");
-        const inserts = rows.map((r) => ({
-          wedding_id: wedding.id,
-          full_name: r.name || r.full_name || "",
-          email: r.email || null,
-          phone: r.phone || r.whatsapp || null,
-          household_group: r.household || r.household_group || null,
-        }));
+        const rows = res.data.filter((r) => r.first_name || r.name || r.full_name);
+        if (rows.length === 0) return toast.error("No rows with a first_name or name column found");
+        const inserts = rows.map((r) => {
+          const fn = r.first_name || (r.name || r.full_name || "").split(" ")[0];
+          const ln = r.last_name || (r.name || r.full_name || "").split(" ").slice(1).join(" ") || null;
+          return {
+            wedding_id: wedding.id,
+            first_name: fn || null,
+            last_name: ln,
+            full_name: [fn, ln].filter(Boolean).join(" ") || r.name || r.full_name || "",
+            email: r.email || null,
+            phone: r.phone || r.whatsapp || null,
+            household_group: r.household || r.household_group || null,
+            dietary_tags: r.dietary_tags ? r.dietary_tags.split(/[;,]/).map((s) => s.trim()).filter(Boolean) : [],
+            food_allergies: r.food_allergies ? r.food_allergies.split(/[;,]/).map((s) => s.trim()).filter(Boolean) : [],
+            dietary_notes: r.dietary_notes || null,
+            accessibility_notes: r.accessibility_notes || null,
+          } as any;
+        });
         const { error } = await supabase.from("guests").insert(inserts);
         if (error) return toast.error(error.message);
         toast.success(`Imported ${inserts.length} guests`);
@@ -62,11 +88,16 @@ function GuestsPage() {
   };
 
   const exportCsv = () => {
-    const csv = Papa.unparse(guests.map((g) => ({
-      name: g.full_name, email: g.email, phone: g.phone, household: g.household_group,
-      dietary: g.dietary_tags?.join("; "), allergies: g.food_allergies?.join("; "),
-      notes: g.dietary_notes,
-    })));
+    const rows = guests.map((g: any) => ({
+      first_name: g.first_name ?? g.full_name?.split(" ")[0] ?? "",
+      last_name: g.last_name ?? g.full_name?.split(" ").slice(1).join(" ") ?? "",
+      email: g.email ?? "", phone: g.phone ?? "", household: g.household_group ?? "",
+      dietary_tags: (g.dietary_tags ?? []).join("; "),
+      food_allergies: (g.food_allergies ?? []).join("; "),
+      dietary_notes: g.dietary_notes ?? "",
+      accessibility_notes: g.accessibility_notes ?? "",
+    }));
+    const csv = Papa.unparse({ fields: CSV_HEADERS, data: rows.map((r) => CSV_HEADERS.map((h) => (r as any)[h])) });
     const blob = new Blob([csv], { type: "text/csv" });
     const a = document.createElement("a");
     a.href = URL.createObjectURL(blob); a.download = "guests.csv"; a.click();
