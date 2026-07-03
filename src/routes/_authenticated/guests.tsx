@@ -193,9 +193,10 @@ function GuestsPage() {
       </div>
 
       {guests.length === 0 ? (
-        <div className="rounded-3xl border border-dashed border-line p-16 text-center">
-          <h3 className="font-serif text-2xl">No guests yet</h3>
-          <p className="mt-2 text-sm text-muted-foreground">Import a CSV with columns <code className="text-xs bg-stone px-1 rounded">name, email, phone, household</code>, or add them one by one.</p>
+        <div className="rounded-3xl bg-gradient-to-br from-blush-soft via-cream to-sage/20 border border-line p-12 text-center">
+          <h3 className="font-serif text-3xl">No guests yet</h3>
+          <p className="mt-3 text-sm text-ink/70 max-w-lg mx-auto">Add guests one by one, or download the CSV template and import a whole spreadsheet. The template has every Add-guest field as a column, so nothing gets lost.</p>
+          <button onClick={downloadTemplate} className="mt-6 inline-flex items-center gap-2 rounded-full bg-ink text-paper px-5 py-2.5 text-sm hover:bg-clay"><FileText className="h-4 w-4" /> Download CSV template</button>
         </div>
       ) : (
         <div className="paper-card overflow-hidden">
@@ -293,7 +294,10 @@ function GuestDialog({ guest, events, existingInvites, onClose, onSave }: {
           <button onClick={onClose}><X className="h-4 w-4" /></button>
         </div>
         <form onSubmit={submit} className="mt-6 space-y-4">
-          <F label="Full name" required value={form.full_name ?? ""} onChange={(v) => setForm({ ...form, full_name: v })} />
+          <div className="grid grid-cols-2 gap-3">
+            <F label="First name" required value={(form as any).first_name ?? form.full_name?.split(" ")[0] ?? ""} onChange={(v) => setForm({ ...form, first_name: v } as any)} />
+            <F label="Last name" value={(form as any).last_name ?? form.full_name?.split(" ").slice(1).join(" ") ?? ""} onChange={(v) => setForm({ ...form, last_name: v } as any)} />
+          </div>
           <div className="grid grid-cols-2 gap-3">
             <F label="Email" type="email" value={form.email ?? ""} onChange={(v) => setForm({ ...form, email: v })} />
             <F label="Phone (with country code)" value={form.phone ?? ""} onChange={(v) => setForm({ ...form, phone: v })} placeholder="+91 98…" />
