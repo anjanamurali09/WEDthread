@@ -106,9 +106,14 @@ function GuestsPage() {
   const save = async (g: Partial<Guest> & { invitedEventIds?: string[] }) => {
     if (!wedding) return;
     try {
+      const fn = (g as any).first_name ?? g.full_name?.split(" ")[0] ?? "";
+      const ln = (g as any).last_name ?? g.full_name?.split(" ").slice(1).join(" ") ?? null;
       const payload: any = {
         wedding_id: wedding.id,
-        full_name: g.full_name, email: g.email || null, phone: g.phone || null,
+        first_name: fn || null,
+        last_name: ln || null,
+        full_name: [fn, ln].filter(Boolean).join(" "),
+        email: g.email || null, phone: g.phone || null,
         household_group: g.household_group || null,
         dietary_tags: g.dietary_tags ?? [], food_allergies: g.food_allergies ?? [],
         dietary_notes: g.dietary_notes || null, accessibility_notes: g.accessibility_notes || null,
