@@ -48,10 +48,17 @@ function SeatingPage() {
 
   const addTable = async () => {
     if (!eventId) return;
-    const label = prompt("Table label?", `Table ${tables.length + 1}`);
-    if (!label) return;
-    const seatsN = Number(prompt("How many seats?", "8") ?? 8);
-    await supabase.from("wedding_tables").insert({ event_id: eventId, label, seats: seatsN, sort_order: tables.length });
+    await supabase.from("wedding_tables").insert({
+      event_id: eventId,
+      label: `Table ${tables.length + 1}`,
+      seats: 8,
+      sort_order: tables.length,
+    });
+    qc.invalidateQueries({ queryKey: ["tables", wedding?.id, eventId] });
+  };
+
+  const updateTable = async (id: string, patch: { label?: string; seats?: number }) => {
+    await supabase.from("wedding_tables").update(patch).eq("id", id);
     qc.invalidateQueries({ queryKey: ["tables", wedding?.id, eventId] });
   };
 
