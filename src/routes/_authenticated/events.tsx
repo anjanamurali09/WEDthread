@@ -8,7 +8,12 @@ import { Plus, Trash2, X, CalendarDays } from "lucide-react";
 
 export const Route = createFileRoute("/_authenticated/events")({ component: EventsPage });
 
-const SUGGESTIONS = ["Mehendi", "Haldi", "Sangeet", "Nikah", "Baraat", "Hindu Ceremony", "Church Ceremony", "Registry", "Reception", "Cocktail Hour", "Farewell Brunch"];
+const SUGGESTIONS = [
+  "Welcome party", "Mehendi", "Haldi", "Sangeet", "Rehearsal dinner",
+  "Nikah", "Baraat", "Hindu ceremony", "Church ceremony", "Chuppah", "Tea ceremony",
+  "Civil registry", "Cocktail hour", "Reception", "Pool party", "Beach ceremony",
+  "After-party", "Farewell brunch",
+];
 
 function EventsPage() {
   const { data: wedding } = useCurrentWedding();
@@ -21,6 +26,7 @@ function EventsPage() {
     const payload = {
       wedding_id: wedding.id,
       name: e.name!, event_date: e.event_date || null, event_time: e.event_time || null,
+      event_end_time: (e as any).event_end_time || null,
       venue_name: e.venue_name || null, address: e.address || null, city: e.city || null,
       country: e.country || null, description: e.description || null,
       sort_order: e.sort_order ?? events.length,
