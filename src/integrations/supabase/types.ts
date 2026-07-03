@@ -77,6 +77,7 @@ export type Database = {
           created_at: string
           description: string | null
           event_date: string | null
+          event_end_time: string | null
           event_time: string | null
           id: string
           name: string
@@ -91,6 +92,7 @@ export type Database = {
           created_at?: string
           description?: string | null
           event_date?: string | null
+          event_end_time?: string | null
           event_time?: string | null
           id?: string
           name: string
@@ -105,6 +107,7 @@ export type Database = {
           created_at?: string
           description?: string | null
           event_date?: string | null
+          event_end_time?: string | null
           event_time?: string | null
           id?: string
           name?: string
@@ -171,10 +174,12 @@ export type Database = {
           dietary_notes: string | null
           dietary_tags: string[]
           email: string | null
+          first_name: string | null
           food_allergies: string[]
           full_name: string
           household_group: string | null
           id: string
+          last_name: string | null
           phone: string | null
           rsvp_token: string
           wedding_id: string
@@ -185,10 +190,12 @@ export type Database = {
           dietary_notes?: string | null
           dietary_tags?: string[]
           email?: string | null
+          first_name?: string | null
           food_allergies?: string[]
           full_name: string
           household_group?: string | null
           id?: string
+          last_name?: string | null
           phone?: string | null
           rsvp_token?: string
           wedding_id: string
@@ -199,10 +206,12 @@ export type Database = {
           dietary_notes?: string | null
           dietary_tags?: string[]
           email?: string | null
+          first_name?: string | null
           food_allergies?: string[]
           full_name?: string
           household_group?: string | null
           id?: string
+          last_name?: string | null
           phone?: string | null
           rsvp_token?: string
           wedding_id?: string
@@ -220,37 +229,49 @@ export type Database = {
       marketplace_listings: {
         Row: {
           category: string | null
+          city: string | null
           condition: string | null
+          country_code: string | null
           created_at: string
           description: string | null
           id: string
+          listing_kind: string
           photos: string[]
           price: number | null
           seller_id: string
+          sold_at: string | null
           status: string
           title: string
         }
         Insert: {
           category?: string | null
+          city?: string | null
           condition?: string | null
+          country_code?: string | null
           created_at?: string
           description?: string | null
           id?: string
+          listing_kind?: string
           photos?: string[]
           price?: number | null
           seller_id: string
+          sold_at?: string | null
           status?: string
           title: string
         }
         Update: {
           category?: string | null
+          city?: string | null
           condition?: string | null
+          country_code?: string | null
           created_at?: string
           description?: string | null
           id?: string
+          listing_kind?: string
           photos?: string[]
           price?: number | null
           seller_id?: string
+          sold_at?: string | null
           status?: string
           title?: string
         }
@@ -385,6 +406,103 @@ export type Database = {
         }
         Relationships: []
       }
+      registries: {
+        Row: {
+          country_code: string | null
+          created_at: string
+          id: string
+          is_public: boolean
+          message: string | null
+          updated_at: string
+          wedding_id: string
+        }
+        Insert: {
+          country_code?: string | null
+          created_at?: string
+          id?: string
+          is_public?: boolean
+          message?: string | null
+          updated_at?: string
+          wedding_id: string
+        }
+        Update: {
+          country_code?: string | null
+          created_at?: string
+          id?: string
+          is_public?: boolean
+          message?: string | null
+          updated_at?: string
+          wedding_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "registries_wedding_id_fkey"
+            columns: ["wedding_id"]
+            isOneToOne: true
+            referencedRelation: "weddings"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      registry_items: {
+        Row: {
+          created_at: string
+          currency: string | null
+          description: string | null
+          id: string
+          image_url: string | null
+          price_cents: number | null
+          product_url: string | null
+          quantity: number
+          registry_id: string
+          reserved_count: number
+          retailer: string | null
+          sort_order: number
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          currency?: string | null
+          description?: string | null
+          id?: string
+          image_url?: string | null
+          price_cents?: number | null
+          product_url?: string | null
+          quantity?: number
+          registry_id: string
+          reserved_count?: number
+          retailer?: string | null
+          sort_order?: number
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          currency?: string | null
+          description?: string | null
+          id?: string
+          image_url?: string | null
+          price_cents?: number | null
+          product_url?: string | null
+          quantity?: number
+          registry_id?: string
+          reserved_count?: number
+          retailer?: string | null
+          sort_order?: number
+          title?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "registry_items_registry_id_fkey"
+            columns: ["registry_id"]
+            isOneToOne: false
+            referencedRelation: "registries"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       reviews: {
         Row: {
           author_id: string
@@ -444,6 +562,97 @@ export type Database = {
             columns: ["table_id"]
             isOneToOne: false
             referencedRelation: "wedding_tables"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      seating_fixtures: {
+        Row: {
+          color: string | null
+          created_at: string
+          event_id: string
+          height: number
+          id: string
+          kind: string
+          label: string | null
+          pos_x: number
+          pos_y: number
+          rotation: number
+          updated_at: string
+          width: number
+        }
+        Insert: {
+          color?: string | null
+          created_at?: string
+          event_id: string
+          height?: number
+          id?: string
+          kind: string
+          label?: string | null
+          pos_x?: number
+          pos_y?: number
+          rotation?: number
+          updated_at?: string
+          width?: number
+        }
+        Update: {
+          color?: string | null
+          created_at?: string
+          event_id?: string
+          height?: number
+          id?: string
+          kind?: string
+          label?: string | null
+          pos_x?: number
+          pos_y?: number
+          rotation?: number
+          updated_at?: string
+          width?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "seating_fixtures_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "events"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      seating_layouts: {
+        Row: {
+          background_color: string
+          canvas_height: number
+          canvas_width: number
+          created_at: string
+          event_id: string
+          id: string
+          updated_at: string
+        }
+        Insert: {
+          background_color?: string
+          canvas_height?: number
+          canvas_width?: number
+          created_at?: string
+          event_id: string
+          id?: string
+          updated_at?: string
+        }
+        Update: {
+          background_color?: string
+          canvas_height?: number
+          canvas_width?: number
+          created_at?: string
+          event_id?: string
+          id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "seating_layouts_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: true
+            referencedRelation: "events"
             referencedColumns: ["id"]
           },
         ]
@@ -585,27 +794,83 @@ export type Database = {
         }
         Relationships: []
       }
+      wedding_photos: {
+        Row: {
+          caption: string | null
+          created_at: string
+          id: string
+          sort_order: number
+          url: string
+          wedding_id: string
+        }
+        Insert: {
+          caption?: string | null
+          created_at?: string
+          id?: string
+          sort_order?: number
+          url: string
+          wedding_id: string
+        }
+        Update: {
+          caption?: string | null
+          created_at?: string
+          id?: string
+          sort_order?: number
+          url?: string
+          wedding_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "wedding_photos_wedding_id_fkey"
+            columns: ["wedding_id"]
+            isOneToOne: false
+            referencedRelation: "weddings"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       wedding_tables: {
         Row: {
           event_id: string
+          height: number
           id: string
           label: string
+          mat_color: string | null
+          pos_x: number
+          pos_y: number
+          rotation: number
           seats: number
+          shape: string
           sort_order: number
+          width: number
         }
         Insert: {
           event_id: string
+          height?: number
           id?: string
           label: string
+          mat_color?: string | null
+          pos_x?: number
+          pos_y?: number
+          rotation?: number
           seats?: number
+          shape?: string
           sort_order?: number
+          width?: number
         }
         Update: {
           event_id?: string
+          height?: number
           id?: string
           label?: string
+          mat_color?: string | null
+          pos_x?: number
+          pos_y?: number
+          rotation?: number
           seats?: number
+          shape?: string
           sort_order?: number
+          width?: number
         }
         Relationships: [
           {
@@ -619,6 +884,8 @@ export type Database = {
       }
       weddings: {
         Row: {
+          accent_color: string | null
+          cover_photo_url: string | null
           created_at: string
           destination_city: string | null
           destination_country: string | null
@@ -630,11 +897,16 @@ export type Database = {
           partner_b: string
           site_config: Json
           site_published: boolean
+          site_sections: Json
           site_template_id: string
           slug: string | null
+          story_html: string | null
           updated_at: string
+          welcome_message: string | null
         }
         Insert: {
+          accent_color?: string | null
+          cover_photo_url?: string | null
           created_at?: string
           destination_city?: string | null
           destination_country?: string | null
@@ -646,11 +918,16 @@ export type Database = {
           partner_b: string
           site_config?: Json
           site_published?: boolean
+          site_sections?: Json
           site_template_id?: string
           slug?: string | null
+          story_html?: string | null
           updated_at?: string
+          welcome_message?: string | null
         }
         Update: {
+          accent_color?: string | null
+          cover_photo_url?: string | null
           created_at?: string
           destination_city?: string | null
           destination_country?: string | null
@@ -662,9 +939,12 @@ export type Database = {
           partner_b?: string
           site_config?: Json
           site_published?: boolean
+          site_sections?: Json
           site_template_id?: string
           slug?: string | null
+          story_html?: string | null
           updated_at?: string
+          welcome_message?: string | null
         }
         Relationships: []
       }
