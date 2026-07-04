@@ -5,12 +5,15 @@
 @custom-variant dark (&:is(.dark *));
 
 @theme inline {
-  --font-serif: "DM Serif Display", ui-serif, Georgia, serif;
-  --font-sans: "Fira Sans", ui-sans-serif, system-ui, sans-serif;
+  --font-serif: "Fraunces", ui-serif, Georgia, serif;
+  --font-sans: "Instrument Sans", ui-sans-serif, system-ui, sans-serif;
+  --color-ivory: var(--ivory);
   --color-blush: var(--blush);
   --color-blush-soft: var(--blush-soft);
   --color-cream: var(--cream);
   --color-sage: var(--sage);
+  --color-teal: var(--teal);
+  --color-rose: var(--rose);
 
   --radius-sm: 8px;
   --radius-md: 14px;
@@ -59,35 +62,38 @@
 }
 
 :root {
-  /* Warm romantic palette: terracotta, blush, cream, sage */
-  --paper: oklch(0.988 0.008 70);          /* soft cream */
-  --ink: oklch(0.28 0.02 30);              /* warm near-black */
-  --clay: oklch(0.58 0.14 40);             /* deeper terracotta */
-  --clay-soft: oklch(0.94 0.04 40);
-  --blush: oklch(0.86 0.06 20);            /* dusty rose */
-  --blush-soft: oklch(0.96 0.025 20);
-  --cream: oklch(0.97 0.03 80);            /* buttery cream */
-  --sage: oklch(0.72 0.06 140);            /* soft sage */
-  --stone: oklch(0.965 0.015 70);
-  --stone-2: oklch(0.92 0.02 60);
-  --line: oklch(0.88 0.012 60);
+  /* Soulful editorial palette: ivory, cherry rose, deep teal, sage, blush */
+  --ivory: #F3EFE0;                        /* ivory — primary surface */
+  --paper: #FBF8ED;                        /* softer cream paper */
+  --cream: #F3FFC6;                        /* lime-cream accent from ref */
+  --ink: #1C5253;                          /* deep slate teal — primary text */
+  --teal: #09A1A1;                         /* vibrant teal accent */
+  --clay: #B6174B;                         /* cherry rose — brand accent */
+  --clay-soft: #F7DDE5;                    /* rose wash */
+  --rose: #D396A6;                         /* dusty rose */
+  --blush: #F6C992;                        /* warm sand-blush */
+  --blush-soft: #FBE8CF;
+  --sage: #C3EB78;                         /* lime sage accent */
+  --stone: #EDE7D6;
+  --stone-2: #E1D9C4;
+  --line: #DDD3BB;
 
-  --background: var(--paper);
+  --background: var(--ivory);
   --foreground: var(--ink);
-  --card: oklch(1 0 0);
+  --card: var(--paper);
   --card-foreground: var(--ink);
-  --popover: oklch(1 0 0);
+  --popover: var(--paper);
   --popover-foreground: var(--ink);
   --primary: var(--ink);
-  --primary-foreground: var(--paper);
+  --primary-foreground: var(--ivory);
   --secondary: var(--stone);
   --secondary-foreground: var(--ink);
   --muted: var(--stone);
-  --muted-foreground: oklch(0.5 0.01 60);
+  --muted-foreground: #6B6A5A;
   --accent: var(--clay-soft);
   --accent-foreground: var(--clay);
-  --destructive: oklch(0.55 0.2 25);
-  --destructive-foreground: var(--paper);
+  --destructive: #B6174B;
+  --destructive-foreground: var(--ivory);
   --border: var(--line);
   --input: var(--line);
   --ring: var(--clay);
@@ -95,17 +101,17 @@
   --sidebar: var(--paper);
   --sidebar-foreground: var(--ink);
   --sidebar-primary: var(--clay);
-  --sidebar-primary-foreground: var(--paper);
+  --sidebar-primary-foreground: var(--ivory);
   --sidebar-accent: var(--stone);
   --sidebar-accent-foreground: var(--ink);
   --sidebar-border: var(--line);
   --sidebar-ring: var(--clay);
 
   --chart-1: var(--clay);
-  --chart-2: oklch(0.6 0.08 200);
-  --chart-3: oklch(0.7 0.11 90);
-  --chart-4: oklch(0.5 0.05 260);
-  --chart-5: oklch(0.75 0.09 30);
+  --chart-2: var(--teal);
+  --chart-3: var(--blush);
+  --chart-4: var(--rose);
+  --chart-5: var(--sage);
 }
 
 .dark {
@@ -130,14 +136,21 @@
 
 @layer base {
   * { border-color: var(--color-border); }
-  html { font-family: var(--font-sans); -webkit-font-smoothing: antialiased; }
+  html { font-family: var(--font-sans); -webkit-font-smoothing: antialiased; font-feature-settings: "ss01"; }
   body {
     background-color: var(--color-background);
     color: var(--color-foreground);
     font-family: var(--font-sans);
-    font-feature-settings: "ss01", "cv11";
+    font-optical-sizing: auto;
   }
-  h1, h2, h3, .font-serif { font-family: var(--font-serif); letter-spacing: -0.01em; }
+  h1, h2, h3, h4, .font-serif {
+    font-family: var(--font-serif);
+    font-optical-sizing: auto;
+    font-variation-settings: "opsz" 144, "SOFT" 50;
+    letter-spacing: -0.02em;
+  }
+  h1 { font-weight: 400; }
+  em, i, .italic { font-style: italic; }
 }
 
 @utility hairline {
@@ -147,4 +160,7 @@
   background: var(--color-card);
   border-radius: 24px;
   box-shadow: inset 0 0 0 1px rgb(0 0 0 / 0.06), 0 1px 2px rgb(0 0 0 / 0.03);
+}
+@utility soul-hero-shadow {
+  box-shadow: 0 40px 80px -30px rgb(28 82 83 / 0.35), 0 20px 40px -20px rgb(182 23 75 / 0.15);
 }
