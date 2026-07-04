@@ -680,18 +680,35 @@ export type Database = {
           id: string
           is_default: boolean
           name: string
+          parent_id: string | null
+          slug: string | null
+          sort_order: number
         }
         Insert: {
           id?: string
           is_default?: boolean
           name: string
+          parent_id?: string | null
+          slug?: string | null
+          sort_order?: number
         }
         Update: {
           id?: string
           is_default?: boolean
           name?: string
+          parent_id?: string | null
+          slug?: string | null
+          sort_order?: number
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "vendor_categories_parent_id_fkey"
+            columns: ["parent_id"]
+            isOneToOne: false
+            referencedRelation: "vendor_categories"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       vendors: {
         Row: {
@@ -896,6 +913,7 @@ export type Database = {
           partner_a: string
           partner_b: string
           site_config: Json
+          site_customization: Json
           site_published: boolean
           site_sections: Json
           site_template_id: string
@@ -917,6 +935,7 @@ export type Database = {
           partner_a: string
           partner_b: string
           site_config?: Json
+          site_customization?: Json
           site_published?: boolean
           site_sections?: Json
           site_template_id?: string
@@ -938,6 +957,7 @@ export type Database = {
           partner_a?: string
           partner_b?: string
           site_config?: Json
+          site_customization?: Json
           site_published?: boolean
           site_sections?: Json
           site_template_id?: string
@@ -989,7 +1009,7 @@ export type Database = {
       }
     }
     Enums: {
-      app_role: "couple" | "vendor" | "admin"
+      app_role: "couple" | "vendor" | "admin" | "venue" | "seller" | "planner"
       message_kind:
         | "save_the_date"
         | "rsvp_request"
@@ -1126,7 +1146,7 @@ export type CompositeTypes<
 export const Constants = {
   public: {
     Enums: {
-      app_role: ["couple", "vendor", "admin"],
+      app_role: ["couple", "vendor", "admin", "venue", "seller", "planner"],
       message_kind: [
         "save_the_date",
         "rsvp_request",
