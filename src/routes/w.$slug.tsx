@@ -37,7 +37,7 @@ function WeddingSite() {
       <section className="min-h-[92vh] flex flex-col items-center justify-center text-center px-6 relative overflow-hidden">
         <div className="absolute inset-0 opacity-[0.04]" style={{ backgroundImage: "radial-gradient(circle at 20% 30%, var(--clay) 0 8%, transparent 9%), radial-gradient(circle at 80% 60%, var(--ink) 0 5%, transparent 6%)" }} />
         <p className="relative text-[11px] uppercase tracking-[0.35em] text-clay">Together with their families</p>
-        <h1 className="relative mt-8 font-serif text-6xl md:text-8xl leading-[0.95]">{wedding.partner_a}<br/><span className="text-clay">&amp;</span><br/>{wedding.partner_b}</h1>
+        <h1 className="relative mt-8 font-serif text-6xl md:text-8xl leading-[0.95]">{wedding.partner_a}<br/><span className="text-clay">&</span><br/>{wedding.partner_b}</h1>
         <p className="relative mt-8 text-sm text-muted-foreground">
           {wedding.destination_city && `${wedding.destination_city}, `}{wedding.destination_country}
         </p>
