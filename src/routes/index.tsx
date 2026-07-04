@@ -31,7 +31,7 @@ function Landing() {
       <section className="px-6 md:px-12 pt-8 md:pt-16 pb-24 grid lg:grid-cols-12 gap-10 items-center">
         <div className="lg:col-span-6 relative z-10">
           <p className="inline-flex items-center gap-2 text-xs uppercase tracking-[0.2em] text-clay">
-            <span className="h-px w-8 bg-clay" /> For weddings that cross cultures &amp; continents
+            <span className="h-px w-8 bg-clay" /> For weddings that cross cultures & continents
           </p>
           <h1 className="mt-6 font-serif text-6xl md:text-8xl leading-[0.9] tracking-tight">
             Many ceremonies.<br/>
