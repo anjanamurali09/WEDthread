@@ -70,7 +70,7 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
       { title: "Vowzy, Wedding planning for many cultures, many ceremonies" },
       { name: "description", content: "The wedding platform built for multicultural and destination weddings. Multiple ceremonies, multiple cultures, one plan." },
       { name: "author", content: "Vowzy" },
-      { name: "theme-color", content: "#FDFCFB" },
+      { name: "theme-color", content: "#F3EFE0" },
       { property: "og:title", content: "Vowzy, Wedding planning for many cultures, many ceremonies" },
       { property: "og:description", content: "Plan multiple ceremonies, invite guests across countries, seat them, and message them, all in one place." },
       { property: "og:type", content: "website" },
