@@ -14,6 +14,7 @@ import { Route as AuthenticatedRouteRouteImport } from './routes/_authenticated/
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as WSlugRouteImport } from './routes/w.$slug'
 import { Route as RsvpTokenRouteImport } from './routes/rsvp.$token'
+import { Route as AuthRoleRouteImport } from './routes/auth.$role'
 import { Route as AuthenticatedWebsiteRouteImport } from './routes/_authenticated/website'
 import { Route as AuthenticatedVenuesRouteImport } from './routes/_authenticated/venues'
 import { Route as AuthenticatedVendorsRouteImport } from './routes/_authenticated/vendors'
@@ -47,6 +48,11 @@ const RsvpTokenRoute = RsvpTokenRouteImport.update({
   id: '/rsvp/$token',
   path: '/rsvp/$token',
   getParentRoute: () => rootRouteImport,
+} as any)
+const AuthRoleRoute = AuthRoleRouteImport.update({
+  id: '/$role',
+  path: '/$role',
+  getParentRoute: () => AuthRoute,
 } as any)
 const AuthenticatedWebsiteRoute = AuthenticatedWebsiteRouteImport.update({
   id: '/website',
@@ -96,7 +102,7 @@ const AuthenticatedDashboardRoute = AuthenticatedDashboardRouteImport.update({
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
-  '/auth': typeof AuthRoute
+  '/auth': typeof AuthRouteWithChildren
   '/dashboard': typeof AuthenticatedDashboardRoute
   '/events': typeof AuthenticatedEventsRoute
   '/guests': typeof AuthenticatedGuestsRoute
@@ -106,12 +112,13 @@ export interface FileRoutesByFullPath {
   '/vendors': typeof AuthenticatedVendorsRoute
   '/venues': typeof AuthenticatedVenuesRoute
   '/website': typeof AuthenticatedWebsiteRoute
+  '/auth/$role': typeof AuthRoleRoute
   '/rsvp/$token': typeof RsvpTokenRoute
   '/w/$slug': typeof WSlugRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
-  '/auth': typeof AuthRoute
+  '/auth': typeof AuthRouteWithChildren
   '/dashboard': typeof AuthenticatedDashboardRoute
   '/events': typeof AuthenticatedEventsRoute
   '/guests': typeof AuthenticatedGuestsRoute
@@ -121,6 +128,7 @@ export interface FileRoutesByTo {
   '/vendors': typeof AuthenticatedVendorsRoute
   '/venues': typeof AuthenticatedVenuesRoute
   '/website': typeof AuthenticatedWebsiteRoute
+  '/auth/$role': typeof AuthRoleRoute
   '/rsvp/$token': typeof RsvpTokenRoute
   '/w/$slug': typeof WSlugRoute
 }
@@ -128,7 +136,7 @@ export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/_authenticated': typeof AuthenticatedRouteRouteWithChildren
-  '/auth': typeof AuthRoute
+  '/auth': typeof AuthRouteWithChildren
   '/_authenticated/dashboard': typeof AuthenticatedDashboardRoute
   '/_authenticated/events': typeof AuthenticatedEventsRoute
   '/_authenticated/guests': typeof AuthenticatedGuestsRoute
@@ -138,6 +146,7 @@ export interface FileRoutesById {
   '/_authenticated/vendors': typeof AuthenticatedVendorsRoute
   '/_authenticated/venues': typeof AuthenticatedVenuesRoute
   '/_authenticated/website': typeof AuthenticatedWebsiteRoute
+  '/auth/$role': typeof AuthRoleRoute
   '/rsvp/$token': typeof RsvpTokenRoute
   '/w/$slug': typeof WSlugRoute
 }
@@ -155,6 +164,7 @@ export interface FileRouteTypes {
     | '/vendors'
     | '/venues'
     | '/website'
+    | '/auth/$role'
     | '/rsvp/$token'
     | '/w/$slug'
   fileRoutesByTo: FileRoutesByTo
@@ -170,6 +180,7 @@ export interface FileRouteTypes {
     | '/vendors'
     | '/venues'
     | '/website'
+    | '/auth/$role'
     | '/rsvp/$token'
     | '/w/$slug'
   id:
@@ -186,6 +197,7 @@ export interface FileRouteTypes {
     | '/_authenticated/vendors'
     | '/_authenticated/venues'
     | '/_authenticated/website'
+    | '/auth/$role'
     | '/rsvp/$token'
     | '/w/$slug'
   fileRoutesById: FileRoutesById
@@ -193,7 +205,7 @@ export interface FileRouteTypes {
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AuthenticatedRouteRoute: typeof AuthenticatedRouteRouteWithChildren
-  AuthRoute: typeof AuthRoute
+  AuthRoute: typeof AuthRouteWithChildren
   RsvpTokenRoute: typeof RsvpTokenRoute
   WSlugRoute: typeof WSlugRoute
 }
@@ -234,6 +246,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/rsvp/$token'
       preLoaderRoute: typeof RsvpTokenRouteImport
       parentRoute: typeof rootRouteImport
+    }
+    '/auth/$role': {
+      id: '/auth/$role'
+      path: '/$role'
+      fullPath: '/auth/$role'
+      preLoaderRoute: typeof AuthRoleRouteImport
+      parentRoute: typeof AuthRoute
     }
     '/_authenticated/website': {
       id: '/_authenticated/website'
@@ -328,10 +347,20 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
 const AuthenticatedRouteRouteWithChildren =
   AuthenticatedRouteRoute._addFileChildren(AuthenticatedRouteRouteChildren)
 
+interface AuthRouteChildren {
+  AuthRoleRoute: typeof AuthRoleRoute
+}
+
+const AuthRouteChildren: AuthRouteChildren = {
+  AuthRoleRoute: AuthRoleRoute,
+}
+
+const AuthRouteWithChildren = AuthRoute._addFileChildren(AuthRouteChildren)
+
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AuthenticatedRouteRoute: AuthenticatedRouteRouteWithChildren,
-  AuthRoute: AuthRoute,
+  AuthRoute: AuthRouteWithChildren,
   RsvpTokenRoute: RsvpTokenRoute,
   WSlugRoute: WSlugRoute,
 }
