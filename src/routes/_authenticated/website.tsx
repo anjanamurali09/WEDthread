@@ -81,7 +81,7 @@ function WebsitePage() {
               <div className="aspect-[4/3] rounded-2xl overflow-hidden flex" style={{ background: t.palette[0] }}>
                 <div className="flex-1 flex items-center justify-center p-4">
                   <div className="text-center">
-                    <p className="font-serif text-2xl" style={{ color: t.palette[1] }}>Aria &amp; Rohan</p>
+                    <p className="font-serif text-2xl" style={{ color: t.palette[1] }}>Aria & Rohan</p>
                     <p className="text-[10px] tracking-widest uppercase mt-1" style={{ color: t.palette[2] }}>- together -</p>
                   </div>
                 </div>

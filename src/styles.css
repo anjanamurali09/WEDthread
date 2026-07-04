@@ -7,10 +7,14 @@
 @theme inline {
   --font-serif: "Fraunces", ui-serif, Georgia, serif;
   --font-sans: "Instrument Sans", ui-sans-serif, system-ui, sans-serif;
-  --color-ivory: var(--ivory);
+
+  --color-pearl: var(--pearl);
+  --color-cream: var(--cream);
+  --color-beige: var(--beige);
+  --color-wine: var(--wine);
+  --color-cherry: var(--cherry);
   --color-blush: var(--blush);
   --color-blush-soft: var(--blush-soft);
-  --color-cream: var(--cream);
   --color-sage: var(--sage);
   --color-teal: var(--teal);
   --color-rose: var(--rose);
@@ -27,9 +31,10 @@
   --color-background: var(--background);
   --color-foreground: var(--foreground);
   --color-paper: var(--paper);
+  --color-ivory: var(--pearl);
   --color-ink: var(--ink);
-  --color-clay: var(--clay);
-  --color-clay-soft: var(--clay-soft);
+  --color-clay: var(--wine);
+  --color-clay-soft: var(--wine-soft);
   --color-stone: var(--stone);
   --color-stone-2: var(--stone-2);
   --color-line: var(--line);
@@ -62,76 +67,78 @@
 }
 
 :root {
-  /* Soulful editorial palette: ivory, cherry rose, deep teal, sage, blush */
-  --ivory: #F3EFE0;                        /* ivory — primary surface */
-  --paper: #FBF8ED;                        /* softer cream paper */
-  --cream: #F3FFC6;                        /* lime-cream accent from ref */
-  --ink: #1C5253;                          /* deep slate teal — primary text */
-  --teal: #09A1A1;                         /* vibrant teal accent */
-  --clay: #B6174B;                         /* cherry rose — brand accent */
-  --clay-soft: #F7DDE5;                    /* rose wash */
-  --rose: #D396A6;                         /* dusty rose */
-  --blush: #F6C992;                        /* warm sand-blush */
-  --blush-soft: #FBE8CF;
-  --sage: #C3EB78;                         /* lime sage accent */
-  --stone: #EDE7D6;
-  --stone-2: #E1D9C4;
-  --line: #DDD3BB;
+  /* Pearl white base, cream + beige surfaces, wine + cherry accents */
+  --pearl: #FDFCF7;                        /* primary background */
+  --paper: #FBF6EA;                        /* soft cream card */
+  --cream: #F5EEDC;                        /* deeper cream */
+  --beige: #E8DFC9;                        /* warm beige */
+  --wine: #6B0F1A;                         /* deep wine, primary accent */
+  --wine-soft: #F1D9DD;                    /* wine wash */
+  --cherry: #C21E38;                       /* cherry red highlight */
+  --blush: #E7B8B8;                        /* soft blush */
+  --blush-soft: #F6E4E1;
+  --rose: #C97A82;                         /* dusty rose */
+  --sage: #A7B79A;                         /* muted sage as tertiary */
+  --teal: #6B7F7A;                         /* muted teal */
+  --ink: #1A1512;                          /* rich near-black */
+  --stone: #F0E9D7;
+  --stone-2: #E4DAC1;
+  --line: #DDD1B6;
 
-  --background: var(--ivory);
+  --background: var(--pearl);
   --foreground: var(--ink);
   --card: var(--paper);
   --card-foreground: var(--ink);
   --popover: var(--paper);
   --popover-foreground: var(--ink);
-  --primary: var(--ink);
-  --primary-foreground: var(--ivory);
-  --secondary: var(--stone);
+  --primary: var(--wine);
+  --primary-foreground: var(--pearl);
+  --secondary: var(--cream);
   --secondary-foreground: var(--ink);
   --muted: var(--stone);
-  --muted-foreground: #6B6A5A;
-  --accent: var(--clay-soft);
-  --accent-foreground: var(--clay);
-  --destructive: #B6174B;
-  --destructive-foreground: var(--ivory);
+  --muted-foreground: #6B6455;
+  --accent: var(--wine-soft);
+  --accent-foreground: var(--wine);
+  --destructive: var(--cherry);
+  --destructive-foreground: var(--pearl);
   --border: var(--line);
   --input: var(--line);
-  --ring: var(--clay);
+  --ring: var(--cherry);
 
   --sidebar: var(--paper);
   --sidebar-foreground: var(--ink);
-  --sidebar-primary: var(--clay);
-  --sidebar-primary-foreground: var(--ivory);
-  --sidebar-accent: var(--stone);
+  --sidebar-primary: var(--wine);
+  --sidebar-primary-foreground: var(--pearl);
+  --sidebar-accent: var(--cream);
   --sidebar-accent-foreground: var(--ink);
   --sidebar-border: var(--line);
-  --sidebar-ring: var(--clay);
+  --sidebar-ring: var(--cherry);
 
-  --chart-1: var(--clay);
-  --chart-2: var(--teal);
+  --chart-1: var(--wine);
+  --chart-2: var(--cherry);
   --chart-3: var(--blush);
   --chart-4: var(--rose);
   --chart-5: var(--sage);
 }
 
 .dark {
-  --background: oklch(0.18 0.005 285);
-  --foreground: var(--paper);
-  --card: oklch(0.22 0.006 285);
-  --card-foreground: var(--paper);
-  --popover: oklch(0.22 0.006 285);
-  --popover-foreground: var(--paper);
-  --primary: var(--paper);
+  --background: oklch(0.16 0.005 40);
+  --foreground: var(--pearl);
+  --card: oklch(0.20 0.006 40);
+  --card-foreground: var(--pearl);
+  --popover: oklch(0.20 0.006 40);
+  --popover-foreground: var(--pearl);
+  --primary: var(--pearl);
   --primary-foreground: var(--ink);
-  --secondary: oklch(0.26 0.006 285);
-  --secondary-foreground: var(--paper);
-  --muted: oklch(0.26 0.006 285);
+  --secondary: oklch(0.26 0.006 40);
+  --secondary-foreground: var(--pearl);
+  --muted: oklch(0.26 0.006 40);
   --muted-foreground: oklch(0.7 0.01 60);
-  --accent: oklch(0.32 0.05 40);
-  --accent-foreground: var(--paper);
+  --accent: oklch(0.32 0.05 15);
+  --accent-foreground: var(--pearl);
   --border: oklch(1 0 0 / 12%);
   --input: oklch(1 0 0 / 15%);
-  --ring: var(--clay);
+  --ring: var(--cherry);
 }
 
 @layer base {
@@ -162,5 +169,5 @@
   box-shadow: inset 0 0 0 1px rgb(0 0 0 / 0.06), 0 1px 2px rgb(0 0 0 / 0.03);
 }
 @utility soul-hero-shadow {
-  box-shadow: 0 40px 80px -30px rgb(28 82 83 / 0.35), 0 20px 40px -20px rgb(182 23 75 / 0.15);
+  box-shadow: 0 40px 80px -30px rgb(107 15 26 / 0.35), 0 20px 40px -20px rgb(194 30 56 / 0.15);
 }

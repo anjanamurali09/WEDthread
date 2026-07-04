@@ -14,10 +14,12 @@ import { Route as AuthenticatedRouteRouteImport } from './routes/_authenticated/
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as WSlugRouteImport } from './routes/w.$slug'
 import { Route as RsvpTokenRouteImport } from './routes/rsvp.$token'
+import { Route as AuthRoleRouteImport } from './routes/auth.$role'
 import { Route as AuthenticatedWebsiteRouteImport } from './routes/_authenticated/website'
 import { Route as AuthenticatedVenuesRouteImport } from './routes/_authenticated/venues'
 import { Route as AuthenticatedVendorsRouteImport } from './routes/_authenticated/vendors'
 import { Route as AuthenticatedSeatingRouteImport } from './routes/_authenticated/seating'
+import { Route as AuthenticatedRegistryRouteImport } from './routes/_authenticated/registry'
 import { Route as AuthenticatedOnboardingRouteImport } from './routes/_authenticated/onboarding'
 import { Route as AuthenticatedMessagesRouteImport } from './routes/_authenticated/messages'
 import { Route as AuthenticatedGuestsRouteImport } from './routes/_authenticated/guests'
@@ -48,6 +50,11 @@ const RsvpTokenRoute = RsvpTokenRouteImport.update({
   path: '/rsvp/$token',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AuthRoleRoute = AuthRoleRouteImport.update({
+  id: '/$role',
+  path: '/$role',
+  getParentRoute: () => AuthRoute,
+} as any)
 const AuthenticatedWebsiteRoute = AuthenticatedWebsiteRouteImport.update({
   id: '/website',
   path: '/website',
@@ -66,6 +73,11 @@ const AuthenticatedVendorsRoute = AuthenticatedVendorsRouteImport.update({
 const AuthenticatedSeatingRoute = AuthenticatedSeatingRouteImport.update({
   id: '/seating',
   path: '/seating',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
+const AuthenticatedRegistryRoute = AuthenticatedRegistryRouteImport.update({
+  id: '/registry',
+  path: '/registry',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
 const AuthenticatedOnboardingRoute = AuthenticatedOnboardingRouteImport.update({
@@ -96,31 +108,35 @@ const AuthenticatedDashboardRoute = AuthenticatedDashboardRouteImport.update({
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
-  '/auth': typeof AuthRoute
+  '/auth': typeof AuthRouteWithChildren
   '/dashboard': typeof AuthenticatedDashboardRoute
   '/events': typeof AuthenticatedEventsRoute
   '/guests': typeof AuthenticatedGuestsRoute
   '/messages': typeof AuthenticatedMessagesRoute
   '/onboarding': typeof AuthenticatedOnboardingRoute
+  '/registry': typeof AuthenticatedRegistryRoute
   '/seating': typeof AuthenticatedSeatingRoute
   '/vendors': typeof AuthenticatedVendorsRoute
   '/venues': typeof AuthenticatedVenuesRoute
   '/website': typeof AuthenticatedWebsiteRoute
+  '/auth/$role': typeof AuthRoleRoute
   '/rsvp/$token': typeof RsvpTokenRoute
   '/w/$slug': typeof WSlugRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
-  '/auth': typeof AuthRoute
+  '/auth': typeof AuthRouteWithChildren
   '/dashboard': typeof AuthenticatedDashboardRoute
   '/events': typeof AuthenticatedEventsRoute
   '/guests': typeof AuthenticatedGuestsRoute
   '/messages': typeof AuthenticatedMessagesRoute
   '/onboarding': typeof AuthenticatedOnboardingRoute
+  '/registry': typeof AuthenticatedRegistryRoute
   '/seating': typeof AuthenticatedSeatingRoute
   '/vendors': typeof AuthenticatedVendorsRoute
   '/venues': typeof AuthenticatedVenuesRoute
   '/website': typeof AuthenticatedWebsiteRoute
+  '/auth/$role': typeof AuthRoleRoute
   '/rsvp/$token': typeof RsvpTokenRoute
   '/w/$slug': typeof WSlugRoute
 }
@@ -128,16 +144,18 @@ export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/_authenticated': typeof AuthenticatedRouteRouteWithChildren
-  '/auth': typeof AuthRoute
+  '/auth': typeof AuthRouteWithChildren
   '/_authenticated/dashboard': typeof AuthenticatedDashboardRoute
   '/_authenticated/events': typeof AuthenticatedEventsRoute
   '/_authenticated/guests': typeof AuthenticatedGuestsRoute
   '/_authenticated/messages': typeof AuthenticatedMessagesRoute
   '/_authenticated/onboarding': typeof AuthenticatedOnboardingRoute
+  '/_authenticated/registry': typeof AuthenticatedRegistryRoute
   '/_authenticated/seating': typeof AuthenticatedSeatingRoute
   '/_authenticated/vendors': typeof AuthenticatedVendorsRoute
   '/_authenticated/venues': typeof AuthenticatedVenuesRoute
   '/_authenticated/website': typeof AuthenticatedWebsiteRoute
+  '/auth/$role': typeof AuthRoleRoute
   '/rsvp/$token': typeof RsvpTokenRoute
   '/w/$slug': typeof WSlugRoute
 }
@@ -151,10 +169,12 @@ export interface FileRouteTypes {
     | '/guests'
     | '/messages'
     | '/onboarding'
+    | '/registry'
     | '/seating'
     | '/vendors'
     | '/venues'
     | '/website'
+    | '/auth/$role'
     | '/rsvp/$token'
     | '/w/$slug'
   fileRoutesByTo: FileRoutesByTo
@@ -166,10 +186,12 @@ export interface FileRouteTypes {
     | '/guests'
     | '/messages'
     | '/onboarding'
+    | '/registry'
     | '/seating'
     | '/vendors'
     | '/venues'
     | '/website'
+    | '/auth/$role'
     | '/rsvp/$token'
     | '/w/$slug'
   id:
@@ -182,10 +204,12 @@ export interface FileRouteTypes {
     | '/_authenticated/guests'
     | '/_authenticated/messages'
     | '/_authenticated/onboarding'
+    | '/_authenticated/registry'
     | '/_authenticated/seating'
     | '/_authenticated/vendors'
     | '/_authenticated/venues'
     | '/_authenticated/website'
+    | '/auth/$role'
     | '/rsvp/$token'
     | '/w/$slug'
   fileRoutesById: FileRoutesById
@@ -193,7 +217,7 @@ export interface FileRouteTypes {
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AuthenticatedRouteRoute: typeof AuthenticatedRouteRouteWithChildren
-  AuthRoute: typeof AuthRoute
+  AuthRoute: typeof AuthRouteWithChildren
   RsvpTokenRoute: typeof RsvpTokenRoute
   WSlugRoute: typeof WSlugRoute
 }
@@ -235,6 +259,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof RsvpTokenRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/auth/$role': {
+      id: '/auth/$role'
+      path: '/$role'
+      fullPath: '/auth/$role'
+      preLoaderRoute: typeof AuthRoleRouteImport
+      parentRoute: typeof AuthRoute
+    }
     '/_authenticated/website': {
       id: '/_authenticated/website'
       path: '/website'
@@ -261,6 +292,13 @@ declare module '@tanstack/react-router' {
       path: '/seating'
       fullPath: '/seating'
       preLoaderRoute: typeof AuthenticatedSeatingRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/registry': {
+      id: '/_authenticated/registry'
+      path: '/registry'
+      fullPath: '/registry'
+      preLoaderRoute: typeof AuthenticatedRegistryRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_authenticated/onboarding': {
@@ -307,6 +345,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedGuestsRoute: typeof AuthenticatedGuestsRoute
   AuthenticatedMessagesRoute: typeof AuthenticatedMessagesRoute
   AuthenticatedOnboardingRoute: typeof AuthenticatedOnboardingRoute
+  AuthenticatedRegistryRoute: typeof AuthenticatedRegistryRoute
   AuthenticatedSeatingRoute: typeof AuthenticatedSeatingRoute
   AuthenticatedVendorsRoute: typeof AuthenticatedVendorsRoute
   AuthenticatedVenuesRoute: typeof AuthenticatedVenuesRoute
@@ -319,6 +358,7 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedGuestsRoute: AuthenticatedGuestsRoute,
   AuthenticatedMessagesRoute: AuthenticatedMessagesRoute,
   AuthenticatedOnboardingRoute: AuthenticatedOnboardingRoute,
+  AuthenticatedRegistryRoute: AuthenticatedRegistryRoute,
   AuthenticatedSeatingRoute: AuthenticatedSeatingRoute,
   AuthenticatedVendorsRoute: AuthenticatedVendorsRoute,
   AuthenticatedVenuesRoute: AuthenticatedVenuesRoute,
@@ -328,10 +368,20 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
 const AuthenticatedRouteRouteWithChildren =
   AuthenticatedRouteRoute._addFileChildren(AuthenticatedRouteRouteChildren)
 
+interface AuthRouteChildren {
+  AuthRoleRoute: typeof AuthRoleRoute
+}
+
+const AuthRouteChildren: AuthRouteChildren = {
+  AuthRoleRoute: AuthRoleRoute,
+}
+
+const AuthRouteWithChildren = AuthRoute._addFileChildren(AuthRouteChildren)
+
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AuthenticatedRouteRoute: AuthenticatedRouteRouteWithChildren,
-  AuthRoute: AuthRoute,
+  AuthRoute: AuthRouteWithChildren,
   RsvpTokenRoute: RsvpTokenRoute,
   WSlugRoute: WSlugRoute,
 }

@@ -31,7 +31,7 @@ function Landing() {
       <section className="px-6 md:px-12 pt-8 md:pt-16 pb-24 grid lg:grid-cols-12 gap-10 items-center">
         <div className="lg:col-span-6 relative z-10">
           <p className="inline-flex items-center gap-2 text-xs uppercase tracking-[0.2em] text-clay">
-            <span className="h-px w-8 bg-clay" /> For weddings that cross cultures &amp; continents
+            <span className="h-px w-8 bg-clay" /> For weddings that cross cultures & continents
           </p>
           <h1 className="mt-6 font-serif text-6xl md:text-8xl leading-[0.9] tracking-tight">
             Many ceremonies.<br/>
@@ -108,9 +108,9 @@ function Landing() {
               { i: Users, t: "Smart guest lists", b: "First and last name, per-event invites, plus-ones, dietary tags, allergies, accessibility notes.", bg: "bg-blush-soft" },
               { i: Grid3x3, t: "Seating canvas", b: "Design the room. Drag tables, dance floor, bar. Round, square, rectangle. Warn on capacity and allergy clusters.", bg: "bg-sage/25" },
               { i: MessageCircle, t: "WhatsApp automation", b: "Save-the-date, RSVP link, T-7 reminder, thank-you. Templates that greet guests by first name.", bg: "bg-clay-soft" },
-              { i: Utensils, t: "Food &amp; allergies", b: "Halal, kosher, jain, vegan, nut, dairy, shellfish. Tracked, filterable, flagged when you seat them.", bg: "bg-blush-soft" },
+              { i: Utensils, t: "Food & allergies", b: "Halal, kosher, jain, vegan, nut, dairy, shellfish. Tracked, filterable, flagged when you seat them.", bg: "bg-blush-soft" },
               { i: Gift, t: "Registry, your way", b: "Pick your country, choose from the retailers guests actually shop at, and share one link.", bg: "bg-cream" },
-              { i: Store, t: "Buy &amp; sell marketplace", b: "Leftover décor, dresses, tableware. Buy from other couples, resell yours after the day.", bg: "bg-sage/25" },
+              { i: Store, t: "Buy & sell marketplace", b: "Leftover décor, dresses, tableware. Buy from other couples, resell yours after the day.", bg: "bg-sage/25" },
               { i: Globe2, t: "Destination-first", b: "Your wedding city isn't always your home city. Travel, stay, vendors, all filtered by where you're actually getting married.", bg: "bg-clay-soft" },
             ].map(({ i: Icon, t, b, bg }) => (
               <div key={t} className={`${bg} rounded-3xl p-6 hover:-translate-y-1 transition-transform`}>

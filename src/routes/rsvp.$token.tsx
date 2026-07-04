@@ -60,7 +60,7 @@ function RsvpPage() {
           <span className="font-serif text-xl">Vowzy</span>
         </div>
         <p className="text-center text-[11px] uppercase tracking-[0.25em] text-clay">You are invited to celebrate</p>
-        <h1 className="mt-4 text-center font-serif text-4xl md:text-6xl leading-tight">{first.partner_a} <span className="text-clay">&amp;</span> {first.partner_b}</h1>
+        <h1 className="mt-4 text-center font-serif text-4xl md:text-6xl leading-tight">{first.partner_a} <span className="text-clay">&</span> {first.partner_b}</h1>
         <p className="mt-4 text-center text-muted-foreground">Dear <span className="text-ink">{first.guest_name}</span>, please respond to each ceremony below.</p>
 
         <div className="mt-10 space-y-4">

@@ -1,6 +1,6 @@
 import { Link, useRouter, useLocation } from "@tanstack/react-router";
 import { useSignOut } from "@/lib/wedding-hooks";
-import { CalendarDays, LayoutDashboard, Users, Grid3x3, MessageCircle, Globe, LogOut, Store, MapPin, Sparkles } from "lucide-react";
+import { CalendarDays, LayoutDashboard, Users, Grid3x3, MessageCircle, Globe, LogOut, Store, MapPin, Sparkles, Gift } from "lucide-react";
 import type { ReactNode } from "react";
 
 const nav = [
@@ -8,6 +8,7 @@ const nav = [
   { to: "/events", label: "Events", icon: CalendarDays },
   { to: "/guests", label: "Guests", icon: Users },
   { to: "/seating", label: "Seating", icon: Grid3x3 },
+  { to: "/registry", label: "Registry", icon: Gift },
   { to: "/messages", label: "Messages", icon: MessageCircle },
   { to: "/website", label: "Website", icon: Globe },
 ] as const;
