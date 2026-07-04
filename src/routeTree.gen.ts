@@ -19,6 +19,7 @@ import { Route as AuthenticatedWebsiteRouteImport } from './routes/_authenticate
 import { Route as AuthenticatedVenuesRouteImport } from './routes/_authenticated/venues'
 import { Route as AuthenticatedVendorsRouteImport } from './routes/_authenticated/vendors'
 import { Route as AuthenticatedSeatingRouteImport } from './routes/_authenticated/seating'
+import { Route as AuthenticatedRegistryRouteImport } from './routes/_authenticated/registry'
 import { Route as AuthenticatedOnboardingRouteImport } from './routes/_authenticated/onboarding'
 import { Route as AuthenticatedMessagesRouteImport } from './routes/_authenticated/messages'
 import { Route as AuthenticatedGuestsRouteImport } from './routes/_authenticated/guests'
@@ -74,6 +75,11 @@ const AuthenticatedSeatingRoute = AuthenticatedSeatingRouteImport.update({
   path: '/seating',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
+const AuthenticatedRegistryRoute = AuthenticatedRegistryRouteImport.update({
+  id: '/registry',
+  path: '/registry',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
 const AuthenticatedOnboardingRoute = AuthenticatedOnboardingRouteImport.update({
   id: '/onboarding',
   path: '/onboarding',
@@ -108,6 +114,7 @@ export interface FileRoutesByFullPath {
   '/guests': typeof AuthenticatedGuestsRoute
   '/messages': typeof AuthenticatedMessagesRoute
   '/onboarding': typeof AuthenticatedOnboardingRoute
+  '/registry': typeof AuthenticatedRegistryRoute
   '/seating': typeof AuthenticatedSeatingRoute
   '/vendors': typeof AuthenticatedVendorsRoute
   '/venues': typeof AuthenticatedVenuesRoute
@@ -124,6 +131,7 @@ export interface FileRoutesByTo {
   '/guests': typeof AuthenticatedGuestsRoute
   '/messages': typeof AuthenticatedMessagesRoute
   '/onboarding': typeof AuthenticatedOnboardingRoute
+  '/registry': typeof AuthenticatedRegistryRoute
   '/seating': typeof AuthenticatedSeatingRoute
   '/vendors': typeof AuthenticatedVendorsRoute
   '/venues': typeof AuthenticatedVenuesRoute
@@ -142,6 +150,7 @@ export interface FileRoutesById {
   '/_authenticated/guests': typeof AuthenticatedGuestsRoute
   '/_authenticated/messages': typeof AuthenticatedMessagesRoute
   '/_authenticated/onboarding': typeof AuthenticatedOnboardingRoute
+  '/_authenticated/registry': typeof AuthenticatedRegistryRoute
   '/_authenticated/seating': typeof AuthenticatedSeatingRoute
   '/_authenticated/vendors': typeof AuthenticatedVendorsRoute
   '/_authenticated/venues': typeof AuthenticatedVenuesRoute
@@ -160,6 +169,7 @@ export interface FileRouteTypes {
     | '/guests'
     | '/messages'
     | '/onboarding'
+    | '/registry'
     | '/seating'
     | '/vendors'
     | '/venues'
@@ -176,6 +186,7 @@ export interface FileRouteTypes {
     | '/guests'
     | '/messages'
     | '/onboarding'
+    | '/registry'
     | '/seating'
     | '/vendors'
     | '/venues'
@@ -193,6 +204,7 @@ export interface FileRouteTypes {
     | '/_authenticated/guests'
     | '/_authenticated/messages'
     | '/_authenticated/onboarding'
+    | '/_authenticated/registry'
     | '/_authenticated/seating'
     | '/_authenticated/vendors'
     | '/_authenticated/venues'
@@ -282,6 +294,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedSeatingRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/registry': {
+      id: '/_authenticated/registry'
+      path: '/registry'
+      fullPath: '/registry'
+      preLoaderRoute: typeof AuthenticatedRegistryRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/onboarding': {
       id: '/_authenticated/onboarding'
       path: '/onboarding'
@@ -326,6 +345,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedGuestsRoute: typeof AuthenticatedGuestsRoute
   AuthenticatedMessagesRoute: typeof AuthenticatedMessagesRoute
   AuthenticatedOnboardingRoute: typeof AuthenticatedOnboardingRoute
+  AuthenticatedRegistryRoute: typeof AuthenticatedRegistryRoute
   AuthenticatedSeatingRoute: typeof AuthenticatedSeatingRoute
   AuthenticatedVendorsRoute: typeof AuthenticatedVendorsRoute
   AuthenticatedVenuesRoute: typeof AuthenticatedVenuesRoute
@@ -338,6 +358,7 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedGuestsRoute: AuthenticatedGuestsRoute,
   AuthenticatedMessagesRoute: AuthenticatedMessagesRoute,
   AuthenticatedOnboardingRoute: AuthenticatedOnboardingRoute,
+  AuthenticatedRegistryRoute: AuthenticatedRegistryRoute,
   AuthenticatedSeatingRoute: AuthenticatedSeatingRoute,
   AuthenticatedVendorsRoute: AuthenticatedVendorsRoute,
   AuthenticatedVenuesRoute: AuthenticatedVenuesRoute,
