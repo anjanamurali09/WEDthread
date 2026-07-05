@@ -25,6 +25,7 @@ import { Route as AuthenticatedMessagesRouteImport } from './routes/_authenticat
 import { Route as AuthenticatedGuestsRouteImport } from './routes/_authenticated/guests'
 import { Route as AuthenticatedEventsRouteImport } from './routes/_authenticated/events'
 import { Route as AuthenticatedDashboardRouteImport } from './routes/_authenticated/dashboard'
+import { Route as AuthenticatedWebsiteEditRouteImport } from './routes/_authenticated/website.edit'
 
 const AuthRoute = AuthRouteImport.update({
   id: '/auth',
@@ -105,6 +106,12 @@ const AuthenticatedDashboardRoute = AuthenticatedDashboardRouteImport.update({
   path: '/dashboard',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
+const AuthenticatedWebsiteEditRoute =
+  AuthenticatedWebsiteEditRouteImport.update({
+    id: '/edit',
+    path: '/edit',
+    getParentRoute: () => AuthenticatedWebsiteRoute,
+  } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -118,10 +125,11 @@ export interface FileRoutesByFullPath {
   '/seating': typeof AuthenticatedSeatingRoute
   '/vendors': typeof AuthenticatedVendorsRoute
   '/venues': typeof AuthenticatedVenuesRoute
-  '/website': typeof AuthenticatedWebsiteRoute
+  '/website': typeof AuthenticatedWebsiteRouteWithChildren
   '/auth/$role': typeof AuthRoleRoute
   '/rsvp/$token': typeof RsvpTokenRoute
   '/w/$slug': typeof WSlugRoute
+  '/website/edit': typeof AuthenticatedWebsiteEditRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -135,10 +143,11 @@ export interface FileRoutesByTo {
   '/seating': typeof AuthenticatedSeatingRoute
   '/vendors': typeof AuthenticatedVendorsRoute
   '/venues': typeof AuthenticatedVenuesRoute
-  '/website': typeof AuthenticatedWebsiteRoute
+  '/website': typeof AuthenticatedWebsiteRouteWithChildren
   '/auth/$role': typeof AuthRoleRoute
   '/rsvp/$token': typeof RsvpTokenRoute
   '/w/$slug': typeof WSlugRoute
+  '/website/edit': typeof AuthenticatedWebsiteEditRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -154,10 +163,11 @@ export interface FileRoutesById {
   '/_authenticated/seating': typeof AuthenticatedSeatingRoute
   '/_authenticated/vendors': typeof AuthenticatedVendorsRoute
   '/_authenticated/venues': typeof AuthenticatedVenuesRoute
-  '/_authenticated/website': typeof AuthenticatedWebsiteRoute
+  '/_authenticated/website': typeof AuthenticatedWebsiteRouteWithChildren
   '/auth/$role': typeof AuthRoleRoute
   '/rsvp/$token': typeof RsvpTokenRoute
   '/w/$slug': typeof WSlugRoute
+  '/_authenticated/website/edit': typeof AuthenticatedWebsiteEditRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -177,6 +187,7 @@ export interface FileRouteTypes {
     | '/auth/$role'
     | '/rsvp/$token'
     | '/w/$slug'
+    | '/website/edit'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -194,6 +205,7 @@ export interface FileRouteTypes {
     | '/auth/$role'
     | '/rsvp/$token'
     | '/w/$slug'
+    | '/website/edit'
   id:
     | '__root__'
     | '/'
@@ -212,6 +224,7 @@ export interface FileRouteTypes {
     | '/auth/$role'
     | '/rsvp/$token'
     | '/w/$slug'
+    | '/_authenticated/website/edit'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -336,8 +349,26 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedDashboardRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/website/edit': {
+      id: '/_authenticated/website/edit'
+      path: '/edit'
+      fullPath: '/website/edit'
+      preLoaderRoute: typeof AuthenticatedWebsiteEditRouteImport
+      parentRoute: typeof AuthenticatedWebsiteRoute
+    }
   }
 }
+
+interface AuthenticatedWebsiteRouteChildren {
+  AuthenticatedWebsiteEditRoute: typeof AuthenticatedWebsiteEditRoute
+}
+
+const AuthenticatedWebsiteRouteChildren: AuthenticatedWebsiteRouteChildren = {
+  AuthenticatedWebsiteEditRoute: AuthenticatedWebsiteEditRoute,
+}
+
+const AuthenticatedWebsiteRouteWithChildren =
+  AuthenticatedWebsiteRoute._addFileChildren(AuthenticatedWebsiteRouteChildren)
 
 interface AuthenticatedRouteRouteChildren {
   AuthenticatedDashboardRoute: typeof AuthenticatedDashboardRoute
@@ -349,7 +380,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedSeatingRoute: typeof AuthenticatedSeatingRoute
   AuthenticatedVendorsRoute: typeof AuthenticatedVendorsRoute
   AuthenticatedVenuesRoute: typeof AuthenticatedVenuesRoute
-  AuthenticatedWebsiteRoute: typeof AuthenticatedWebsiteRoute
+  AuthenticatedWebsiteRoute: typeof AuthenticatedWebsiteRouteWithChildren
 }
 
 const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
@@ -362,7 +393,7 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedSeatingRoute: AuthenticatedSeatingRoute,
   AuthenticatedVendorsRoute: AuthenticatedVendorsRoute,
   AuthenticatedVenuesRoute: AuthenticatedVenuesRoute,
-  AuthenticatedWebsiteRoute: AuthenticatedWebsiteRoute,
+  AuthenticatedWebsiteRoute: AuthenticatedWebsiteRouteWithChildren,
 }
 
 const AuthenticatedRouteRouteWithChildren =

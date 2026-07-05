@@ -811,6 +811,50 @@ export type Database = {
         }
         Relationships: []
       }
+      website_sections: {
+        Row: {
+          content: Json
+          created_at: string
+          id: string
+          image_url: string | null
+          section_type: string
+          sort_order: number
+          updated_at: string
+          visible: boolean
+          wedding_id: string
+        }
+        Insert: {
+          content?: Json
+          created_at?: string
+          id?: string
+          image_url?: string | null
+          section_type: string
+          sort_order?: number
+          updated_at?: string
+          visible?: boolean
+          wedding_id: string
+        }
+        Update: {
+          content?: Json
+          created_at?: string
+          id?: string
+          image_url?: string | null
+          section_type?: string
+          sort_order?: number
+          updated_at?: string
+          visible?: boolean
+          wedding_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "website_sections_wedding_id_fkey"
+            columns: ["wedding_id"]
+            isOneToOne: false
+            referencedRelation: "weddings"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       wedding_photos: {
         Row: {
           caption: string | null
