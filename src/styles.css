@@ -171,5 +171,47 @@
   box-shadow: inset 0 0 0 1px rgb(0 0 0 / 0.06), 0 1px 2px rgb(0 0 0 / 0.03);
 }
 @utility soul-hero-shadow {
-  box-shadow: 0 40px 80px -30px rgb(107 15 26 / 0.35), 0 20px 40px -20px rgb(194 30 56 / 0.15);
+  box-shadow: 0 40px 80px -30px rgb(230 57 80 / 0.35), 0 20px 40px -20px rgb(138 18 38 / 0.15);
 }
+
+/* Curved organic blob shape */
+@utility blob {
+  border-radius: 62% 38% 55% 45% / 45% 55% 45% 55%;
+}
+@utility blob-2 {
+  border-radius: 40% 60% 65% 35% / 55% 30% 70% 45%;
+}
+
+/* Scroll-reveal: hidden until [data-visible="true"] is set by IntersectionObserver */
+[data-reveal] {
+  opacity: 0;
+  transform: translateY(28px);
+  transition: opacity 700ms cubic-bezier(.22,.61,.36,1), transform 700ms cubic-bezier(.22,.61,.36,1);
+  will-change: opacity, transform;
+}
+[data-reveal][data-visible="true"] {
+  opacity: 1;
+  transform: none;
+}
+
+/* Slow float for hero blobs */
+@keyframes float-slow {
+  0%, 100% { transform: translate3d(0,0,0) rotate(0deg); }
+  50% { transform: translate3d(0,-18px,0) rotate(3deg); }
+}
+.animate-float-slow { animation: float-slow 9s ease-in-out infinite; }
+
+/* Hover-morph card: color + radius shift */
+@utility morph-card {
+  transition: transform 500ms cubic-bezier(.22,.61,.36,1),
+              border-radius 500ms cubic-bezier(.22,.61,.36,1),
+              background-color 400ms ease,
+              color 400ms ease,
+              box-shadow 500ms ease;
+}
+.morph-card:hover {
+  border-radius: 44px 20px 44px 20px;
+  transform: translateY(-6px);
+  box-shadow: 0 30px 60px -30px rgb(230 57 80 / 0.35);
+}
+
