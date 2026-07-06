@@ -13,9 +13,12 @@
   --color-beige: var(--beige);
   --color-wine: var(--wine);
   --color-cherry: var(--cherry);
+  --color-cherry-glow: var(--cherry-glow);
+  --color-wine-soft: var(--wine-soft);
   --color-blush: var(--blush);
   --color-blush-soft: var(--blush-soft);
   --color-sage: var(--sage);
+  --color-sage-soft: var(--sage-soft);
   --color-teal: var(--teal);
   --color-rose: var(--rose);
 
