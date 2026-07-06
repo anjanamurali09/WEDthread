@@ -1,5 +1,7 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
+import { useEffect, useRef, useState } from "react";
 import { Sparkles, ArrowRight, Globe2, Users, Calendar, Utensils, MessageCircle, Grid3x3, Gift, Store } from "lucide-react";
+import { LoginDialog } from "@/components/login-dialog";
 
 // Real, free, high-quality wedding photography (Unsplash). No AI generation.
 const heroImg = "https://images.unsplash.com/photo-1519741497674-611481863552?auto=format&fit=crop&w=1600&q=80";
@@ -7,73 +9,109 @@ const cocktailImg = "https://images.unsplash.com/photo-1464366400600-7168b8af9bc
 
 export const Route = createFileRoute("/")({ component: Landing });
 
+function useReveal() {
+  const ref = useRef<HTMLElement | null>(null);
+  useEffect(() => {
+    const root = ref.current;
+    if (!root) return;
+    const els = root.querySelectorAll<HTMLElement>("[data-reveal]");
+    const io = new IntersectionObserver((entries) => {
+      entries.forEach((e) => {
+        if (e.isIntersecting) {
+          (e.target as HTMLElement).dataset.visible = "true";
+          io.unobserve(e.target);
+        }
+      });
+    }, { threshold: 0.15, rootMargin: "0px 0px -60px 0px" });
+    els.forEach((el) => io.observe(el));
+    return () => io.disconnect();
+  }, []);
+  return ref;
+}
+
 function Landing() {
+  const rootRef = useReveal();
+  const [authOpen, setAuthOpen] = useState<false | "signin" | "signup">(false);
+
   return (
-    <div className="min-h-screen bg-cream text-ink">
+    <div ref={rootRef as any} className="min-h-screen bg-pearl text-ink overflow-hidden">
+      {/* Ambient curved decorations */}
+      <div aria-hidden className="pointer-events-none fixed -top-40 -left-40 h-[520px] w-[520px] blob bg-blush-soft/70 animate-float-slow" />
+      <div aria-hidden className="pointer-events-none fixed top-[30%] -right-56 h-[560px] w-[560px] blob-2 bg-sage-soft/60 animate-float-slow" style={{ animationDelay: "-3s" }} />
+      <div aria-hidden className="pointer-events-none fixed bottom-[-220px] left-[15%] h-[420px] w-[420px] blob bg-wine-soft/60 animate-float-slow" style={{ animationDelay: "-6s" }} />
+
       {/* Nav */}
-      <header className="px-6 md:px-12 py-6 flex items-center justify-between relative z-10">
-        <Link to="/" className="flex items-center gap-2">
-          <span className="grid h-9 w-9 place-items-center rounded-full bg-clay text-paper"><Sparkles className="h-4 w-4" /></span>
+      <header className="relative z-20 px-6 md:px-12 py-6 flex items-center justify-between">
+        <Link to="/" className="flex items-center gap-2 group">
+          <span className="grid h-9 w-9 place-items-center rounded-full bg-cherry text-pearl transition-all group-hover:rotate-12 group-hover:bg-wine"><Sparkles className="h-4 w-4" /></span>
           <span className="font-serif text-3xl">Vowzy</span>
         </Link>
         <nav className="hidden md:flex items-center gap-8 text-sm text-ink/70">
-          <Link to="/venues" className="hover:text-clay transition-colors">Venues</Link>
-          <Link to="/vendors" className="hover:text-clay transition-colors">Marketplace</Link>
-          <a href="#how" className="hover:text-clay transition-colors">How it works</a>
+          <Link to="/venues" className="story-link hover:text-cherry transition-colors">Venues</Link>
+          <Link to="/vendors" className="story-link hover:text-cherry transition-colors">Marketplace</Link>
+          <a href="#how" className="story-link hover:text-cherry transition-colors">How it works</a>
         </nav>
         <div className="flex items-center gap-3">
-          <Link to="/auth" className="text-sm text-ink/70 hover:text-ink hidden sm:inline">Sign in</Link>
-          <Link to="/auth" className="rounded-full bg-ink text-paper px-4 py-2 text-sm hover:bg-clay transition-colors">Start planning</Link>
+          <button onClick={() => setAuthOpen("signin")} className="text-sm text-ink/70 hover:text-cherry transition-colors hidden sm:inline">Sign in</button>
+          <button onClick={() => setAuthOpen("signup")}
+            className="rounded-full bg-ink text-pearl px-5 py-2 text-sm transition-all hover:bg-cherry hover:rounded-2xl">
+            Start planning
+          </button>
         </div>
       </header>
 
       {/* Hero */}
-      <section className="px-6 md:px-12 pt-8 md:pt-16 pb-24 grid lg:grid-cols-12 gap-10 items-center">
-        <div className="lg:col-span-6 relative z-10">
-          <p className="inline-flex items-center gap-2 text-xs uppercase tracking-[0.2em] text-clay">
-            <span className="h-px w-8 bg-clay" /> For weddings that cross cultures & continents
+      <section className="relative z-10 px-6 md:px-12 pt-8 md:pt-16 pb-24 grid lg:grid-cols-12 gap-10 items-center">
+        <div className="lg:col-span-6" data-reveal>
+          <p className="inline-flex items-center gap-2 text-xs uppercase tracking-[0.2em] text-cherry">
+            <span className="h-px w-8 bg-cherry" /> Weddings that cross cultures & continents
           </p>
           <h1 className="mt-6 font-serif text-6xl md:text-8xl leading-[0.9] tracking-tight">
             Many ceremonies.<br/>
-            <span className="italic text-clay">Many cultures.</span><br/>
+            <span className="italic text-cherry">Many cultures.</span><br/>
             One plan.
           </h1>
           <p className="mt-6 text-lg text-ink/70 max-w-xl leading-relaxed">
             Plan a mehendi, a church ceremony, a cocktail hour, a nikah, a pool party, or a Sunday farewell brunch. Vowzy handles as many events as your two families need, wherever in the world you're getting married.
           </p>
           <div className="mt-8 flex flex-wrap gap-3">
-            <Link to="/auth" className="inline-flex items-center gap-2 rounded-full bg-ink text-paper px-6 py-3 text-sm font-medium hover:bg-clay transition-colors">
+            <button onClick={() => setAuthOpen("signup")}
+              className="inline-flex items-center gap-2 rounded-full bg-cherry text-pearl px-6 py-3 text-sm font-medium transition-all hover:bg-wine hover:rounded-2xl hover:gap-3">
               Start your plan <ArrowRight className="h-4 w-4" />
-            </Link>
-            <Link to="/venues" className="inline-flex items-center gap-2 rounded-full border border-clay text-clay px-6 py-3 text-sm hover:bg-blush-soft">
+            </button>
+            <Link to="/venues"
+              className="inline-flex items-center gap-2 rounded-full border border-cherry text-cherry px-6 py-3 text-sm transition-all hover:bg-cherry hover:text-pearl hover:rounded-2xl">
               Browse destinations
             </Link>
           </div>
           <div className="mt-10 flex flex-wrap gap-x-6 gap-y-2 text-xs uppercase tracking-widest text-muted-foreground">
             <span>Destination-native</span>
-            <span className="text-clay">·</span>
+            <span className="text-cherry">·</span>
             <span>WhatsApp built in</span>
-            <span className="text-clay">·</span>
+            <span className="text-cherry">·</span>
             <span>Every culture, every ceremony</span>
           </div>
         </div>
-        <div className="lg:col-span-6 relative">
-          <div className="relative rounded-[2rem] overflow-hidden shadow-2xl">
-            <img src={heroImg} alt="Warm golden-hour destination wedding table setting with terracotta and blush florals under string lights" className="w-full h-[560px] object-cover" width={1600} height={1280} />
+
+        <div className="lg:col-span-6 relative" data-reveal>
+          <div className="relative overflow-hidden shadow-2xl blob-2 group">
+            <img src={heroImg} alt="Warm golden-hour destination wedding table setting with terracotta and blush florals under string lights"
+              className="w-full h-[560px] object-cover transition-transform duration-[1200ms] group-hover:scale-105"
+              width={1600} height={1280} />
             <div className="absolute inset-0 bg-gradient-to-t from-ink/30 via-transparent to-transparent" />
           </div>
-          <div className="hidden md:block absolute -bottom-6 -left-6 paper-card p-5 rotate-[-2deg] max-w-[260px] bg-paper">
-            <p className="text-[10px] uppercase tracking-widest text-clay">The Rao–Beckett Wedding</p>
-            <p className="font-serif text-xl mt-1">Udaipur · Nov 2026</p>
+          <div className="hidden md:block absolute -bottom-6 -left-6 paper-card p-5 rotate-[-2deg] max-w-[260px] bg-paper transition-transform hover:rotate-0 hover:-translate-y-1">
+            <p className="text-[10px] uppercase tracking-widest text-cherry">The Rao–Beckett Wedding</p>
+            <p className="font-serif text-xl mt-1">Dubai · Nov 2026</p>
             <div className="mt-3 space-y-1.5 text-xs text-ink/70">
-              <p>Nov 12 · Mehendi</p>
-              <p>Nov 13 · Sangeet</p>
-              <p>Nov 14 · Ceremony</p>
-              <p>Nov 15 · Reception</p>
+              <p>Nov 12 · Mehendi at Al Barari</p>
+              <p>Nov 13 · Sangeet · Bulgari Resort</p>
+              <p>Nov 14 · Ceremony · Palm Jumeirah</p>
+              <p>Nov 15 · Reception · Atlantis</p>
             </div>
-            <p className="mt-3 text-[11px] text-clay">248 guests, 4 countries</p>
+            <p className="mt-3 text-[11px] text-cherry">248 guests, 4 countries</p>
           </div>
-          <div className="hidden md:flex absolute -top-4 -right-4 paper-card p-4 rotate-[2deg] bg-paper items-center gap-3 max-w-[240px]">
+          <div className="hidden md:flex absolute -top-4 -right-4 paper-card p-4 rotate-[2deg] bg-paper items-center gap-3 max-w-[240px] transition-transform hover:rotate-0 hover:-translate-y-1">
             <span className="grid h-9 w-9 place-items-center rounded-full bg-sage/40 text-ink"><MessageCircle className="h-4 w-4" /></span>
             <div>
               <p className="text-xs font-medium">RSVP reminder sent</p>
@@ -84,39 +122,40 @@ function Landing() {
       </section>
 
       {/* Culture strip */}
-      <section className="bg-blush-soft border-y border-line py-14 px-6 md:px-12">
-        <p className="text-xs uppercase tracking-[0.3em] text-clay text-center">Built for every kind of wedding</p>
+      <section className="relative z-10 bg-blush-soft/70 border-y border-line py-14 px-6 md:px-12" data-reveal>
+        <p className="text-xs uppercase tracking-[0.3em] text-cherry text-center">Built for every kind of wedding</p>
         <div className="mt-8 flex flex-wrap justify-center gap-2 max-w-4xl mx-auto">
           {["Mehendi","Haldi","Sangeet","Nikah","Baraat","Church ceremony","Registry","Reception","Cocktail hour","Rehearsal dinner","Welcome party","Pool party","Beach ceremony","Chuppah","Tea ceremony","Farewell brunch"].map((t) => (
-            <span key={t} className="rounded-full bg-paper border border-line px-4 py-2 text-sm">{t}</span>
+            <span key={t} className="rounded-full bg-paper border border-line px-4 py-2 text-sm cursor-default transition-all hover:bg-cherry hover:text-pearl hover:border-cherry hover:-translate-y-0.5">{t}</span>
           ))}
         </div>
       </section>
 
       {/* Features */}
-      <section id="how" className="px-6 md:px-12 py-24">
+      <section id="how" className="relative z-10 px-6 md:px-12 py-24">
         <div className="grid lg:grid-cols-12 gap-10 items-start">
-          <div className="lg:col-span-5 lg:sticky lg:top-24">
-            <p className="text-xs uppercase tracking-[0.2em] text-clay">The planner</p>
+          <div className="lg:col-span-5 lg:sticky lg:top-24" data-reveal>
+            <p className="text-xs uppercase tracking-[0.2em] text-cherry">The planner</p>
             <h2 className="mt-3 font-serif text-5xl md:text-6xl leading-[0.95]">Every tool a modern wedding needs.</h2>
             <p className="mt-6 text-ink/70">One plan for two families. Multiple events, guests across borders, RSVPs on WhatsApp, seating that respects allergies, a website you actually design yourself.</p>
-            <img src={cocktailImg} alt="Beach cocktail hour at a destination wedding" loading="lazy" width={1024} height={1280} className="mt-8 rounded-[2rem] w-full h-64 object-cover shadow-xl" />
+            <img src={cocktailImg} alt="Beach cocktail hour at a destination wedding" loading="lazy" width={1024} height={1280}
+              className="mt-8 blob w-full h-64 object-cover shadow-xl transition-all duration-700 hover:blob-2" />
           </div>
           <div className="lg:col-span-7 grid sm:grid-cols-2 gap-4">
             {[
               { i: Calendar, t: "Unlimited ceremonies", b: "Add every event your two cultures ask for. Never a dropdown of just ceremony and reception.", bg: "bg-cream" },
               { i: Users, t: "Smart guest lists", b: "First and last name, per-event invites, plus-ones, dietary tags, allergies, accessibility notes.", bg: "bg-blush-soft" },
-              { i: Grid3x3, t: "Seating canvas", b: "Design the room. Drag tables, dance floor, bar. Round, square, rectangle. Warn on capacity and allergy clusters.", bg: "bg-sage/25" },
-              { i: MessageCircle, t: "WhatsApp automation", b: "Save-the-date, RSVP link, T-7 reminder, thank-you. Templates that greet guests by first name.", bg: "bg-clay-soft" },
+              { i: Grid3x3, t: "Seating canvas", b: "Design the room. Drag tables, dance floor, bar. Round, square, rectangle. Warn on capacity and allergy clusters.", bg: "bg-sage-soft" },
+              { i: MessageCircle, t: "WhatsApp automation", b: "Save-the-date, RSVP link, T-7 reminder, thank-you. Templates that greet guests by first name.", bg: "bg-wine-soft" },
               { i: Utensils, t: "Food & allergies", b: "Halal, kosher, jain, vegan, nut, dairy, shellfish. Tracked, filterable, flagged when you seat them.", bg: "bg-blush-soft" },
               { i: Gift, t: "Registry, your way", b: "Pick your country, choose from the retailers guests actually shop at, and share one link.", bg: "bg-cream" },
-              { i: Store, t: "Buy & sell marketplace", b: "Leftover décor, dresses, tableware. Buy from other couples, resell yours after the day.", bg: "bg-sage/25" },
-              { i: Globe2, t: "Destination-first", b: "Your wedding city isn't always your home city. Travel, stay, vendors, all filtered by where you're actually getting married.", bg: "bg-clay-soft" },
+              { i: Store, t: "Buy & sell marketplace", b: "Leftover décor, dresses, tableware. Buy from other couples, resell yours after the day.", bg: "bg-sage-soft" },
+              { i: Globe2, t: "Destination-first", b: "Your wedding city isn't always your home city. Travel, stay, vendors, all filtered by where you're actually getting married.", bg: "bg-wine-soft" },
             ].map(({ i: Icon, t, b, bg }) => (
-              <div key={t} className={`${bg} rounded-3xl p-6 hover:-translate-y-1 transition-transform`}>
-                <span className="grid h-10 w-10 place-items-center rounded-full bg-paper text-clay shadow-sm"><Icon className="h-4 w-4" /></span>
+              <div key={t} data-reveal className={`${bg} rounded-3xl p-6 morph-card cursor-default`}>
+                <span className="grid h-10 w-10 place-items-center rounded-full bg-paper text-cherry shadow-sm transition-transform group-hover:scale-110"><Icon className="h-4 w-4" /></span>
                 <h3 className="mt-4 font-serif text-2xl leading-tight">{t}</h3>
-                <p className="mt-2 text-sm text-ink/70 leading-relaxed" dangerouslySetInnerHTML={{ __html: b }} />
+                <p className="mt-2 text-sm text-ink/70 leading-relaxed">{b}</p>
               </div>
             ))}
           </div>
@@ -124,19 +163,28 @@ function Landing() {
       </section>
 
       {/* CTA */}
-      <section className="mx-6 md:mx-12 mb-16 rounded-[3rem] bg-clay text-paper py-24 px-6 md:px-12 text-center relative overflow-hidden">
-        <div className="absolute inset-0 opacity-20" style={{ backgroundImage: "radial-gradient(circle at 20% 30%, var(--blush) 0 4%, transparent 5%), radial-gradient(circle at 80% 60%, var(--cream) 0 3%, transparent 4%), radial-gradient(circle at 50% 80%, var(--sage) 0 5%, transparent 6%)" }} />
+      <section className="relative z-10 mx-6 md:mx-12 mb-16 rounded-[3rem] bg-cherry text-pearl py-24 px-6 md:px-12 text-center overflow-hidden" data-reveal>
+        <div className="absolute inset-0 opacity-30" style={{ backgroundImage: "radial-gradient(circle at 20% 30%, var(--blush) 0 4%, transparent 5%), radial-gradient(circle at 80% 60%, var(--cream) 0 3%, transparent 4%), radial-gradient(circle at 50% 80%, var(--sage) 0 5%, transparent 6%)" }} />
+        <div aria-hidden className="absolute -top-24 -left-24 h-72 w-72 blob bg-wine/40" />
+        <div aria-hidden className="absolute -bottom-24 -right-24 h-80 w-80 blob-2 bg-blush/40" />
         <p className="relative text-xs uppercase tracking-[0.3em] text-blush">Free while we're launching</p>
         <h2 className="relative mt-4 font-serif text-5xl md:text-7xl max-w-3xl mx-auto leading-[0.95]">Your wedding, every ceremony, in one place.</h2>
-        <Link to="/auth" className="relative mt-10 inline-flex items-center gap-2 rounded-full bg-paper text-ink px-8 py-4 text-sm font-medium hover:bg-cream transition-colors">
+        <button onClick={() => setAuthOpen("signup")}
+          className="relative mt-10 inline-flex items-center gap-2 rounded-full bg-pearl text-ink px-8 py-4 text-sm font-medium transition-all hover:bg-ink hover:text-pearl hover:rounded-2xl hover:gap-3">
           Start planning free <ArrowRight className="h-4 w-4" />
-        </Link>
+        </button>
       </section>
 
-      <footer className="border-t border-line py-8 px-6 md:px-12 flex flex-wrap items-center justify-between text-xs text-muted-foreground gap-3">
+      <footer className="relative z-10 border-t border-line py-8 px-6 md:px-12 flex flex-wrap items-center justify-between text-xs text-muted-foreground gap-3">
         <span>© {new Date().getFullYear()} Vowzy</span>
         <span>Designed for weddings, everywhere.</span>
       </footer>
+
+      <LoginDialog
+        open={!!authOpen}
+        onOpenChange={(v) => setAuthOpen(v ? (authOpen || "signin") : false)}
+        initialMode={authOpen || "signin"}
+      />
     </div>
   );
 }

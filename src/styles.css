@@ -13,9 +13,12 @@
   --color-beige: var(--beige);
   --color-wine: var(--wine);
   --color-cherry: var(--cherry);
+  --color-cherry-glow: var(--cherry-glow);
+  --color-wine-soft: var(--wine-soft);
   --color-blush: var(--blush);
   --color-blush-soft: var(--blush-soft);
   --color-sage: var(--sage);
+  --color-sage-soft: var(--sage-soft);
   --color-teal: var(--teal);
   --color-rose: var(--rose);
 
@@ -67,23 +70,25 @@
 }
 
 :root {
-  /* Pearl white base, cream + beige surfaces, wine + cherry accents */
-  --pearl: #FDFCF7;                        /* primary background */
-  --paper: #FBF6EA;                        /* soft cream card */
-  --cream: #F5EEDC;                        /* deeper cream */
-  --beige: #E8DFC9;                        /* warm beige */
-  --wine: #6B0F1A;                         /* deep wine, primary accent */
-  --wine-soft: #F1D9DD;                    /* wine wash */
-  --cherry: #C21E38;                       /* cherry red highlight */
-  --blush: #E7B8B8;                        /* soft blush */
-  --blush-soft: #F6E4E1;
-  --rose: #C97A82;                         /* dusty rose */
-  --sage: #A7B79A;                         /* muted sage as tertiary */
-  --teal: #6B7F7A;                         /* muted teal */
+  /* Brighter pearl base + lighter creams; brighter cherry with wine anchor */
+  --pearl: #FEFDFA;                        /* primary background — near-white pearl */
+  --paper: #FBF7EC;                        /* soft cream card */
+  --cream: #F7F1E1;                        /* deeper cream */
+  --beige: #ECE3CE;                        /* warm beige */
+  --wine: #8A1226;                         /* wine — anchor accent */
+  --wine-soft: #FADCE1;                    /* wine wash */
+  --cherry: #E63950;                       /* brighter cherry — primary pop */
+  --cherry-glow: #FF5C74;                  /* light cherry for hover */
+  --blush: #F2C4C4;                        /* soft blush */
+  --blush-soft: #FCEEEB;
+  --rose: #D48891;                         /* dusty rose */
+  --sage: #B6C7A6;                         /* sage tint */
+  --sage-soft: #E4EDD8;
+  --teal: #7B928C;
   --ink: #1A1512;                          /* rich near-black */
-  --stone: #F0E9D7;
-  --stone-2: #E4DAC1;
-  --line: #DDD1B6;
+  --stone: #F4EEDD;
+  --stone-2: #E8DEC5;
+  --line: #E4D9BE;
 
   --background: var(--pearl);
   --foreground: var(--ink);
@@ -169,5 +174,47 @@
   box-shadow: inset 0 0 0 1px rgb(0 0 0 / 0.06), 0 1px 2px rgb(0 0 0 / 0.03);
 }
 @utility soul-hero-shadow {
-  box-shadow: 0 40px 80px -30px rgb(107 15 26 / 0.35), 0 20px 40px -20px rgb(194 30 56 / 0.15);
+  box-shadow: 0 40px 80px -30px rgb(230 57 80 / 0.35), 0 20px 40px -20px rgb(138 18 38 / 0.15);
 }
+
+/* Curved organic blob shape */
+@utility blob {
+  border-radius: 62% 38% 55% 45% / 45% 55% 45% 55%;
+}
+@utility blob-2 {
+  border-radius: 40% 60% 65% 35% / 55% 30% 70% 45%;
+}
+
+/* Scroll-reveal: hidden until [data-visible="true"] is set by IntersectionObserver */
+[data-reveal] {
+  opacity: 0;
+  transform: translateY(28px);
+  transition: opacity 700ms cubic-bezier(.22,.61,.36,1), transform 700ms cubic-bezier(.22,.61,.36,1);
+  will-change: opacity, transform;
+}
+[data-reveal][data-visible="true"] {
+  opacity: 1;
+  transform: none;
+}
+
+/* Slow float for hero blobs */
+@keyframes float-slow {
+  0%, 100% { transform: translate3d(0,0,0) rotate(0deg); }
+  50% { transform: translate3d(0,-18px,0) rotate(3deg); }
+}
+.animate-float-slow { animation: float-slow 9s ease-in-out infinite; }
+
+/* Hover-morph card: color + radius shift */
+@utility morph-card {
+  transition: transform 500ms cubic-bezier(.22,.61,.36,1),
+              border-radius 500ms cubic-bezier(.22,.61,.36,1),
+              background-color 400ms ease,
+              color 400ms ease,
+              box-shadow 500ms ease;
+}
+.morph-card:hover {
+  border-radius: 44px 20px 44px 20px;
+  transform: translateY(-6px);
+  box-shadow: 0 30px 60px -30px rgb(230 57 80 / 0.35);
+}
+
