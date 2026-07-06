@@ -67,23 +67,25 @@
 }
 
 :root {
-  /* Pearl white base, cream + beige surfaces, wine + cherry accents */
-  --pearl: #FDFCF7;                        /* primary background */
-  --paper: #FBF6EA;                        /* soft cream card */
-  --cream: #F5EEDC;                        /* deeper cream */
-  --beige: #E8DFC9;                        /* warm beige */
-  --wine: #6B0F1A;                         /* deep wine, primary accent */
-  --wine-soft: #F1D9DD;                    /* wine wash */
-  --cherry: #C21E38;                       /* cherry red highlight */
-  --blush: #E7B8B8;                        /* soft blush */
-  --blush-soft: #F6E4E1;
-  --rose: #C97A82;                         /* dusty rose */
-  --sage: #A7B79A;                         /* muted sage as tertiary */
-  --teal: #6B7F7A;                         /* muted teal */
+  /* Brighter pearl base + lighter creams; brighter cherry with wine anchor */
+  --pearl: #FEFDFA;                        /* primary background — near-white pearl */
+  --paper: #FBF7EC;                        /* soft cream card */
+  --cream: #F7F1E1;                        /* deeper cream */
+  --beige: #ECE3CE;                        /* warm beige */
+  --wine: #8A1226;                         /* wine — anchor accent */
+  --wine-soft: #FADCE1;                    /* wine wash */
+  --cherry: #E63950;                       /* brighter cherry — primary pop */
+  --cherry-glow: #FF5C74;                  /* light cherry for hover */
+  --blush: #F2C4C4;                        /* soft blush */
+  --blush-soft: #FCEEEB;
+  --rose: #D48891;                         /* dusty rose */
+  --sage: #B6C7A6;                         /* sage tint */
+  --sage-soft: #E4EDD8;
+  --teal: #7B928C;
   --ink: #1A1512;                          /* rich near-black */
-  --stone: #F0E9D7;
-  --stone-2: #E4DAC1;
-  --line: #DDD1B6;
+  --stone: #F4EEDD;
+  --stone-2: #E8DEC5;
+  --line: #E4D9BE;
 
   --background: var(--pearl);
   --foreground: var(--ink);
