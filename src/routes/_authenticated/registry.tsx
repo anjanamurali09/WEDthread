@@ -23,6 +23,40 @@ const COUNTRIES = [
   ["AE", "UAE"], ["AU", "Australia"], ["CA", "Canada"],
 ] as const;
 
+const CURRENCY: Record<string, { code: string; symbol: string; locale: string }> = {
+  US: { code: "USD", symbol: "$",   locale: "en-US" },
+  UK: { code: "GBP", symbol: "£",   locale: "en-GB" },
+  IN: { code: "INR", symbol: "₹",   locale: "en-IN" },
+  AE: { code: "AED", symbol: "AED", locale: "en-AE" },
+  AU: { code: "AUD", symbol: "A$",  locale: "en-AU" },
+  CA: { code: "CAD", symbol: "C$",  locale: "en-CA" },
+};
+
+// Appends Vowzy UTM tracking params to any outbound registry link so we can
+// attribute referral traffic back to the platform.
+function withUtm(rawUrl: string): string {
+  if (!rawUrl) return rawUrl;
+  try {
+    const u = new URL(rawUrl);
+    u.searchParams.set("utm_source", "vowzy");
+    u.searchParams.set("utm_medium", "referral");
+    u.searchParams.set("utm_campaign", "registry");
+    return u.toString();
+  } catch {
+    // Not a valid absolute URL — return untouched so validation happens elsewhere.
+    return rawUrl;
+  }
+}
+
+function formatPrice(cents: number, countryCode: string) {
+  const c = CURRENCY[countryCode] ?? CURRENCY.US;
+  try {
+    return new Intl.NumberFormat(c.locale, { style: "currency", currency: c.code, maximumFractionDigits: 2 }).format(cents / 100);
+  } catch {
+    return `${c.symbol} ${(cents / 100).toFixed(2)}`;
+  }
+}
+
 function RegistryPage() {
   const { data: wedding } = useCurrentWedding();
   const qc = useQueryClient();
@@ -69,7 +103,7 @@ function RegistryPage() {
       const { error } = await supabase.from("registry_items").insert({
         registry_id: registry!.id,
         title: form.title.trim(),
-        product_url: form.product_url || null,
+        product_url: form.product_url ? withUtm(form.product_url) : null,
         retailer: form.retailer || null,
         price_cents: form.price ? Math.round(parseFloat(form.price) * 100) : null,
       });
@@ -152,7 +186,7 @@ function RegistryPage() {
                   <p className="font-serif text-lg truncate">{it.title}</p>
                   <p className="text-xs text-muted-foreground truncate">
                     {it.retailer && <>{it.retailer} · </>}
-                    {it.price_cents && <>${(it.price_cents / 100).toFixed(2)} · </>}
+                    {it.price_cents && <>{formatPrice(it.price_cents, registry.country_code ?? "US")} · </>}
                     {it.product_url && <a href={it.product_url} target="_blank" rel="noreferrer" className="hover:text-cherry underline underline-offset-2">view</a>}
                   </p>
                 </div>
@@ -167,9 +201,13 @@ function RegistryPage() {
           <div className="mt-4 space-y-3">
             <input placeholder="Title (e.g. Le Creuset dutch oven)" value={form.title} onChange={(e) => setForm({ ...form, title: e.target.value })} className="w-full rounded-2xl border border-line bg-pearl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-cherry" />
             <input placeholder="Product URL" value={form.product_url} onChange={(e) => setForm({ ...form, product_url: e.target.value })} className="w-full rounded-2xl border border-line bg-pearl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-cherry" />
+            <p className="text-[10px] text-muted-foreground -mt-1 px-1">We'll auto-add Vowzy referral tags (utm_source=vowzy) so partners can credit sales back to you.</p>
             <div className="grid grid-cols-2 gap-2">
               <input placeholder="Retailer" value={form.retailer} onChange={(e) => setForm({ ...form, retailer: e.target.value })} className="rounded-2xl border border-line bg-pearl px-4 py-2.5 text-sm" />
-              <input placeholder="Price" type="number" step="0.01" value={form.price} onChange={(e) => setForm({ ...form, price: e.target.value })} className="rounded-2xl border border-line bg-pearl px-4 py-2.5 text-sm" />
+              <div className="relative">
+                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-xs text-muted-foreground pointer-events-none">{(CURRENCY[registry.country_code ?? "US"] ?? CURRENCY.US).symbol}</span>
+                <input placeholder="Price" type="number" step="0.01" value={form.price} onChange={(e) => setForm({ ...form, price: e.target.value })} className="w-full rounded-2xl border border-line bg-pearl pl-10 pr-3 py-2.5 text-sm" />
+              </div>
             </div>
             <button onClick={() => addItem.mutate()} disabled={addItem.isPending} className="w-full inline-flex items-center justify-center gap-2 rounded-full bg-wine text-pearl py-2.5 text-sm hover:bg-cherry disabled:opacity-60">
               <Plus className="h-4 w-4" /> Add to registry
