@@ -3,9 +3,10 @@ import { useEffect, useRef, useState } from "react";
 import { Sparkles, ArrowRight, Globe2, Users, Calendar, Utensils, MessageCircle, Grid3x3, Gift, Store } from "lucide-react";
 import { LoginDialog } from "@/components/login-dialog";
 
-// Real, free, high-quality wedding photography (Unsplash). No AI generation.
-const heroImg = "https://images.unsplash.com/photo-1519741497674-611481863552?auto=format&fit=crop&w=1600&q=80";
-const cocktailImg = "https://images.unsplash.com/photo-1464366400600-7168b8af9bc3?auto=format&fit=crop&w=1200&q=80";
+import heroAsset from "@/assets/wedding-c4b5c3dc.jpg.asset.json";
+import cocktailAsset from "@/assets/wedding-8ffa935d.jpg.asset.json";
+const heroImg = heroAsset.url;
+const cocktailImg = cocktailAsset.url;
 
 export const Route = createFileRoute("/")({ component: Landing });
 
