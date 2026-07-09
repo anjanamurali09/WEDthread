@@ -3,33 +3,37 @@ import { Dialog, DialogContent, DialogTitle, DialogDescription } from "@/compone
 import { supabase } from "@/integrations/supabase/client";
 import { lovable } from "@/integrations/lovable/index";
 import { toast } from "sonner";
-import { Sparkles, HeartHandshake, Building2, Store, ShoppingBag, ClipboardList } from "lucide-react";
+import { Sparkles } from "lucide-react";
 import { Link, useNavigate } from "@tanstack/react-router";
+import { ROLE_LANDING, type AppRole } from "@/hooks/use-active-role";
 
-type Role = "couple" | "planner" | "venue" | "vendor" | "seller";
 type Mode = "signin" | "signup";
 
-const LANDING: Record<Role, string> = {
-  couple: "/onboarding",
-  planner: "/dashboard",
-  venue: "/vendors",
-  vendor: "/vendors",
-  seller: "/vendors",
-};
-
-const SIGNIN_ROLES: { role: Role; label: string; icon: any }[] = [
-  { role: "couple", label: "Couple", icon: HeartHandshake },
-  { role: "planner", label: "Planner", icon: ClipboardList },
-  { role: "venue", label: "Venue", icon: Building2 },
-  { role: "vendor", label: "Vendor", icon: Store },
-];
-
-const SIGNUP_ROLES: { role: Role; label: string; desc: string; icon: any }[] = [
-  { role: "couple", label: "Getting married", desc: "Plan ceremonies, guests, seating, and your website.", icon: HeartHandshake },
-  { role: "venue", label: "List a venue", desc: "Reach couples planning a destination wedding.", icon: Building2 },
-  { role: "vendor", label: "List services", desc: "Photographers, planners, mehendi artists, florists.", icon: Store },
-  { role: "seller", label: "Sell items", desc: "Resell décor, dresses, tableware after your day.", icon: ShoppingBag },
-];
+async function routeAfterAuth(navigate: ReturnType<typeof useNavigate>) {
+  const { data: u } = await supabase.auth.getUser();
+  if (!u.user) return;
+  const { data: roles } = await supabase
+    .from("user_roles")
+    .select("role")
+    .eq("user_id", u.user.id);
+  if (!roles || roles.length === 0) {
+    navigate({ to: "/auth/role" as any });
+    return;
+  }
+  const active = roles[0].role as AppRole;
+  window.localStorage.setItem("vowzy.activeRole", active);
+  if (active === "couple") {
+    const { data: w } = await supabase
+      .from("weddings")
+      .select("id")
+      .eq("owner_id", u.user.id)
+      .limit(1)
+      .maybeSingle();
+    navigate({ to: (w ? "/dashboard" : "/onboarding") as any });
+    return;
+  }
+  navigate({ to: ROLE_LANDING[active] as any });
+}
 
 export function LoginDialog({
   open,
@@ -42,25 +46,21 @@ export function LoginDialog({
 }) {
   const navigate = useNavigate();
   const [mode, setMode] = useState<Mode>(initialMode);
-  const [role, setRole] = useState<Role | null>(null);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
 
-  const reset = () => {
-    setRole(null); setEmail(""); setPassword(""); setLoading(false);
-  };
+  const reset = () => { setEmail(""); setPassword(""); setLoading(false); };
   const close = (v: boolean) => { if (!v) reset(); onOpenChange(v); };
 
   const submit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!role) return;
     setLoading(true);
     try {
       if (mode === "signup") {
         const { error } = await supabase.auth.signUp({
           email, password,
-          options: { emailRedirectTo: window.location.origin, data: { signup_role: role } },
+          options: { emailRedirectTo: window.location.origin },
         });
         if (error) throw error;
         toast.success("Account created.");
@@ -69,7 +69,7 @@ export function LoginDialog({
         if (error) throw error;
       }
       close(false);
-      navigate({ to: LANDING[role] as any });
+      await routeAfterAuth(navigate);
     } catch (err: any) {
       toast.error(err.message ?? "Something went wrong");
     } finally {
@@ -86,7 +86,7 @@ export function LoginDialog({
       if (result.error) { toast.error(result.error.message ?? "Google sign-in failed"); return; }
       if (result.redirected) return;
       close(false);
-      navigate({ to: role ? (LANDING[role] as any) : "/dashboard" });
+      await routeAfterAuth(navigate);
     } finally { setLoading(false); }
   };
 
@@ -100,55 +100,37 @@ export function LoginDialog({
               {mode === "signup" ? "Create your account" : "Welcome back"}
             </DialogTitle>
             <DialogDescription className="text-xs text-muted-foreground">
-              {role ? `As a ${role}` : mode === "signup" ? "Choose how you'll use Vowzy" : "Pick your account type"}
+              {mode === "signup" ? "You'll pick your role next" : "Sign in to continue"}
             </DialogDescription>
           </div>
         </div>
 
         <div className="p-6">
-          {!role ? (
-            <div className="grid gap-2.5">
-              {(mode === "signup" ? SIGNUP_ROLES : SIGNIN_ROLES).map(({ role: r, label, icon: Icon, ...rest }: any) => (
-                <button key={r} onClick={() => setRole(r)}
-                  className="group flex items-start gap-3 rounded-2xl border border-line bg-paper p-4 text-left hover:border-cherry hover:bg-blush-soft transition-all hover:-translate-y-0.5">
-                  <span className="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-wine-soft text-wine group-hover:bg-cherry group-hover:text-pearl transition-colors"><Icon className="h-4 w-4" /></span>
-                  <div className="min-w-0">
-                    <p className="font-serif text-lg leading-tight">{label}</p>
-                    {rest.desc && <p className="text-xs text-muted-foreground mt-0.5">{rest.desc}</p>}
-                  </div>
-                </button>
-              ))}
-            </div>
-          ) : (
-            <>
-              <button onClick={() => setRole(null)} className="text-xs text-muted-foreground hover:text-cherry mb-4">← Change account type</button>
-              <button onClick={google} disabled={loading}
-                className="w-full flex items-center justify-center gap-3 rounded-full border border-line py-2.5 text-sm hover:bg-cream disabled:opacity-60 transition-colors">
-                <GoogleIcon /> Continue with Google
-              </button>
-              <div className="my-4 flex items-center gap-3 text-[10px] uppercase tracking-widest text-muted-foreground">
-                <div className="h-px flex-1 bg-line" /> or email <div className="h-px flex-1 bg-line" />
-              </div>
-              <form onSubmit={submit} className="space-y-3">
-                <input required type="email" placeholder="Email" value={email} onChange={(e) => setEmail(e.target.value)}
-                  className="w-full rounded-2xl border border-line bg-pearl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-cherry" />
-                <input required type="password" minLength={6} placeholder="Password" value={password} onChange={(e) => setPassword(e.target.value)}
-                  className="w-full rounded-2xl border border-line bg-pearl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-cherry" />
-                <button disabled={loading}
-                  className="w-full rounded-full bg-cherry text-pearl py-2.5 text-sm font-medium hover:bg-wine disabled:opacity-60 transition-colors">
-                  {loading ? "Please wait…" : mode === "signup" ? "Create account" : "Sign in"}
-                </button>
-              </form>
-              <p className="mt-4 text-xs text-center text-muted-foreground">
-                {mode === "signup" ? "Already have an account?" : "New here?"}{" "}
-                <button onClick={() => { setMode(mode === "signup" ? "signin" : "signup"); setRole(null); }} className="text-cherry underline underline-offset-4">
-                  {mode === "signup" ? "Sign in" : "Create an account"}
-                </button>
-              </p>
-            </>
-          )}
+          <button onClick={google} disabled={loading}
+            className="w-full flex items-center justify-center gap-3 rounded-full border border-line py-2.5 text-sm hover:bg-cream disabled:opacity-60 transition-colors">
+            <GoogleIcon /> Continue with Google
+          </button>
+          <div className="my-4 flex items-center gap-3 text-[10px] uppercase tracking-widest text-muted-foreground">
+            <div className="h-px flex-1 bg-line" /> or email <div className="h-px flex-1 bg-line" />
+          </div>
+          <form onSubmit={submit} className="space-y-3">
+            <input required type="email" placeholder="Email" value={email} onChange={(e) => setEmail(e.target.value)}
+              className="w-full rounded-2xl border border-line bg-pearl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-cherry" />
+            <input required type="password" minLength={6} placeholder="Password" value={password} onChange={(e) => setPassword(e.target.value)}
+              className="w-full rounded-2xl border border-line bg-pearl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-cherry" />
+            <button disabled={loading}
+              className="w-full rounded-full bg-cherry text-pearl py-2.5 text-sm font-medium hover:bg-wine disabled:opacity-60 transition-colors">
+              {loading ? "Please wait…" : mode === "signup" ? "Create account" : "Sign in"}
+            </button>
+          </form>
+          <p className="mt-4 text-xs text-center text-muted-foreground">
+            {mode === "signup" ? "Already have an account?" : "New here?"}{" "}
+            <button onClick={() => setMode(mode === "signup" ? "signin" : "signup")} className="text-cherry underline underline-offset-4">
+              {mode === "signup" ? "Sign in" : "Create an account"}
+            </button>
+          </p>
           <p className="mt-5 text-[11px] text-center text-muted-foreground">
-            Prefer the full page? <Link to="/auth" onClick={() => close(false)} className="underline underline-offset-2 hover:text-cherry">Open sign-in hub</Link>
+            Prefer the full page? <Link to="/auth" onClick={() => close(false)} className="underline underline-offset-2 hover:text-cherry">Open sign-in page</Link>
           </p>
         </div>
       </DialogContent>

@@ -1,7 +1,63 @@
 import { Link, useRouter, useLocation } from "@tanstack/react-router";
 import { useSignOut } from "@/lib/wedding-hooks";
-import { CalendarDays, LayoutDashboard, Users, Grid3x3, MessageCircle, Globe, LogOut, Store, MapPin, Sparkles, Gift } from "lucide-react";
+import { CalendarDays, LayoutDashboard, Users, Grid3x3, MessageCircle, Globe, LogOut, Store, MapPin, Sparkles, Gift, ChevronDown, Plus } from "lucide-react";
 import type { ReactNode } from "react";
+import { useState } from "react";
+import { useActiveRole, type AppRole } from "@/hooks/use-active-role";
+
+const ROLE_LABEL: Record<AppRole, string> = {
+  couple: "Couple", planner: "Planner", venue: "Venue", vendor: "Vendor", seller: "Seller", admin: "Admin",
+};
+
+const ROLE_LANDING_MAP: Record<AppRole, string> = {
+  couple: "/dashboard", planner: "/dashboard", venue: "/vendors", vendor: "/vendors", seller: "/vendors", admin: "/dashboard",
+};
+
+function WorkspaceSwitcher() {
+  const { active, roles, setActive } = useActiveRole();
+  const router = useRouter();
+  const [open, setOpen] = useState(false);
+  if (!active) return null;
+  const others = roles.filter((r) => r !== active);
+  return (
+    <div className="relative mt-4">
+      <button
+        onClick={() => setOpen((v) => !v)}
+        className="w-full flex items-center justify-between gap-2 rounded-2xl border border-line/70 bg-paper px-3 py-2 text-left text-sm hover:border-cherry transition-colors"
+      >
+        <div className="min-w-0">
+          <p className="text-[10px] uppercase tracking-widest text-muted-foreground">Workspace</p>
+          <p className="font-serif text-base truncate">{ROLE_LABEL[active]}</p>
+        </div>
+        <ChevronDown className="h-4 w-4 text-muted-foreground shrink-0" />
+      </button>
+      {open && (
+        <div className="absolute z-20 left-0 right-0 mt-2 rounded-2xl border border-line bg-pearl shadow-lg overflow-hidden">
+          {others.map((r) => (
+            <button
+              key={r}
+              onClick={() => { setActive(r); setOpen(false); router.navigate({ to: ROLE_LANDING_MAP[r] as any }); }}
+              className="w-full px-3 py-2.5 text-sm text-left hover:bg-blush-soft flex items-center justify-between"
+            >
+              <span>{ROLE_LABEL[r]}</span>
+              <span className="text-[10px] uppercase tracking-widest text-muted-foreground">Switch</span>
+            </button>
+          ))}
+          {others.length > 0 && <div className="h-px bg-line/70" />}
+          <Link
+            to="/auth/role"
+            search={{ add: "1" as const }}
+            onClick={() => setOpen(false)}
+            className="w-full px-3 py-2.5 text-sm text-cherry hover:bg-blush-soft flex items-center gap-2"
+          >
+            <Plus className="h-3.5 w-3.5" /> Add another role
+          </Link>
+        </div>
+      )}
+    </div>
+  );
+}
+
 
 const nav = [
   { to: "/dashboard", label: "Overview", icon: LayoutDashboard },
@@ -47,6 +103,7 @@ export function AppShell({ children, title, subtitle, actions, decor }: { childr
             <span className="grid h-9 w-9 place-items-center rounded-full bg-cherry text-pearl transition-all group-hover:rotate-12 group-hover:bg-wine"><Sparkles className="h-4 w-4" /></span>
             <span className="font-serif text-2xl tracking-tight">Vowzy</span>
           </Link>
+          <WorkspaceSwitcher />
         </div>
         <nav className="px-3 flex-1 overflow-y-auto">
           <p className="px-3 pb-2 text-[11px] uppercase tracking-widest text-cherry">Planning</p>
