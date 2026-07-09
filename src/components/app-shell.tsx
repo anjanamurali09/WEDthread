@@ -29,57 +29,79 @@ export function AppShell({ children, title, subtitle, actions }: { children: Rea
   };
 
   return (
-    <div className="min-h-screen bg-paper text-ink flex">
+    <div className="min-h-screen bg-pearl text-ink flex relative overflow-hidden">
+      {/* Ambient curved decorations — same language as the landing page */}
+      <div aria-hidden className="pointer-events-none fixed -top-40 -left-40 h-[420px] w-[420px] blob bg-blush-soft/60 animate-float-slow" />
+      <div aria-hidden className="pointer-events-none fixed top-[40%] -right-56 h-[500px] w-[500px] blob-2 bg-sage-soft/50 animate-float-slow" style={{ animationDelay: "-3s" }} />
+      <div aria-hidden className="pointer-events-none fixed bottom-[-200px] left-[10%] h-[360px] w-[360px] blob bg-wine-soft/50 animate-float-slow" style={{ animationDelay: "-6s" }} />
+
       {/* Sidebar */}
-      <aside className="hidden md:flex md:w-64 lg:w-72 shrink-0 flex-col border-r border-line bg-paper sticky top-0 h-screen">
+      <aside className="relative z-10 hidden md:flex md:w-64 lg:w-72 shrink-0 flex-col border-r border-line/60 bg-pearl/70 backdrop-blur-sm sticky top-0 h-screen">
         <div className="px-6 pt-8 pb-6">
-          <Link to="/dashboard" className="flex items-center gap-2">
-            <span className="grid h-9 w-9 place-items-center rounded-full bg-clay text-paper"><Sparkles className="h-4 w-4" /></span>
+          <Link to="/dashboard" className="flex items-center gap-2 group">
+            <span className="grid h-9 w-9 place-items-center rounded-full bg-cherry text-pearl transition-all group-hover:rotate-12 group-hover:bg-wine"><Sparkles className="h-4 w-4" /></span>
             <span className="font-serif text-2xl tracking-tight">Vowzy</span>
           </Link>
         </div>
         <nav className="px-3 flex-1 overflow-y-auto">
-          <p className="px-3 pb-2 text-[11px] uppercase tracking-widest text-muted-foreground">Planning</p>
+          <p className="px-3 pb-2 text-[11px] uppercase tracking-widest text-cherry">Planning</p>
           {nav.map(({ to, label, icon: Icon }) => {
             const active = pathname === to || pathname.startsWith(to + "/");
             return (
-              <Link key={to} to={to} className={`flex items-center gap-3 rounded-2xl px-3 py-2.5 text-sm transition-colors ${active ? "bg-stone text-ink font-medium" : "text-ink/70 hover:bg-stone/60"}`}>
+              <Link key={to} to={to}
+                className={`flex items-center gap-3 rounded-full px-4 py-2.5 text-sm transition-all ${
+                  active
+                    ? "bg-cherry text-pearl font-medium shadow-md"
+                    : "text-ink/70 hover:bg-blush-soft/70 hover:text-cherry hover:translate-x-1"
+                }`}>
                 <Icon className="h-4 w-4" /> {label}
               </Link>
             );
           })}
-          <p className="mt-6 px-3 pb-2 text-[11px] uppercase tracking-widest text-muted-foreground">Discover</p>
+          <p className="mt-6 px-3 pb-2 text-[11px] uppercase tracking-widest text-cherry">Discover</p>
           {discover.map(({ to, label, icon: Icon }) => {
             const active = pathname === to || pathname.startsWith(to + "/");
             return (
-              <Link key={to} to={to} className={`flex items-center gap-3 rounded-2xl px-3 py-2.5 text-sm transition-colors ${active ? "bg-stone text-ink font-medium" : "text-ink/70 hover:bg-stone/60"}`}>
+              <Link key={to} to={to}
+                className={`flex items-center gap-3 rounded-full px-4 py-2.5 text-sm transition-all ${
+                  active
+                    ? "bg-cherry text-pearl font-medium shadow-md"
+                    : "text-ink/70 hover:bg-blush-soft/70 hover:text-cherry hover:translate-x-1"
+                }`}>
                 <Icon className="h-4 w-4" /> {label}
               </Link>
             );
           })}
         </nav>
-        <div className="p-3 border-t border-line">
-          <button onClick={onSignOut} className="flex w-full items-center gap-3 rounded-2xl px-3 py-2.5 text-sm text-ink/70 hover:bg-stone/60">
+        <div className="p-3 border-t border-line/60">
+          <button onClick={onSignOut} className="flex w-full items-center gap-3 rounded-full px-4 py-2.5 text-sm text-ink/70 hover:bg-wine-soft hover:text-wine transition-all">
             <LogOut className="h-4 w-4" /> Sign out
           </button>
         </div>
       </aside>
 
-      <main className="flex-1 min-w-0">
+      <main className="relative z-10 flex-1 min-w-0">
         {/* Top mobile bar */}
-        <div className="md:hidden flex items-center justify-between px-4 py-3 border-b border-line">
+        <div className="md:hidden flex items-center justify-between px-4 py-3 border-b border-line/60 bg-pearl/70 backdrop-blur-sm">
           <Link to="/dashboard" className="flex items-center gap-2">
-            <span className="grid h-8 w-8 place-items-center rounded-full bg-clay text-paper"><Sparkles className="h-3.5 w-3.5" /></span>
+            <span className="grid h-8 w-8 place-items-center rounded-full bg-cherry text-pearl"><Sparkles className="h-3.5 w-3.5" /></span>
             <span className="font-serif text-xl">Vowzy</span>
           </Link>
-          <button onClick={onSignOut} className="text-xs text-muted-foreground">Sign out</button>
+          <button onClick={onSignOut} className="text-xs text-cherry">Sign out</button>
         </div>
 
         {(title || actions) && (
           <header className="px-4 md:px-10 pt-8 md:pt-12 pb-6 flex flex-wrap items-end justify-between gap-4">
             <div>
-              {title && <h1 className="font-serif text-3xl md:text-5xl text-ink">{title}</h1>}
-              {subtitle && <p className="mt-2 text-sm text-muted-foreground max-w-2xl">{subtitle}</p>}
+              {title && (
+                <>
+                  <p className="text-[11px] uppercase tracking-[0.25em] text-cherry inline-flex items-center gap-2 mb-2">
+                    <span className="h-px w-8 bg-cherry" /> Vowzy
+                  </p>
+                  <h1 className="font-serif text-3xl md:text-5xl text-ink leading-[0.95]">{title}</h1>
+                </>
+              )}
+              {subtitle && <p className="mt-3 text-sm text-ink/70 max-w-2xl">{subtitle}</p>}
             </div>
             {actions}
           </header>
@@ -88,11 +110,11 @@ export function AppShell({ children, title, subtitle, actions }: { children: Rea
         <div className="px-4 md:px-10 pb-16">{children}</div>
 
         {/* Mobile bottom nav */}
-        <nav className="md:hidden fixed bottom-0 inset-x-0 border-t border-line bg-paper flex justify-around py-2">
+        <nav className="md:hidden fixed bottom-0 inset-x-0 border-t border-line/60 bg-pearl/95 backdrop-blur-sm flex justify-around py-2 z-20">
           {nav.slice(0, 5).map(({ to, label, icon: Icon }) => {
             const active = pathname === to;
             return (
-              <Link key={to} to={to} className={`flex flex-col items-center gap-0.5 px-3 py-1 text-[10px] ${active ? "text-clay" : "text-ink/60"}`}>
+              <Link key={to} to={to} className={`flex flex-col items-center gap-0.5 px-3 py-1 text-[10px] transition-colors ${active ? "text-cherry" : "text-ink/60 hover:text-cherry"}`}>
                 <Icon className="h-4 w-4" />{label}
               </Link>
             );
