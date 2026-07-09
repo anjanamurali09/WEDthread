@@ -201,7 +201,7 @@ function RegistryPage() {
           <div className="mt-4 space-y-3">
             <input placeholder="Title (e.g. Le Creuset dutch oven)" value={form.title} onChange={(e) => setForm({ ...form, title: e.target.value })} className="w-full rounded-2xl border border-line bg-pearl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-cherry" />
             <input placeholder="Product URL" value={form.product_url} onChange={(e) => setForm({ ...form, product_url: e.target.value })} className="w-full rounded-2xl border border-line bg-pearl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-cherry" />
-            <p className="text-[10px] text-muted-foreground -mt-1 px-1">We'll auto-add Vowzy referral tags (utm_source=vowzy) so partners can credit sales back to you.</p>
+            
             <div className="grid grid-cols-2 gap-2">
               <input placeholder="Retailer" value={form.retailer} onChange={(e) => setForm({ ...form, retailer: e.target.value })} className="rounded-2xl border border-line bg-pearl px-4 py-2.5 text-sm" />
               <div className="relative">
