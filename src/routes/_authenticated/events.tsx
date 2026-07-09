@@ -4,9 +4,10 @@ import { AppShell } from "@/components/app-shell";
 import { useCurrentWedding, useEvents, useInvalidateWedding, type Event } from "@/lib/wedding-hooks";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-import { Plus, Trash2, X, CalendarDays, CalendarIcon } from "lucide-react";
+import { Plus, Trash2, X, CalendarDays } from "lucide-react";
 import { DatePicker } from "@/components/ui/datepicker";
 import { cn } from "@/lib/utils";
+
 
 
 
