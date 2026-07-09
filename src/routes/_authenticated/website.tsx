@@ -5,7 +5,8 @@ import { useCurrentWedding, useInvalidateWedding } from "@/lib/wedding-hooks";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { Copy, Check, ExternalLink, Pencil } from "lucide-react";
-import { TEMPLATES, getTemplate } from "@/lib/website-templates";
+import { TEMPLATES } from "@/lib/website-templates";
+import { TemplatePreview } from "@/components/template-preview";
 
 export const Route = createFileRoute("/_authenticated/website")({ component: WebsitePage });
 
@@ -67,21 +68,9 @@ function WebsitePage() {
         {TEMPLATES.map((t) => {
           const active = activeId === t.id;
           return (
-            <div key={t.id} className={`paper-card p-5 transition-shadow hover:shadow-md ${active ? "ring-2 ring-wine" : ""}`}>
-              <button onClick={() => setTemplate(t.id)} className="w-full text-left">
-                <div className="aspect-[4/3] rounded-2xl overflow-hidden flex flex-col justify-center items-center p-6" style={{ background: t.palette.bg }}>
-                  <p className="text-[9px] tracking-[0.3em] uppercase" style={{ color: t.palette.accent }}>together</p>
-                  <p className="mt-2 text-center" style={{ fontFamily: `"${t.fonts.display}", serif`, color: t.palette.ink, fontSize: 26, lineHeight: 1.1 }}>
-                    {wedding.partner_a || "Partner A"}
-                    <br /><span style={{ color: t.palette.accent }}>&</span><br />
-                    {wedding.partner_b || "Partner B"}
-                  </p>
-                  <div className="mt-3 flex gap-1">
-                    {[t.palette.ink, t.palette.accent, t.palette.soft].map((c) => (
-                      <span key={c} className="h-2 w-6 rounded-full" style={{ background: c }} />
-                    ))}
-                  </div>
-                </div>
+            <div key={t.id} className={`paper-card p-4 transition-all hover:-translate-y-1 hover:shadow-xl ${active ? "ring-2 ring-cherry" : ""}`}>
+              <button onClick={() => setTemplate(t.id)} className="w-full text-left rounded-2xl overflow-hidden block">
+                <TemplatePreview t={t} names={{ a: wedding.partner_a || "Aanya", b: wedding.partner_b || "Rahul" }} />
               </button>
               <div className="mt-4 flex items-start justify-between gap-3">
                 <div className="min-w-0">

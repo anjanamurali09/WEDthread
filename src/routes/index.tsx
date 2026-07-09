@@ -96,9 +96,9 @@ function Landing() {
 
         <div className="lg:col-span-6 relative" data-reveal>
           <div className="relative overflow-hidden shadow-2xl blob-2 group">
-            <img src={heroImg} alt="Warm golden-hour destination wedding table setting with terracotta and blush florals under string lights"
-              className="w-full h-[560px] object-cover transition-transform duration-[1200ms] group-hover:scale-105"
-              width={1600} height={1280} />
+            <img src={heroImg} alt="Bride and groom overlooking the water beneath a garden arch — a Vowzy destination wedding"
+              className="w-full h-[560px] object-cover object-[center_75%] transition-transform duration-[1200ms] group-hover:scale-105"
+              width={1600} height={1280} loading="eager" decoding="async" />
             <div className="absolute inset-0 bg-gradient-to-t from-ink/30 via-transparent to-transparent" />
           </div>
           <div className="hidden md:block absolute -bottom-6 -left-6 paper-card p-5 rotate-[-2deg] max-w-[260px] bg-paper transition-transform hover:rotate-0 hover:-translate-y-1">
