@@ -123,7 +123,6 @@ function EventDialog({ event, onClose, onSave }: { event: Partial<Event>; onClos
   const validate = (next: Partial<Event>) => {
     const e: Record<string, string> = {};
     if (!next.name || !next.name.trim()) e.name = "Please enter an event name.";
-    if (!next.event_date) e.event_date = "Please select a date.";
     setErrors(e);
     return Object.keys(e).length === 0;
   };
@@ -136,7 +135,7 @@ function EventDialog({ event, onClose, onSave }: { event: Partial<Event>; onClos
 
   const submit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setTouched({ name: true, event_date: true });
+    setTouched({ name: true });
     if (!validate(form)) return;
     setSaving(true);
     await onSave(form);
@@ -152,7 +151,7 @@ function EventDialog({ event, onClose, onSave }: { event: Partial<Event>; onClos
         </div>
         <form noValidate onSubmit={submit} className="mt-6 space-y-4">
           <div>
-            <F label="Name" required value={form.name ?? ""} onChange={(v) => setField("name", v)} placeholder="e.g. Sangeet" error={touched.name ? errors.name : undefined} />
+            <F label="Name of event" required value={form.name ?? ""} onChange={(v) => setField("name", v)} placeholder="e.g. Sangeet" error={touched.name ? errors.name : undefined} />
             <div className="mt-2 flex flex-wrap gap-1.5">
               {SUGGESTIONS.map((s) => (
                 <button type="button" key={s} onClick={() => setField("name", s)} className="text-[11px] rounded-full border border-line px-2.5 py-0.5 hover:bg-stone text-muted-foreground">{s}</button>
@@ -161,14 +160,13 @@ function EventDialog({ event, onClose, onSave }: { event: Partial<Event>; onClos
           </div>
           <div>
             <label className="block text-xs uppercase tracking-widest text-muted-foreground">
-              Date <span className="text-cherry">*</span>
+              Date
             </label>
             <div className="mt-1">
               <DatePicker
                 value={form.event_date ?? ""}
                 onChange={(v) => setField("event_date", v)}
                 placeholder="Pick a date"
-                required
                 className={touched.event_date && errors.event_date ? "border-cherry ring-1 ring-cherry" : ""}
               />
             </div>
@@ -177,8 +175,8 @@ function EventDialog({ event, onClose, onSave }: { event: Partial<Event>; onClos
             )}
           </div>
           <div className="grid grid-cols-2 gap-3">
-            <F label="Start time (optional)" type="time" value={form.event_time ?? ""} onChange={(v) => setField("event_time", v)} />
-            <F label="End time (optional)" type="time" value={(form as any).event_end_time ?? ""} onChange={(v) => setField("event_end_time" as any, v)} />
+            <F label="Start time" type="time" value={form.event_time ?? ""} onChange={(v) => setField("event_time", v)} />
+            <F label="End time" type="time" value={(form as any).event_end_time ?? ""} onChange={(v) => setField("event_end_time" as any, v)} />
           </div>
           <F label="Venue name" value={form.venue_name ?? ""} onChange={(v) => setField("venue_name", v)} placeholder="e.g. Jag Mandir" />
           <F label="Address" value={form.address ?? ""} onChange={(v) => setField("address", v)} />

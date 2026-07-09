@@ -230,7 +230,7 @@ function SendDialog({ template, guests, events, invites, wedding, onClose }: any
           <button onClick={onClose}><X className="h-4 w-4" /></button>
         </div>
 
-        <label className="block mt-6"><span className="text-xs uppercase tracking-widest text-muted-foreground">Filter by event (optional)</span>
+        <label className="block mt-6"><span className="text-xs uppercase tracking-widest text-muted-foreground">Filter by event</span>
           <select value={eventId} onChange={(e) => { setEventId(e.target.value); setSelected(new Set()); }} className="mt-1 w-full rounded-2xl border border-line px-4 py-3 text-sm bg-paper">
             <option value="">All guests with a phone number</option>
             {events.map((e: any) => <option key={e.id} value={e.id}>{e.name}, invitees</option>)}

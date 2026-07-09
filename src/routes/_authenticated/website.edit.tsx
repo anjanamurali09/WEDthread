@@ -393,7 +393,7 @@ function SectionFields({ section, setField }: { section: Section; setField: (k: 
       return (
         <>
           <div>{label("Quote")}<textarea rows={3} className={inp} value={c.text ?? ""} onChange={(e) => setField("text", e.target.value)} /></div>
-          <div>{label("Author (optional)")}<input className={inp} value={c.author ?? ""} onChange={(e) => setField("author", e.target.value)} /></div>
+          <div>{label("Author")}<input className={inp} value={c.author ?? ""} onChange={(e) => setField("author", e.target.value)} /></div>
         </>
       );
     default:
