@@ -95,7 +95,7 @@ function Field({ label, value, onChange, type = "text", required, placeholder }:
 }) {
   return (
     <label className="block">
-      <span className="text-xs uppercase tracking-widest text-muted-foreground">{label}</span>
+      <span className="text-xs uppercase tracking-widest text-muted-foreground">{label}{required && <span className="text-cherry ml-0.5">*</span>}</span>
       <input type={type} required={required} placeholder={placeholder} value={value} onChange={(e) => onChange(e.target.value)}
         className="mt-1 w-full rounded-2xl border border-line bg-paper px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-clay" />
     </label>
