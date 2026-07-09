@@ -1,11 +1,13 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { AppShell } from "@/components/app-shell";
 import { useCurrentWedding } from "@/lib/wedding-hooks";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useServerFn } from "@tanstack/react-start";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-import { ExternalLink, Plus, Trash2, Globe2 } from "lucide-react";
+import { ExternalLink, Plus, Trash2, Globe2, Share2, Copy, Check, MessageCircle, Loader2, ImageOff, X } from "lucide-react";
+import { fetchProductPreview } from "@/lib/product-preview.functions";
 
 export const Route = createFileRoute("/_authenticated/registry")({ component: RegistryPage });
 
@@ -32,8 +34,6 @@ const CURRENCY: Record<string, { code: string; symbol: string; locale: string }>
   CA: { code: "CAD", symbol: "C$",  locale: "en-CA" },
 };
 
-// Appends Vowzy UTM tracking params to any outbound registry link so we can
-// attribute referral traffic back to the platform.
 function withUtm(rawUrl: string): string {
   if (!rawUrl) return rawUrl;
   try {
@@ -42,10 +42,7 @@ function withUtm(rawUrl: string): string {
     u.searchParams.set("utm_medium", "referral");
     u.searchParams.set("utm_campaign", "registry");
     return u.toString();
-  } catch {
-    // Not a valid absolute URL — return untouched so validation happens elsewhere.
-    return rawUrl;
-  }
+  } catch { return rawUrl; }
 }
 
 function formatPrice(cents: number, countryCode: string) {
@@ -60,6 +57,8 @@ function formatPrice(cents: number, countryCode: string) {
 function RegistryPage() {
   const { data: wedding } = useCurrentWedding();
   const qc = useQueryClient();
+  const preview = useServerFn(fetchProductPreview);
+  const [shareOpen, setShareOpen] = useState(false);
 
   const { data: registry } = useQuery({
     queryKey: ["registry", wedding?.id],
@@ -95,7 +94,34 @@ function RegistryPage() {
     onSuccess: () => qc.invalidateQueries({ queryKey: ["registry", wedding?.id] }),
   });
 
-  const [form, setForm] = useState({ title: "", product_url: "", price: "", retailer: "" });
+  const [form, setForm] = useState({ title: "", product_url: "", price: "", retailer: "", image_url: "" });
+  const [fetching, setFetching] = useState(false);
+  const [autoFilled, setAutoFilled] = useState(false);
+
+  // Auto-fetch preview when URL looks valid
+  useEffect(() => {
+    const url = form.product_url.trim();
+    if (!url || !/^https?:\/\//i.test(url)) { setAutoFilled(false); return; }
+    let cancelled = false;
+    setFetching(true);
+    const t = setTimeout(async () => {
+      try {
+        const p = await preview({ data: { url } });
+        if (cancelled) return;
+        setForm((f) => ({
+          ...f,
+          title: f.title || p.title || "",
+          image_url: f.image_url || p.image || "",
+          retailer: f.retailer || p.retailer || "",
+          price: f.price || (p.price ? String(p.price) : ""),
+        }));
+        setAutoFilled(!!(p.title || p.image));
+      } catch { /* silent */ }
+      finally { if (!cancelled) setFetching(false); }
+    }, 500);
+    return () => { cancelled = true; clearTimeout(t); setFetching(false); };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [form.product_url]);
 
   const addItem = useMutation({
     mutationFn: async () => {
@@ -105,11 +131,17 @@ function RegistryPage() {
         title: form.title.trim(),
         product_url: form.product_url ? withUtm(form.product_url) : null,
         retailer: form.retailer || null,
+        image_url: form.image_url || null,
         price_cents: form.price ? Math.round(parseFloat(form.price) * 100) : null,
       });
       if (error) throw error;
     },
-    onSuccess: () => { qc.invalidateQueries({ queryKey: ["registry-items", registry?.id] }); setForm({ title: "", product_url: "", price: "", retailer: "" }); toast.success("Added"); },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["registry-items", registry?.id] });
+      setForm({ title: "", product_url: "", price: "", retailer: "", image_url: "" });
+      setAutoFilled(false);
+      toast.success("Added");
+    },
     onError: (e: any) => toast.error(e.message),
   });
 
@@ -142,9 +174,21 @@ function RegistryPage() {
   }
 
   const sites = COUNTRY_SITES[registry.country_code ?? "US"] ?? [];
+  const shareUrl = typeof window !== "undefined" ? `${window.location.origin}/w/${wedding.slug}/registry` : "";
 
   return (
-    <AppShell title="Registry" subtitle="Add items from any retailer. Guests browse and reserve from your wedding site.">
+    <AppShell title="Registry" subtitle="Paste any product link — we'll grab the photo, title and price automatically.">
+      {/* Share bar */}
+      <div className="paper-card p-4 md:p-5 mb-6 flex items-center justify-between gap-4 flex-wrap">
+        <div className="min-w-0">
+          <p className="text-[11px] uppercase tracking-widest text-cherry">Your registry link</p>
+          <p className="mt-1 font-mono text-xs md:text-sm truncate">{shareUrl || `…/w/${wedding.slug}/registry`}</p>
+        </div>
+        <button onClick={() => setShareOpen(true)} className="inline-flex items-center gap-2 rounded-full bg-wine text-pearl px-5 py-2.5 text-sm hover:bg-cherry transition-colors">
+          <Share2 className="h-4 w-4" /> Share
+        </button>
+      </div>
+
       <div className="grid lg:grid-cols-3 gap-6">
         <section className="lg:col-span-2 space-y-6">
           <div className="paper-card p-6">
@@ -174,23 +218,38 @@ function RegistryPage() {
             )}
           </div>
 
-          <div className="space-y-3">
+          <div className="grid sm:grid-cols-2 gap-3">
             {items.length === 0 ? (
-              <div className="rounded-3xl border border-dashed border-line p-12 text-center">
+              <div className="sm:col-span-2 rounded-3xl border border-dashed border-line p-12 text-center">
                 <p className="font-serif text-xl">No items yet</p>
-                <p className="text-sm text-muted-foreground mt-1">Add your first gift on the right.</p>
+                <p className="text-sm text-muted-foreground mt-1">Paste a product link on the right — the photo appears automatically.</p>
               </div>
             ) : items.map((it: any) => (
-              <div key={it.id} className="paper-card p-4 flex items-center gap-4">
-                <div className="flex-1 min-w-0">
-                  <p className="font-serif text-lg truncate">{it.title}</p>
-                  <p className="text-xs text-muted-foreground truncate">
-                    {it.retailer && <>{it.retailer} · </>}
-                    {it.price_cents && <>{formatPrice(it.price_cents, registry.country_code ?? "US")} · </>}
-                    {it.product_url && <a href={it.product_url} target="_blank" rel="noreferrer" className="hover:text-cherry underline underline-offset-2">view</a>}
-                  </p>
+              <div key={it.id} className="paper-card overflow-hidden group relative flex flex-col">
+                <div className="aspect-[4/3] bg-pearl border-b border-line overflow-hidden">
+                  {it.image_url ? (
+                    <img src={it.image_url} alt={it.title} loading="lazy" className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" onError={(e) => { (e.currentTarget as HTMLImageElement).style.display = "none"; }} />
+                  ) : (
+                    <div className="w-full h-full grid place-items-center text-muted-foreground/40">
+                      <ImageOff className="h-8 w-8" />
+                    </div>
+                  )}
                 </div>
-                <button onClick={() => removeItem.mutate(it.id)} className="text-muted-foreground hover:text-cherry"><Trash2 className="h-4 w-4" /></button>
+                <div className="p-4 flex-1 flex flex-col">
+                  <p className="font-serif text-lg leading-snug line-clamp-2">{it.title}</p>
+                  <p className="mt-1 text-xs text-muted-foreground truncate">
+                    {it.retailer && <>{it.retailer}</>}
+                    {it.price_cents && <> · <span className="text-wine font-medium">{formatPrice(it.price_cents, registry.country_code ?? "US")}</span></>}
+                  </p>
+                  {it.product_url && (
+                    <a href={it.product_url} target="_blank" rel="noreferrer" className="mt-3 inline-flex items-center gap-1 text-xs text-cherry hover:underline underline-offset-2">
+                      View product <ExternalLink className="h-3 w-3" />
+                    </a>
+                  )}
+                </div>
+                <button onClick={() => removeItem.mutate(it.id)} className="absolute top-2 right-2 rounded-full bg-pearl/90 backdrop-blur p-1.5 opacity-0 group-hover:opacity-100 transition-opacity text-muted-foreground hover:text-cherry">
+                  <Trash2 className="h-3.5 w-3.5" />
+                </button>
               </div>
             ))}
           </div>
@@ -198,10 +257,25 @@ function RegistryPage() {
 
         <aside className="paper-card p-6 h-fit lg:sticky lg:top-6">
           <h3 className="font-serif text-xl">Add item</h3>
+          <p className="mt-1 text-xs text-muted-foreground">Paste a product URL — photo and details auto-fill.</p>
           <div className="mt-4 space-y-3">
-            <input placeholder="Title (e.g. Le Creuset dutch oven)" value={form.title} onChange={(e) => setForm({ ...form, title: e.target.value })} className="w-full rounded-2xl border border-line bg-pearl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-cherry" />
-            <input placeholder="Product URL" value={form.product_url} onChange={(e) => setForm({ ...form, product_url: e.target.value })} className="w-full rounded-2xl border border-line bg-pearl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-cherry" />
-            
+            <div className="relative">
+              <input placeholder="Product URL (paste here first)" value={form.product_url} onChange={(e) => setForm({ ...form, product_url: e.target.value })} className="w-full rounded-2xl border border-line bg-pearl px-4 py-2.5 pr-10 text-sm focus:outline-none focus:ring-2 focus:ring-cherry" />
+              {fetching && <Loader2 className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 animate-spin text-cherry" />}
+              {!fetching && autoFilled && <Check className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-emerald-600" />}
+            </div>
+
+            {form.image_url && (
+              <div className="relative rounded-2xl overflow-hidden border border-line bg-pearl">
+                <img src={form.image_url} alt="preview" className="w-full h-40 object-cover" onError={() => setForm((f) => ({ ...f, image_url: "" }))} />
+                <button onClick={() => setForm({ ...form, image_url: "" })} className="absolute top-2 right-2 rounded-full bg-pearl/90 p-1 text-muted-foreground hover:text-cherry">
+                  <X className="h-3.5 w-3.5" />
+                </button>
+              </div>
+            )}
+
+            <input placeholder="Title" value={form.title} onChange={(e) => setForm({ ...form, title: e.target.value })} className="w-full rounded-2xl border border-line bg-pearl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-cherry" />
+
             <div className="grid grid-cols-2 gap-2">
               <input placeholder="Retailer" value={form.retailer} onChange={(e) => setForm({ ...form, retailer: e.target.value })} className="rounded-2xl border border-line bg-pearl px-4 py-2.5 text-sm" />
               <div className="relative">
@@ -215,6 +289,47 @@ function RegistryPage() {
           </div>
         </aside>
       </div>
+
+      {shareOpen && <ShareDialog url={shareUrl} wedding={wedding} onClose={() => setShareOpen(false)} />}
     </AppShell>
+  );
+}
+
+function ShareDialog({ url, wedding, onClose }: { url: string; wedding: any; onClose: () => void }) {
+  const [copied, setCopied] = useState(false);
+  const message = `We've made a wedding registry! Take a look 💛\n${wedding.partner_a} & ${wedding.partner_b}\n${url}`;
+  const waHref = `https://wa.me/?text=${encodeURIComponent(message)}`;
+  const qrSrc = `https://api.qrserver.com/v1/create-qr-code/?size=280x280&data=${encodeURIComponent(url)}`;
+
+  const copy = async () => { await navigator.clipboard.writeText(url); setCopied(true); setTimeout(() => setCopied(false), 1500); };
+
+  return (
+    <div className="fixed inset-0 z-50 grid place-items-center bg-ink/40 backdrop-blur-sm p-4" onClick={onClose}>
+      <div className="paper-card w-full max-w-md p-6 relative" onClick={(e) => e.stopPropagation()}>
+        <button onClick={onClose} className="absolute top-3 right-3 text-muted-foreground hover:text-cherry"><X className="h-4 w-4" /></button>
+        <p className="text-[11px] uppercase tracking-widest text-cherry">Share registry</p>
+        <h3 className="mt-1 font-serif text-2xl">Send it to your guests</h3>
+
+        <div className="mt-5 flex items-center gap-2 rounded-full border border-line bg-pearl p-1 pl-4">
+          <span className="flex-1 truncate font-mono text-xs">{url}</span>
+          <button onClick={copy} className="inline-flex items-center gap-1.5 rounded-full bg-wine text-pearl px-4 py-2 text-xs hover:bg-cherry">
+            {copied ? <><Check className="h-3.5 w-3.5" /> Copied</> : <><Copy className="h-3.5 w-3.5" /> Copy</>}
+          </button>
+        </div>
+
+        <a href={waHref} target="_blank" rel="noreferrer" className="mt-3 flex items-center justify-center gap-2 rounded-full bg-[#25D366] text-white py-3 text-sm hover:opacity-90">
+          <MessageCircle className="h-4 w-4" /> Share on WhatsApp
+        </a>
+
+        <div className="mt-5 pt-5 border-t border-line">
+          <p className="text-[11px] uppercase tracking-widest text-muted-foreground text-center">Or scan the QR code</p>
+          <div className="mt-3 grid place-items-center">
+            <img src={qrSrc} alt="Registry QR code" width={200} height={200} className="rounded-2xl border border-line" />
+          </div>
+        </div>
+
+        <p className="mt-5 text-[11px] text-muted-foreground text-center">Your registry is public — anyone with this link can view it. It also appears on your wedding site.</p>
+      </div>
+    </div>
   );
 }
