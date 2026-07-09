@@ -30,7 +30,7 @@ function PublicRegistry() {
 
   useEffect(() => {
     (async () => {
-      const { data: w } = await supabase.from("weddings").select("id, partner_a, partner_b, slug, wedding_date").eq("slug", slug).maybeSingle();
+      const { data: w } = await supabase.from("weddings").select("id, partner_a, partner_b, slug").eq("slug", slug).maybeSingle();
       if (!w) { setLoading(false); return; }
       setWedding(w);
       const { data: r } = await supabase.from("registries").select("*").eq("wedding_id", w.id).eq("is_public", true).maybeSingle();
