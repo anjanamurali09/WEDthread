@@ -18,7 +18,7 @@ const discover = [
   { to: "/vendors", label: "Vendors", icon: Store },
 ] as const;
 
-export function AppShell({ children, title, subtitle, actions }: { children: ReactNode; title?: string; subtitle?: string; actions?: ReactNode }) {
+export function AppShell({ children, title, subtitle, actions, decor }: { children: ReactNode; title?: string; subtitle?: string; actions?: ReactNode; decor?: ReactNode }) {
   const router = useRouter();
   const { pathname } = useLocation();
   const signOut = useSignOut();
@@ -30,10 +30,15 @@ export function AppShell({ children, title, subtitle, actions }: { children: Rea
 
   return (
     <div className="min-h-screen bg-pearl text-ink flex relative overflow-hidden">
-      {/* Ambient curved decorations — same language as the landing page */}
-      <div aria-hidden className="pointer-events-none fixed -top-40 -left-40 h-[420px] w-[420px] blob bg-blush-soft/60 animate-float-slow" />
-      <div aria-hidden className="pointer-events-none fixed top-[40%] -right-56 h-[500px] w-[500px] blob-2 bg-sage-soft/50 animate-float-slow" style={{ animationDelay: "-3s" }} />
-      <div aria-hidden className="pointer-events-none fixed bottom-[-200px] left-[10%] h-[360px] w-[360px] blob bg-wine-soft/50 animate-float-slow" style={{ animationDelay: "-6s" }} />
+      {/* Ambient decorations — page can override via `decor` prop */}
+      {decor ?? (
+        <>
+          <div aria-hidden className="pointer-events-none fixed -top-40 -left-40 h-[420px] w-[420px] blob bg-blush-soft/60 animate-float-slow" />
+          <div aria-hidden className="pointer-events-none fixed top-[40%] -right-56 h-[500px] w-[500px] blob-2 bg-sage-soft/50 animate-float-slow" style={{ animationDelay: "-3s" }} />
+          <div aria-hidden className="pointer-events-none fixed bottom-[-200px] left-[10%] h-[360px] w-[360px] blob bg-wine-soft/50 animate-float-slow" style={{ animationDelay: "-6s" }} />
+        </>
+      )}
+
 
       {/* Sidebar */}
       <aside className="relative z-10 hidden md:flex md:w-64 lg:w-72 shrink-0 flex-col border-r border-line/60 bg-pearl/70 backdrop-blur-sm sticky top-0 h-screen">
