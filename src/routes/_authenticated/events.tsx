@@ -175,8 +175,8 @@ function EventDialog({ event, onClose, onSave }: { event: Partial<Event>; onClos
             )}
           </div>
           <div className="grid grid-cols-2 gap-3">
-            <F label="Start time (optional)" type="time" value={form.event_time ?? ""} onChange={(v) => setField("event_time", v)} />
-            <F label="End time (optional)" type="time" value={(form as any).event_end_time ?? ""} onChange={(v) => setField("event_end_time" as any, v)} />
+            <F label="Start time" type="time" value={form.event_time ?? ""} onChange={(v) => setField("event_time", v)} />
+            <F label="End time" type="time" value={(form as any).event_end_time ?? ""} onChange={(v) => setField("event_end_time" as any, v)} />
           </div>
           <F label="Venue name" value={form.venue_name ?? ""} onChange={(v) => setField("venue_name", v)} placeholder="e.g. Jag Mandir" />
           <F label="Address" value={form.address ?? ""} onChange={(v) => setField("address", v)} />
