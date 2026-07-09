@@ -20,10 +20,13 @@ export type SectionDef = {
   defaultContent: Record<string, any>;
 };
 
+export type TemplateLayout = "arch" | "split" | "banner" | "stack" | "frame" | "gradient" | "dark" | "editorial" | "monogram" | "polaroid";
+
 export type Template = {
   id: string;
   name: string;
   desc: string;
+  layout: TemplateLayout;
   palette: { bg: string; ink: string; accent: string; soft: string };
   fonts: { display: string; body: string };
   sections: SectionType[];
