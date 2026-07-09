@@ -51,7 +51,13 @@ function Onboarding() {
     } finally { setSaving(false); }
   };
 
-  if (isLoading) return <div className="min-h-screen grid place-items-center bg-paper"><p className="text-muted-foreground text-sm">Loading…</p></div>;
+  // Stay on the loading screen while the wedding lookup is in flight AND
+  // while a redirect to /dashboard is queued (wedding present). Rendering the
+  // form only when we're sure there's nothing to redirect to avoids the
+  // "empty form flashes for a second" glitch on returning sign-ins.
+  if (isLoading || wedding) {
+    return <div className="min-h-screen grid place-items-center bg-pearl"><p className="text-muted-foreground text-sm">Loading your wedding…</p></div>;
+  }
 
   return (
     <div className="min-h-screen bg-paper flex items-center justify-center px-6 py-16">

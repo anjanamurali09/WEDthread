@@ -40,22 +40,42 @@ function RoleAuthPage() {
   const [loading, setLoading] = useState(false);
   const roleInfo = ROLES[role as Role] ?? ROLES.couple;
 
+  // Couples land on /dashboard when they already have a wedding, /onboarding
+  // otherwise. Resolving that here (instead of always sending them to
+  // /onboarding) prevents the onboarding form from flashing for a beat before
+  // it self-redirects to /dashboard.
+  const routeAfterAuth = async (userId: string) => {
+    if (role === "couple") {
+      const { data } = await supabase
+        .from("weddings")
+        .select("id")
+        .eq("owner_id", userId)
+        .limit(1)
+        .maybeSingle();
+      navigate({ to: (data ? "/dashboard" : "/onboarding") as any, replace: true });
+      return;
+    }
+    navigate({ to: roleInfo.landing as any, replace: true });
+  };
+
   const onEmail = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
     try {
       if (mode === "signup") {
-        const { error } = await supabase.auth.signUp({
+        const { data, error } = await supabase.auth.signUp({
           email, password,
           options: { emailRedirectTo: window.location.origin, data: { signup_role: role } },
         });
         if (error) throw error;
         toast.success("Account created.");
-        navigate({ to: roleInfo.landing as any });
+        if (data.user) await routeAfterAuth(data.user.id);
+        else navigate({ to: roleInfo.landing as any, replace: true });
       } else {
-        const { error } = await supabase.auth.signInWithPassword({ email, password });
+        const { data, error } = await supabase.auth.signInWithPassword({ email, password });
         if (error) throw error;
-        navigate({ to: roleInfo.landing as any });
+        if (data.user) await routeAfterAuth(data.user.id);
+        else navigate({ to: roleInfo.landing as any, replace: true });
       }
     } catch (err: any) {
       toast.error(err.message ?? "Something went wrong");
