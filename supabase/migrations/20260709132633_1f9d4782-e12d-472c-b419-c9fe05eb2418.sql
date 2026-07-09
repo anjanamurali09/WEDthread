@@ -1,0 +1,1 @@
+DROP POLICY IF EXISTS "wedding public read via public registry" ON public.weddings;
