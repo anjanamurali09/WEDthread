@@ -103,6 +103,7 @@ export function AppShell({ children, title, subtitle, actions, decor }: { childr
             <span className="grid h-9 w-9 place-items-center rounded-full bg-cherry text-pearl transition-all group-hover:rotate-12 group-hover:bg-wine"><Sparkles className="h-4 w-4" /></span>
             <span className="font-serif text-2xl tracking-tight">Vowzy</span>
           </Link>
+          <WorkspaceSwitcher />
         </div>
         <nav className="px-3 flex-1 overflow-y-auto">
           <p className="px-3 pb-2 text-[11px] uppercase tracking-widest text-cherry">Planning</p>
