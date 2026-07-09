@@ -218,3 +218,32 @@
   box-shadow: 0 30px 60px -30px rgb(230 57 80 / 0.35);
 }
 
+/* Global subtle interactivity on clickable elements.
+   Uses :where() for zero specificity so component styles always win.
+   Excludes disabled, form inputs, and elements opting out via [data-static]. */
+:where(a[href], button, [role="button"], summary):not(:disabled):not([data-static]) {
+  transition: transform 220ms cubic-bezier(.22,.61,.36,1),
+              box-shadow 220ms ease,
+              background-color 220ms ease,
+              color 220ms ease,
+              border-color 220ms ease,
+              filter 220ms ease;
+}
+:where(a[href], button, [role="button"], summary):not(:disabled):not([data-static]):hover {
+  transform: translateY(-1px);
+  box-shadow: 0 6px 18px -10px rgb(138 18 38 / 0.35);
+}
+:where(a[href], button, [role="button"], summary):not(:disabled):not([data-static]):active {
+  transform: translateY(0);
+  filter: brightness(0.98);
+}
+
+/* Floating decorative animations with varied timing */
+@keyframes float-a { 0%,100% { transform: translate3d(0,0,0) rotate(-6deg); } 50% { transform: translate3d(0,-22px,0) rotate(2deg); } }
+@keyframes float-b { 0%,100% { transform: translate3d(0,0,0) rotate(8deg); }  50% { transform: translate3d(0,-14px,0) rotate(-4deg); } }
+@keyframes float-c { 0%,100% { transform: translate3d(0,0,0) rotate(-3deg); } 50% { transform: translate3d(0,-28px,0) rotate(6deg); } }
+.float-a { animation: float-a 10s ease-in-out infinite; }
+.float-b { animation: float-b 12s ease-in-out infinite; }
+.float-c { animation: float-c 14s ease-in-out infinite; }
+
+
