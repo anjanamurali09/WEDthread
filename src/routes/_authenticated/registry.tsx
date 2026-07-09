@@ -1,6 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useState, useEffect } from "react";
 import { AppShell } from "@/components/app-shell";
+import { GiftBoxDecor } from "@/components/gift-box-decor";
 import { useCurrentWedding } from "@/lib/wedding-hooks";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
@@ -151,12 +152,12 @@ function RegistryPage() {
   });
 
   if (!wedding) {
-    return <AppShell title="Registry"><p className="text-sm text-muted-foreground">Finish onboarding first to create a registry.</p></AppShell>;
+    return <AppShell title="Registry" decor={<GiftBoxDecor />}><p className="text-sm text-muted-foreground">Finish onboarding first to create a registry.</p></AppShell>;
   }
 
   if (!registry) {
     return (
-      <AppShell title="Registry" subtitle="Curate a gift list from retailers in your country. One link, shared with guests.">
+      <AppShell title="Registry" subtitle="Curate a gift list from retailers in your country. One link, shared with guests." decor={<GiftBoxDecor />}>
         <div className="paper-card p-8 max-w-2xl">
           <h2 className="font-serif text-2xl">Where do most of your guests shop?</h2>
           <p className="mt-2 text-sm text-muted-foreground">Pick your country to see suggested retailers. You can change this later.</p>
@@ -177,7 +178,7 @@ function RegistryPage() {
   const shareUrl = typeof window !== "undefined" ? `${window.location.origin}/w/${wedding.slug}/registry` : "";
 
   return (
-    <AppShell title="Registry" subtitle="Paste any product link — we'll grab the photo, title and price automatically.">
+    <AppShell title="Registry" subtitle="Paste any product link — we'll grab the photo, title and price automatically." decor={<GiftBoxDecor />}>
       {/* Share bar */}
       <div className="paper-card p-4 md:p-5 mb-6 flex items-center justify-between gap-4 flex-wrap">
         <div className="min-w-0">
