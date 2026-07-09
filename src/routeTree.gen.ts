@@ -14,6 +14,7 @@ import { Route as AuthenticatedRouteRouteImport } from './routes/_authenticated/
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as WSlugRouteImport } from './routes/w.$slug'
 import { Route as RsvpTokenRouteImport } from './routes/rsvp.$token'
+import { Route as AuthRoleRouteImport } from './routes/auth.role'
 import { Route as AuthRoleRouteImport } from './routes/auth.$role'
 import { Route as AuthenticatedWebsiteRouteImport } from './routes/_authenticated/website'
 import { Route as AuthenticatedVenuesRouteImport } from './routes/_authenticated/venues'
@@ -51,6 +52,11 @@ const RsvpTokenRoute = RsvpTokenRouteImport.update({
   id: '/rsvp/$token',
   path: '/rsvp/$token',
   getParentRoute: () => rootRouteImport,
+} as any)
+const AuthRoleRoute = AuthRoleRouteImport.update({
+  id: '/role',
+  path: '/role',
+  getParentRoute: () => AuthRoute,
 } as any)
 const AuthRoleRoute = AuthRoleRouteImport.update({
   id: '/$role',
@@ -133,6 +139,7 @@ export interface FileRoutesByFullPath {
   '/venues': typeof AuthenticatedVenuesRoute
   '/website': typeof AuthenticatedWebsiteRouteWithChildren
   '/auth/$role': typeof AuthRoleRoute
+  '/auth/role': typeof AuthRoleRoute
   '/rsvp/$token': typeof RsvpTokenRoute
   '/w/$slug': typeof WSlugRouteWithChildren
   '/website/edit': typeof AuthenticatedWebsiteEditRoute
@@ -152,6 +159,7 @@ export interface FileRoutesByTo {
   '/venues': typeof AuthenticatedVenuesRoute
   '/website': typeof AuthenticatedWebsiteRouteWithChildren
   '/auth/$role': typeof AuthRoleRoute
+  '/auth/role': typeof AuthRoleRoute
   '/rsvp/$token': typeof RsvpTokenRoute
   '/w/$slug': typeof WSlugRouteWithChildren
   '/website/edit': typeof AuthenticatedWebsiteEditRoute
@@ -173,6 +181,7 @@ export interface FileRoutesById {
   '/_authenticated/venues': typeof AuthenticatedVenuesRoute
   '/_authenticated/website': typeof AuthenticatedWebsiteRouteWithChildren
   '/auth/$role': typeof AuthRoleRoute
+  '/auth/role': typeof AuthRoleRoute
   '/rsvp/$token': typeof RsvpTokenRoute
   '/w/$slug': typeof WSlugRouteWithChildren
   '/_authenticated/website/edit': typeof AuthenticatedWebsiteEditRoute
@@ -194,6 +203,7 @@ export interface FileRouteTypes {
     | '/venues'
     | '/website'
     | '/auth/$role'
+    | '/auth/role'
     | '/rsvp/$token'
     | '/w/$slug'
     | '/website/edit'
@@ -213,6 +223,7 @@ export interface FileRouteTypes {
     | '/venues'
     | '/website'
     | '/auth/$role'
+    | '/auth/role'
     | '/rsvp/$token'
     | '/w/$slug'
     | '/website/edit'
@@ -233,6 +244,7 @@ export interface FileRouteTypes {
     | '/_authenticated/venues'
     | '/_authenticated/website'
     | '/auth/$role'
+    | '/auth/role'
     | '/rsvp/$token'
     | '/w/$slug'
     | '/_authenticated/website/edit'
@@ -283,6 +295,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/rsvp/$token'
       preLoaderRoute: typeof RsvpTokenRouteImport
       parentRoute: typeof rootRouteImport
+    }
+    '/auth/role': {
+      id: '/auth/role'
+      path: '/role'
+      fullPath: '/auth/role'
+      preLoaderRoute: typeof AuthRoleRouteImport
+      parentRoute: typeof AuthRoute
     }
     '/auth/$role': {
       id: '/auth/$role'
@@ -420,9 +439,11 @@ const AuthenticatedRouteRouteWithChildren =
 
 interface AuthRouteChildren {
   AuthRoleRoute: typeof AuthRoleRoute
+  AuthRoleRoute: typeof AuthRoleRoute
 }
 
 const AuthRouteChildren: AuthRouteChildren = {
+  AuthRoleRoute: AuthRoleRoute,
   AuthRoleRoute: AuthRoleRoute,
 }
 
