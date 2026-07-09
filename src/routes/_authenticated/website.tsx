@@ -5,7 +5,8 @@ import { useCurrentWedding, useInvalidateWedding } from "@/lib/wedding-hooks";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { Copy, Check, ExternalLink, Pencil } from "lucide-react";
-import { TEMPLATES, getTemplate } from "@/lib/website-templates";
+import { TEMPLATES } from "@/lib/website-templates";
+import { TemplatePreview } from "@/components/template-preview";
 
 export const Route = createFileRoute("/_authenticated/website")({ component: WebsitePage });
 
