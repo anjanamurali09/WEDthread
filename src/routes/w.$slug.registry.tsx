@@ -63,11 +63,6 @@ function PublicRegistry() {
         <h1 className="mt-6 font-serif" style={{ fontSize: "clamp(2.5rem, 6vw, 4.5rem)", lineHeight: 1 }}>
           {wedding.partner_a} <span className="text-wine italic">&</span> {wedding.partner_b}
         </h1>
-        {wedding.wedding_date && (
-          <p className="mt-4 text-sm text-muted-foreground">
-            {new Date(wedding.wedding_date).toLocaleDateString(undefined, { weekday: "long", month: "long", day: "numeric", year: "numeric" })}
-          </p>
-        )}
         <p className="mt-6 max-w-xl mx-auto text-sm text-muted-foreground">
           Your presence is the greatest gift — but if you'd like to celebrate with something more, here are a few things we've been dreaming of.
         </p>
