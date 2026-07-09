@@ -151,7 +151,7 @@ function EventDialog({ event, onClose, onSave }: { event: Partial<Event>; onClos
         </div>
         <form noValidate onSubmit={submit} className="mt-6 space-y-4">
           <div>
-            <F label="Name" required value={form.name ?? ""} onChange={(v) => setField("name", v)} placeholder="e.g. Sangeet" error={touched.name ? errors.name : undefined} />
+            <F label="Name of event" required value={form.name ?? ""} onChange={(v) => setField("name", v)} placeholder="e.g. Sangeet" error={touched.name ? errors.name : undefined} />
             <div className="mt-2 flex flex-wrap gap-1.5">
               {SUGGESTIONS.map((s) => (
                 <button type="button" key={s} onClick={() => setField("name", s)} className="text-[11px] rounded-full border border-line px-2.5 py-0.5 hover:bg-stone text-muted-foreground">{s}</button>
@@ -160,14 +160,13 @@ function EventDialog({ event, onClose, onSave }: { event: Partial<Event>; onClos
           </div>
           <div>
             <label className="block text-xs uppercase tracking-widest text-muted-foreground">
-              Date <span className="text-cherry">*</span>
+              Date
             </label>
             <div className="mt-1">
               <DatePicker
                 value={form.event_date ?? ""}
                 onChange={(v) => setField("event_date", v)}
                 placeholder="Pick a date"
-                required
                 className={touched.event_date && errors.event_date ? "border-cherry ring-1 ring-cherry" : ""}
               />
             </div>
