@@ -123,7 +123,6 @@ function EventDialog({ event, onClose, onSave }: { event: Partial<Event>; onClos
   const validate = (next: Partial<Event>) => {
     const e: Record<string, string> = {};
     if (!next.name || !next.name.trim()) e.name = "Please enter an event name.";
-    if (!next.event_date) e.event_date = "Please select a date.";
     setErrors(e);
     return Object.keys(e).length === 0;
   };
