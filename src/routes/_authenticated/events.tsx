@@ -6,6 +6,8 @@ import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { Plus, Trash2, X, CalendarDays, CalendarIcon } from "lucide-react";
 import { DatePicker } from "@/components/ui/datepicker";
+import { cn } from "@/lib/utils";
+
 
 
 export const Route = createFileRoute("/_authenticated/events")({ component: EventsPage });
