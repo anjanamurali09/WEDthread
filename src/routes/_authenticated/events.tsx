@@ -135,7 +135,7 @@ function EventDialog({ event, onClose, onSave }: { event: Partial<Event>; onClos
 
   const submit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setTouched({ name: true, event_date: true });
+    setTouched({ name: true });
     if (!validate(form)) return;
     setSaving(true);
     await onSave(form);
