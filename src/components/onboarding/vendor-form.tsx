@@ -2,7 +2,8 @@ import { useEffect, useMemo, useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-import { CheckCircle2, Loader2 } from "lucide-react";
+import { CheckCircle2, Check, Loader2 } from "lucide-react";
+import { useOnboardingDraft } from "@/hooks/use-onboarding-draft";
 
 const CURRENCIES = ["AED", "USD", "INR", "GBP", "EUR", "SAR", "PKR", "SGD", "LKR", "BDT", "AUD", "CAD"];
 const PRICE_TIERS = [1, 2, 3, 4, 5];
@@ -51,6 +52,9 @@ export function VendorOnboardingForm() {
   const tier1 = useMemo(() => cats.filter((c) => c.parent_id === null), [cats]);
   const tier2 = useMemo(() => cats.filter((c) => c.parent_id === form.category_id), [cats, form.category_id]);
 
+  const { hydrated: draftHydrated, initial: draftInitial, saving: autoSaving, savedAt, markCompleted } =
+    useOnboardingDraft<any>("vendor", form, { enabled: !existing });
+
   useEffect(() => {
     if (existing) {
       setForm((f: any) => ({
@@ -61,8 +65,11 @@ export function VendorOnboardingForm() {
         countries_served: existing.countries_served ?? [],
         years_in_business: existing.years_in_business ?? "",
       }));
+    } else if (draftHydrated && draftInitial && Object.keys(draftInitial).length > 0) {
+      setForm((f: any) => ({ ...f, ...draftInitial }));
     }
-  }, [existing]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [existing, draftHydrated]);
 
   const set = (k: string, v: any) => setForm((f: any) => ({ ...f, [k]: v }));
 
@@ -105,6 +112,7 @@ export function VendorOnboardingForm() {
         if (error) throw error;
       }
       qc.invalidateQueries({ queryKey: ["my-vendor"] });
+      await markCompleted();
       toast.success(publish ? "Submitted for review." : "Saved.");
     } catch (e: any) {
       toast.error(e.message);
@@ -132,6 +140,13 @@ export function VendorOnboardingForm() {
 
   return (
     <div className="space-y-6 max-w-3xl">
+      {!existing && (
+        <div className="text-xs text-muted-foreground inline-flex items-center gap-1.5">
+          {autoSaving ? (<><Loader2 className="h-3 w-3 animate-spin" /> Saving draft…</>)
+            : savedAt ? (<><Check className="h-3 w-3 text-clay" /> Draft saved</>)
+            : "Autosaves as you type"}
+        </div>
+      )}
       {status && (
         <div className={`rounded-2xl px-4 py-3 text-sm inline-flex items-center gap-2 ${
           status === "approved" ? "bg-sage-soft text-ink" : status === "rejected" ? "bg-wine-soft text-wine" : "bg-blush-soft text-cherry"

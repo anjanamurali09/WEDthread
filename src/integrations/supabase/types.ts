@@ -482,11 +482,43 @@ export type Database = {
           },
         ]
       }
+      onboarding_drafts: {
+        Row: {
+          completed_at: string | null
+          created_at: string
+          data: Json
+          id: string
+          role: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          completed_at?: string | null
+          created_at?: string
+          data?: Json
+          id?: string
+          role: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          completed_at?: string | null
+          created_at?: string
+          data?: Json
+          id?: string
+          role?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           avatar_url: string | null
           created_at: string
           display_name: string | null
+          onboarding_completed_at: string | null
+          onboarding_completed_roles: string[]
           updated_at: string
           user_id: string
         }
@@ -494,6 +526,8 @@ export type Database = {
           avatar_url?: string | null
           created_at?: string
           display_name?: string | null
+          onboarding_completed_at?: string | null
+          onboarding_completed_roles?: string[]
           updated_at?: string
           user_id: string
         }
@@ -501,6 +535,8 @@ export type Database = {
           avatar_url?: string | null
           created_at?: string
           display_name?: string | null
+          onboarding_completed_at?: string | null
+          onboarding_completed_roles?: string[]
           updated_at?: string
           user_id?: string
         }

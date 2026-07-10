@@ -2,8 +2,9 @@ import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useCurrentWedding } from "@/lib/wedding-hooks";
+import { useOnboardingDraft } from "@/hooks/use-onboarding-draft";
 import { toast } from "sonner";
-import { Sparkles, ArrowRight } from "lucide-react";
+import { Sparkles, ArrowRight, Check, Loader2 } from "lucide-react";
 
 export const Route = createFileRoute("/_authenticated/onboarding")({ component: Onboarding });
 
@@ -22,6 +23,16 @@ function Onboarding() {
     est_guest_count: 100,
   });
   const [saving, setSaving] = useState(false);
+  const { hydrated, initial, saving: autoSaving, savedAt, markCompleted } =
+    useOnboardingDraft<typeof form>("couple", form, { enabled: !wedding });
+
+  // Rehydrate form from any saved draft the first time it loads.
+  useEffect(() => {
+    if (hydrated && initial && Object.keys(initial).length > 0) {
+      setForm((f) => ({ ...f, ...initial }));
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [hydrated]);
 
   useEffect(() => {
     if (wedding) navigate({ to: "/dashboard", replace: true });
@@ -44,6 +55,7 @@ function Onboarding() {
         slug,
       });
       if (error) throw error;
+      await markCompleted();
       toast.success("Wedding created. Let's add your events.");
       navigate({ to: "/events" });
     } catch (err: any) {
@@ -55,7 +67,7 @@ function Onboarding() {
   // while a redirect to /dashboard is queued (wedding present). Rendering the
   // form only when we're sure there's nothing to redirect to avoids the
   // "empty form flashes for a second" glitch on returning sign-ins.
-  if (isLoading || wedding) {
+  if (isLoading || wedding || !hydrated) {
     return <div className="min-h-screen grid place-items-center bg-pearl"><p className="text-muted-foreground text-sm">Loading your wedding…</p></div>;
   }
 
@@ -81,9 +93,16 @@ function Onboarding() {
           </div>
           <Field label="Estimated guest count" type="number" value={String(form.est_guest_count)} onChange={(v) => setForm({ ...form, est_guest_count: Number(v) || 0 })} />
 
-          <button disabled={saving} className="mt-4 inline-flex justify-center items-center gap-2 rounded-full bg-ink text-paper px-8 py-3.5 text-sm font-medium hover:bg-clay disabled:opacity-60 self-start">
-            {saving ? "Creating…" : (<>Continue <ArrowRight className="h-4 w-4" /></>)}
-          </button>
+          <div className="flex items-center gap-4 mt-4">
+            <button disabled={saving} className="inline-flex justify-center items-center gap-2 rounded-full bg-ink text-paper px-8 py-3.5 text-sm font-medium hover:bg-clay disabled:opacity-60">
+              {saving ? "Creating…" : (<>Continue <ArrowRight className="h-4 w-4" /></>)}
+            </button>
+            <span className="text-xs text-muted-foreground inline-flex items-center gap-1.5">
+              {autoSaving ? (<><Loader2 className="h-3 w-3 animate-spin" /> Saving…</>)
+                : savedAt ? (<><Check className="h-3 w-3 text-clay" /> Draft saved</>)
+                : "Autosaves as you type"}
+            </span>
+          </div>
         </form>
       </div>
     </div>

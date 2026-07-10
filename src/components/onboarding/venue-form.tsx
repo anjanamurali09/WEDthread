@@ -2,7 +2,8 @@ import { useEffect, useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-import { CheckCircle2, Loader2 } from "lucide-react";
+import { CheckCircle2, Check, Loader2 } from "lucide-react";
+import { useOnboardingDraft } from "@/hooks/use-onboarding-draft";
 
 const CURRENCIES = ["AED", "USD", "INR", "GBP", "EUR", "SAR", "PKR", "SGD", "LKR", "BDT", "AUD", "CAD"];
 const PRICE_TIERS = [1, 2, 3, 4, 5];
@@ -40,6 +41,9 @@ export function VenueOnboardingForm() {
     },
   });
 
+  const { hydrated: draftHydrated, initial: draftInitial, saving: autoSaving, savedAt, markCompleted } =
+    useOnboardingDraft<any>("venue", form, { enabled: !existing });
+
   useEffect(() => {
     if (existing) {
       setForm((f: any) => ({
@@ -50,8 +54,11 @@ export function VenueOnboardingForm() {
         capacity_seated: existing.capacity_seated ?? "",
         capacity_standing: existing.capacity_standing ?? "",
       }));
+    } else if (draftHydrated && draftInitial && Object.keys(draftInitial).length > 0) {
+      setForm((f: any) => ({ ...f, ...draftInitial }));
     }
-  }, [existing]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [existing, draftHydrated]);
 
   const set = (k: string, v: any) => setForm((f: any) => ({ ...f, [k]: v }));
   const toggle = (k: string, v: string) => set(k, form[k].includes(v) ? form[k].filter((x: string) => x !== v) : [...form[k], v]);
@@ -100,6 +107,7 @@ export function VenueOnboardingForm() {
         if (error) throw error;
       }
       qc.invalidateQueries({ queryKey: ["my-venue"] });
+      await markCompleted();
       toast.success("Saved. Awaiting review.");
     } catch (e: any) { toast.error(e.message); } finally { setSaving(false); }
   };
@@ -108,6 +116,13 @@ export function VenueOnboardingForm() {
 
   return (
     <div className="space-y-6 max-w-3xl">
+      {!existing && (
+        <div className="text-xs text-muted-foreground inline-flex items-center gap-1.5">
+          {autoSaving ? (<><Loader2 className="h-3 w-3 animate-spin" /> Saving draft…</>)
+            : savedAt ? (<><Check className="h-3 w-3 text-clay" /> Draft saved</>)
+            : "Autosaves as you type"}
+        </div>
+      )}
       {status && (
         <div className={`rounded-2xl px-4 py-3 text-sm inline-flex items-center gap-2 ${
           status === "approved" ? "bg-sage-soft text-ink" : status === "rejected" ? "bg-wine-soft text-wine" : "bg-blush-soft text-cherry"
