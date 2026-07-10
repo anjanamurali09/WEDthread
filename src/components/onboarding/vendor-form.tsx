@@ -52,6 +52,9 @@ export function VendorOnboardingForm() {
   const tier1 = useMemo(() => cats.filter((c) => c.parent_id === null), [cats]);
   const tier2 = useMemo(() => cats.filter((c) => c.parent_id === form.category_id), [cats, form.category_id]);
 
+  const { hydrated: draftHydrated, initial: draftInitial, saving: autoSaving, savedAt, markCompleted } =
+    useOnboardingDraft<any>("vendor", form, { enabled: !existing });
+
   useEffect(() => {
     if (existing) {
       setForm((f: any) => ({
@@ -62,8 +65,11 @@ export function VendorOnboardingForm() {
         countries_served: existing.countries_served ?? [],
         years_in_business: existing.years_in_business ?? "",
       }));
+    } else if (draftHydrated && draftInitial && Object.keys(draftInitial).length > 0) {
+      setForm((f: any) => ({ ...f, ...draftInitial }));
     }
-  }, [existing]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [existing, draftHydrated]);
 
   const set = (k: string, v: any) => setForm((f: any) => ({ ...f, [k]: v }));
 
