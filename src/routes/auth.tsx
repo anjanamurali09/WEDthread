@@ -68,11 +68,11 @@ function AuthPage() {
         });
         if (error) throw error;
         toast.success("Account created.");
-        await routeAfterAuth(navigate);
+        await routeAfterSignUp(navigate);
       } else {
         const { error } = await supabase.auth.signInWithPassword({ email, password });
         if (error) throw error;
-        await routeAfterAuth(navigate);
+        await routeAfterSignIn(navigate);
       }
     } catch (err: any) {
       toast.error(err.message ?? "Something went wrong");
