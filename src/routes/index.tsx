@@ -44,7 +44,6 @@ function Landing() {
       {/* Nav */}
       <header className="relative z-20 px-6 md:px-12 py-6 flex items-center justify-between">
         <Link to="/" className="flex items-center gap-2 group">
-          <span className="grid h-9 w-9 place-items-center rounded-full bg-cherry text-pearl transition-all group-hover:rotate-12 group-hover:bg-wine"><Sparkles className="h-4 w-4" /></span>
           <span className="font-serif text-3xl">Vowzy</span>
         </Link>
         <nav className="hidden md:flex items-center gap-8 text-sm text-ink/70">
