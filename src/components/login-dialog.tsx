@@ -89,18 +89,14 @@ export function LoginDialog({
   const google = async () => {
     setLoading(true);
     try {
+      try { window.sessionStorage.setItem("vowzy.authIntent", mode); } catch {}
       const result = await lovable.auth.signInWithOAuth("google", {
-        redirect_uri: window.location.origin + "/auth",
+        redirect_uri: window.location.origin + "/auth/callback",
       });
       if (result.error) { toast.error(result.error.message ?? "Google sign-in failed"); return; }
       if (result.redirected) return;
       close(false);
-      const { data: u } = await supabase.auth.getUser();
-      if (u.user) {
-        const { data: roles } = await supabase.from("user_roles").select("role").eq("user_id", u.user.id);
-        if (!roles || roles.length === 0) await routeAfterSignUp(navigate);
-        else await routeAfterSignIn(navigate);
-      }
+      navigate({ to: "/auth/callback" as any });
     } finally { setLoading(false); }
   };
 

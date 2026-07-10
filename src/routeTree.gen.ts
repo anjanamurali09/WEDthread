@@ -15,6 +15,7 @@ import { Route as IndexRouteImport } from './routes/index'
 import { Route as WSlugRouteImport } from './routes/w.$slug'
 import { Route as RsvpTokenRouteImport } from './routes/rsvp.$token'
 import { Route as AuthRoleRouteImport } from './routes/auth.role'
+import { Route as AuthCallbackRouteImport } from './routes/auth.callback'
 import { Route as AuthenticatedWebsiteRouteImport } from './routes/_authenticated/website'
 import { Route as AuthenticatedVenuesRouteImport } from './routes/_authenticated/venues'
 import { Route as AuthenticatedVendorsRouteImport } from './routes/_authenticated/vendors'
@@ -56,6 +57,11 @@ const RsvpTokenRoute = RsvpTokenRouteImport.update({
 const AuthRoleRoute = AuthRoleRouteImport.update({
   id: '/role',
   path: '/role',
+  getParentRoute: () => AuthRoute,
+} as any)
+const AuthCallbackRoute = AuthCallbackRouteImport.update({
+  id: '/callback',
+  path: '/callback',
   getParentRoute: () => AuthRoute,
 } as any)
 const AuthenticatedWebsiteRoute = AuthenticatedWebsiteRouteImport.update({
@@ -139,6 +145,7 @@ export interface FileRoutesByFullPath {
   '/vendors': typeof AuthenticatedVendorsRoute
   '/venues': typeof AuthenticatedVenuesRoute
   '/website': typeof AuthenticatedWebsiteRouteWithChildren
+  '/auth/callback': typeof AuthCallbackRoute
   '/auth/role': typeof AuthRoleRoute
   '/rsvp/$token': typeof RsvpTokenRoute
   '/w/$slug': typeof WSlugRouteWithChildren
@@ -159,6 +166,7 @@ export interface FileRoutesByTo {
   '/vendors': typeof AuthenticatedVendorsRoute
   '/venues': typeof AuthenticatedVenuesRoute
   '/website': typeof AuthenticatedWebsiteRouteWithChildren
+  '/auth/callback': typeof AuthCallbackRoute
   '/auth/role': typeof AuthRoleRoute
   '/rsvp/$token': typeof RsvpTokenRoute
   '/w/$slug': typeof WSlugRouteWithChildren
@@ -181,6 +189,7 @@ export interface FileRoutesById {
   '/_authenticated/vendors': typeof AuthenticatedVendorsRoute
   '/_authenticated/venues': typeof AuthenticatedVenuesRoute
   '/_authenticated/website': typeof AuthenticatedWebsiteRouteWithChildren
+  '/auth/callback': typeof AuthCallbackRoute
   '/auth/role': typeof AuthRoleRoute
   '/rsvp/$token': typeof RsvpTokenRoute
   '/w/$slug': typeof WSlugRouteWithChildren
@@ -203,6 +212,7 @@ export interface FileRouteTypes {
     | '/vendors'
     | '/venues'
     | '/website'
+    | '/auth/callback'
     | '/auth/role'
     | '/rsvp/$token'
     | '/w/$slug'
@@ -223,6 +233,7 @@ export interface FileRouteTypes {
     | '/vendors'
     | '/venues'
     | '/website'
+    | '/auth/callback'
     | '/auth/role'
     | '/rsvp/$token'
     | '/w/$slug'
@@ -244,6 +255,7 @@ export interface FileRouteTypes {
     | '/_authenticated/vendors'
     | '/_authenticated/venues'
     | '/_authenticated/website'
+    | '/auth/callback'
     | '/auth/role'
     | '/rsvp/$token'
     | '/w/$slug'
@@ -301,6 +313,13 @@ declare module '@tanstack/react-router' {
       path: '/role'
       fullPath: '/auth/role'
       preLoaderRoute: typeof AuthRoleRouteImport
+      parentRoute: typeof AuthRoute
+    }
+    '/auth/callback': {
+      id: '/auth/callback'
+      path: '/callback'
+      fullPath: '/auth/callback'
+      preLoaderRoute: typeof AuthCallbackRouteImport
       parentRoute: typeof AuthRoute
     }
     '/_authenticated/website': {
@@ -440,10 +459,12 @@ const AuthenticatedRouteRouteWithChildren =
   AuthenticatedRouteRoute._addFileChildren(AuthenticatedRouteRouteChildren)
 
 interface AuthRouteChildren {
+  AuthCallbackRoute: typeof AuthCallbackRoute
   AuthRoleRoute: typeof AuthRoleRoute
 }
 
 const AuthRouteChildren: AuthRouteChildren = {
+  AuthCallbackRoute: AuthCallbackRoute,
   AuthRoleRoute: AuthRoleRoute,
 }
 

@@ -1,5 +1,5 @@
 import { createFileRoute, useNavigate, Link } from "@tanstack/react-router";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { lovable } from "@/integrations/lovable/index";
 import { toast } from "sonner";
@@ -57,6 +57,17 @@ function AuthPage() {
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
 
+  // If already signed in, don't render the "Welcome back" hero — route onward.
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      const { data } = await supabase.auth.getUser();
+      if (cancelled || !data.user) return;
+      navigate({ to: "/auth/callback" as any, replace: true });
+    })();
+    return () => { cancelled = true; };
+  }, [navigate]);
+
   const onEmail = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
@@ -84,18 +95,13 @@ function AuthPage() {
   const onGoogle = async () => {
     setLoading(true);
     try {
+      try { window.sessionStorage.setItem("vowzy.authIntent", mode); } catch {}
       const result = await lovable.auth.signInWithOAuth("google", {
-        redirect_uri: window.location.origin + "/auth",
+        redirect_uri: window.location.origin + "/auth/callback",
       });
       if (result.error) { toast.error(result.error.message ?? "Google sign-in failed"); return; }
       if (result.redirected) return;
-      // Google: existing users go straight in; brand-new users pick a role.
-      const { data: u } = await supabase.auth.getUser();
-      if (u.user) {
-        const { data: roles } = await supabase.from("user_roles").select("role").eq("user_id", u.user.id);
-        if (!roles || roles.length === 0) await routeAfterSignUp(navigate);
-        else await routeAfterSignIn(navigate);
-      }
+      navigate({ to: "/auth/callback" as any, replace: true });
     } catch (err: any) {
       toast.error(err.message ?? "Google sign-in failed");
     } finally {
