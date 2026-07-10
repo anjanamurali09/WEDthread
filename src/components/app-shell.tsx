@@ -1,6 +1,6 @@
 import { Link, useRouter, useLocation } from "@tanstack/react-router";
 import { useSignOut } from "@/lib/wedding-hooks";
-import { CalendarDays, LayoutDashboard, Users, Grid3x3, MessageCircle, Globe, LogOut, Store, MapPin, Sparkles, Gift, ChevronDown, Plus } from "lucide-react";
+import { CalendarDays, LayoutDashboard, Users, Grid3x3, MessageCircle, Globe, LogOut, Store, MapPin, Sparkles, Gift, ChevronDown, Plus, Inbox } from "lucide-react";
 import type { ReactNode } from "react";
 import { useState } from "react";
 import { useActiveRole, type AppRole } from "@/hooks/use-active-role";
@@ -61,15 +61,38 @@ function WorkspaceSwitcher() {
 
 
 
-const nav = [
-  { to: "/dashboard", label: "Overview", icon: LayoutDashboard },
-  { to: "/events", label: "Events", icon: CalendarDays },
-  { to: "/guests", label: "Guests", icon: Users },
-  { to: "/seating", label: "Seating", icon: Grid3x3 },
-  { to: "/registry", label: "Registry", icon: Gift },
-  { to: "/messages", label: "Messages", icon: MessageCircle },
-  { to: "/website", label: "Website", icon: Globe },
-] as const;
+const NAV_BY_ROLE: Record<AppRole, ReadonlyArray<{ to: string; label: string; icon: any }>> = {
+  couple: [
+    { to: "/dashboard", label: "Overview", icon: LayoutDashboard },
+    { to: "/events", label: "Events", icon: CalendarDays },
+    { to: "/guests", label: "Guests", icon: Users },
+    { to: "/seating", label: "Seating", icon: Grid3x3 },
+    { to: "/registry", label: "Registry", icon: Gift },
+    { to: "/messages", label: "Messages", icon: MessageCircle },
+    { to: "/website", label: "Website", icon: Globe },
+  ],
+  planner: [
+    { to: "/dashboard", label: "Overview", icon: LayoutDashboard },
+    { to: "/events", label: "Events", icon: CalendarDays },
+    { to: "/guests", label: "Guests", icon: Users },
+    { to: "/seating", label: "Seating", icon: Grid3x3 },
+    { to: "/messages", label: "Messages", icon: MessageCircle },
+  ],
+  vendor: [
+    { to: "/dashboard", label: "My listing", icon: Store },
+    { to: "/leads", label: "Leads", icon: Inbox },
+  ],
+  venue: [
+    { to: "/dashboard", label: "My venue", icon: MapPin },
+    { to: "/leads", label: "Leads", icon: Inbox },
+  ],
+  seller: [
+    { to: "/dashboard", label: "Overview", icon: LayoutDashboard },
+  ],
+  admin: [
+    { to: "/dashboard", label: "Overview", icon: LayoutDashboard },
+  ],
+};
 
 const discover = [
   { to: "/venues", label: "Venues", icon: MapPin },
@@ -80,6 +103,9 @@ export function AppShell({ children, title, subtitle, actions, decor }: { childr
   const router = useRouter();
   const { pathname } = useLocation();
   const signOut = useSignOut();
+  const { active } = useActiveRole();
+  const nav = NAV_BY_ROLE[active ?? "couple"] ?? NAV_BY_ROLE.couple;
+  const showDiscover = !active || active === "couple" || active === "planner";
 
   const onSignOut = async () => {
     await signOut.mutateAsync();
@@ -108,13 +134,13 @@ export function AppShell({ children, title, subtitle, actions, decor }: { childr
           <WorkspaceSwitcher />
         </div>
         <nav className="px-3 flex-1 overflow-y-auto">
-          <p className="px-3 pb-2 text-[11px] uppercase tracking-widest text-cherry">Planning</p>
+          <p className="px-3 pb-2 text-[11px] uppercase tracking-widest text-cherry">Workspace</p>
           {nav.map(({ to, label, icon: Icon }) => {
-            const active = pathname === to || pathname.startsWith(to + "/");
+            const isActive = pathname === to || pathname.startsWith(to + "/");
             return (
-              <Link key={to} to={to}
+              <Link key={to} to={to as any}
                 className={`flex items-center gap-3 rounded-full px-4 py-2.5 text-sm transition-all ${
-                  active
+                  isActive
                     ? "bg-cherry text-pearl font-medium shadow-md"
                     : "text-ink/70 hover:bg-blush-soft/70 hover:text-cherry hover:translate-x-1"
                 }`}>
@@ -122,13 +148,14 @@ export function AppShell({ children, title, subtitle, actions, decor }: { childr
               </Link>
             );
           })}
+          {showDiscover && (<>
           <p className="mt-6 px-3 pb-2 text-[11px] uppercase tracking-widest text-cherry">Discover</p>
           {discover.map(({ to, label, icon: Icon }) => {
-            const active = pathname === to || pathname.startsWith(to + "/");
+            const isActive = pathname === to || pathname.startsWith(to + "/");
             return (
-              <Link key={to} to={to}
+              <Link key={to} to={to as any}
                 className={`flex items-center gap-3 rounded-full px-4 py-2.5 text-sm transition-all ${
-                  active
+                  isActive
                     ? "bg-cherry text-pearl font-medium shadow-md"
                     : "text-ink/70 hover:bg-blush-soft/70 hover:text-cherry hover:translate-x-1"
                 }`}>
@@ -136,6 +163,7 @@ export function AppShell({ children, title, subtitle, actions, decor }: { childr
               </Link>
             );
           })}
+          </>)}
         </nav>
         <div className="p-3 border-t border-line/60">
           <button onClick={onSignOut} className="flex w-full items-center gap-3 rounded-full px-4 py-2.5 text-sm text-ink/70 hover:bg-wine-soft hover:text-wine transition-all">
@@ -178,7 +206,7 @@ export function AppShell({ children, title, subtitle, actions, decor }: { childr
           {nav.slice(0, 5).map(({ to, label, icon: Icon }) => {
             const active = pathname === to;
             return (
-              <Link key={to} to={to} className={`flex flex-col items-center gap-0.5 px-3 py-1 text-[10px] transition-colors ${active ? "text-cherry" : "text-ink/60 hover:text-cherry"}`}>
+              <Link key={to} to={to as any} className={`flex flex-col items-center gap-0.5 px-3 py-1 text-[10px] transition-colors ${active ? "text-cherry" : "text-ink/60 hover:text-cherry"}`}>
                 <Icon className="h-4 w-4" />{label}
               </Link>
             );
