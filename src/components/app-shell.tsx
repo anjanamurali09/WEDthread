@@ -109,7 +109,7 @@ export function AppShell({ children, title, subtitle, actions, decor }: { childr
 
   const onSignOut = async () => {
     await signOut.mutateAsync();
-    router.navigate({ to: "/auth", replace: true });
+    router.navigate({ to: "/", replace: true });
   };
 
   return (
