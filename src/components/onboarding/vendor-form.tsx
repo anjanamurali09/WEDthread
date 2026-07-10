@@ -112,6 +112,7 @@ export function VendorOnboardingForm() {
         if (error) throw error;
       }
       qc.invalidateQueries({ queryKey: ["my-vendor"] });
+      await markCompleted();
       toast.success(publish ? "Submitted for review." : "Saved.");
     } catch (e: any) {
       toast.error(e.message);
