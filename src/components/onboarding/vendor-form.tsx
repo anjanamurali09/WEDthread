@@ -140,6 +140,13 @@ export function VendorOnboardingForm() {
 
   return (
     <div className="space-y-6 max-w-3xl">
+      {!existing && (
+        <div className="text-xs text-muted-foreground inline-flex items-center gap-1.5">
+          {autoSaving ? (<><Loader2 className="h-3 w-3 animate-spin" /> Saving draft…</>)
+            : savedAt ? (<><Check className="h-3 w-3 text-clay" /> Draft saved</>)
+            : "Autosaves as you type"}
+        </div>
+      )}
       {status && (
         <div className={`rounded-2xl px-4 py-3 text-sm inline-flex items-center gap-2 ${
           status === "approved" ? "bg-sage-soft text-ink" : status === "rejected" ? "bg-wine-soft text-wine" : "bg-blush-soft text-cherry"
