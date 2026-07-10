@@ -103,6 +103,9 @@ export function AppShell({ children, title, subtitle, actions, decor }: { childr
   const router = useRouter();
   const { pathname } = useLocation();
   const signOut = useSignOut();
+  const { active } = useActiveRole();
+  const nav = NAV_BY_ROLE[active ?? "couple"] ?? NAV_BY_ROLE.couple;
+  const showDiscover = !active || active === "couple" || active === "planner";
 
   const onSignOut = async () => {
     await signOut.mutateAsync();
@@ -131,11 +134,37 @@ export function AppShell({ children, title, subtitle, actions, decor }: { childr
           <WorkspaceSwitcher />
         </div>
         <nav className="px-3 flex-1 overflow-y-auto">
-          <p className="px-3 pb-2 text-[11px] uppercase tracking-widest text-cherry">Planning</p>
+          <p className="px-3 pb-2 text-[11px] uppercase tracking-widest text-cherry">Workspace</p>
           {nav.map(({ to, label, icon: Icon }) => {
-            const active = pathname === to || pathname.startsWith(to + "/");
+            const isActive = pathname === to || pathname.startsWith(to + "/");
             return (
-              <Link key={to} to={to}
+              <Link key={to} to={to as any}
+                className={`flex items-center gap-3 rounded-full px-4 py-2.5 text-sm transition-all ${
+                  isActive
+                    ? "bg-cherry text-pearl font-medium shadow-md"
+                    : "text-ink/70 hover:bg-blush-soft/70 hover:text-cherry hover:translate-x-1"
+                }`}>
+                <Icon className="h-4 w-4" /> {label}
+              </Link>
+            );
+          })}
+          {showDiscover && (<>
+          <p className="mt-6 px-3 pb-2 text-[11px] uppercase tracking-widest text-cherry">Discover</p>
+          {discover.map(({ to, label, icon: Icon }) => {
+            const isActive = pathname === to || pathname.startsWith(to + "/");
+            return (
+              <Link key={to} to={to as any}
+                className={`flex items-center gap-3 rounded-full px-4 py-2.5 text-sm transition-all ${
+                  isActive
+                    ? "bg-cherry text-pearl font-medium shadow-md"
+                    : "text-ink/70 hover:bg-blush-soft/70 hover:text-cherry hover:translate-x-1"
+                }`}>
+                <Icon className="h-4 w-4" /> {label}
+              </Link>
+            );
+          })}
+          </>)}
+        </nav>
                 className={`flex items-center gap-3 rounded-full px-4 py-2.5 text-sm transition-all ${
                   active
                     ? "bg-cherry text-pearl font-medium shadow-md"
