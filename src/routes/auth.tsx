@@ -89,7 +89,13 @@ function AuthPage() {
       });
       if (result.error) { toast.error(result.error.message ?? "Google sign-in failed"); return; }
       if (result.redirected) return;
-      await routeAfterAuth(navigate);
+      // Google: existing users go straight in; brand-new users pick a role.
+      const { data: u } = await supabase.auth.getUser();
+      if (u.user) {
+        const { data: roles } = await supabase.from("user_roles").select("role").eq("user_id", u.user.id);
+        if (!roles || roles.length === 0) await routeAfterSignUp(navigate);
+        else await routeAfterSignIn(navigate);
+      }
     } catch (err: any) {
       toast.error(err.message ?? "Google sign-in failed");
     } finally {
