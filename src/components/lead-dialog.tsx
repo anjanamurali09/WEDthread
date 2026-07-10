@@ -46,14 +46,12 @@ export function LeadDialog({
     if (!open || !target) return;
     setContactName(me?.display_name || [wedding?.partner_a, wedding?.partner_b].filter(Boolean).join(" & "));
     setContactEmail(me?.email || "");
-    setEventDate(wedding?.event_start_date ?? "");
+    setEventDate("");
     setGuestCount(wedding?.est_guest_count ? String(wedding.est_guest_count) : "");
     setMessage(
       `Hi ${target.name},\n\nWe're planning our wedding${
         wedding?.destination_city ? ` in ${wedding.destination_city}${wedding.destination_country ? ", " + wedding.destination_country : ""}` : ""
-      }${wedding?.event_start_date ? ` on ${new Date(wedding.event_start_date).toLocaleDateString()}` : ""}${
-        wedding?.est_guest_count ? ` for around ${wedding.est_guest_count} guests` : ""
-      }. Could you share availability and packages?\n\nThank you!`,
+      }${wedding?.est_guest_count ? ` for around ${wedding.est_guest_count} guests` : ""}. Could you share availability and packages?\n\nThank you!`,
     );
   }, [open, target, wedding, me]);
 

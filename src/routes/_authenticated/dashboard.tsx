@@ -12,7 +12,7 @@ function Dashboard() {
   const { active, isLoading } = useActiveRole();
   const { data: wedding } = useCurrentWedding();
 
-  if (isLoading || !active) return <AppShell title="Loading…" />;
+  if (isLoading || !active) return <AppShell title="Loading…"><div /></AppShell>;
 
   if (active === "vendor") {
     return <AppShell title="Vendor workspace" subtitle="Your listing, your leads, and your bookings."><VendorDashboard /></AppShell>;
