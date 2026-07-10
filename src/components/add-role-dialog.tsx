@@ -3,7 +3,7 @@ import { Dialog, DialogContent, DialogTitle, DialogDescription } from "@/compone
 import { HeartHandshake, Building2, Store, ShoppingBag, ClipboardList } from "lucide-react";
 import { toast } from "sonner";
 import { useRouter } from "@tanstack/react-router";
-import { addRoleForCurrentUser, ROLE_LANDING, useActiveRole, type AppRole } from "@/hooks/use-active-role";
+import { addRoleForCurrentUser, useActiveRole, type AppRole } from "@/hooks/use-active-role";
 
 const OPTIONS: { role: AppRole; label: string; desc: string; icon: any }[] = [
   { role: "couple",  label: "Getting married", desc: "Plan ceremonies, guests, seating, and your website.", icon: HeartHandshake },
@@ -31,7 +31,9 @@ export function AddRoleDialog({
       setActive(role);
       toast.success(`Switched to ${role === "couple" ? "couple" : role}.`);
       onOpenChange(false);
-      router.navigate({ to: ROLE_LANDING[role] as any });
+      // Land on the dashboard, which renders role-specific onboarding
+      // inline. Never bounce through /auth — the user is already signed in.
+      router.navigate({ to: "/dashboard" as any });
     } catch (err: any) {
       toast.error(err.message ?? "Could not add role");
     } finally {
