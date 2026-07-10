@@ -109,7 +109,7 @@ export function AppShell({ children, title, subtitle, actions, decor }: { childr
 
   const onSignOut = async () => {
     await signOut.mutateAsync();
-    router.navigate({ to: "/auth", replace: true });
+    router.navigate({ to: "/", replace: true });
   };
 
   return (
@@ -128,7 +128,6 @@ export function AppShell({ children, title, subtitle, actions, decor }: { childr
       <aside className="relative z-10 hidden md:flex md:w-64 lg:w-72 shrink-0 flex-col border-r border-line/60 bg-pearl/70 backdrop-blur-sm sticky top-0 h-screen">
         <div className="px-6 pt-8 pb-6">
           <Link to="/dashboard" className="flex items-center gap-2 group">
-            <span className="grid h-9 w-9 place-items-center rounded-full bg-cherry text-pearl transition-all group-hover:rotate-12 group-hover:bg-wine"><Sparkles className="h-4 w-4" /></span>
             <span className="font-serif text-2xl tracking-tight">Vowzy</span>
           </Link>
           <WorkspaceSwitcher />
@@ -176,7 +175,6 @@ export function AppShell({ children, title, subtitle, actions, decor }: { childr
         {/* Top mobile bar */}
         <div className="md:hidden flex items-center justify-between px-4 py-3 border-b border-line/60 bg-pearl/70 backdrop-blur-sm">
           <Link to="/dashboard" className="flex items-center gap-2">
-            <span className="grid h-8 w-8 place-items-center rounded-full bg-cherry text-pearl"><Sparkles className="h-3.5 w-3.5" /></span>
             <span className="font-serif text-xl">Vowzy</span>
           </Link>
           <button onClick={onSignOut} className="text-xs text-cherry">Sign out</button>

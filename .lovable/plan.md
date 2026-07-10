@@ -1,17 +1,23 @@
-## Problem
-Selecting a role (e.g. "Getting married") inserts into `user_roles`, but that table only has a SELECT policy. INSERT is blocked by RLS → 403 "new row violates row-level security policy".
+## Changes
 
-## Fix
-Add an INSERT policy on `public.user_roles` allowing authenticated users to insert their own non-admin roles:
+### 1. Sign out → homepage
+- Update the sign-out handler (in `src/components/app-shell.tsx` and/or `WorkspaceSwitcher`) so after `supabase.auth.signOut()` it navigates to `/` instead of `/auth`.
 
-```sql
-CREATE POLICY "self insert non-admin role"
-  ON public.user_roles
-  FOR INSERT
-  TO authenticated
-  WITH CHECK (auth.uid() = user_id AND role <> 'admin');
-```
+### 2. Cursor pointer on clickables
+- Add a global rule in `src/styles.css`:
+  ```css
+  button, [role="button"], a, [data-clickable], summary, label[for], select, input[type="submit"], input[type="button"], input[type="checkbox"], input[type="radio"] { cursor: pointer; }
+  button:disabled, [role="button"][aria-disabled="true"] { cursor: not-allowed; }
+  ```
 
-Admin role assignments remain restricted (only service_role/admin flows via SECURITY DEFINER can grant admin), so no privilege escalation.
+### 3. Remove Vowzy highlight
+- In `src/routes/index.tsx` nav logo, drop the cherry-filled sparkle badge hover treatment and use a plain, subtle wordmark (no colored circle background, no hover rotate). Keep it as a simple serif "Vowzy" link, matching the rest of the site's quiet tone.
 
-No client code changes needed — the existing insert in `auth.role.tsx` and `login-dialog.tsx` will succeed once the policy exists.
+### 4. Home page copy
+Update `src/routes/index.tsx` hero:
+- Eyebrow: `FOR EVERY WEDDING, ANYWHERE`
+- Headline: `One place for every event your wedding needs.` with italic cherry emphasis on `Big, small, traditional, or entirely your own.`
+- Sub-eyebrow row (replacing the current "Destination-native · WhatsApp built in · Every culture" strip): `MULTI-EVENT PLANNING · FIND VENUES & VENDORS · SELL & BUY WITH US`
+- Remove the old "Many ceremonies. Many cultures. One plan." headline and its paragraph.
+
+No backend, routing, or other page changes.

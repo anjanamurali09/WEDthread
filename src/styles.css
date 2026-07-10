@@ -238,6 +238,17 @@
   filter: brightness(0.98);
 }
 
+/* Pointer cursor on anything interactive */
+:where(a[href], button, [role="button"], summary, label[for], select,
+  input[type="submit"], input[type="button"], input[type="reset"],
+  input[type="checkbox"], input[type="radio"]) {
+  cursor: pointer;
+}
+:where(button, [role="button"]):disabled,
+:where(button, [role="button"])[aria-disabled="true"] {
+  cursor: not-allowed;
+}
+
 /* Floating decorative animations with varied timing */
 @keyframes float-a { 0%,100% { transform: translate3d(0,0,0) rotate(-6deg); } 50% { transform: translate3d(0,-22px,0) rotate(2deg); } }
 @keyframes float-b { 0%,100% { transform: translate3d(0,0,0) rotate(8deg); }  50% { transform: translate3d(0,-14px,0) rotate(-4deg); } }

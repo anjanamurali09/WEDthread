@@ -44,7 +44,6 @@ function Landing() {
       {/* Nav */}
       <header className="relative z-20 px-6 md:px-12 py-6 flex items-center justify-between">
         <Link to="/" className="flex items-center gap-2 group">
-          <span className="grid h-9 w-9 place-items-center rounded-full bg-cherry text-pearl transition-all group-hover:rotate-12 group-hover:bg-wine"><Sparkles className="h-4 w-4" /></span>
           <span className="font-serif text-3xl">Vowzy</span>
         </Link>
         <nav className="hidden md:flex items-center gap-8 text-sm text-ink/70">
@@ -65,15 +64,13 @@ function Landing() {
       <section className="relative z-10 px-6 md:px-12 pt-8 md:pt-16 pb-24 grid lg:grid-cols-12 gap-10 items-center">
         <div className="lg:col-span-6" data-reveal>
           <p className="inline-flex items-center gap-2 text-xs uppercase tracking-[0.2em] text-cherry">
-            <span className="h-px w-8 bg-cherry" /> Weddings that cross cultures & continents
+            <span className="h-px w-8 bg-cherry" /> For every wedding, anywhere
           </p>
           <h1 className="mt-6 font-serif text-6xl md:text-8xl leading-[0.9] tracking-tight">
-            Many ceremonies.<br/>
-            <span className="italic text-cherry">Many cultures.</span><br/>
-            One plan.
+            One place for every <span className="italic text-cherry">event</span> your wedding needs.
           </h1>
           <p className="mt-6 text-lg text-ink/70 max-w-xl leading-relaxed">
-            Plan a mehendi, a church ceremony, a cocktail hour, a nikah, a pool party, or a Sunday farewell brunch. Vowzy handles as many events as your two families need, wherever in the world you're getting married.
+            Big, small, traditional, or entirely your own.
           </p>
           <div className="mt-8 flex flex-wrap gap-3">
             <button onClick={() => setAuthOpen("signup")}
@@ -86,11 +83,11 @@ function Landing() {
             </Link>
           </div>
           <div className="mt-10 flex flex-wrap gap-x-6 gap-y-2 text-xs uppercase tracking-widest text-muted-foreground">
-            <span>Destination-native</span>
+            <span>Multi-event planning</span>
             <span className="text-cherry">·</span>
-            <span>WhatsApp built in</span>
+            <span>Find venues &amp; vendors</span>
             <span className="text-cherry">·</span>
-            <span>Every culture, every ceremony</span>
+            <span>Sell &amp; buy with us</span>
           </div>
         </div>
 
