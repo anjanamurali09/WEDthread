@@ -14,6 +14,106 @@ export type Database = {
   }
   public: {
     Tables: {
+      booking_leads: {
+        Row: {
+          budget_max: number | null
+          budget_min: number | null
+          city: string | null
+          contact_email: string | null
+          contact_name: string | null
+          contact_phone: string | null
+          country: string | null
+          created_at: string
+          currency: string | null
+          event_date: string | null
+          guest_count: number | null
+          id: string
+          message: string | null
+          sender_user_id: string
+          status: string
+          target_vendor_id: string | null
+          target_venue_id: string | null
+          updated_at: string
+          utm_campaign: string | null
+          utm_content: string | null
+          utm_medium: string
+          utm_source: string
+          wedding_id: string | null
+        }
+        Insert: {
+          budget_max?: number | null
+          budget_min?: number | null
+          city?: string | null
+          contact_email?: string | null
+          contact_name?: string | null
+          contact_phone?: string | null
+          country?: string | null
+          created_at?: string
+          currency?: string | null
+          event_date?: string | null
+          guest_count?: number | null
+          id?: string
+          message?: string | null
+          sender_user_id: string
+          status?: string
+          target_vendor_id?: string | null
+          target_venue_id?: string | null
+          updated_at?: string
+          utm_campaign?: string | null
+          utm_content?: string | null
+          utm_medium?: string
+          utm_source?: string
+          wedding_id?: string | null
+        }
+        Update: {
+          budget_max?: number | null
+          budget_min?: number | null
+          city?: string | null
+          contact_email?: string | null
+          contact_name?: string | null
+          contact_phone?: string | null
+          country?: string | null
+          created_at?: string
+          currency?: string | null
+          event_date?: string | null
+          guest_count?: number | null
+          id?: string
+          message?: string | null
+          sender_user_id?: string
+          status?: string
+          target_vendor_id?: string | null
+          target_venue_id?: string | null
+          updated_at?: string
+          utm_campaign?: string | null
+          utm_content?: string | null
+          utm_medium?: string
+          utm_source?: string
+          wedding_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "booking_leads_target_vendor_id_fkey"
+            columns: ["target_vendor_id"]
+            isOneToOne: false
+            referencedRelation: "vendors"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "booking_leads_target_venue_id_fkey"
+            columns: ["target_venue_id"]
+            isOneToOne: false
+            referencedRelation: "venues"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "booking_leads_wedding_id_fkey"
+            columns: ["wedding_id"]
+            isOneToOne: false
+            referencedRelation: "weddings"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       booking_requests: {
         Row: {
           created_at: string
@@ -714,7 +814,11 @@ export type Database = {
         Row: {
           business_name: string
           category_id: string | null
+          contact_email: string | null
+          contact_name: string | null
+          countries_served: string[]
           created_at: string
+          currency: string | null
           description: string | null
           destinations_serviced: string[]
           gallery_urls: string[]
@@ -722,16 +826,30 @@ export type Database = {
           home_city: string | null
           home_country: string | null
           id: string
+          instagram: string | null
+          long_description: string | null
           owner_id: string | null
+          photos: string[]
           price_max: number | null
           price_min: number | null
+          price_tier: number | null
           status: Database["public"]["Enums"]["vendor_status"]
+          subcategory_ids: string[]
           tags: string[]
+          updated_at: string
+          video_url: string | null
+          website: string | null
+          whatsapp: string | null
+          years_in_business: number | null
         }
         Insert: {
           business_name: string
           category_id?: string | null
+          contact_email?: string | null
+          contact_name?: string | null
+          countries_served?: string[]
           created_at?: string
+          currency?: string | null
           description?: string | null
           destinations_serviced?: string[]
           gallery_urls?: string[]
@@ -739,16 +857,30 @@ export type Database = {
           home_city?: string | null
           home_country?: string | null
           id?: string
+          instagram?: string | null
+          long_description?: string | null
           owner_id?: string | null
+          photos?: string[]
           price_max?: number | null
           price_min?: number | null
+          price_tier?: number | null
           status?: Database["public"]["Enums"]["vendor_status"]
+          subcategory_ids?: string[]
           tags?: string[]
+          updated_at?: string
+          video_url?: string | null
+          website?: string | null
+          whatsapp?: string | null
+          years_in_business?: number | null
         }
         Update: {
           business_name?: string
           category_id?: string | null
+          contact_email?: string | null
+          contact_name?: string | null
+          countries_served?: string[]
           created_at?: string
+          currency?: string | null
           description?: string | null
           destinations_serviced?: string[]
           gallery_urls?: string[]
@@ -756,11 +888,21 @@ export type Database = {
           home_city?: string | null
           home_country?: string | null
           id?: string
+          instagram?: string | null
+          long_description?: string | null
           owner_id?: string | null
+          photos?: string[]
           price_max?: number | null
           price_min?: number | null
+          price_tier?: number | null
           status?: Database["public"]["Enums"]["vendor_status"]
+          subcategory_ids?: string[]
           tags?: string[]
+          updated_at?: string
+          video_url?: string | null
+          website?: string | null
+          whatsapp?: string | null
+          years_in_business?: number | null
         }
         Relationships: [
           {
@@ -774,40 +916,88 @@ export type Database = {
       }
       venues: {
         Row: {
+          address: string | null
           capacity: number | null
+          capacity_seated: number | null
+          capacity_standing: number | null
           city: string
+          contact_email: string | null
           country: string
           created_at: string
+          currency: string | null
           description: string | null
+          facilities: string[]
           gallery_urls: string[]
           hero_image: string | null
           id: string
+          long_description: string | null
           name: string
+          owner_id: string | null
+          photos: string[]
           price_range: string | null
+          price_tier: number | null
+          restrictions: string[]
+          status: Database["public"]["Enums"]["venue_status"]
+          updated_at: string
+          video_url: string | null
+          website: string | null
+          whatsapp: string | null
         }
         Insert: {
+          address?: string | null
           capacity?: number | null
+          capacity_seated?: number | null
+          capacity_standing?: number | null
           city: string
+          contact_email?: string | null
           country: string
           created_at?: string
+          currency?: string | null
           description?: string | null
+          facilities?: string[]
           gallery_urls?: string[]
           hero_image?: string | null
           id?: string
+          long_description?: string | null
           name: string
+          owner_id?: string | null
+          photos?: string[]
           price_range?: string | null
+          price_tier?: number | null
+          restrictions?: string[]
+          status?: Database["public"]["Enums"]["venue_status"]
+          updated_at?: string
+          video_url?: string | null
+          website?: string | null
+          whatsapp?: string | null
         }
         Update: {
+          address?: string | null
           capacity?: number | null
+          capacity_seated?: number | null
+          capacity_standing?: number | null
           city?: string
+          contact_email?: string | null
           country?: string
           created_at?: string
+          currency?: string | null
           description?: string | null
+          facilities?: string[]
           gallery_urls?: string[]
           hero_image?: string | null
           id?: string
+          long_description?: string | null
           name?: string
+          owner_id?: string | null
+          photos?: string[]
           price_range?: string | null
+          price_tier?: number | null
+          restrictions?: string[]
+          status?: Database["public"]["Enums"]["venue_status"]
+          updated_at?: string
+          video_url?: string | null
+          website?: string | null
+          whatsapp?: string | null
         }
         Relationships: []
       }
@@ -1063,6 +1253,7 @@ export type Database = {
       message_status: "queued" | "sending" | "sent" | "delivered" | "failed"
       rsvp_status: "pending" | "attending" | "declined" | "maybe"
       vendor_status: "pending" | "approved" | "rejected"
+      venue_status: "pending" | "approved" | "rejected"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -1201,6 +1392,7 @@ export const Constants = {
       message_status: ["queued", "sending", "sent", "delivered", "failed"],
       rsvp_status: ["pending", "attending", "declined", "maybe"],
       vendor_status: ["pending", "approved", "rejected"],
+      venue_status: ["pending", "approved", "rejected"],
     },
   },
 } as const
