@@ -128,7 +128,6 @@ export function AppShell({ children, title, subtitle, actions, decor }: { childr
       <aside className="relative z-10 hidden md:flex md:w-64 lg:w-72 shrink-0 flex-col border-r border-line/60 bg-pearl/70 backdrop-blur-sm sticky top-0 h-screen">
         <div className="px-6 pt-8 pb-6">
           <Link to="/dashboard" className="flex items-center gap-2 group">
-            <span className="grid h-9 w-9 place-items-center rounded-full bg-cherry text-pearl transition-all group-hover:rotate-12 group-hover:bg-wine"><Sparkles className="h-4 w-4" /></span>
             <span className="font-serif text-2xl tracking-tight">Vowzy</span>
           </Link>
           <WorkspaceSwitcher />
