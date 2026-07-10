@@ -18,6 +18,7 @@ function WorkspaceSwitcher() {
   const { active, roles, setActive } = useActiveRole();
   const router = useRouter();
   const [open, setOpen] = useState(false);
+  const [addOpen, setAddOpen] = useState(false);
   if (!active) return null;
   const others = roles.filter((r) => r !== active);
   return (
@@ -45,19 +46,19 @@ function WorkspaceSwitcher() {
             </button>
           ))}
           {others.length > 0 && <div className="h-px bg-line/70" />}
-          <Link
-            to="/auth/role"
-            search={{ add: "1" as const }}
-            onClick={() => setOpen(false)}
+          <button
+            onClick={() => { setOpen(false); setAddOpen(true); }}
             className="w-full px-3 py-2.5 text-sm text-cherry hover:bg-blush-soft flex items-center gap-2"
           >
             <Plus className="h-3.5 w-3.5" /> Add another role
-          </Link>
+          </button>
         </div>
       )}
+      <AddRoleDialog open={addOpen} onOpenChange={setAddOpen} />
     </div>
   );
 }
+
 
 
 const nav = [
