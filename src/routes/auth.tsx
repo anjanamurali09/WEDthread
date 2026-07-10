@@ -16,20 +16,20 @@ export const Route = createFileRoute("/auth")({
   component: AuthPage,
 });
 
-async function routeAfterAuth(navigate: ReturnType<typeof useNavigate>) {
+async function routeAfterSignIn(navigate: ReturnType<typeof useNavigate>) {
   const { data: u } = await supabase.auth.getUser();
   if (!u.user) return;
   const { data: roles } = await supabase
     .from("user_roles")
     .select("role")
     .eq("user_id", u.user.id);
-  if (!roles || roles.length === 0) {
-    navigate({ to: "/auth/role" as any, replace: true });
-    return;
+  // Sign-in never asks for a role. If none exists, silently default to couple.
+  let active = (roles?.[0]?.role as AppRole | undefined) ?? null;
+  if (!active) {
+    await supabase.from("user_roles").insert({ user_id: u.user.id, role: "couple" });
+    active = "couple";
   }
-  const active = roles[0].role as AppRole;
   window.localStorage.setItem("vowzy.activeRole", active);
-  // Couples with no wedding go to onboarding
   if (active === "couple") {
     const { data: w } = await supabase
       .from("weddings")
@@ -41,6 +41,13 @@ async function routeAfterAuth(navigate: ReturnType<typeof useNavigate>) {
     return;
   }
   navigate({ to: ROLE_LANDING[active] as any, replace: true });
+}
+
+// After sign-up we always send the user to pick a role.
+async function routeAfterSignUp(navigate: ReturnType<typeof useNavigate>) {
+  const { data: u } = await supabase.auth.getUser();
+  if (!u.user) return;
+  navigate({ to: "/auth/role" as any, replace: true });
 }
 
 function AuthPage() {
@@ -61,11 +68,11 @@ function AuthPage() {
         });
         if (error) throw error;
         toast.success("Account created.");
-        await routeAfterAuth(navigate);
+        await routeAfterSignUp(navigate);
       } else {
         const { error } = await supabase.auth.signInWithPassword({ email, password });
         if (error) throw error;
-        await routeAfterAuth(navigate);
+        await routeAfterSignIn(navigate);
       }
     } catch (err: any) {
       toast.error(err.message ?? "Something went wrong");
@@ -82,7 +89,13 @@ function AuthPage() {
       });
       if (result.error) { toast.error(result.error.message ?? "Google sign-in failed"); return; }
       if (result.redirected) return;
-      await routeAfterAuth(navigate);
+      // Google: existing users go straight in; brand-new users pick a role.
+      const { data: u } = await supabase.auth.getUser();
+      if (u.user) {
+        const { data: roles } = await supabase.from("user_roles").select("role").eq("user_id", u.user.id);
+        if (!roles || roles.length === 0) await routeAfterSignUp(navigate);
+        else await routeAfterSignIn(navigate);
+      }
     } catch (err: any) {
       toast.error(err.message ?? "Google sign-in failed");
     } finally {

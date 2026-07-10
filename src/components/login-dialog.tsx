@@ -9,18 +9,18 @@ import { ROLE_LANDING, type AppRole } from "@/hooks/use-active-role";
 
 type Mode = "signin" | "signup";
 
-async function routeAfterAuth(navigate: ReturnType<typeof useNavigate>) {
+async function routeAfterSignIn(navigate: ReturnType<typeof useNavigate>) {
   const { data: u } = await supabase.auth.getUser();
   if (!u.user) return;
   const { data: roles } = await supabase
     .from("user_roles")
     .select("role")
     .eq("user_id", u.user.id);
-  if (!roles || roles.length === 0) {
-    navigate({ to: "/auth/role" as any });
-    return;
+  let active = (roles?.[0]?.role as AppRole | undefined) ?? null;
+  if (!active) {
+    await supabase.from("user_roles").insert({ user_id: u.user.id, role: "couple" });
+    active = "couple";
   }
-  const active = roles[0].role as AppRole;
   window.localStorage.setItem("vowzy.activeRole", active);
   if (active === "couple") {
     const { data: w } = await supabase
@@ -33,6 +33,12 @@ async function routeAfterAuth(navigate: ReturnType<typeof useNavigate>) {
     return;
   }
   navigate({ to: ROLE_LANDING[active] as any });
+}
+
+async function routeAfterSignUp(navigate: ReturnType<typeof useNavigate>) {
+  const { data: u } = await supabase.auth.getUser();
+  if (!u.user) return;
+  navigate({ to: "/auth/role" as any });
 }
 
 export function LoginDialog({
@@ -64,12 +70,14 @@ export function LoginDialog({
         });
         if (error) throw error;
         toast.success("Account created.");
+        close(false);
+        await routeAfterSignUp(navigate);
       } else {
         const { error } = await supabase.auth.signInWithPassword({ email, password });
         if (error) throw error;
+        close(false);
+        await routeAfterSignIn(navigate);
       }
-      close(false);
-      await routeAfterAuth(navigate);
     } catch (err: any) {
       toast.error(err.message ?? "Something went wrong");
     } finally {
@@ -86,7 +94,12 @@ export function LoginDialog({
       if (result.error) { toast.error(result.error.message ?? "Google sign-in failed"); return; }
       if (result.redirected) return;
       close(false);
-      await routeAfterAuth(navigate);
+      const { data: u } = await supabase.auth.getUser();
+      if (u.user) {
+        const { data: roles } = await supabase.from("user_roles").select("role").eq("user_id", u.user.id);
+        if (!roles || roles.length === 0) await routeAfterSignUp(navigate);
+        else await routeAfterSignIn(navigate);
+      }
     } finally { setLoading(false); }
   };
 

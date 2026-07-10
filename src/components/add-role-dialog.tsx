@@ -1,0 +1,77 @@
+import { useState } from "react";
+import { Dialog, DialogContent, DialogTitle, DialogDescription } from "@/components/ui/dialog";
+import { HeartHandshake, Building2, Store, ShoppingBag, ClipboardList } from "lucide-react";
+import { toast } from "sonner";
+import { useRouter } from "@tanstack/react-router";
+import { addRoleForCurrentUser, ROLE_LANDING, useActiveRole, type AppRole } from "@/hooks/use-active-role";
+
+const OPTIONS: { role: AppRole; label: string; desc: string; icon: any }[] = [
+  { role: "couple",  label: "Getting married", desc: "Plan ceremonies, guests, seating, and your website.", icon: HeartHandshake },
+  { role: "planner", label: "Planner",         desc: "Coordinate every couple you work with, side by side.", icon: ClipboardList },
+  { role: "venue",   label: "List a venue",    desc: "Reach couples planning a destination wedding.",       icon: Building2 },
+  { role: "vendor",  label: "List services",   desc: "Photographers, planners, mehendi artists, florists.", icon: Store },
+  { role: "seller",  label: "Sell items",      desc: "Resell décor, dresses, tableware after your day.",    icon: ShoppingBag },
+];
+
+export function AddRoleDialog({
+  open,
+  onOpenChange,
+}: {
+  open: boolean;
+  onOpenChange: (v: boolean) => void;
+}) {
+  const router = useRouter();
+  const { roles, setActive } = useActiveRole();
+  const [saving, setSaving] = useState<AppRole | null>(null);
+
+  const pick = async (role: AppRole) => {
+    setSaving(role);
+    try {
+      await addRoleForCurrentUser(role);
+      setActive(role);
+      toast.success(`Switched to ${role === "couple" ? "couple" : role}.`);
+      onOpenChange(false);
+      router.navigate({ to: ROLE_LANDING[role] as any });
+    } catch (err: any) {
+      toast.error(err.message ?? "Could not add role");
+    } finally {
+      setSaving(null);
+    }
+  };
+
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="max-w-lg rounded-3xl bg-pearl border-line p-0 overflow-hidden">
+        <div className="p-6 pb-4 border-b border-line/60">
+          <DialogTitle className="font-serif text-2xl">Add another role</DialogTitle>
+          <DialogDescription className="text-xs text-muted-foreground mt-1">
+            Pick another way to use Vowzy. You can switch between roles anytime.
+          </DialogDescription>
+        </div>
+        <div className="p-4 space-y-2 max-h-[70vh] overflow-y-auto">
+          {OPTIONS.map(({ role, label, desc, icon: Icon }) => {
+            const already = roles.includes(role);
+            return (
+              <button
+                key={role}
+                onClick={() => !already && pick(role)}
+                disabled={already || saving !== null}
+                className="w-full flex items-start gap-3 rounded-2xl border border-line bg-paper p-4 text-left hover:border-cherry hover:-translate-y-0.5 transition-all disabled:opacity-50 disabled:hover:translate-y-0 disabled:hover:border-line"
+              >
+                <span className="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-wine-soft text-wine">
+                  <Icon className="h-4 w-4" />
+                </span>
+                <div className="min-w-0 flex-1">
+                  <p className="font-serif text-lg">{label}</p>
+                  <p className="text-xs text-muted-foreground mt-0.5">{desc}</p>
+                </div>
+                {already && <span className="text-[10px] uppercase tracking-widest text-muted-foreground self-center">Added</span>}
+                {saving === role && <span className="text-[10px] uppercase tracking-widest text-cherry self-center">Adding…</span>}
+              </button>
+            );
+          })}
+        </div>
+      </DialogContent>
+    </Dialog>
+  );
+}
