@@ -206,7 +206,7 @@ export function AppShell({ children, title, subtitle, actions, decor }: { childr
           {nav.slice(0, 5).map(({ to, label, icon: Icon }) => {
             const active = pathname === to;
             return (
-              <Link key={to} to={to} className={`flex flex-col items-center gap-0.5 px-3 py-1 text-[10px] transition-colors ${active ? "text-cherry" : "text-ink/60 hover:text-cherry"}`}>
+              <Link key={to} to={to as any} className={`flex flex-col items-center gap-0.5 px-3 py-1 text-[10px] transition-colors ${active ? "text-cherry" : "text-ink/60 hover:text-cherry"}`}>
                 <Icon className="h-4 w-4" />{label}
               </Link>
             );
