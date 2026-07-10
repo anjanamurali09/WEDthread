@@ -1,6 +1,6 @@
 import { Link, useRouter, useLocation } from "@tanstack/react-router";
 import { useSignOut } from "@/lib/wedding-hooks";
-import { CalendarDays, LayoutDashboard, Users, Grid3x3, MessageCircle, Globe, LogOut, Store, MapPin, Sparkles, Gift, ChevronDown, Plus } from "lucide-react";
+import { CalendarDays, LayoutDashboard, Users, Grid3x3, MessageCircle, Globe, LogOut, Store, MapPin, Sparkles, Gift, ChevronDown, Plus, Inbox } from "lucide-react";
 import type { ReactNode } from "react";
 import { useState } from "react";
 import { useActiveRole, type AppRole } from "@/hooks/use-active-role";
@@ -61,15 +61,38 @@ function WorkspaceSwitcher() {
 
 
 
-const nav = [
-  { to: "/dashboard", label: "Overview", icon: LayoutDashboard },
-  { to: "/events", label: "Events", icon: CalendarDays },
-  { to: "/guests", label: "Guests", icon: Users },
-  { to: "/seating", label: "Seating", icon: Grid3x3 },
-  { to: "/registry", label: "Registry", icon: Gift },
-  { to: "/messages", label: "Messages", icon: MessageCircle },
-  { to: "/website", label: "Website", icon: Globe },
-] as const;
+const NAV_BY_ROLE: Record<AppRole, ReadonlyArray<{ to: string; label: string; icon: any }>> = {
+  couple: [
+    { to: "/dashboard", label: "Overview", icon: LayoutDashboard },
+    { to: "/events", label: "Events", icon: CalendarDays },
+    { to: "/guests", label: "Guests", icon: Users },
+    { to: "/seating", label: "Seating", icon: Grid3x3 },
+    { to: "/registry", label: "Registry", icon: Gift },
+    { to: "/messages", label: "Messages", icon: MessageCircle },
+    { to: "/website", label: "Website", icon: Globe },
+  ],
+  planner: [
+    { to: "/dashboard", label: "Overview", icon: LayoutDashboard },
+    { to: "/events", label: "Events", icon: CalendarDays },
+    { to: "/guests", label: "Guests", icon: Users },
+    { to: "/seating", label: "Seating", icon: Grid3x3 },
+    { to: "/messages", label: "Messages", icon: MessageCircle },
+  ],
+  vendor: [
+    { to: "/dashboard", label: "My listing", icon: Store },
+    { to: "/leads", label: "Leads", icon: Inbox },
+  ],
+  venue: [
+    { to: "/dashboard", label: "My venue", icon: MapPin },
+    { to: "/leads", label: "Leads", icon: Inbox },
+  ],
+  seller: [
+    { to: "/dashboard", label: "Overview", icon: LayoutDashboard },
+  ],
+  admin: [
+    { to: "/dashboard", label: "Overview", icon: LayoutDashboard },
+  ],
+};
 
 const discover = [
   { to: "/venues", label: "Venues", icon: MapPin },
