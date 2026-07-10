@@ -4,6 +4,7 @@ import { CalendarDays, LayoutDashboard, Users, Grid3x3, MessageCircle, Globe, Lo
 import type { ReactNode } from "react";
 import { useState } from "react";
 import { useActiveRole, type AppRole } from "@/hooks/use-active-role";
+import { AddRoleDialog } from "@/components/add-role-dialog";
 
 const ROLE_LABEL: Record<AppRole, string> = {
   couple: "Couple", planner: "Planner", venue: "Venue", vendor: "Vendor", seller: "Seller", admin: "Admin",
