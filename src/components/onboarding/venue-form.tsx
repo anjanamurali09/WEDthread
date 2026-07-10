@@ -41,6 +41,9 @@ export function VenueOnboardingForm() {
     },
   });
 
+  const { hydrated: draftHydrated, initial: draftInitial, saving: autoSaving, savedAt, markCompleted } =
+    useOnboardingDraft<any>("venue", form, { enabled: !existing });
+
   useEffect(() => {
     if (existing) {
       setForm((f: any) => ({
@@ -51,8 +54,11 @@ export function VenueOnboardingForm() {
         capacity_seated: existing.capacity_seated ?? "",
         capacity_standing: existing.capacity_standing ?? "",
       }));
+    } else if (draftHydrated && draftInitial && Object.keys(draftInitial).length > 0) {
+      setForm((f: any) => ({ ...f, ...draftInitial }));
     }
-  }, [existing]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [existing, draftHydrated]);
 
   const set = (k: string, v: any) => setForm((f: any) => ({ ...f, [k]: v }));
   const toggle = (k: string, v: string) => set(k, form[k].includes(v) ? form[k].filter((x: string) => x !== v) : [...form[k], v]);
