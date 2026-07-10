@@ -2,7 +2,8 @@ import { useEffect, useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-import { CheckCircle2, Loader2 } from "lucide-react";
+import { CheckCircle2, Check, Loader2 } from "lucide-react";
+import { useOnboardingDraft } from "@/hooks/use-onboarding-draft";
 
 const CURRENCIES = ["AED", "USD", "INR", "GBP", "EUR", "SAR", "PKR", "SGD", "LKR", "BDT", "AUD", "CAD"];
 const PRICE_TIERS = [1, 2, 3, 4, 5];
