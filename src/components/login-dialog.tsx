@@ -70,12 +70,14 @@ export function LoginDialog({
         });
         if (error) throw error;
         toast.success("Account created.");
+        close(false);
+        await routeAfterSignUp(navigate);
       } else {
         const { error } = await supabase.auth.signInWithPassword({ email, password });
         if (error) throw error;
+        close(false);
+        await routeAfterSignIn(navigate);
       }
-      close(false);
-      await routeAfterAuth(navigate);
     } catch (err: any) {
       toast.error(err.message ?? "Something went wrong");
     } finally {
@@ -92,7 +94,12 @@ export function LoginDialog({
       if (result.error) { toast.error(result.error.message ?? "Google sign-in failed"); return; }
       if (result.redirected) return;
       close(false);
-      await routeAfterAuth(navigate);
+      const { data: u } = await supabase.auth.getUser();
+      if (u.user) {
+        const { data: roles } = await supabase.from("user_roles").select("role").eq("user_id", u.user.id);
+        if (!roles || roles.length === 0) await routeAfterSignUp(navigate);
+        else await routeAfterSignIn(navigate);
+      }
     } finally { setLoading(false); }
   };
 
