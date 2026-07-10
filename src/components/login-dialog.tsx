@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Dialog, DialogContent, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { supabase } from "@/integrations/supabase/client";
 import { lovable } from "@/integrations/lovable/index";
@@ -52,6 +52,7 @@ export function LoginDialog({
 }) {
   const navigate = useNavigate();
   const [mode, setMode] = useState<Mode>(initialMode);
+  useEffect(() => { if (open) setMode(initialMode); }, [open, initialMode]);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
