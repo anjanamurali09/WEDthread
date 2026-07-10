@@ -107,6 +107,7 @@ export function VenueOnboardingForm() {
         if (error) throw error;
       }
       qc.invalidateQueries({ queryKey: ["my-venue"] });
+      await markCompleted();
       toast.success("Saved. Awaiting review.");
     } catch (e: any) { toast.error(e.message); } finally { setSaving(false); }
   };
