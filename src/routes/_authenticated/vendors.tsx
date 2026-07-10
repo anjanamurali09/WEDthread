@@ -3,7 +3,10 @@ import { useMemo, useState } from "react";
 import { AppShell } from "@/components/app-shell";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import { MapPin, Search, X } from "lucide-react";
+import { MapPin, Search, X, MessageCircle, Send } from "lucide-react";
+import { LeadDialog } from "@/components/lead-dialog";
+import { whatsappUrl, buildLeadMessage } from "@/lib/lead-utm";
+import { useCurrentWedding } from "@/lib/wedding-hooks";
 
 export const Route = createFileRoute("/_authenticated/vendors")({ component: VendorsPage });
 
@@ -14,6 +17,8 @@ function VendorsPage() {
   const [tier1Id, setTier1Id] = useState<string>("");
   const [tier2Id, setTier2Id] = useState<string>("");
   const [tag, setTag] = useState<string>("");
+  const [leadFor, setLeadFor] = useState<any>(null);
+  const { data: wedding } = useCurrentWedding();
 
   const { data: cats = [] } = useQuery({
     queryKey: ["vendor-categories"],
@@ -107,19 +112,44 @@ function VendorsPage() {
         </div>
       ) : (
         <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-5">
-          {filtered.map((v: any) => (
-            <article key={v.id} className="paper-card overflow-hidden">
-              <div className="aspect-[4/3] bg-stone" style={v.hero_image ? { backgroundImage: `url(${v.hero_image})`, backgroundSize: "cover", backgroundPosition: "center" } : {}} />
-              <div className="p-5">
-                <h3 className="font-serif text-xl">{v.business_name}</h3>
-                {(v.home_city || v.home_country) && <p className="text-xs text-muted-foreground mt-1 inline-flex items-center gap-1"><MapPin className="h-3 w-3" /> {[v.home_city, v.home_country].filter(Boolean).join(", ")}</p>}
-                {v.description && <p className="mt-3 text-sm text-ink/70 line-clamp-3">{v.description}</p>}
-                {v.tags?.length > 0 && <div className="mt-3 flex flex-wrap gap-1">{v.tags.slice(0, 4).map((t: string) => <span key={t} className="text-[10px] rounded-full bg-cream px-2 py-0.5">{t}</span>)}</div>}
-              </div>
-            </article>
-          ))}
+          {filtered.map((v: any) => {
+            const priceLabel = v.price_tier ? "$".repeat(v.price_tier) : "";
+            const waMsg = buildLeadMessage({
+              partnerA: wedding?.partner_a, partnerB: wedding?.partner_b,
+              city: wedding?.destination_city, country: wedding?.destination_country,
+              guests: wedding?.est_guest_count, targetName: v.business_name,
+            });
+            const waHref = v.whatsapp ? whatsappUrl(v.whatsapp, waMsg, "vendor", v.id) : null;
+            return (
+              <article key={v.id} className="paper-card overflow-hidden flex flex-col">
+                <div className="aspect-[4/3] bg-stone" style={v.hero_image ? { backgroundImage: `url(${v.hero_image})`, backgroundSize: "cover", backgroundPosition: "center" } : {}} />
+                <div className="p-5 flex-1 flex flex-col">
+                  <div className="flex items-start justify-between gap-2">
+                    <h3 className="font-serif text-xl">{v.business_name}</h3>
+                    {priceLabel && <span className="text-xs text-cherry font-medium">{priceLabel}{v.currency ? ` ${v.currency}` : ""}</span>}
+                  </div>
+                  {(v.home_city || v.home_country) && <p className="text-xs text-muted-foreground mt-1 inline-flex items-center gap-1"><MapPin className="h-3 w-3" /> {[v.home_city, v.home_country].filter(Boolean).join(", ")}</p>}
+                  {v.description && <p className="mt-3 text-sm text-ink/70 line-clamp-3">{v.description}</p>}
+                  {v.tags?.length > 0 && <div className="mt-3 flex flex-wrap gap-1">{v.tags.slice(0, 4).map((t: string) => <span key={t} className="text-[10px] rounded-full bg-cream px-2 py-0.5">{t}</span>)}</div>}
+                  <div className="mt-auto pt-4 flex gap-2">
+                    <button onClick={() => setLeadFor({ kind: "vendor", target: { id: v.id, name: v.business_name, city: v.home_city, country: v.home_country, currency: v.currency } })}
+                      className="flex-1 rounded-full bg-cherry text-pearl text-xs px-3 py-2 hover:bg-wine transition-colors inline-flex items-center justify-center gap-1">
+                      <Send className="h-3 w-3" /> I'm interested
+                    </button>
+                    {waHref && (
+                      <a href={waHref} target="_blank" rel="noreferrer"
+                        className="rounded-full border border-line text-xs px-3 py-2 hover:border-cherry inline-flex items-center gap-1">
+                        <MessageCircle className="h-3 w-3" /> WhatsApp
+                      </a>
+                    )}
+                  </div>
+                </div>
+              </article>
+            );
+          })}
         </div>
       )}
+      <LeadDialog open={!!leadFor} onOpenChange={(v) => !v && setLeadFor(null)} kind={leadFor?.kind ?? "vendor"} target={leadFor?.target ?? null} />
     </AppShell>
   );
 }
