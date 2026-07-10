@@ -175,7 +175,6 @@ export function AppShell({ children, title, subtitle, actions, decor }: { childr
         {/* Top mobile bar */}
         <div className="md:hidden flex items-center justify-between px-4 py-3 border-b border-line/60 bg-pearl/70 backdrop-blur-sm">
           <Link to="/dashboard" className="flex items-center gap-2">
-            <span className="grid h-8 w-8 place-items-center rounded-full bg-cherry text-pearl"><Sparkles className="h-3.5 w-3.5" /></span>
             <span className="font-serif text-xl">Vowzy</span>
           </Link>
           <button onClick={onSignOut} className="text-xs text-cherry">Sign out</button>
