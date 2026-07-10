@@ -62,7 +62,10 @@ function RolePicker() {
         navigate({ to: (w ? "/dashboard" : "/onboarding") as any, replace: true });
         return;
       }
-      navigate({ to: ROLE_LANDING[role] as any, replace: true });
+      // Send new roles straight to their onboarding surface (dashboards
+      // render inline onboarding for vendor/venue/seller/planner), never
+      // to the generic marketplace.
+      navigate({ to: "/dashboard" as any, replace: true });
     } catch (err: any) {
       toast.error(err.message ?? "Could not set role");
     } finally {
