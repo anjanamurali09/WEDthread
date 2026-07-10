@@ -165,30 +165,6 @@ export function AppShell({ children, title, subtitle, actions, decor }: { childr
           })}
           </>)}
         </nav>
-                className={`flex items-center gap-3 rounded-full px-4 py-2.5 text-sm transition-all ${
-                  active
-                    ? "bg-cherry text-pearl font-medium shadow-md"
-                    : "text-ink/70 hover:bg-blush-soft/70 hover:text-cherry hover:translate-x-1"
-                }`}>
-                <Icon className="h-4 w-4" /> {label}
-              </Link>
-            );
-          })}
-          <p className="mt-6 px-3 pb-2 text-[11px] uppercase tracking-widest text-cherry">Discover</p>
-          {discover.map(({ to, label, icon: Icon }) => {
-            const active = pathname === to || pathname.startsWith(to + "/");
-            return (
-              <Link key={to} to={to}
-                className={`flex items-center gap-3 rounded-full px-4 py-2.5 text-sm transition-all ${
-                  active
-                    ? "bg-cherry text-pearl font-medium shadow-md"
-                    : "text-ink/70 hover:bg-blush-soft/70 hover:text-cherry hover:translate-x-1"
-                }`}>
-                <Icon className="h-4 w-4" /> {label}
-              </Link>
-            );
-          })}
-        </nav>
         <div className="p-3 border-t border-line/60">
           <button onClick={onSignOut} className="flex w-full items-center gap-3 rounded-full px-4 py-2.5 text-sm text-ink/70 hover:bg-wine-soft hover:text-wine transition-all">
             <LogOut className="h-4 w-4" /> Sign out
