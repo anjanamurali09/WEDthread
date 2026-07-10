@@ -9,9 +9,9 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
-import { Route as AuthRouteImport } from './routes/auth'
 import { Route as AuthenticatedRouteRouteImport } from './routes/_authenticated/route'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as AuthIndexRouteImport } from './routes/auth.index'
 import { Route as WSlugRouteImport } from './routes/w.$slug'
 import { Route as RsvpTokenRouteImport } from './routes/rsvp.$token'
 import { Route as AuthRoleRouteImport } from './routes/auth.role'
@@ -30,11 +30,6 @@ import { Route as AuthenticatedDashboardRouteImport } from './routes/_authentica
 import { Route as WSlugRegistryRouteImport } from './routes/w.$slug.registry'
 import { Route as AuthenticatedWebsiteEditRouteImport } from './routes/_authenticated/website.edit'
 
-const AuthRoute = AuthRouteImport.update({
-  id: '/auth',
-  path: '/auth',
-  getParentRoute: () => rootRouteImport,
-} as any)
 const AuthenticatedRouteRoute = AuthenticatedRouteRouteImport.update({
   id: '/_authenticated',
   getParentRoute: () => rootRouteImport,
@@ -42,6 +37,11 @@ const AuthenticatedRouteRoute = AuthenticatedRouteRouteImport.update({
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AuthIndexRoute = AuthIndexRouteImport.update({
+  id: '/auth/',
+  path: '/auth/',
   getParentRoute: () => rootRouteImport,
 } as any)
 const WSlugRoute = WSlugRouteImport.update({
@@ -55,14 +55,14 @@ const RsvpTokenRoute = RsvpTokenRouteImport.update({
   getParentRoute: () => rootRouteImport,
 } as any)
 const AuthRoleRoute = AuthRoleRouteImport.update({
-  id: '/role',
-  path: '/role',
-  getParentRoute: () => AuthRoute,
+  id: '/auth/role',
+  path: '/auth/role',
+  getParentRoute: () => rootRouteImport,
 } as any)
 const AuthCallbackRoute = AuthCallbackRouteImport.update({
-  id: '/callback',
-  path: '/callback',
-  getParentRoute: () => AuthRoute,
+  id: '/auth/callback',
+  path: '/auth/callback',
+  getParentRoute: () => rootRouteImport,
 } as any)
 const AuthenticatedWebsiteRoute = AuthenticatedWebsiteRouteImport.update({
   id: '/website',
@@ -133,7 +133,6 @@ const AuthenticatedWebsiteEditRoute =
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
-  '/auth': typeof AuthRouteWithChildren
   '/dashboard': typeof AuthenticatedDashboardRoute
   '/events': typeof AuthenticatedEventsRoute
   '/guests': typeof AuthenticatedGuestsRoute
@@ -149,12 +148,12 @@ export interface FileRoutesByFullPath {
   '/auth/role': typeof AuthRoleRoute
   '/rsvp/$token': typeof RsvpTokenRoute
   '/w/$slug': typeof WSlugRouteWithChildren
+  '/auth/': typeof AuthIndexRoute
   '/website/edit': typeof AuthenticatedWebsiteEditRoute
   '/w/$slug/registry': typeof WSlugRegistryRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
-  '/auth': typeof AuthRouteWithChildren
   '/dashboard': typeof AuthenticatedDashboardRoute
   '/events': typeof AuthenticatedEventsRoute
   '/guests': typeof AuthenticatedGuestsRoute
@@ -170,6 +169,7 @@ export interface FileRoutesByTo {
   '/auth/role': typeof AuthRoleRoute
   '/rsvp/$token': typeof RsvpTokenRoute
   '/w/$slug': typeof WSlugRouteWithChildren
+  '/auth': typeof AuthIndexRoute
   '/website/edit': typeof AuthenticatedWebsiteEditRoute
   '/w/$slug/registry': typeof WSlugRegistryRoute
 }
@@ -177,7 +177,6 @@ export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/_authenticated': typeof AuthenticatedRouteRouteWithChildren
-  '/auth': typeof AuthRouteWithChildren
   '/_authenticated/dashboard': typeof AuthenticatedDashboardRoute
   '/_authenticated/events': typeof AuthenticatedEventsRoute
   '/_authenticated/guests': typeof AuthenticatedGuestsRoute
@@ -193,6 +192,7 @@ export interface FileRoutesById {
   '/auth/role': typeof AuthRoleRoute
   '/rsvp/$token': typeof RsvpTokenRoute
   '/w/$slug': typeof WSlugRouteWithChildren
+  '/auth/': typeof AuthIndexRoute
   '/_authenticated/website/edit': typeof AuthenticatedWebsiteEditRoute
   '/w/$slug/registry': typeof WSlugRegistryRoute
 }
@@ -200,7 +200,6 @@ export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
     | '/'
-    | '/auth'
     | '/dashboard'
     | '/events'
     | '/guests'
@@ -216,12 +215,12 @@ export interface FileRouteTypes {
     | '/auth/role'
     | '/rsvp/$token'
     | '/w/$slug'
+    | '/auth/'
     | '/website/edit'
     | '/w/$slug/registry'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
-    | '/auth'
     | '/dashboard'
     | '/events'
     | '/guests'
@@ -237,13 +236,13 @@ export interface FileRouteTypes {
     | '/auth/role'
     | '/rsvp/$token'
     | '/w/$slug'
+    | '/auth'
     | '/website/edit'
     | '/w/$slug/registry'
   id:
     | '__root__'
     | '/'
     | '/_authenticated'
-    | '/auth'
     | '/_authenticated/dashboard'
     | '/_authenticated/events'
     | '/_authenticated/guests'
@@ -259,6 +258,7 @@ export interface FileRouteTypes {
     | '/auth/role'
     | '/rsvp/$token'
     | '/w/$slug'
+    | '/auth/'
     | '/_authenticated/website/edit'
     | '/w/$slug/registry'
   fileRoutesById: FileRoutesById
@@ -266,20 +266,15 @@ export interface FileRouteTypes {
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AuthenticatedRouteRoute: typeof AuthenticatedRouteRouteWithChildren
-  AuthRoute: typeof AuthRouteWithChildren
+  AuthCallbackRoute: typeof AuthCallbackRoute
+  AuthRoleRoute: typeof AuthRoleRoute
   RsvpTokenRoute: typeof RsvpTokenRoute
   WSlugRoute: typeof WSlugRouteWithChildren
+  AuthIndexRoute: typeof AuthIndexRoute
 }
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
-    '/auth': {
-      id: '/auth'
-      path: '/auth'
-      fullPath: '/auth'
-      preLoaderRoute: typeof AuthRouteImport
-      parentRoute: typeof rootRouteImport
-    }
     '/_authenticated': {
       id: '/_authenticated'
       path: ''
@@ -292,6 +287,13 @@ declare module '@tanstack/react-router' {
       path: '/'
       fullPath: '/'
       preLoaderRoute: typeof IndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/auth/': {
+      id: '/auth/'
+      path: '/auth'
+      fullPath: '/auth/'
+      preLoaderRoute: typeof AuthIndexRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/w/$slug': {
@@ -310,17 +312,17 @@ declare module '@tanstack/react-router' {
     }
     '/auth/role': {
       id: '/auth/role'
-      path: '/role'
+      path: '/auth/role'
       fullPath: '/auth/role'
       preLoaderRoute: typeof AuthRoleRouteImport
-      parentRoute: typeof AuthRoute
+      parentRoute: typeof rootRouteImport
     }
     '/auth/callback': {
       id: '/auth/callback'
-      path: '/callback'
+      path: '/auth/callback'
       fullPath: '/auth/callback'
       preLoaderRoute: typeof AuthCallbackRouteImport
-      parentRoute: typeof AuthRoute
+      parentRoute: typeof rootRouteImport
     }
     '/_authenticated/website': {
       id: '/_authenticated/website'
@@ -458,18 +460,6 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
 const AuthenticatedRouteRouteWithChildren =
   AuthenticatedRouteRoute._addFileChildren(AuthenticatedRouteRouteChildren)
 
-interface AuthRouteChildren {
-  AuthCallbackRoute: typeof AuthCallbackRoute
-  AuthRoleRoute: typeof AuthRoleRoute
-}
-
-const AuthRouteChildren: AuthRouteChildren = {
-  AuthCallbackRoute: AuthCallbackRoute,
-  AuthRoleRoute: AuthRoleRoute,
-}
-
-const AuthRouteWithChildren = AuthRoute._addFileChildren(AuthRouteChildren)
-
 interface WSlugRouteChildren {
   WSlugRegistryRoute: typeof WSlugRegistryRoute
 }
@@ -483,9 +473,11 @@ const WSlugRouteWithChildren = WSlugRoute._addFileChildren(WSlugRouteChildren)
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AuthenticatedRouteRoute: AuthenticatedRouteRouteWithChildren,
-  AuthRoute: AuthRouteWithChildren,
+  AuthCallbackRoute: AuthCallbackRoute,
+  AuthRoleRoute: AuthRoleRoute,
   RsvpTokenRoute: RsvpTokenRoute,
   WSlugRoute: WSlugRouteWithChildren,
+  AuthIndexRoute: AuthIndexRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

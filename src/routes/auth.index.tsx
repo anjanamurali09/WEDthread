@@ -6,7 +6,7 @@ import { toast } from "sonner";
 import { Sparkles } from "lucide-react";
 import { ROLE_LANDING, type AppRole } from "@/hooks/use-active-role";
 
-export const Route = createFileRoute("/auth")({
+export const Route = createFileRoute("/auth/")({
   head: () => ({
     meta: [
       { title: "Sign in or join Vowzy" },
