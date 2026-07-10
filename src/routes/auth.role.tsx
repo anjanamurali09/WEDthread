@@ -42,9 +42,23 @@ function RolePicker() {
         navigate({ to: "/auth", replace: true });
         return;
       }
+      // Skip the picker on later visits: if the user already has a role
+      // and isn't explicitly adding another, send them to their dashboard.
+      if (!add) {
+        const { data: existing } = await supabase
+          .from("user_roles")
+          .select("role")
+          .eq("user_id", data.user.id)
+          .limit(1);
+        if (existing && existing.length > 0) {
+          window.localStorage.setItem("vowzy.activeRole", existing[0].role);
+          navigate({ to: "/dashboard" as any, replace: true });
+          return;
+        }
+      }
       setReady(true);
     })();
-  }, [navigate]);
+  }, [navigate, add]);
 
   const pick = async (role: AppRole) => {
     setSaving(role);
