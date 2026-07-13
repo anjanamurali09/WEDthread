@@ -7,6 +7,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { Plus, X, Trash2, Circle, Square, RectangleHorizontal, Music, GlassWater, Mic, DoorOpen, Palette, Users } from "lucide-react";
+import { OvalPhotoOrnament } from "@/components/photo-empty-state";
 
 export const Route = createFileRoute("/_authenticated/seating")({
   component: SeatingPage,
@@ -287,16 +288,20 @@ function FloorCanvas({ floorColor, tables, fixtures, seats, guests, onUpdateTabl
         onClick={() => setSelected(null)}
       >
         {tables.length === 0 && fixtures.length === 0 && (
-          <div className="absolute inset-0 flex flex-col items-center justify-center text-center pointer-events-none">
-            <p className="font-serif text-2xl text-ink/70">Your floor is empty</p>
-            <p className="text-sm text-muted-foreground mt-1">Add a table to start seating.</p>
+          <div className="absolute inset-0 flex flex-col items-center justify-center text-center pointer-events-none px-6">
+            <div className="pointer-events-none">
+              <OvalPhotoOrnament photo="cane" className="h-32 w-44 md:h-40 md:w-56" />
+            </div>
+            <p className="mt-5 font-serif text-3xl text-ink/80">Every seat a story</p>
+            <p className="text-sm text-muted-foreground mt-1 max-w-sm">Drop in your first table, then drag guests from the sidebar to give everyone a place at the celebration.</p>
             <button
               onClick={(e) => { e.stopPropagation(); onFirstTable(); }}
-              className="pointer-events-auto mt-4 inline-flex items-center gap-2 rounded-full bg-ink text-paper px-5 py-2 text-sm hover:bg-clay cursor-pointer">
-              <Plus className="h-4 w-4" /> Add table
+              className="pointer-events-auto mt-5 inline-flex items-center gap-2 rounded-full bg-ink text-paper px-5 py-2.5 text-sm hover:bg-clay cursor-pointer">
+              <Plus className="h-4 w-4" /> Add first table
             </button>
           </div>
         )}
+
 
         {fixtures.map((f: any) => (
           <FixtureNode key={f.id} fixture={f} selected={selected?.kind === "fixture" && selected.id === f.id}
