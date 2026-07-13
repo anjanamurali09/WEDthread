@@ -219,41 +219,44 @@ function RegistryPage() {
             )}
           </div>
 
-          <div className="grid sm:grid-cols-2 gap-3">
+          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
             {items.length === 0 ? (
-              <div className="sm:col-span-2 rounded-3xl border border-dashed border-line p-12 text-center">
+              <div className="col-span-full rounded-3xl border border-dashed border-line p-12 text-center">
                 <p className="font-serif text-xl">No items yet</p>
                 <p className="text-sm text-muted-foreground mt-1">Paste a product link on the right — the photo appears automatically.</p>
               </div>
             ) : items.map((it: any) => (
               <div key={it.id} className="paper-card overflow-hidden group relative flex flex-col">
-                <div className="aspect-[4/3] bg-pearl border-b border-line overflow-hidden">
+                <div className="aspect-square bg-pearl border-b border-line overflow-hidden">
                   {it.image_url ? (
                     <img src={it.image_url} alt={it.title} loading="lazy" className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" onError={(e) => { (e.currentTarget as HTMLImageElement).style.display = "none"; }} />
                   ) : (
                     <div className="w-full h-full grid place-items-center text-muted-foreground/40">
-                      <ImageOff className="h-8 w-8" />
+                      <ImageOff className="h-6 w-6" />
                     </div>
                   )}
                 </div>
-                <div className="p-4 flex-1 flex flex-col">
-                  <p className="font-serif text-lg leading-snug line-clamp-2">{it.title}</p>
-                  <p className="mt-1 text-xs text-muted-foreground truncate">
-                    {it.retailer && <>{it.retailer}</>}
-                    {it.price_cents && <> · <span className="text-wine font-medium">{formatPrice(it.price_cents, registry.country_code ?? "US")}</span></>}
-                  </p>
-                  {it.product_url && (
-                    <a href={it.product_url} target="_blank" rel="noreferrer" className="mt-3 inline-flex items-center gap-1 text-xs text-cherry hover:underline underline-offset-2">
-                      View product <ExternalLink className="h-3 w-3" />
-                    </a>
-                  )}
+                <div className="p-3 flex-1 flex flex-col gap-1">
+                  {it.retailer && <p className="text-[9px] uppercase tracking-widest text-muted-foreground truncate">{it.retailer}</p>}
+                  <p className="font-serif text-sm leading-snug line-clamp-2 flex-1">{it.title}</p>
+                  <div className="flex items-center justify-between gap-2 mt-1">
+                    {it.price_cents ? (
+                      <span className="text-xs font-medium text-wine">{formatPrice(it.price_cents, registry.country_code ?? "US")}</span>
+                    ) : <span />}
+                    {it.product_url && (
+                      <a href={it.product_url} target="_blank" rel="noreferrer" className="inline-flex items-center gap-0.5 text-[10px] text-cherry hover:underline underline-offset-2">
+                        View <ExternalLink className="h-2.5 w-2.5" />
+                      </a>
+                    )}
+                  </div>
                 </div>
-                <button onClick={() => removeItem.mutate(it.id)} className="absolute top-2 right-2 rounded-full bg-pearl/90 backdrop-blur p-1.5 opacity-0 group-hover:opacity-100 transition-opacity text-muted-foreground hover:text-cherry">
-                  <Trash2 className="h-3.5 w-3.5" />
+                <button onClick={() => removeItem.mutate(it.id)} className="absolute top-1.5 right-1.5 rounded-full bg-pearl/90 backdrop-blur p-1 opacity-0 group-hover:opacity-100 transition-opacity text-muted-foreground hover:text-cherry">
+                  <Trash2 className="h-3 w-3" />
                 </button>
               </div>
             ))}
           </div>
+
         </section>
 
         <aside className="paper-card p-6 h-fit lg:sticky lg:top-6">
