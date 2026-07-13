@@ -1,4 +1,4 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, Link } from "@tanstack/react-router";
 import { useMemo, useRef, useState } from "react";
 import Papa from "papaparse";
 import { AppShell } from "@/components/app-shell";
@@ -7,7 +7,10 @@ import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { Plus, Upload, Download, X, Trash2, Search, MessageCircle, Copy, FileText, Columns3, Check } from "lucide-react";
 
-export const Route = createFileRoute("/_authenticated/guests")({ component: GuestsPage });
+export const Route = createFileRoute("/_authenticated/guests")({
+  component: GuestsPage,
+  validateSearch: (s: Record<string, unknown>) => ({ event: typeof s.event === "string" ? s.event : undefined }),
+});
 
 const DIETARY = ["Vegetarian","Vegan","Halal","Kosher","Jain","Gluten-free","Pescatarian"];
 const ALLERGIES = ["Nuts","Dairy","Shellfish","Eggs","Soy","Sesame","Wheat"];
@@ -30,6 +33,8 @@ function GuestsPage() {
   const { data: guests = [] } = useGuests(wedding?.id);
   const { data: invites = [] } = useInvites(wedding?.id);
   const invalidate = useInvalidateWedding();
+  const { event: scopeEventId } = Route.useSearch();
+  const scopeEvent = scopeEventId ? events.find((e) => e.id === scopeEventId) : undefined;
   const [editing, setEditing] = useState<Partial<Guest> | null>(null);
   const [q, setQ] = useState("");
   const [filterDiet, setFilterDiet] = useState<string | null>(null);
@@ -46,14 +51,20 @@ function GuestsPage() {
   });
   const showCol = (k: ColKey) => visibleCols.includes(k);
 
+  const scopedGuestIds = useMemo(() => {
+    if (!scopeEventId) return null;
+    return new Set(invites.filter((i) => i.event_id === scopeEventId).map((i) => i.guest_id));
+  }, [invites, scopeEventId]);
 
   const filtered = useMemo(() => {
     return guests.filter((g) => {
+      if (scopedGuestIds && !scopedGuestIds.has(g.id)) return false;
       if (q && !g.full_name.toLowerCase().includes(q.toLowerCase()) && !(g.email || "").toLowerCase().includes(q.toLowerCase())) return false;
       if (filterDiet && !(g.dietary_tags?.includes(filterDiet) || g.food_allergies?.includes(filterDiet))) return false;
       return true;
     });
-  }, [guests, q, filterDiet]);
+  }, [guests, q, filterDiet, scopedGuestIds]);
+
 
   const inviteByGuest = useMemo(() => {
     const m = new Map<string, Invite[]>();
@@ -197,6 +208,12 @@ function GuestsPage() {
         </div>
       }
     >
+      {scopeEvent && (
+        <div className="mb-4 flex items-center justify-between gap-3 rounded-2xl border border-line bg-cream/60 px-4 py-2.5">
+          <p className="text-xs text-ink/80">Showing guests invited to <span className="font-medium">{scopeEvent.name}</span></p>
+          <Link to="/guests" className="text-xs text-clay hover:text-ink cursor-pointer">Show all guests ×</Link>
+        </div>
+      )}
       <div className="grid grid-cols-3 gap-3 mb-6">
         <Stat label="Total guests" value={stats.total} />
         <Stat label="Attending" value={stats.attending} accent />
