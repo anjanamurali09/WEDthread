@@ -9,6 +9,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { ExternalLink, Plus, Trash2, Globe2, Share2, Copy, Check, MessageCircle, Loader2, ImageOff, X } from "lucide-react";
 import { fetchProductPreview } from "@/lib/product-preview.functions";
+import { PhotoEmptyState } from "@/components/photo-empty-state";
 
 export const Route = createFileRoute("/_authenticated/registry")({ component: RegistryPage });
 
@@ -221,9 +222,14 @@ function RegistryPage() {
 
           <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
             {items.length === 0 ? (
-              <div className="col-span-full rounded-3xl border border-dashed border-line p-12 text-center">
-                <p className="font-serif text-xl">No items yet</p>
-                <p className="text-sm text-muted-foreground mt-1">Paste a product link on the right — the photo appears automatically.</p>
+              <div className="col-span-full">
+                <PhotoEmptyState
+                  photo="garden"
+                  variant="landscape"
+                  eyebrow="Your registry"
+                  title="A few things you've been dreaming of"
+                  body="Paste any product link on the right — we'll grab the photo, price, and retailer automatically."
+                />
               </div>
             ) : items.map((it: any) => (
               <div key={it.id} className="paper-card overflow-hidden group relative flex flex-col">

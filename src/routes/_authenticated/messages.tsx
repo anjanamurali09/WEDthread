@@ -6,6 +6,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { MessageCircle, Send, Plus, Trash2, X, ExternalLink } from "lucide-react";
+import { PhotoEmptyState } from "@/components/photo-empty-state";
 
 export const Route = createFileRoute("/_authenticated/messages")({ component: MessagesPage });
 
@@ -95,11 +96,14 @@ function MessagesPage() {
       }
     >
       {templates.length === 0 ? (
-        <div className="rounded-3xl border border-dashed border-line p-16 text-center">
-          <MessageCircle className="h-8 w-8 mx-auto text-clay" />
-          <h3 className="mt-4 font-serif text-2xl">No templates yet</h3>
-          <p className="mt-2 text-sm text-muted-foreground max-w-md mx-auto">Load the four starters (save-the-date, RSVP, reminder, thank-you), then edit to match your voice.</p>
-        </div>
+        <PhotoEmptyState
+          photo="bridal"
+          eyebrow="Messages"
+          title="Speak in your own voice"
+          body="Load the four starters — save-the-date, RSVP, reminder, thank-you — then edit each one so it sounds like you, not us."
+        >
+          <button onClick={seedDefaults} className="inline-flex items-center gap-2 rounded-full bg-ink text-paper px-5 py-2.5 text-sm hover:bg-clay"><Send className="h-4 w-4" /> Load starter templates</button>
+        </PhotoEmptyState>
       ) : (
         <div className="grid md:grid-cols-2 gap-4">
           {templates.map((t: any) => (

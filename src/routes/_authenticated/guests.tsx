@@ -6,6 +6,7 @@ import { useCurrentWedding, useEvents, useGuests, useInvites, useInvalidateWeddi
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { Plus, Upload, Download, X, Trash2, Search, MessageCircle, Copy, FileText, Columns3, Check, ChevronDown } from "lucide-react";
+import { PhotoEmptyState, OvalPhotoOrnament } from "@/components/photo-empty-state";
 
 export const Route = createFileRoute("/_authenticated/guests")({
   component: GuestsPage,
@@ -229,11 +230,20 @@ function GuestsPage() {
           <Link to="/guests" className="text-xs text-clay hover:text-ink cursor-pointer">Show all guests ×</Link>
         </div>
       )}
-      <div className="grid grid-cols-3 gap-3 mb-6">
-        <Stat label="Total guests" value={stats.total} />
-        <Stat label="Attending" value={stats.attending} accent />
-        <Stat label="Pending replies" value={stats.pending} />
-      </div>
+
+      {/* Signature header strip: oval photo ornament + stats, echoes the homepage hero motif. */}
+      <section className="warm-wash rounded-[36px] border border-line/60 overflow-hidden mb-6 grid md:grid-cols-[220px_1fr] gap-6 md:gap-8 items-center p-5 md:p-6">
+        <div className="relative h-40 md:h-44">
+          <OvalPhotoOrnament photo="garden" className="absolute inset-0 h-full w-full" />
+          <span aria-hidden className="pointer-events-none absolute -bottom-3 -right-3 h-10 w-14 blob bg-blush-soft" />
+        </div>
+        <div className="grid grid-cols-3 gap-3">
+          <Stat label="Total guests" value={stats.total} />
+          <Stat label="Attending" value={stats.attending} accent />
+          <Stat label="Pending replies" value={stats.pending} />
+        </div>
+      </section>
+
 
       <div className="flex flex-wrap gap-2 mb-4 items-center">
         <div className="relative flex-1 min-w-[220px]">
@@ -294,11 +304,15 @@ function GuestsPage() {
 
 
       {guests.length === 0 ? (
-        <div className="rounded-3xl bg-gradient-to-br from-blush-soft via-cream to-sage/20 border border-line p-12 text-center">
-          <h3 className="font-serif text-3xl">No guests yet</h3>
-          <p className="mt-3 text-sm text-ink/70 max-w-lg mx-auto">Add guests one by one, or download the CSV template and import a whole spreadsheet. The template has every Add-guest field as a column, so nothing gets lost.</p>
-          <button onClick={downloadTemplate} className="mt-6 inline-flex items-center gap-2 rounded-full bg-ink text-paper px-5 py-2.5 text-sm hover:bg-clay"><FileText className="h-4 w-4" /> Download CSV template</button>
-        </div>
+        <PhotoEmptyState
+          photo="cane"
+          eyebrow="Your guest list"
+          title="Start with the names that matter"
+          body="Add guests one by one, or download the CSV template and import a whole spreadsheet — every Add-guest field is a column, so nothing gets lost in translation."
+        >
+          <button onClick={downloadTemplate} className="inline-flex items-center gap-2 rounded-full bg-ink text-paper px-5 py-2.5 text-sm hover:bg-clay"><FileText className="h-4 w-4" /> Download CSV template</button>
+          <button onClick={() => setEditing({})} className="inline-flex items-center gap-2 rounded-full border border-ink px-5 py-2.5 text-sm hover:bg-blush-soft"><Plus className="h-4 w-4" /> Add first guest</button>
+        </PhotoEmptyState>
       ) : (
         <div className="paper-card overflow-x-auto">
           <table className="w-full text-sm">
