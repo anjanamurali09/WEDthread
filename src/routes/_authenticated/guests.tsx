@@ -229,11 +229,20 @@ function GuestsPage() {
           <Link to="/guests" className="text-xs text-clay hover:text-ink cursor-pointer">Show all guests ×</Link>
         </div>
       )}
-      <div className="grid grid-cols-3 gap-3 mb-6">
-        <Stat label="Total guests" value={stats.total} />
-        <Stat label="Attending" value={stats.attending} accent />
-        <Stat label="Pending replies" value={stats.pending} />
-      </div>
+
+      {/* Signature header strip: oval photo ornament + stats, echoes the homepage hero motif. */}
+      <section className="warm-wash rounded-[36px] border border-line/60 overflow-hidden mb-6 grid md:grid-cols-[220px_1fr] gap-6 md:gap-8 items-center p-5 md:p-6">
+        <div className="relative h-40 md:h-44">
+          <OvalPhotoOrnament photo="garden" className="absolute inset-0 h-full w-full" />
+          <span aria-hidden className="pointer-events-none absolute -bottom-3 -right-3 h-10 w-14 blob bg-blush-soft" />
+        </div>
+        <div className="grid grid-cols-3 gap-3">
+          <Stat label="Total guests" value={stats.total} />
+          <Stat label="Attending" value={stats.attending} accent />
+          <Stat label="Pending replies" value={stats.pending} />
+        </div>
+      </section>
+
 
       <div className="flex flex-wrap gap-2 mb-4 items-center">
         <div className="relative flex-1 min-w-[220px]">
