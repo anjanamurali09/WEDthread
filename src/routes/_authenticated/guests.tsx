@@ -208,6 +208,12 @@ function GuestsPage() {
         </div>
       }
     >
+      {scopeEvent && (
+        <div className="mb-4 flex items-center justify-between gap-3 rounded-2xl border border-line bg-cream/60 px-4 py-2.5">
+          <p className="text-xs text-ink/80">Showing guests invited to <span className="font-medium">{scopeEvent.name}</span></p>
+          <Link to="/guests" className="text-xs text-clay hover:text-ink cursor-pointer">Show all guests ×</Link>
+        </div>
+      )}
       <div className="grid grid-cols-3 gap-3 mb-6">
         <Stat label="Total guests" value={stats.total} />
         <Stat label="Attending" value={stats.attending} accent />
