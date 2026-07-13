@@ -166,7 +166,7 @@ function SeatingPage() {
       title="Seating"
       subtitle="Design your floor plan. Drag tables and fixtures, then drop guests from the sidebar."
       actions={
-        <select value={eventId} onChange={(e) => setEventId(e.target.value)} className="rounded-full border border-line px-4 py-2 text-sm bg-paper cursor-pointer">
+        <select value={eventId} onChange={(e) => setEventId(e.target.value)} className="rounded-full border border-line pl-4 pr-10 py-2 text-sm bg-paper cursor-pointer appearance-none bg-no-repeat" style={{ backgroundImage: "url(\"data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%231A1512' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'><polyline points='6 9 12 15 18 9'/></svg>\")", backgroundPosition: "right 14px center" }}>
           {events.map((e) => <option key={e.id} value={e.id}>{e.name}</option>)}
         </select>
       }
