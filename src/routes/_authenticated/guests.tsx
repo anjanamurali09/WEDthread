@@ -38,6 +38,9 @@ function GuestsPage() {
   const [editing, setEditing] = useState<Partial<Guest> | null>(null);
   const [q, setQ] = useState("");
   const [filterDiet, setFilterDiet] = useState<string | null>(null);
+  const [filterHousehold, setFilterHousehold] = useState<string | null>(null);
+  const [filterEvent, setFilterEvent] = useState<string | null>(null);
+  const [filterRsvp, setFilterRsvp] = useState<string | null>(null);
   const fileRef = useRef<HTMLInputElement>(null);
   const [visibleCols, setVisibleCols] = useState<ColKey[]>(() => {
     try { const s = localStorage.getItem("vowzy_guest_cols"); if (s) return JSON.parse(s); } catch {}
@@ -56,14 +59,33 @@ function GuestsPage() {
     return new Set(invites.filter((i) => i.event_id === scopeEventId).map((i) => i.guest_id));
   }, [invites, scopeEventId]);
 
+  const households = useMemo(() => {
+    const s = new Set<string>();
+    guests.forEach((g) => { if (g.household_group) s.add(g.household_group); });
+    return [...s].sort();
+  }, [guests]);
+
+  const invitesByGuestQuick = useMemo(() => {
+    const m = new Map<string, Invite[]>();
+    invites.forEach((i) => { const l = m.get(i.guest_id) ?? []; l.push(i); m.set(i.guest_id, l); });
+    return m;
+  }, [invites]);
+
   const filtered = useMemo(() => {
     return guests.filter((g) => {
       if (scopedGuestIds && !scopedGuestIds.has(g.id)) return false;
       if (q && !g.full_name.toLowerCase().includes(q.toLowerCase()) && !(g.email || "").toLowerCase().includes(q.toLowerCase())) return false;
       if (filterDiet && !(g.dietary_tags?.includes(filterDiet) || g.food_allergies?.includes(filterDiet))) return false;
+      if (filterHousehold && g.household_group !== filterHousehold) return false;
+      const gi = invitesByGuestQuick.get(g.id) ?? [];
+      if (filterEvent && !gi.some((i) => i.event_id === filterEvent)) return false;
+      if (filterRsvp && !gi.some((i) => i.rsvp_status === filterRsvp)) return false;
       return true;
     });
-  }, [guests, q, filterDiet, scopedGuestIds]);
+  }, [guests, q, filterDiet, filterHousehold, filterEvent, filterRsvp, scopedGuestIds, invitesByGuestQuick]);
+
+  const anyFilter = !!(q || filterDiet || filterHousehold || filterEvent || filterRsvp);
+  const clearFilters = () => { setQ(""); setFilterDiet(null); setFilterHousehold(null); setFilterEvent(null); setFilterRsvp(null); };
 
 
   const inviteByGuest = useMemo(() => {
