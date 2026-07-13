@@ -432,8 +432,15 @@ function TableNode({ table, seated, selected, onSelect, onUpdate, onDelete, onUn
 }
 
 /* --- Chair chip around the table --- */
-function ChairChip({ x, y, size, name, first, hasDiet, dietary, notes, onUnseat }: any) {
+function getInitials(name: string): string {
+  const parts = (name ?? "").trim().split(/\s+/).filter(Boolean);
+  if (parts.length === 0) return "?";
+  if (parts.length === 1) return parts[0].slice(0, 2).toUpperCase();
+  return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
+}
+function ChairChip({ x, y, size, name, initials, hasDiet, dietary, notes, onUnseat }: any) {
   const [tipOpen, setTipOpen] = useState(false);
+  const fontSize = size >= 34 ? 12 : size >= 28 ? 11 : size >= 24 ? 10 : 9;
   return (
     <div
       data-nodrag
@@ -445,9 +452,10 @@ function ChairChip({ x, y, size, name, first, hasDiet, dietary, notes, onUnseat 
         <button
           onClick={onUnseat}
           title={name}
-          className="w-full h-full rounded-full bg-paper border border-ink/30 shadow flex items-center justify-center text-[8px] font-medium text-ink hover:bg-blush-soft hover:border-ink transition-colors cursor-pointer overflow-hidden"
+          style={{ fontSize }}
+          className="w-full h-full rounded-full bg-paper border border-ink/30 shadow flex items-center justify-center font-semibold text-ink hover:bg-blush-soft hover:border-ink transition-colors cursor-pointer"
         >
-          <span className="truncate px-0.5 max-w-full leading-none">{first}</span>
+          <span className="leading-none">{initials}</span>
         </button>
         {hasDiet && (
           <>
