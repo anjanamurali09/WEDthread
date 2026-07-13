@@ -160,7 +160,7 @@ function Landing() {
           </div>
           <div className="lg:col-span-7 grid sm:grid-cols-2 gap-4">
             {[
-              { i: Calendar, t: "Unlimited ceremonies", b: "Add every event your two cultures ask for. Never a dropdown of just ceremony and reception.", bg: "bg-cream", hover: "hover:bg-cream-hover" },
+              { i: Calendar, t: "Unlimited ceremonies", b: "Add every event your two cultures and traditions need. No limits.", bg: "bg-cream", hover: "hover:bg-cream-hover" },
               { i: Users, t: "Smart guest lists", b: "First and last name, per-event invites, plus-ones, dietary tags, allergies, accessibility notes.", bg: "bg-blush-soft", hover: "hover:bg-blush-soft-hover" },
               { i: Grid3x3, t: "Seating canvas", b: "Design the room. Drag tables, dance floor, bar. Round, square, rectangle. Warn on capacity and allergy clusters.", bg: "bg-sage-soft", hover: "hover:bg-sage-soft-hover" },
               { i: MessageCircle, t: "WhatsApp automation", b: "Save-the-date, RSVP link, T-7 reminder, thank-you. Templates that greet guests by first name.", bg: "bg-wine-soft", hover: "hover:bg-wine-soft-hover" },
@@ -184,11 +184,11 @@ function Landing() {
         <div className="absolute inset-0 opacity-30" style={{ backgroundImage: "radial-gradient(circle at 20% 30%, var(--blush) 0 4%, transparent 5%), radial-gradient(circle at 80% 60%, var(--cream) 0 3%, transparent 4%), radial-gradient(circle at 50% 80%, var(--sage) 0 5%, transparent 6%)" }} />
         <div aria-hidden className="absolute -top-24 -left-24 h-72 w-72 blob bg-wine/40" />
         <div aria-hidden className="absolute -bottom-24 -right-24 h-80 w-80 blob-2 bg-blush/40" />
-        <p className="relative text-xs uppercase tracking-[0.3em] text-blush">Free while we're launching</p>
+        <p className="relative text-xs uppercase tracking-[0.3em] text-blush">FOR EVERY WEDDING, ANYWHERE</p>
         <h2 className="relative mt-4 font-serif text-5xl md:text-7xl max-w-3xl mx-auto leading-[0.95]">Your wedding, every ceremony, in one place.</h2>
         <button onClick={() => setAuthOpen("signup")}
           className="relative mt-10 inline-flex items-center gap-2 rounded-full bg-pearl text-ink px-8 py-4 text-sm font-medium transition-all hover:bg-ink hover:text-pearl hover:rounded-2xl hover:gap-3">
-          Start planning free <ArrowRight className="h-4 w-4" />
+          Start planning for free <ArrowRight className="h-4 w-4" />
         </button>
       </section>
 
