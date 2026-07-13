@@ -279,6 +279,20 @@ function GuestsPage() {
         </div>
       </div>
 
+      <div className="flex items-center justify-between mb-3 text-xs text-muted-foreground">
+        <p>
+          {anyFilter ? (
+            <><span className="font-medium text-ink">{filtered.length}</span> of {guests.length} guests match</>
+          ) : (
+            <><span className="font-medium text-ink">{guests.length}</span> guest{guests.length === 1 ? "" : "s"}</>
+          )}
+        </p>
+        {anyFilter && (
+          <button onClick={clearFilters} className="text-clay hover:text-ink cursor-pointer">Clear filters ×</button>
+        )}
+      </div>
+
+
       {guests.length === 0 ? (
         <div className="rounded-3xl bg-gradient-to-br from-blush-soft via-cream to-sage/20 border border-line p-12 text-center">
           <h3 className="font-serif text-3xl">No guests yet</h3>
