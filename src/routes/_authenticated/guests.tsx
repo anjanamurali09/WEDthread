@@ -5,7 +5,7 @@ import { AppShell } from "@/components/app-shell";
 import { useCurrentWedding, useEvents, useGuests, useInvites, useInvalidateWedding, type Guest, type Invite } from "@/lib/wedding-hooks";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-import { Plus, Upload, Download, X, Trash2, Search, MessageCircle, Copy, FileText, Columns3, Check } from "lucide-react";
+import { Plus, Upload, Download, X, Trash2, Search, MessageCircle, Copy, FileText, Columns3, Check, ChevronDown } from "lucide-react";
 
 export const Route = createFileRoute("/_authenticated/guests")({
   component: GuestsPage,
@@ -38,6 +38,9 @@ function GuestsPage() {
   const [editing, setEditing] = useState<Partial<Guest> | null>(null);
   const [q, setQ] = useState("");
   const [filterDiet, setFilterDiet] = useState<string | null>(null);
+  const [filterHousehold, setFilterHousehold] = useState<string | null>(null);
+  const [filterEvent, setFilterEvent] = useState<string | null>(null);
+  const [filterRsvp, setFilterRsvp] = useState<string | null>(null);
   const fileRef = useRef<HTMLInputElement>(null);
   const [visibleCols, setVisibleCols] = useState<ColKey[]>(() => {
     try { const s = localStorage.getItem("vowzy_guest_cols"); if (s) return JSON.parse(s); } catch {}
@@ -56,21 +59,33 @@ function GuestsPage() {
     return new Set(invites.filter((i) => i.event_id === scopeEventId).map((i) => i.guest_id));
   }, [invites, scopeEventId]);
 
-  const filtered = useMemo(() => {
-    return guests.filter((g) => {
-      if (scopedGuestIds && !scopedGuestIds.has(g.id)) return false;
-      if (q && !g.full_name.toLowerCase().includes(q.toLowerCase()) && !(g.email || "").toLowerCase().includes(q.toLowerCase())) return false;
-      if (filterDiet && !(g.dietary_tags?.includes(filterDiet) || g.food_allergies?.includes(filterDiet))) return false;
-      return true;
-    });
-  }, [guests, q, filterDiet, scopedGuestIds]);
-
+  const households = useMemo(() => {
+    const s = new Set<string>();
+    guests.forEach((g) => { if (g.household_group) s.add(g.household_group); });
+    return [...s].sort();
+  }, [guests]);
 
   const inviteByGuest = useMemo(() => {
     const m = new Map<string, Invite[]>();
     invites.forEach((i) => { const l = m.get(i.guest_id) ?? []; l.push(i); m.set(i.guest_id, l); });
     return m;
   }, [invites]);
+
+  const filtered = useMemo(() => {
+    return guests.filter((g) => {
+      if (scopedGuestIds && !scopedGuestIds.has(g.id)) return false;
+      if (q && !g.full_name.toLowerCase().includes(q.toLowerCase()) && !(g.email || "").toLowerCase().includes(q.toLowerCase())) return false;
+      if (filterDiet && !(g.dietary_tags?.includes(filterDiet) || g.food_allergies?.includes(filterDiet))) return false;
+      if (filterHousehold && g.household_group !== filterHousehold) return false;
+      const gi = inviteByGuest.get(g.id) ?? [];
+      if (filterEvent && !gi.some((i) => i.event_id === filterEvent)) return false;
+      if (filterRsvp && !gi.some((i) => i.rsvp_status === filterRsvp)) return false;
+      return true;
+    });
+  }, [guests, q, filterDiet, filterHousehold, filterEvent, filterRsvp, scopedGuestIds, inviteByGuest]);
+
+  const anyFilter = !!(q || filterDiet || filterHousehold || filterEvent || filterRsvp);
+  const clearFilters = () => { setQ(""); setFilterDiet(null); setFilterHousehold(null); setFilterEvent(null); setFilterRsvp(null); };
 
   const importCsv = () => fileRef.current?.click();
 
@@ -225,12 +240,19 @@ function GuestsPage() {
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
           <input value={q} onChange={(e) => setQ(e.target.value)} placeholder="Search name or email…" className="w-full rounded-full border border-line pl-10 pr-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-clay" />
         </div>
-        <div className="flex gap-1 flex-wrap">
-          {[...DIETARY, ...ALLERGIES].map((t) => (
-            <button key={t} onClick={() => setFilterDiet(filterDiet === t ? null : t)}
-              className={`text-[11px] rounded-full border px-2.5 py-0.5 ${filterDiet === t ? "bg-clay text-paper border-clay" : "border-line hover:bg-stone text-muted-foreground"}`}>{t}</button>
-          ))}
-        </div>
+        <FilterSelect label="Family / Group" value={filterHousehold} onChange={setFilterHousehold}
+          options={households.map((h) => ({ value: h, label: h }))} />
+        <FilterSelect label="Dietary" value={filterDiet} onChange={setFilterDiet}
+          options={[...DIETARY, ...ALLERGIES].map((t) => ({ value: t, label: t }))} />
+        <FilterSelect label="Event" value={filterEvent} onChange={setFilterEvent}
+          options={events.map((e) => ({ value: e.id, label: e.name }))} />
+        <FilterSelect label="RSVP status" value={filterRsvp} onChange={setFilterRsvp}
+          options={[
+            { value: "attending", label: "Attending" },
+            { value: "declined", label: "Declined" },
+            { value: "pending", label: "Pending" },
+            { value: "maybe", label: "Maybe" },
+          ]} />
         <div className="relative">
           <button onClick={() => setColsOpen((v) => !v)} className="inline-flex items-center gap-2 rounded-full border border-line px-4 py-2 text-sm hover:bg-stone">
             <Columns3 className="h-4 w-4" /> Columns
@@ -256,6 +278,20 @@ function GuestsPage() {
           )}
         </div>
       </div>
+
+      <div className="flex items-center justify-between mb-3 text-xs text-muted-foreground">
+        <p>
+          {anyFilter ? (
+            <><span className="font-medium text-ink">{filtered.length}</span> of {guests.length} guests match</>
+          ) : (
+            <><span className="font-medium text-ink">{guests.length}</span> guest{guests.length === 1 ? "" : "s"}</>
+          )}
+        </p>
+        {anyFilter && (
+          <button onClick={clearFilters} className="text-clay hover:text-ink cursor-pointer">Clear filters ×</button>
+        )}
+      </div>
+
 
       {guests.length === 0 ? (
         <div className="rounded-3xl bg-gradient-to-br from-blush-soft via-cream to-sage/20 border border-line p-12 text-center">
@@ -439,5 +475,40 @@ function F({ label, value, onChange, type = "text", placeholder, required }: { l
       <input type={type} required={required} value={value} onChange={(e) => onChange(e.target.value)} placeholder={placeholder}
         className="mt-1 w-full rounded-2xl border border-line px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-clay" />
     </label>
+  );
+}
+
+function FilterSelect({ label, value, onChange, options }: {
+  label: string; value: string | null; onChange: (v: string | null) => void;
+  options: { value: string; label: string }[];
+}) {
+  const [open, setOpen] = useState(false);
+  const active = value ? options.find((o) => o.value === value) : null;
+  return (
+    <div className="relative">
+      <button onClick={() => setOpen((v) => !v)}
+        className={`inline-flex items-center gap-2 rounded-full border px-3 py-2 text-xs cursor-pointer transition-colors ${active ? "bg-clay text-paper border-clay" : "border-line hover:bg-stone"}`}>
+        <span className="uppercase tracking-widest text-[10px] opacity-80">{label}</span>
+        <span className="font-medium">{active?.label ?? "Any"}</span>
+        <ChevronDown className="h-3 w-3 opacity-70" />
+      </button>
+      {open && (
+        <>
+          <div className="fixed inset-0 z-10" onClick={() => setOpen(false)} />
+          <div className="absolute left-0 mt-2 z-20 w-56 max-h-72 overflow-y-auto rounded-2xl border border-line bg-pearl shadow-lg p-1.5">
+            <button onClick={() => { onChange(null); setOpen(false); }}
+              className={`w-full text-left px-3 py-2 text-sm rounded-xl hover:bg-blush-soft ${!value ? "font-medium" : ""}`}>Any</button>
+            {options.length === 0 && <p className="px-3 py-2 text-xs text-muted-foreground">No options yet</p>}
+            {options.map((o) => (
+              <button key={o.value} onClick={() => { onChange(o.value); setOpen(false); }}
+                className={`w-full text-left px-3 py-2 text-sm rounded-xl hover:bg-blush-soft flex items-center justify-between gap-2 ${value === o.value ? "font-medium" : ""}`}>
+                <span className="truncate">{o.label}</span>
+                {value === o.value && <Check className="h-3.5 w-3.5 text-cherry shrink-0" />}
+              </button>
+            ))}
+          </div>
+        </>
+      )}
+    </div>
   );
 }
