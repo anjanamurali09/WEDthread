@@ -33,6 +33,8 @@ function GuestsPage() {
   const { data: guests = [] } = useGuests(wedding?.id);
   const { data: invites = [] } = useInvites(wedding?.id);
   const invalidate = useInvalidateWedding();
+  const { event: scopeEventId } = Route.useSearch();
+  const scopeEvent = scopeEventId ? events.find((e) => e.id === scopeEventId) : undefined;
   const [editing, setEditing] = useState<Partial<Guest> | null>(null);
   const [q, setQ] = useState("");
   const [filterDiet, setFilterDiet] = useState<string | null>(null);
@@ -49,14 +51,20 @@ function GuestsPage() {
   });
   const showCol = (k: ColKey) => visibleCols.includes(k);
 
+  const scopedGuestIds = useMemo(() => {
+    if (!scopeEventId) return null;
+    return new Set(invites.filter((i) => i.event_id === scopeEventId).map((i) => i.guest_id));
+  }, [invites, scopeEventId]);
 
   const filtered = useMemo(() => {
     return guests.filter((g) => {
+      if (scopedGuestIds && !scopedGuestIds.has(g.id)) return false;
       if (q && !g.full_name.toLowerCase().includes(q.toLowerCase()) && !(g.email || "").toLowerCase().includes(q.toLowerCase())) return false;
       if (filterDiet && !(g.dietary_tags?.includes(filterDiet) || g.food_allergies?.includes(filterDiet))) return false;
       return true;
     });
-  }, [guests, q, filterDiet]);
+  }, [guests, q, filterDiet, scopedGuestIds]);
+
 
   const inviteByGuest = useMemo(() => {
     const m = new Map<string, Invite[]>();
