@@ -6,6 +6,7 @@ import { useCurrentWedding, useEvents, useGuests, useInvites, useInvalidateWeddi
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { Plus, Upload, Download, X, Trash2, Search, MessageCircle, Copy, FileText, Columns3, Check, ChevronDown } from "lucide-react";
+import { PhotoEmptyState, OvalPhotoOrnament } from "@/components/photo-empty-state";
 
 export const Route = createFileRoute("/_authenticated/guests")({
   component: GuestsPage,
