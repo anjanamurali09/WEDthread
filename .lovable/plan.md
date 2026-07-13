@@ -1,23 +1,17 @@
-## Changes
+## Plan
 
-### 1. Sign out → homepage
-- Update the sign-out handler (in `src/components/app-shell.tsx` and/or `WorkspaceSwitcher`) so after `supabase.auth.signOut()` it navigates to `/` instead of `/auth`.
+### Goal
+Replace the current homepage hero image with the uploaded wedding photo and ensure the bride and groom are clearly visible and centered.
 
-### 2. Cursor pointer on clickables
-- Add a global rule in `src/styles.css`:
-  ```css
-  button, [role="button"], a, [data-clickable], summary, label[for], select, input[type="submit"], input[type="button"], input[type="checkbox"], input[type="radio"] { cursor: pointer; }
-  button:disabled, [role="button"][aria-disabled="true"] { cursor: not-allowed; }
-  ```
+### Steps
 
-### 3. Remove Vowzy highlight
-- In `src/routes/index.tsx` nav logo, drop the cherry-filled sparkle badge hover treatment and use a plain, subtle wordmark (no colored circle background, no hover rotate). Keep it as a simple serif "Vowzy" link, matching the rest of the site's quiet tone.
+1. **Create a Lovable asset pointer** for `user-uploads://Gemini_Generated_Image_kmkukgkmkukgkmku.png` under `src/assets/`.
+2. **Update `src/routes/index.tsx`**:
+   - Import the new asset pointer.
+   - Replace the existing `heroImg` source with the new image URL.
+   - Adjust `object-position` and cropping so the couple is centered in the frame (the current image is tall/portrait; the hero container is landscape, so we’ll position the focal point on the bride and groom).
+3. **Verify visually** in the preview that the couple is prominent and not cropped out.
 
-### 4. Home page copy
-Update `src/routes/index.tsx` hero:
-- Eyebrow: `FOR EVERY WEDDING, ANYWHERE`
-- Headline: `One place for every event your wedding needs.` with italic cherry emphasis on `Big, small, traditional, or entirely your own.`
-- Sub-eyebrow row (replacing the current "Destination-native · WhatsApp built in · Every culture" strip): `MULTI-EVENT PLANNING · FIND VENUES & VENDORS · SELL & BUY WITH US`
-- Remove the old "Many ceremonies. Many cultures. One plan." headline and its paragraph.
-
-No backend, routing, or other page changes.
+### Out of scope
+- No other copy, color, or layout changes unless the new crop requires minor spacing tweaks.
+- No image generation; we’re using the uploaded photo directly.
