@@ -1,0 +1,1 @@
+ALTER TABLE public.events ADD COLUMN IF NOT EXISTS enabled_categories text[] NOT NULL DEFAULT ARRAY['guests','seating','venue','registry','website','vendors']::text[];

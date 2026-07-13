@@ -176,6 +176,7 @@ export type Database = {
           country: string | null
           created_at: string
           description: string | null
+          enabled_categories: string[]
           event_date: string | null
           event_end_time: string | null
           event_time: string | null
@@ -191,6 +192,7 @@ export type Database = {
           country?: string | null
           created_at?: string
           description?: string | null
+          enabled_categories?: string[]
           event_date?: string | null
           event_end_time?: string | null
           event_time?: string | null
@@ -206,6 +208,7 @@ export type Database = {
           country?: string | null
           created_at?: string
           description?: string | null
+          enabled_categories?: string[]
           event_date?: string | null
           event_end_time?: string | null
           event_time?: string | null
