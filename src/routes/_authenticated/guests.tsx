@@ -12,6 +12,18 @@ export const Route = createFileRoute("/_authenticated/guests")({ component: Gues
 const DIETARY = ["Vegetarian","Vegan","Halal","Kosher","Jain","Gluten-free","Pescatarian"];
 const ALLERGIES = ["Nuts","Dairy","Shellfish","Eggs","Soy","Sesame","Wheat"];
 
+type ColKey = "name" | "household" | "email" | "phone" | "dietary" | "events" | "rsvp";
+const ALL_COLS: { key: ColKey; label: string }[] = [
+  { key: "name", label: "Guest name" },
+  { key: "household", label: "Family / Group" },
+  { key: "email", label: "Email" },
+  { key: "phone", label: "Phone" },
+  { key: "dietary", label: "Dietary" },
+  { key: "events", label: "Events" },
+  { key: "rsvp", label: "RSVP status" },
+];
+const DEFAULT_COLS: ColKey[] = ["name", "household", "email", "phone", "dietary", "events", "rsvp"];
+
 function GuestsPage() {
   const { data: wedding } = useCurrentWedding();
   const { data: events = [] } = useEvents(wedding?.id);
@@ -22,6 +34,18 @@ function GuestsPage() {
   const [q, setQ] = useState("");
   const [filterDiet, setFilterDiet] = useState<string | null>(null);
   const fileRef = useRef<HTMLInputElement>(null);
+  const [visibleCols, setVisibleCols] = useState<ColKey[]>(() => {
+    try { const s = localStorage.getItem("vowzy_guest_cols"); if (s) return JSON.parse(s); } catch {}
+    return DEFAULT_COLS;
+  });
+  const [colsOpen, setColsOpen] = useState(false);
+  const toggleCol = (k: ColKey) => setVisibleCols((prev) => {
+    const next = prev.includes(k) ? prev.filter((x) => x !== k) : [...prev, k];
+    try { localStorage.setItem("vowzy_guest_cols", JSON.stringify(next)); } catch {}
+    return next;
+  });
+  const showCol = (k: ColKey) => visibleCols.includes(k);
+
 
   const filtered = useMemo(() => {
     return guests.filter((g) => {
