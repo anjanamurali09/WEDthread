@@ -5,7 +5,7 @@ import { AppShell } from "@/components/app-shell";
 import { useCurrentWedding, useEvents, useGuests, useInvites, useInvalidateWedding, type Guest, type Invite } from "@/lib/wedding-hooks";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-import { Plus, Upload, Download, X, Trash2, Search, MessageCircle, Copy, FileText } from "lucide-react";
+import { Plus, Upload, Download, X, Trash2, Search, MessageCircle, Copy, FileText, Columns3, Check } from "lucide-react";
 
 export const Route = createFileRoute("/_authenticated/guests")({ component: GuestsPage });
 
