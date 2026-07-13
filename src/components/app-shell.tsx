@@ -191,9 +191,11 @@ export function AppShell({ children, title, subtitle, actions, decor }: { childr
             <div>
               {title && (
                 <>
-                  <p className="text-[11px] uppercase tracking-[0.25em] text-cherry inline-flex items-center gap-2 mb-2">
-                    <span className="h-px w-8 bg-cherry" /> Vowzy
-                  </p>
+                  <nav className="text-[11px] uppercase tracking-[0.25em] text-cherry inline-flex items-center gap-2 mb-2" aria-label="Breadcrumb">
+                    <Link to="/dashboard" className="hover:underline">Home</Link>
+                    <span className="text-ink/30">/</span>
+                    <span className="text-ink/60">{title}</span>
+                  </nav>
                   <h1 className="font-serif text-3xl md:text-5xl text-ink leading-[0.95]">{title}</h1>
                 </>
               )}
@@ -202,6 +204,7 @@ export function AppShell({ children, title, subtitle, actions, decor }: { childr
             {actions}
           </header>
         )}
+
 
         <div className="px-4 md:px-10 pb-16">{children}</div>
 
