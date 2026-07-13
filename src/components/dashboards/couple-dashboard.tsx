@@ -50,20 +50,20 @@ export function CoupleDashboard() {
       </section>
 
       <section className="mt-8 grid md:grid-cols-2 lg:grid-cols-4 gap-4">
-        <Tile to="/events" icon={CalendarDays} label="Events" value={String(events.length)} sub={events.length === 1 ? "ceremony" : "ceremonies"} />
-        <Tile to="/guests" icon={Users} label="Guests" value={String(guests.length)} sub={`${attending} attending`} />
-        <Tile to="/seating" icon={Grid3x3} label="RSVPs" value={`${totalInvites ? Math.round((rsvpd / totalInvites) * 100) : 0}%`} sub={`${rsvpd} of ${totalInvites} responded`} />
-        <Tile to="/website" icon={Globe} label="Website" value={wedding.site_published ? "Live" : "Draft"} sub={`/w/${wedding.slug ?? "-"}`} />
+        <Tile to="/events" icon={CalendarDays} label="Events" value={String(events.length)} sub={events.length === 1 ? "ceremony" : "ceremonies"} bg="bg-sage-soft" />
+        <Tile to="/guests" icon={Users} label="Guests" value={String(guests.length)} sub={`${attending} attending`} bg="bg-blush-soft" />
+        <Tile to="/seating" icon={Grid3x3} label="RSVPs" value={`${totalInvites ? Math.round((rsvpd / totalInvites) * 100) : 0}%`} sub={`${rsvpd} of ${totalInvites} responded`} bg="bg-cream" />
+        <Tile to="/website" icon={Globe} label="Website" value={wedding.site_published ? "Live" : "Draft"} sub={`/w/${wedding.slug ?? "-"}`} bg="bg-wine-soft" />
       </section>
 
       <section className="mt-10 grid md:grid-cols-2 gap-4">
-        <Link to="/venues" className="paper-card p-6 hover:shadow-md transition-shadow group">
+        <Link to="/venues" className="paper-card p-6 hover:shadow-md transition-shadow group bg-sage-soft/70">
           <p className="text-[10px] uppercase tracking-widest text-clay">Discover</p>
           <h3 className="font-serif text-2xl mt-1">Destination venues</h3>
           <p className="mt-2 text-sm text-muted-foreground">Palaces, beach resorts, vineyards, hill retreats.</p>
           <span className="mt-4 inline-flex items-center gap-1 text-xs text-clay uppercase tracking-widest group-hover:gap-2 transition-all">Browse venues <ArrowRight className="h-3 w-3" /></span>
         </Link>
-        <Link to="/vendors" className="paper-card p-6 hover:shadow-md transition-shadow group">
+        <Link to="/vendors" className="paper-card p-6 hover:shadow-md transition-shadow group bg-blush-soft/70">
           <p className="text-[10px] uppercase tracking-widest text-clay">Discover</p>
           <h3 className="font-serif text-2xl mt-1">Vendors near your ceremonies</h3>
           <p className="mt-2 text-sm text-muted-foreground">Planners, photographers, mehendi artists, florists.</p>
