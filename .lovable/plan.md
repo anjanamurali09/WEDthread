@@ -1,17 +1,25 @@
-## Plan
+Update the homepage hero/features section and global hover behavior.
 
-### Goal
-Replace the current homepage hero image with the uploaded wedding photo and ensure the bride and groom are clearly visible and centered.
+## 1. Copy change
+In `src/routes/index.tsx`, replace the features section heading:
+- From: "Every tool a modern wedding needs."
+- To: "We handle the details. You bring the love."
 
-### Steps
+## 2. Wide ellipse image container
+In `src/routes/index.tsx`, restyle the cocktail image (under the new heading) as a wide ellipse:
+- Wrap the `<img>` in a container sized roughly `650px × 400px` (16:9-ish), with `border-radius: 50%` and `overflow: hidden`.
+- Set the inner `<img>` to `width: 100%; height: 100%; object-fit: cover`.
+- Use a landscape-oriented photo so it fills the oval naturally without stretching. If the current asset is portrait, swap to a landscape wedding asset or crop via `object-position` to a horizontal focal area.
 
-1. **Create a Lovable asset pointer** for `user-uploads://Gemini_Generated_Image_kmkukgkmkukgkmku.png` under `src/assets/`.
-2. **Update `src/routes/index.tsx`**:
-   - Import the new asset pointer.
-   - Replace the existing `heroImg` source with the new image URL.
-   - Adjust `object-position` and cropping so the couple is centered in the frame (the current image is tall/portrait; the hero container is landscape, so we’ll position the focal point on the bride and groom).
-3. **Verify visually** in the preview that the couple is prominent and not cropped out.
+## 3. Contextual hover tints
+In `src/styles.css`, add lighter hover variants of the existing soft background colors (`cream`, `blush-soft`, `sage-soft`, `wine-soft`) and a reusable utility that tints on hover.
 
-### Out of scope
-- No other copy, color, or layout changes unless the new crop requires minor spacing tweaks.
-- No image generation; we’re using the uploaded photo directly.
+Then apply the contextual hover to:
+- **Feature cards** (`src/routes/index.tsx`): each card already has a colored background (`bg-cream`, `bg-blush-soft`, `bg-sage-soft`, `bg-wine-soft`). On hover, shift to the matching lighter tint instead of the current generic shadow-only morph.
+- **Culture strip pills** (`src/routes/index.tsx`): currently `hover:bg-cherry hover:text-pearl`. Change to a light tint of the pill's base color (light cream/blush/sage/wine depending on category) so the highlight reflects the element's own color.
+
+## Files changed
+- `src/routes/index.tsx`
+- `src/styles.css`
+
+No backend or auth changes.
