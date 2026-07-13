@@ -85,9 +85,9 @@ export function CoupleDashboard() {
   );
 }
 
-function Tile({ to, icon: Icon, label, value, sub }: { to: any; icon: any; label: string; value: string; sub: string }) {
+function Tile({ to, icon: Icon, label, value, sub, bg }: { to: any; icon: any; label: string; value: string; sub: string; bg?: string }) {
   return (
-    <Link to={to} className="paper-card p-5 hover:shadow-md transition-shadow block">
+    <Link to={to} className={`paper-card p-5 hover:shadow-md transition-shadow block ${bg ?? ""}`}>
       <div className="flex items-center justify-between">
         <span className="text-[10px] uppercase tracking-widest text-muted-foreground">{label}</span>
         <Icon className="h-4 w-4 text-clay" />
