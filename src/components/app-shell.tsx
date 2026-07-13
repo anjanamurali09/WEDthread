@@ -132,9 +132,10 @@ export function AppShell({ children, title, subtitle, actions, decor }: { childr
       {/* Sidebar */}
       <aside className="relative z-10 hidden md:flex md:w-64 lg:w-72 shrink-0 flex-col border-r border-line/60 bg-pearl/70 backdrop-blur-sm sticky top-0 h-screen">
         <div className="px-6 pt-8 pb-6">
-          <Link to="/dashboard" className="flex items-center gap-2 group mb-6">
-            <span className="font-serif text-2xl tracking-tight">Vowzy</span>
+          <Link to="/dashboard" className="inline-flex items-center gap-2 group mb-6 select-none" draggable={false}>
+            <span className="font-serif text-2xl tracking-tight select-none" style={{ WebkitUserDrag: "none" } as any}>Vowzy</span>
           </Link>
+
           <WorkspaceSwitcher />
         </div>
         <nav className="px-3 flex-1 overflow-y-auto">
