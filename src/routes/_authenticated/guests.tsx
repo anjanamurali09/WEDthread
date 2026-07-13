@@ -477,3 +477,38 @@ function F({ label, value, onChange, type = "text", placeholder, required }: { l
     </label>
   );
 }
+
+function FilterSelect({ label, value, onChange, options }: {
+  label: string; value: string | null; onChange: (v: string | null) => void;
+  options: { value: string; label: string }[];
+}) {
+  const [open, setOpen] = useState(false);
+  const active = value ? options.find((o) => o.value === value) : null;
+  return (
+    <div className="relative">
+      <button onClick={() => setOpen((v) => !v)}
+        className={`inline-flex items-center gap-2 rounded-full border px-3 py-2 text-xs cursor-pointer transition-colors ${active ? "bg-clay text-paper border-clay" : "border-line hover:bg-stone"}`}>
+        <span className="uppercase tracking-widest text-[10px] opacity-80">{label}</span>
+        <span className="font-medium">{active?.label ?? "Any"}</span>
+        <ChevronDown className="h-3 w-3 opacity-70" />
+      </button>
+      {open && (
+        <>
+          <div className="fixed inset-0 z-10" onClick={() => setOpen(false)} />
+          <div className="absolute left-0 mt-2 z-20 w-56 max-h-72 overflow-y-auto rounded-2xl border border-line bg-pearl shadow-lg p-1.5">
+            <button onClick={() => { onChange(null); setOpen(false); }}
+              className={`w-full text-left px-3 py-2 text-sm rounded-xl hover:bg-blush-soft ${!value ? "font-medium" : ""}`}>Any</button>
+            {options.length === 0 && <p className="px-3 py-2 text-xs text-muted-foreground">No options yet</p>}
+            {options.map((o) => (
+              <button key={o.value} onClick={() => { onChange(o.value); setOpen(false); }}
+                className={`w-full text-left px-3 py-2 text-sm rounded-xl hover:bg-blush-soft flex items-center justify-between gap-2 ${value === o.value ? "font-medium" : ""}`}>
+                <span className="truncate">{o.label}</span>
+                {value === o.value && <Check className="h-3.5 w-3.5 text-cherry shrink-0" />}
+              </button>
+            ))}
+          </div>
+        </>
+      )}
+    </div>
+  );
+}
