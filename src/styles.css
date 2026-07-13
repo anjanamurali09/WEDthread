@@ -10,15 +10,19 @@
 
   --color-pearl: var(--pearl);
   --color-cream: var(--cream);
+  --color-cream-hover: var(--cream-hover);
   --color-beige: var(--beige);
   --color-wine: var(--wine);
   --color-cherry: var(--cherry);
   --color-cherry-glow: var(--cherry-glow);
   --color-wine-soft: var(--wine-soft);
+  --color-wine-soft-hover: var(--wine-soft-hover);
   --color-blush: var(--blush);
   --color-blush-soft: var(--blush-soft);
+  --color-blush-soft-hover: var(--blush-soft-hover);
   --color-sage: var(--sage);
   --color-sage-soft: var(--sage-soft);
+  --color-sage-soft-hover: var(--sage-soft-hover);
   --color-teal: var(--teal);
   --color-rose: var(--rose);
 
