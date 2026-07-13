@@ -22,10 +22,10 @@ function WorkspaceSwitcher() {
   if (!active) return null;
   const others = roles.filter((r) => r !== active);
   return (
-    <div className="relative mt-4">
+    <div className="relative mt-6">
       <button
         onClick={() => setOpen((v) => !v)}
-        className="w-full flex items-center justify-between gap-2 rounded-2xl border border-line/70 bg-paper px-3 py-2 text-left text-sm hover:border-cherry transition-colors"
+        className="w-full flex items-center justify-between gap-2 rounded-2xl border border-line/70 bg-paper px-4 py-3 text-left text-sm hover:border-cherry transition-colors"
       >
         <div className="min-w-0">
           <p className="text-[10px] uppercase tracking-widest text-muted-foreground">Workspace</p>
@@ -34,21 +34,26 @@ function WorkspaceSwitcher() {
         <ChevronDown className="h-4 w-4 text-muted-foreground shrink-0" />
       </button>
       {open && (
-        <div className="absolute z-20 left-0 right-0 mt-2 rounded-2xl border border-line bg-pearl shadow-lg overflow-hidden">
+        <div className="absolute z-20 left-0 right-0 mt-2 rounded-2xl border border-line bg-pearl shadow-lg overflow-hidden p-2">
+          <div className="px-3 py-2">
+            <p className="text-[10px] uppercase tracking-widest text-muted-foreground">Current workspace</p>
+            <p className="font-serif text-base truncate">{ROLE_LABEL[active]}</p>
+          </div>
+          <div className="h-px bg-line/70 mx-2 my-1" />
           {others.map((r) => (
             <button
               key={r}
               onClick={() => { setActive(r); setOpen(false); router.navigate({ to: ROLE_LANDING_MAP[r] as any }); }}
-              className="w-full px-3 py-2.5 text-sm text-left hover:bg-blush-soft flex items-center justify-between"
+              className="w-full px-3 py-2.5 text-sm text-left rounded-xl hover:bg-blush-soft flex items-center justify-between"
             >
               <span>{ROLE_LABEL[r]}</span>
               <span className="text-[10px] uppercase tracking-widest text-muted-foreground">Switch</span>
             </button>
           ))}
-          {others.length > 0 && <div className="h-px bg-line/70" />}
+          {others.length > 0 && <div className="h-px bg-line/70 mx-2 my-1" />}
           <button
             onClick={() => { setOpen(false); setAddOpen(true); }}
-            className="w-full px-3 py-2.5 text-sm text-cherry hover:bg-blush-soft flex items-center gap-2"
+            className="w-full mx-auto max-w-[calc(100%-8px)] px-3 py-2.5 text-sm text-cherry rounded-xl hover:bg-blush-soft flex items-center gap-2"
           >
             <Plus className="h-3.5 w-3.5" /> Add another role
           </button>
