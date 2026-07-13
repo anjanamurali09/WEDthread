@@ -353,6 +353,10 @@ function TableNode({ table, seated, selected, onSelect, onUpdate, onDelete, onUn
   const { handlers, current } = useMovable({ x: table.pos_x, y: table.pos_y }, (p) => onUpdate({ pos_x: p.x, pos_y: p.y }));
   const isRound = table.shape === "round";
   const over = seated.length > table.seats;
+  const seatCount = Math.max(seated.length, 1);
+  const CHAIR = 26;
+  const GAP = 8;
+  const chairs = chairPositions(table.shape ?? "round", table.width, table.height, seatCount, CHAIR, GAP);
   return (
     <div
       style={{ position: "absolute", left: current.x, top: current.y, width: table.width, height: table.height }}
@@ -362,6 +366,22 @@ function TableNode({ table, seated, selected, onSelect, onUpdate, onDelete, onUn
       onClick={(e) => { e.stopPropagation(); onSelect(); }}
       className={`select-none cursor-move ${selected ? "z-20" : "z-10"}`}
     >
+      {/* Chairs around the outside */}
+      {seated.map((s: any, i: number) => {
+        const pos = chairs[i];
+        if (!pos) return null;
+        const first = (s.g.full_name ?? "").trim().split(/\s+/)[0] ?? "";
+        const hasDiet = (s.g.dietary_tags?.length ?? 0) > 0 || (s.g.food_allergies?.length ?? 0) > 0 || !!s.g.dietary_notes;
+        return (
+          <ChairChip key={s.a.id} x={pos.x} y={pos.y} size={CHAIR} name={s.g.full_name} first={first}
+            hasDiet={hasDiet}
+            dietary={[...(s.g.dietary_tags ?? []), ...(s.g.food_allergies ?? []).map((a: string) => `⚠ ${a}`)]}
+            notes={s.g.dietary_notes}
+            onUnseat={() => { if (confirm(`Unseat ${s.g.full_name}?`)) onUnseat(s.a.id); }}
+          />
+        );
+      })}
+
       <div
         ref={setNodeRef}
         className={`w-full h-full flex flex-col items-center justify-center text-center transition-shadow ${
@@ -375,20 +395,6 @@ function TableNode({ table, seated, selected, onSelect, onUpdate, onDelete, onUn
       >
         <p className="font-serif text-[13px] leading-tight text-ink px-2 truncate max-w-full">{table.label}</p>
         <p className="text-[10px] text-ink/70">{seated.length}/{table.seats}</p>
-        <div className="mt-1 flex flex-wrap justify-center gap-0.5 px-1.5 max-h-[55%] overflow-hidden">
-          {seated.slice(0, 8).map(({ a, g }: any) => (
-            <span
-              key={a.id}
-              data-nodrag
-              onClick={(e) => { e.stopPropagation(); if (confirm(`Unseat ${g.full_name}?`)) onUnseat(a.id); }}
-              className="text-[9px] leading-none bg-paper/80 rounded-full px-1.5 py-0.5 truncate max-w-[70px] cursor-pointer hover:bg-paper"
-              title={g.full_name}
-            >
-              {shortName(g.full_name)}
-            </span>
-          ))}
-          {seated.length > 8 && <span className="text-[9px] text-ink/60">+{seated.length - 8}</span>}
-        </div>
       </div>
 
       {selected && (
@@ -408,31 +414,58 @@ function TableNode({ table, seated, selected, onSelect, onUpdate, onDelete, onUn
               }}
               className="w-10 bg-transparent border-b border-line text-center focus:outline-none focus:border-clay" />
           </div>
-          <div className="flex items-center gap-1">
-            {(["round", "rect", "square"] as const).map((sh) => (
-              <button key={sh} onClick={() => onUpdate({
-                shape: sh,
-                width: sh === "rect" ? 200 : sh === "square" ? 120 : 140,
-                height: sh === "rect" ? 90  : sh === "square" ? 120 : 140,
-              })}
-                className={`h-6 w-6 rounded flex items-center justify-center border cursor-pointer ${table.shape === sh ? "border-ink bg-stone" : "border-line hover:bg-stone"}`}
-                title={sh}>
-                {sh === "round" ? <Circle className="h-3 w-3" /> : sh === "rect" ? <RectangleHorizontal className="h-3 w-3" /> : <Square className="h-3 w-3" />}
-              </button>
-            ))}
-          </div>
-          <div className="flex gap-0.5">
-            {TABLECLOTHS.map((c) => (
-              <button key={c} onClick={() => onUpdate({ mat_color: c })}
-                className={`h-4 w-4 rounded-full border cursor-pointer ${table.mat_color === c ? "border-ink" : "border-line"}`}
-                style={{ background: c }} />
-            ))}
-          </div>
+          <ShapePicker value={table.shape ?? "round"} onChange={(sh) => onUpdate({
+            shape: sh,
+            width: sh === "rect" ? 200 : sh === "square" ? 120 : 140,
+            height: sh === "rect" ? 90  : sh === "square" ? 120 : 140,
+          })} />
+          <ColorPicker value={table.mat_color ?? "#F5EEDC"} presets={TABLECLOTHS} onChange={(c) => onUpdate({ mat_color: c })} />
           <button onClick={onDelete} className="p-1 rounded-full hover:bg-stone text-muted-foreground cursor-pointer">
             <Trash2 className="h-3.5 w-3.5" />
           </button>
         </div>
       )}
+    </div>
+  );
+}
+
+/* --- Chair chip around the table --- */
+function ChairChip({ x, y, size, name, first, hasDiet, dietary, notes, onUnseat }: any) {
+  const [tipOpen, setTipOpen] = useState(false);
+  return (
+    <div
+      data-nodrag
+      onClick={(e) => e.stopPropagation()}
+      style={{ position: "absolute", left: x - size / 2, top: y - size / 2, width: size, height: size }}
+      className="z-20"
+    >
+      <div className="relative w-full h-full">
+        <button
+          onClick={onUnseat}
+          title={name}
+          className="w-full h-full rounded-full bg-paper border border-ink/30 shadow flex items-center justify-center text-[8px] font-medium text-ink hover:bg-blush-soft hover:border-ink transition-colors cursor-pointer overflow-hidden"
+        >
+          <span className="truncate px-0.5 max-w-full leading-none">{first}</span>
+        </button>
+        {hasDiet && (
+          <>
+            <button
+              onPointerEnter={() => setTipOpen(true)}
+              onPointerLeave={() => setTipOpen(false)}
+              onClick={(e) => { e.stopPropagation(); setTipOpen((v) => !v); }}
+              className="absolute -top-1 -right-1 h-3.5 w-3.5 rounded-full bg-destructive text-paper flex items-center justify-center text-[8px] font-bold cursor-pointer"
+              aria-label="Dietary info"
+            >i</button>
+            {tipOpen && (
+              <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-1.5 z-40 rounded-lg bg-ink text-paper text-[10px] px-2 py-1.5 shadow-lg min-w-[120px] max-w-[180px] pointer-events-none">
+                <p className="font-medium mb-0.5">{name}</p>
+                {dietary.length > 0 && <p className="opacity-90">{dietary.join(", ")}</p>}
+                {notes && <p className="opacity-75 mt-0.5 italic">{notes}</p>}
+              </div>
+            )}
+          </>
+        )}
+      </div>
     </div>
   );
 }
@@ -458,7 +491,8 @@ function FixtureNode({ fixture, selected, onSelect, onUpdate, onDelete }: any) {
     window.addEventListener("pointermove", move);
     window.addEventListener("pointerup", up);
   };
-  const isCircle = fixture.kind === "dance_floor";
+  const shape = fixture.shape ?? (fixture.kind === "dance_floor" ? "round" : "rect");
+  const isRound = shape === "round";
   return (
     <div
       style={{ position: "absolute", left: current.x, top: current.y, width: size.w, height: size.h }}
@@ -472,7 +506,7 @@ function FixtureNode({ fixture, selected, onSelect, onUpdate, onDelete }: any) {
         className={`w-full h-full flex items-center justify-center text-[11px] font-medium tracking-wide uppercase transition-shadow ${selected ? "ring-2 ring-ink" : ""}`}
         style={{
           background: fixture.color ?? "#EDE7DA",
-          borderRadius: isCircle ? "50%" : 8,
+          borderRadius: isRound ? "50%" : 8,
           color: isDark(fixture.color) ? "#FEFDFA" : "#1A1512",
           opacity: 0.92,
         }}
@@ -494,12 +528,14 @@ function FixtureNode({ fixture, selected, onSelect, onUpdate, onDelete }: any) {
               onBlur={(e) => e.target.value !== fixture.label && onUpdate({ label: e.target.value })}
               className="w-24 text-xs bg-transparent border-b border-line focus:outline-none focus:border-clay"
             />
-            <div className="flex gap-0.5">
-              {["#3B2A1E", "#4C1D24", "#C7A96B", "#E9D8FD", "#2A3B36", "#FADADD"].map((c) => (
-                <button key={c} onClick={() => onUpdate({ color: c })}
-                  className={`h-4 w-4 rounded-full border cursor-pointer ${fixture.color === c ? "border-ink" : "border-line"}`} style={{ background: c }} />
-              ))}
-            </div>
+            <ShapePicker value={shape} onChange={(sh) => {
+              const patch: any = { shape: sh };
+              if (sh === "square") { patch.width = Math.max(fixture.width, fixture.height); patch.height = patch.width; }
+              onUpdate(patch);
+            }} />
+            <ColorPicker value={fixture.color ?? "#EDE7DA"}
+              presets={["#3B2A1E", "#4C1D24", "#C7A96B", "#E9D8FD", "#2A3B36", "#FADADD"]}
+              onChange={(c) => onUpdate({ color: c })} />
             <button onClick={onDelete} className="p-1 rounded-full hover:bg-stone text-muted-foreground cursor-pointer">
               <Trash2 className="h-3.5 w-3.5" />
             </button>
@@ -510,11 +546,88 @@ function FixtureNode({ fixture, selected, onSelect, onUpdate, onDelete }: any) {
   );
 }
 
-function shortName(full: string) {
-  const parts = full.trim().split(/\s+/);
-  if (parts.length === 1) return parts[0];
-  return `${parts[0]} ${parts[parts.length - 1][0]}.`;
+/* --- Shared UI --- */
+function ShapePicker({ value, onChange }: { value: string; onChange: (s: "round" | "rect" | "square") => void }) {
+  return (
+    <div className="flex items-center gap-1">
+      {(["round", "rect", "square"] as const).map((sh) => (
+        <button key={sh} onClick={() => onChange(sh)}
+          className={`h-6 w-6 rounded flex items-center justify-center border cursor-pointer ${value === sh ? "border-ink bg-stone" : "border-line hover:bg-stone"}`}
+          title={sh}>
+          {sh === "round" ? <Circle className="h-3 w-3" /> : sh === "rect" ? <RectangleHorizontal className="h-3 w-3" /> : <Square className="h-3 w-3" />}
+        </button>
+      ))}
+    </div>
+  );
 }
+
+function ColorPicker({ value, presets, onChange }: { value: string; presets: string[]; onChange: (c: string) => void }) {
+  const [open, setOpen] = useState(false);
+  const [hex, setHex] = useState(value);
+  useEffect(() => { setHex(value); }, [value]);
+  const commit = (v: string) => {
+    const cleaned = v.startsWith("#") ? v : `#${v}`;
+    if (/^#([0-9A-Fa-f]{3}|[0-9A-Fa-f]{6})$/.test(cleaned)) onChange(cleaned);
+  };
+  return (
+    <div className="relative">
+      <button onClick={(e) => { e.stopPropagation(); setOpen((o) => !o); }}
+        className="h-6 w-6 rounded-full border border-line cursor-pointer"
+        style={{ background: value }} title="Color" />
+      {open && (
+        <>
+          <div className="fixed inset-0 z-30" onClick={() => setOpen(false)} />
+          <div className="absolute z-40 top-full mt-2 right-0 p-3 rounded-2xl bg-paper border border-line shadow-lg w-56">
+            <div className="grid grid-cols-8 gap-1.5">
+              {presets.map((c) => (
+                <button key={c} onClick={() => { onChange(c); setOpen(false); }}
+                  className={`h-5 w-5 rounded-full border cursor-pointer hover:scale-110 transition-transform ${value === c ? "border-ink border-2" : "border-line"}`}
+                  style={{ background: c }} aria-label={c} />
+              ))}
+            </div>
+            <div className="mt-3 flex items-center gap-2">
+              <label className="text-[10px] uppercase tracking-widest text-muted-foreground">Hex</label>
+              <input value={hex} onChange={(e) => setHex(e.target.value)} onBlur={(e) => commit(e.target.value)}
+                onKeyDown={(e) => { if (e.key === "Enter") { commit((e.target as HTMLInputElement).value); setOpen(false); } }}
+                placeholder="#FADADD"
+                className="flex-1 text-xs rounded-lg border border-line px-2 py-1 focus:outline-none focus:ring-2 focus:ring-clay font-mono" />
+              <span className="h-5 w-5 rounded-full border border-line" style={{ background: /^#([0-9A-Fa-f]{3}|[0-9A-Fa-f]{6})$/.test(hex.startsWith("#") ? hex : `#${hex}`) ? (hex.startsWith("#") ? hex : `#${hex}`) : "transparent" }} />
+            </div>
+          </div>
+        </>
+      )}
+    </div>
+  );
+}
+
+/* --- Geometry: chair positions on the perimeter --- */
+function chairPositions(shape: string, w: number, h: number, n: number, chair: number, gap: number): { x: number; y: number }[] {
+  const out: { x: number; y: number }[] = [];
+  const off = chair / 2 + gap;
+  if (shape === "round" || shape === "square") {
+    // round: circle around ellipse; square: also distribute on circle for even spacing
+    const rx = w / 2 + off;
+    const ry = h / 2 + off;
+    for (let i = 0; i < n; i++) {
+      const a = (i / n) * Math.PI * 2 - Math.PI / 2;
+      out.push({ x: w / 2 + rx * Math.cos(a), y: h / 2 + ry * Math.sin(a) });
+    }
+    return out;
+  }
+  // rect: distribute proportionally along the four sides
+  const perim = 2 * (w + h);
+  for (let i = 0; i < n; i++) {
+    const t = (i + 0.5) / n * perim;
+    let x = 0, y = 0;
+    if (t < w)                { x = t; y = -off; }
+    else if (t < w + h)       { x = w + off; y = t - w; }
+    else if (t < 2 * w + h)   { x = w - (t - w - h); y = h + off; }
+    else                       { x = -off; y = h - (t - 2 * w - h); }
+    out.push({ x, y });
+  }
+  return out;
+}
+
 function isDark(hex?: string | null) {
   if (!hex || !hex.startsWith("#")) return false;
   const h = hex.slice(1);
