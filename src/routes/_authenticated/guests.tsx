@@ -7,7 +7,10 @@ import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { Plus, Upload, Download, X, Trash2, Search, MessageCircle, Copy, FileText, Columns3, Check } from "lucide-react";
 
-export const Route = createFileRoute("/_authenticated/guests")({ component: GuestsPage });
+export const Route = createFileRoute("/_authenticated/guests")({
+  component: GuestsPage,
+  validateSearch: (s: Record<string, unknown>) => ({ event: typeof s.event === "string" ? s.event : undefined }),
+});
 
 const DIETARY = ["Vegetarian","Vegan","Halal","Kosher","Jain","Gluten-free","Pescatarian"];
 const ALLERGIES = ["Nuts","Dairy","Shellfish","Eggs","Soy","Sesame","Wheat"];
