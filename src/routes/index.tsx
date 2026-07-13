@@ -134,10 +134,12 @@ function Landing() {
         <div className="grid lg:grid-cols-12 gap-10 items-start">
           <div className="lg:col-span-5 lg:sticky lg:top-24" data-reveal>
             <p className="text-xs uppercase tracking-[0.2em] text-cherry">The planner</p>
-            <h2 className="mt-3 font-serif text-5xl md:text-6xl leading-[0.95]">Every tool a modern wedding needs.</h2>
+            <h2 className="mt-3 font-serif text-5xl md:text-6xl leading-[0.95]">We handle the details. You bring the love.</h2>
             <p className="mt-6 text-ink/70">One plan for two families. Multiple events, guests across borders, RSVPs on WhatsApp, seating that respects allergies, a website you actually design yourself.</p>
-            <img src={cocktailImg} alt="Beach cocktail hour at a destination wedding" loading="lazy" width={1024} height={1280}
-              className="mt-8 blob w-full h-64 object-cover shadow-xl transition-all duration-700 hover:blob-2" />
+            <div className="mt-8 mx-auto lg:mx-0 w-[min(100%,650px)] aspect-[16/10] rounded-[50%] overflow-hidden shadow-xl transition-transform duration-700 hover:scale-[1.02]">
+              <img src={cocktailImg} alt="Beach cocktail hour at a destination wedding" loading="lazy" width={1024} height={1280}
+                className="w-full h-full object-cover object-center" />
+            </div>
           </div>
           <div className="lg:col-span-7 grid sm:grid-cols-2 gap-4">
             {[
