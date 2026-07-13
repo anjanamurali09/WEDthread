@@ -1,13 +1,30 @@
-Update the homepage hero/features section with the requested copy changes and neutralize the pink card shadows.
+## Goal
+Tighten the authenticated sidebar spacing so the workspace dropdown reads as distinct sections, and brighten the couple dashboard by giving the stat/discover cards distinct pastel backgrounds from the brand palette.
 
-Changes:
-1. In `src/routes/index.tsx`:
-   - Update the "Unlimited ceremonies" description to: "Add every event your two cultures and traditions need. No limits."
-   - Change the CTA eyebrow text from "Free while we're launching" to "FOR EVERY WEDDING, ANYWHERE".
-   - Change the CTA button text from "Start planning free" to "Start planning for free".
+## Files to change
+1. `src/components/app-shell.tsx` — sidebar layout and workspace switcher
+2. `src/components/dashboards/couple-dashboard.tsx` — dashboard stat + discover cards
 
-2. In `src/styles.css`:
-   - Remove the pink-tinted hover shadow from `.morph-card:hover` and replace it with a soft neutral/grey shadow (e.g., `0 30px 60px -30px rgb(26 21 18 / 0.12)`).
-   - Verify no other feature-card-specific shadow utilities carry a pink glow. The card background colors (green, cream, pink) will remain unchanged.
+## Plan
 
-No other pages or business logic will be touched.
+### Sidebar polish
+- Increase vertical spacing between the logo, the workspace dropdown, and the dropdown rows (use larger `mb` / `gap` values, e.g. `mb-6` after logo, `mt-5` before switcher).
+- Add a subtle horizontal divider (`h-px bg-line/60`) inside the workspace dropdown between the "WORKSPACE / Couple" value and the "Switch" rows below, so the label/value reads as its own section.
+- Fix the "Add another role" button overflow by removing any negative margins or full-bleed widths and ensuring it sits inside the dropdown's padding with `w-auto` or `mx-3` rounded styling so it never crosses the sidebar padding.
+- Keep all existing functionality (switch role, add role dialog, active-state nav).
+
+### Dashboard color variety
+- Update the four stat tiles (`Events`, `Guests`, `RSVPs`, `Website`) to each use a distinct pastel background from the existing palette:
+  - Events: `bg-sage-soft`
+  - Guests: `bg-blush-soft`
+  - RSVPs: `bg-cream`
+  - Website: `bg-wine-soft`
+- Keep dark `text-ink` labels/values and `text-muted-foreground` subtext for readability.
+- Update the two Discover cards (`Destination venues`, `Vendors`) with subtle tints:
+  - Venues card: `bg-sage-soft/70`
+  - Vendors card: `bg-blush-soft/70`
+- Preserve the current layout, spacing, hover shadow, and typography.
+
+## Verification
+- Run a quick preview check to confirm the sidebar dropdown no longer feels cramped and the "Add another role" button stays within the sidebar padding.
+- Confirm the dashboard stat cards show four distinct pastel backgrounds and the Discover cards show green/pink tints with readable dark text.
