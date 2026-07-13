@@ -65,7 +65,7 @@ function GuestsPage() {
     return [...s].sort();
   }, [guests]);
 
-  const invitesByGuestQuick = useMemo(() => {
+  const inviteByGuest = useMemo(() => {
     const m = new Map<string, Invite[]>();
     invites.forEach((i) => { const l = m.get(i.guest_id) ?? []; l.push(i); m.set(i.guest_id, l); });
     return m;
@@ -77,22 +77,15 @@ function GuestsPage() {
       if (q && !g.full_name.toLowerCase().includes(q.toLowerCase()) && !(g.email || "").toLowerCase().includes(q.toLowerCase())) return false;
       if (filterDiet && !(g.dietary_tags?.includes(filterDiet) || g.food_allergies?.includes(filterDiet))) return false;
       if (filterHousehold && g.household_group !== filterHousehold) return false;
-      const gi = invitesByGuestQuick.get(g.id) ?? [];
+      const gi = inviteByGuest.get(g.id) ?? [];
       if (filterEvent && !gi.some((i) => i.event_id === filterEvent)) return false;
       if (filterRsvp && !gi.some((i) => i.rsvp_status === filterRsvp)) return false;
       return true;
     });
-  }, [guests, q, filterDiet, filterHousehold, filterEvent, filterRsvp, scopedGuestIds, invitesByGuestQuick]);
+  }, [guests, q, filterDiet, filterHousehold, filterEvent, filterRsvp, scopedGuestIds, inviteByGuest]);
 
   const anyFilter = !!(q || filterDiet || filterHousehold || filterEvent || filterRsvp);
   const clearFilters = () => { setQ(""); setFilterDiet(null); setFilterHousehold(null); setFilterEvent(null); setFilterRsvp(null); };
-
-
-  const inviteByGuest = useMemo(() => {
-    const m = new Map<string, Invite[]>();
-    invites.forEach((i) => { const l = m.get(i.guest_id) ?? []; l.push(i); m.set(i.guest_id, l); });
-    return m;
-  }, [invites]);
 
   const importCsv = () => fileRef.current?.click();
 
