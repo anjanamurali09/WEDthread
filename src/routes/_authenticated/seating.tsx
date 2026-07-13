@@ -354,8 +354,10 @@ function TableNode({ table, seated, selected, onSelect, onUpdate, onDelete, onUn
   const isRound = table.shape === "round";
   const over = seated.length > table.seats;
   const seatCount = Math.max(seated.length, 1);
-  const CHAIR = 26;
-  const GAP = 8;
+  // Scale chair size to table capacity: small tables → bigger chairs, large tables → smaller.
+  const capacity = Math.max(table.seats ?? seatCount, seatCount);
+  const CHAIR = capacity <= 4 ? 38 : capacity <= 6 ? 32 : capacity <= 8 ? 26 : capacity <= 10 ? 22 : 20;
+  const GAP = capacity <= 4 ? 10 : 8;
   const chairs = chairPositions(table.shape ?? "round", table.width, table.height, seatCount, CHAIR, GAP);
   return (
     <div
@@ -370,10 +372,10 @@ function TableNode({ table, seated, selected, onSelect, onUpdate, onDelete, onUn
       {seated.map((s: any, i: number) => {
         const pos = chairs[i];
         if (!pos) return null;
-        const first = (s.g.full_name ?? "").trim().split(/\s+/)[0] ?? "";
+        const initials = getInitials(s.g.full_name ?? "");
         const hasDiet = (s.g.dietary_tags?.length ?? 0) > 0 || (s.g.food_allergies?.length ?? 0) > 0 || !!s.g.dietary_notes;
         return (
-          <ChairChip key={s.a.id} x={pos.x} y={pos.y} size={CHAIR} name={s.g.full_name} first={first}
+          <ChairChip key={s.a.id} x={pos.x} y={pos.y} size={CHAIR} name={s.g.full_name} initials={initials}
             hasDiet={hasDiet}
             dietary={[...(s.g.dietary_tags ?? []), ...(s.g.food_allergies ?? []).map((a: string) => `⚠ ${a}`)]}
             notes={s.g.dietary_notes}
@@ -430,8 +432,15 @@ function TableNode({ table, seated, selected, onSelect, onUpdate, onDelete, onUn
 }
 
 /* --- Chair chip around the table --- */
-function ChairChip({ x, y, size, name, first, hasDiet, dietary, notes, onUnseat }: any) {
+function getInitials(name: string): string {
+  const parts = (name ?? "").trim().split(/\s+/).filter(Boolean);
+  if (parts.length === 0) return "?";
+  if (parts.length === 1) return parts[0].slice(0, 2).toUpperCase();
+  return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
+}
+function ChairChip({ x, y, size, name, initials, hasDiet, dietary, notes, onUnseat }: any) {
   const [tipOpen, setTipOpen] = useState(false);
+  const fontSize = size >= 34 ? 12 : size >= 28 ? 11 : size >= 24 ? 10 : 9;
   return (
     <div
       data-nodrag
@@ -443,9 +452,10 @@ function ChairChip({ x, y, size, name, first, hasDiet, dietary, notes, onUnseat 
         <button
           onClick={onUnseat}
           title={name}
-          className="w-full h-full rounded-full bg-paper border border-ink/30 shadow flex items-center justify-center text-[8px] font-medium text-ink hover:bg-blush-soft hover:border-ink transition-colors cursor-pointer overflow-hidden"
+          style={{ fontSize }}
+          className="w-full h-full rounded-full bg-paper border border-ink/30 shadow flex items-center justify-center font-semibold text-ink hover:bg-blush-soft hover:border-ink transition-colors cursor-pointer"
         >
-          <span className="truncate px-0.5 max-w-full leading-none">{first}</span>
+          <span className="leading-none">{initials}</span>
         </button>
         {hasDiet && (
           <>
