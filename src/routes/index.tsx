@@ -3,7 +3,7 @@ import { useEffect, useRef, useState } from "react";
 import { Sparkles, ArrowRight, Globe2, Users, Calendar, Utensils, MessageCircle, Grid3x3, Gift, Store } from "lucide-react";
 import { LoginDialog } from "@/components/login-dialog";
 
-import heroAsset from "@/assets/wedding-c4b5c3dc.jpg.asset.json";
+import heroAsset from "@/assets/homepage-hero.png.asset.json";
 import cocktailAsset from "@/assets/wedding-8ffa935d.jpg.asset.json";
 const heroImg = heroAsset.url;
 const cocktailImg = cocktailAsset.url;
