@@ -16,7 +16,7 @@ const COUNTRY_SITES: Record<string, { name: string; url: string }[]> = {
   US: [{ name: "Amazon", url: "https://amazon.com" }, { name: "Crate & Barrel", url: "https://crateandbarrel.com" }, { name: "West Elm", url: "https://westelm.com" }, { name: "Williams-Sonoma", url: "https://williams-sonoma.com" }],
   UK: [{ name: "John Lewis", url: "https://johnlewis.com" }, { name: "Selfridges", url: "https://selfridges.com" }, { name: "Amazon UK", url: "https://amazon.co.uk" }],
   IN: [{ name: "Amazon India", url: "https://amazon.in" }, { name: "Fabindia", url: "https://fabindia.com" }, { name: "Nicobar", url: "https://nicobar.com" }, { name: "Good Earth", url: "https://goodearth.in" }],
-  AE: [{ name: "Amazon.ae", url: "https://amazon.ae" }, { name: "Bloomingdale's UAE", url: "https://bloomingdales.ae" }, { name: "West Elm UAE", url: "https://westelm.ae" }],
+  AE: [{ name: "Amazon.ae", url: "https://amazon.ae" }, { name: "Bloomingdale's UAE", url: "https://bloomingdales.ae" }, { name: "Ounass", url: "https://ounass.ae" }, { name: "Level Shoes", url: "https://levelshoes.com" }, { name: "Crate & Barrel", url: "https://crateandbarrel.ae" }, { name: "Marina Home", url: "https://marinahome.com" }, { name: "Tiffany & Co.", url: "https://tiffany.ae" }],
   AU: [{ name: "David Jones", url: "https://davidjones.com" }, { name: "Myer", url: "https://myer.com.au" }, { name: "Amazon AU", url: "https://amazon.com.au" }],
   CA: [{ name: "Hudson's Bay", url: "https://thebay.com" }, { name: "Amazon.ca", url: "https://amazon.ca" }, { name: "Indigo", url: "https://indigo.ca" }],
 };
