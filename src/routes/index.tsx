@@ -123,8 +123,25 @@ function Landing() {
       <section className="relative z-10 bg-blush-soft/70 border-y border-line py-14 px-6 md:px-12" data-reveal>
         <p className="text-xs uppercase tracking-[0.3em] text-cherry text-center">Built for every kind of wedding</p>
         <div className="mt-8 flex flex-wrap justify-center gap-2 max-w-4xl mx-auto">
-          {["Mehendi","Haldi","Sangeet","Nikah","Baraat","Church ceremony","Registry","Reception","Cocktail hour","Rehearsal dinner","Welcome party","Pool party","Beach ceremony","Chuppah","Tea ceremony","Farewell brunch"].map((t) => (
-            <span key={t} className="rounded-full bg-paper border border-line px-4 py-2 text-sm cursor-default transition-all hover:bg-cherry hover:text-pearl hover:border-cherry hover:-translate-y-0.5">{t}</span>
+          {[
+            { t: "Mehendi", bg: "bg-cream", hover: "hover:bg-cream-hover" },
+            { t: "Haldi", bg: "bg-blush-soft", hover: "hover:bg-blush-soft-hover" },
+            { t: "Sangeet", bg: "bg-sage-soft", hover: "hover:bg-sage-soft-hover" },
+            { t: "Nikah", bg: "bg-wine-soft", hover: "hover:bg-wine-soft-hover" },
+            { t: "Baraat", bg: "bg-cream", hover: "hover:bg-cream-hover" },
+            { t: "Church ceremony", bg: "bg-blush-soft", hover: "hover:bg-blush-soft-hover" },
+            { t: "Registry", bg: "bg-sage-soft", hover: "hover:bg-sage-soft-hover" },
+            { t: "Reception", bg: "bg-wine-soft", hover: "hover:bg-wine-soft-hover" },
+            { t: "Cocktail hour", bg: "bg-cream", hover: "hover:bg-cream-hover" },
+            { t: "Rehearsal dinner", bg: "bg-blush-soft", hover: "hover:bg-blush-soft-hover" },
+            { t: "Welcome party", bg: "bg-sage-soft", hover: "hover:bg-sage-soft-hover" },
+            { t: "Pool party", bg: "bg-wine-soft", hover: "hover:bg-wine-soft-hover" },
+            { t: "Beach ceremony", bg: "bg-cream", hover: "hover:bg-cream-hover" },
+            { t: "Chuppah", bg: "bg-blush-soft", hover: "hover:bg-blush-soft-hover" },
+            { t: "Tea ceremony", bg: "bg-sage-soft", hover: "hover:bg-sage-soft-hover" },
+            { t: "Farewell brunch", bg: "bg-wine-soft", hover: "hover:bg-wine-soft-hover" },
+          ].map(({ t, bg, hover }) => (
+            <span key={t} className={`rounded-full ${bg} border border-line px-4 py-2 text-sm cursor-default transition-all ${hover} hover:-translate-y-0.5`}>{t}</span>
           ))}
         </div>
       </section>
