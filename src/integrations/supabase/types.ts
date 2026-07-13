@@ -717,6 +717,7 @@ export type Database = {
           pos_x: number
           pos_y: number
           rotation: number
+          shape: string
           updated_at: string
           width: number
         }
@@ -731,6 +732,7 @@ export type Database = {
           pos_x?: number
           pos_y?: number
           rotation?: number
+          shape?: string
           updated_at?: string
           width?: number
         }
@@ -745,6 +747,7 @@ export type Database = {
           pos_x?: number
           pos_y?: number
           rotation?: number
+          shape?: string
           updated_at?: string
           width?: number
         }
