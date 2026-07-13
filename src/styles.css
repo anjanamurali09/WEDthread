@@ -10,15 +10,19 @@
 
   --color-pearl: var(--pearl);
   --color-cream: var(--cream);
+  --color-cream-hover: var(--cream-hover);
   --color-beige: var(--beige);
   --color-wine: var(--wine);
   --color-cherry: var(--cherry);
   --color-cherry-glow: var(--cherry-glow);
   --color-wine-soft: var(--wine-soft);
+  --color-wine-soft-hover: var(--wine-soft-hover);
   --color-blush: var(--blush);
   --color-blush-soft: var(--blush-soft);
+  --color-blush-soft-hover: var(--blush-soft-hover);
   --color-sage: var(--sage);
   --color-sage-soft: var(--sage-soft);
+  --color-sage-soft-hover: var(--sage-soft-hover);
   --color-teal: var(--teal);
   --color-rose: var(--rose);
 
@@ -74,16 +78,20 @@
   --pearl: #FEFDFA;                        /* primary background — near-white pearl */
   --paper: #FBF7EC;                        /* soft cream card */
   --cream: #F7F1E1;                        /* deeper cream */
+  --cream-hover: #FBF7EC;                  /* lighter cream for hover */
   --beige: #ECE3CE;                        /* warm beige */
   --wine: #8A1226;                         /* wine — anchor accent */
   --wine-soft: #FADCE1;                    /* wine wash */
+  --wine-soft-hover: #FDF0F2;              /* lighter wine wash for hover */
   --cherry: #E63950;                       /* brighter cherry — primary pop */
   --cherry-glow: #FF5C74;                  /* light cherry for hover */
   --blush: #F2C4C4;                        /* soft blush */
   --blush-soft: #FCEEEB;
+  --blush-soft-hover: #FFF8F6;             /* lighter blush for hover */
   --rose: #D48891;                         /* dusty rose */
   --sage: #B6C7A6;                         /* sage tint */
   --sage-soft: #E4EDD8;
+  --sage-soft-hover: #EEF5E6;              /* lighter sage for hover */
   --teal: #7B928C;
   --ink: #1A1512;                          /* rich near-black */
   --stone: #F4EEDD;

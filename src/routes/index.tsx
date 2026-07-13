@@ -123,8 +123,25 @@ function Landing() {
       <section className="relative z-10 bg-blush-soft/70 border-y border-line py-14 px-6 md:px-12" data-reveal>
         <p className="text-xs uppercase tracking-[0.3em] text-cherry text-center">Built for every kind of wedding</p>
         <div className="mt-8 flex flex-wrap justify-center gap-2 max-w-4xl mx-auto">
-          {["Mehendi","Haldi","Sangeet","Nikah","Baraat","Church ceremony","Registry","Reception","Cocktail hour","Rehearsal dinner","Welcome party","Pool party","Beach ceremony","Chuppah","Tea ceremony","Farewell brunch"].map((t) => (
-            <span key={t} className="rounded-full bg-paper border border-line px-4 py-2 text-sm cursor-default transition-all hover:bg-cherry hover:text-pearl hover:border-cherry hover:-translate-y-0.5">{t}</span>
+          {[
+            { t: "Mehendi", bg: "bg-cream", hover: "hover:bg-cream-hover" },
+            { t: "Haldi", bg: "bg-blush-soft", hover: "hover:bg-blush-soft-hover" },
+            { t: "Sangeet", bg: "bg-sage-soft", hover: "hover:bg-sage-soft-hover" },
+            { t: "Nikah", bg: "bg-wine-soft", hover: "hover:bg-wine-soft-hover" },
+            { t: "Baraat", bg: "bg-cream", hover: "hover:bg-cream-hover" },
+            { t: "Church ceremony", bg: "bg-blush-soft", hover: "hover:bg-blush-soft-hover" },
+            { t: "Registry", bg: "bg-sage-soft", hover: "hover:bg-sage-soft-hover" },
+            { t: "Reception", bg: "bg-wine-soft", hover: "hover:bg-wine-soft-hover" },
+            { t: "Cocktail hour", bg: "bg-cream", hover: "hover:bg-cream-hover" },
+            { t: "Rehearsal dinner", bg: "bg-blush-soft", hover: "hover:bg-blush-soft-hover" },
+            { t: "Welcome party", bg: "bg-sage-soft", hover: "hover:bg-sage-soft-hover" },
+            { t: "Pool party", bg: "bg-wine-soft", hover: "hover:bg-wine-soft-hover" },
+            { t: "Beach ceremony", bg: "bg-cream", hover: "hover:bg-cream-hover" },
+            { t: "Chuppah", bg: "bg-blush-soft", hover: "hover:bg-blush-soft-hover" },
+            { t: "Tea ceremony", bg: "bg-sage-soft", hover: "hover:bg-sage-soft-hover" },
+            { t: "Farewell brunch", bg: "bg-wine-soft", hover: "hover:bg-wine-soft-hover" },
+          ].map(({ t, bg, hover }) => (
+            <span key={t} className={`rounded-full ${bg} border border-line px-4 py-2 text-sm cursor-default transition-all ${hover} hover:-translate-y-0.5`}>{t}</span>
           ))}
         </div>
       </section>
@@ -134,23 +151,25 @@ function Landing() {
         <div className="grid lg:grid-cols-12 gap-10 items-start">
           <div className="lg:col-span-5 lg:sticky lg:top-24" data-reveal>
             <p className="text-xs uppercase tracking-[0.2em] text-cherry">The planner</p>
-            <h2 className="mt-3 font-serif text-5xl md:text-6xl leading-[0.95]">Every tool a modern wedding needs.</h2>
+            <h2 className="mt-3 font-serif text-5xl md:text-6xl leading-[0.95]">We handle the details. You bring the love.</h2>
             <p className="mt-6 text-ink/70">One plan for two families. Multiple events, guests across borders, RSVPs on WhatsApp, seating that respects allergies, a website you actually design yourself.</p>
-            <img src={cocktailImg} alt="Beach cocktail hour at a destination wedding" loading="lazy" width={1024} height={1280}
-              className="mt-8 blob w-full h-64 object-cover shadow-xl transition-all duration-700 hover:blob-2" />
+            <div className="mt-8 mx-auto lg:mx-0 w-[min(100%,650px)] aspect-[16/10] rounded-[50%] overflow-hidden shadow-xl transition-transform duration-700 hover:scale-[1.02]">
+              <img src={cocktailImg} alt="Beach cocktail hour at a destination wedding" loading="lazy" width={1024} height={1280}
+                className="w-full h-full object-cover object-center" />
+            </div>
           </div>
           <div className="lg:col-span-7 grid sm:grid-cols-2 gap-4">
             {[
-              { i: Calendar, t: "Unlimited ceremonies", b: "Add every event your two cultures ask for. Never a dropdown of just ceremony and reception.", bg: "bg-cream" },
-              { i: Users, t: "Smart guest lists", b: "First and last name, per-event invites, plus-ones, dietary tags, allergies, accessibility notes.", bg: "bg-blush-soft" },
-              { i: Grid3x3, t: "Seating canvas", b: "Design the room. Drag tables, dance floor, bar. Round, square, rectangle. Warn on capacity and allergy clusters.", bg: "bg-sage-soft" },
-              { i: MessageCircle, t: "WhatsApp automation", b: "Save-the-date, RSVP link, T-7 reminder, thank-you. Templates that greet guests by first name.", bg: "bg-wine-soft" },
-              { i: Utensils, t: "Food & allergies", b: "Halal, kosher, jain, vegan, nut, dairy, shellfish. Tracked, filterable, flagged when you seat them.", bg: "bg-blush-soft" },
-              { i: Gift, t: "Registry, your way", b: "Pick your country, choose from the retailers guests actually shop at, and share one link.", bg: "bg-cream" },
-              { i: Store, t: "Buy & sell marketplace", b: "Leftover décor, dresses, tableware. Buy from other couples, resell yours after the day.", bg: "bg-sage-soft" },
-              { i: Globe2, t: "Destination-first", b: "Your wedding city isn't always your home city. Travel, stay, vendors, all filtered by where you're actually getting married.", bg: "bg-wine-soft" },
-            ].map(({ i: Icon, t, b, bg }) => (
-              <div key={t} data-reveal className={`${bg} rounded-3xl p-6 morph-card cursor-default`}>
+              { i: Calendar, t: "Unlimited ceremonies", b: "Add every event your two cultures ask for. Never a dropdown of just ceremony and reception.", bg: "bg-cream", hover: "hover:bg-cream-hover" },
+              { i: Users, t: "Smart guest lists", b: "First and last name, per-event invites, plus-ones, dietary tags, allergies, accessibility notes.", bg: "bg-blush-soft", hover: "hover:bg-blush-soft-hover" },
+              { i: Grid3x3, t: "Seating canvas", b: "Design the room. Drag tables, dance floor, bar. Round, square, rectangle. Warn on capacity and allergy clusters.", bg: "bg-sage-soft", hover: "hover:bg-sage-soft-hover" },
+              { i: MessageCircle, t: "WhatsApp automation", b: "Save-the-date, RSVP link, T-7 reminder, thank-you. Templates that greet guests by first name.", bg: "bg-wine-soft", hover: "hover:bg-wine-soft-hover" },
+              { i: Utensils, t: "Food & allergies", b: "Halal, kosher, jain, vegan, nut, dairy, shellfish. Tracked, filterable, flagged when you seat them.", bg: "bg-blush-soft", hover: "hover:bg-blush-soft-hover" },
+              { i: Gift, t: "Registry, your way", b: "Pick your country, choose from the retailers guests actually shop at, and share one link.", bg: "bg-cream", hover: "hover:bg-cream-hover" },
+              { i: Store, t: "Buy & sell marketplace", b: "Leftover décor, dresses, tableware. Buy from other couples, resell yours after the day.", bg: "bg-sage-soft", hover: "hover:bg-sage-soft-hover" },
+              { i: Globe2, t: "Destination-first", b: "Your wedding city isn't always your home city. Travel, stay, vendors, all filtered by where you're actually getting married.", bg: "bg-wine-soft", hover: "hover:bg-wine-soft-hover" },
+            ].map(({ i: Icon, t, b, bg, hover }) => (
+              <div key={t} data-reveal className={`${bg} ${hover} rounded-3xl p-6 morph-card cursor-default transition-colors duration-500`}>
                 <span className="grid h-10 w-10 place-items-center rounded-full bg-paper text-cherry shadow-sm transition-transform group-hover:scale-110"><Icon className="h-4 w-4" /></span>
                 <h3 className="mt-4 font-serif text-2xl leading-tight">{t}</h3>
                 <p className="mt-2 text-sm text-ink/70 leading-relaxed">{b}</p>
