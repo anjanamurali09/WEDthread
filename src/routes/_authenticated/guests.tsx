@@ -214,6 +214,30 @@ function GuestsPage() {
               className={`text-[11px] rounded-full border px-2.5 py-0.5 ${filterDiet === t ? "bg-clay text-paper border-clay" : "border-line hover:bg-stone text-muted-foreground"}`}>{t}</button>
           ))}
         </div>
+        <div className="relative">
+          <button onClick={() => setColsOpen((v) => !v)} className="inline-flex items-center gap-2 rounded-full border border-line px-4 py-2 text-sm hover:bg-stone">
+            <Columns3 className="h-4 w-4" /> Columns
+          </button>
+          {colsOpen && (
+            <>
+              <div className="fixed inset-0 z-10" onClick={() => setColsOpen(false)} />
+              <div className="absolute right-0 mt-2 z-20 w-56 rounded-2xl border border-line bg-pearl shadow-lg p-2">
+                <p className="px-3 py-2 text-[10px] uppercase tracking-widest text-muted-foreground">Show columns</p>
+                {ALL_COLS.map((c) => {
+                  const on = showCol(c.key);
+                  const disabled = c.key === "name";
+                  return (
+                    <button key={c.key} disabled={disabled} onClick={() => toggleCol(c.key)}
+                      className={`w-full flex items-center justify-between gap-2 px-3 py-2 text-sm rounded-xl ${disabled ? "opacity-60 cursor-not-allowed" : "hover:bg-blush-soft"}`}>
+                      <span>{c.label}</span>
+                      {on && <Check className="h-4 w-4 text-cherry" />}
+                    </button>
+                  );
+                })}
+              </div>
+            </>
+          )}
+        </div>
       </div>
 
       {guests.length === 0 ? (
@@ -223,14 +247,17 @@ function GuestsPage() {
           <button onClick={downloadTemplate} className="mt-6 inline-flex items-center gap-2 rounded-full bg-ink text-paper px-5 py-2.5 text-sm hover:bg-clay"><FileText className="h-4 w-4" /> Download CSV template</button>
         </div>
       ) : (
-        <div className="paper-card overflow-hidden">
+        <div className="paper-card overflow-x-auto">
           <table className="w-full text-sm">
             <thead className="bg-stone/50 text-left text-xs uppercase tracking-widest text-muted-foreground">
               <tr>
-                <th className="px-4 py-3">Guest</th>
-                <th className="px-4 py-3 hidden md:table-cell">Contact</th>
-                <th className="px-4 py-3 hidden lg:table-cell">Dietary</th>
-                <th className="px-4 py-3">Events</th>
+                {showCol("name") && <th className="px-4 py-3">Guest name</th>}
+                {showCol("household") && <th className="px-4 py-3">Family / Group</th>}
+                {showCol("email") && <th className="px-4 py-3">Email</th>}
+                {showCol("phone") && <th className="px-4 py-3">Phone</th>}
+                {showCol("dietary") && <th className="px-4 py-3">Dietary</th>}
+                {showCol("events") && <th className="px-4 py-3">Event</th>}
+                {showCol("rsvp") && <th className="px-4 py-3">RSVP status</th>}
                 <th className="px-4 py-3"></th>
               </tr>
             </thead>
@@ -238,31 +265,42 @@ function GuestsPage() {
               {filtered.map((g) => {
                 const gi = inviteByGuest.get(g.id) ?? [];
                 return (
-                  <tr key={g.id} className="border-t border-line hover:bg-stone/30">
-                    <td className="px-4 py-3">
-                      <p className="font-medium">{g.full_name}</p>
-                      {g.household_group && <p className="text-xs text-muted-foreground">{g.household_group}</p>}
-                    </td>
-                    <td className="px-4 py-3 hidden md:table-cell text-xs text-muted-foreground">
-                      {g.email && <p>{g.email}</p>}
-                      {g.phone && <p>{g.phone}</p>}
-                    </td>
-                    <td className="px-4 py-3 hidden lg:table-cell">
-                      <div className="flex flex-wrap gap-1">
-                        {g.dietary_tags?.map((t) => <span key={t} className="text-[10px] bg-clay-soft text-clay rounded-full px-2 py-0.5">{t}</span>)}
-                        {g.food_allergies?.map((t) => <span key={t} className="text-[10px] bg-destructive/10 text-destructive rounded-full px-2 py-0.5">⚠ {t}</span>)}
-                      </div>
-                    </td>
-                    <td className="px-4 py-3">
-                      <div className="flex flex-wrap gap-1">
-                        {gi.length === 0 && <span className="text-xs text-muted-foreground">-</span>}
-                        {gi.map((i) => {
-                          const ev = events.find((e) => e.id === i.event_id);
-                          const color = i.rsvp_status === "attending" ? "text-clay" : i.rsvp_status === "declined" ? "text-destructive" : "text-muted-foreground";
-                          return <span key={i.id} className={`text-[10px] rounded-full border border-line px-2 py-0.5 ${color}`}>{ev?.name ?? "?"} · {i.rsvp_status}</span>;
-                        })}
-                      </div>
-                    </td>
+                  <tr key={g.id} className="border-t border-line hover:bg-stone/30 align-top">
+                    {showCol("name") && <td className="px-4 py-3 font-medium">{g.full_name}</td>}
+                    {showCol("household") && <td className="px-4 py-3 text-xs text-muted-foreground">{g.household_group || "—"}</td>}
+                    {showCol("email") && <td className="px-4 py-3 text-xs text-muted-foreground">{g.email || "—"}</td>}
+                    {showCol("phone") && <td className="px-4 py-3 text-xs text-muted-foreground">{g.phone || "—"}</td>}
+                    {showCol("dietary") && (
+                      <td className="px-4 py-3">
+                        <div className="flex flex-wrap gap-1">
+                          {g.dietary_tags?.map((t) => <span key={t} className="text-[10px] bg-clay-soft text-clay rounded-full px-2 py-0.5">{t}</span>)}
+                          {g.food_allergies?.map((t) => <span key={t} className="text-[10px] bg-destructive/10 text-destructive rounded-full px-2 py-0.5">⚠ {t}</span>)}
+                          {!g.dietary_tags?.length && !g.food_allergies?.length && <span className="text-xs text-muted-foreground">—</span>}
+                        </div>
+                      </td>
+                    )}
+                    {showCol("events") && (
+                      <td className="px-4 py-3">
+                        <div className="flex flex-col gap-1">
+                          {gi.length === 0 && <span className="text-xs text-muted-foreground">—</span>}
+                          {gi.map((i) => {
+                            const ev = events.find((e) => e.id === i.event_id);
+                            return <span key={i.id} className="text-[11px] rounded-full border border-line px-2 py-0.5 w-fit">{ev?.name ?? "?"}</span>;
+                          })}
+                        </div>
+                      </td>
+                    )}
+                    {showCol("rsvp") && (
+                      <td className="px-4 py-3">
+                        <div className="flex flex-col gap-1">
+                          {gi.length === 0 && <span className="text-xs text-muted-foreground">—</span>}
+                          {gi.map((i) => {
+                            const color = i.rsvp_status === "attending" ? "bg-clay-soft text-clay" : i.rsvp_status === "declined" ? "bg-destructive/10 text-destructive" : "bg-stone text-muted-foreground";
+                            return <span key={i.id} className={`text-[10px] rounded-full px-2 py-0.5 w-fit capitalize ${color}`}>{i.rsvp_status}</span>;
+                          })}
+                        </div>
+                      </td>
+                    )}
                     <td className="px-4 py-3">
                       <div className="flex gap-1 justify-end">
                         <button onClick={() => copyRsvpLink(g)} title="Copy RSVP link" className="p-2 rounded-full hover:bg-stone"><Copy className="h-3.5 w-3.5" /></button>
@@ -279,6 +317,7 @@ function GuestsPage() {
           </table>
         </div>
       )}
+
 
       {editing && <GuestDialog guest={editing} events={events} existingInvites={editing.id ? (inviteByGuest.get(editing.id) ?? []) : []} onClose={() => setEditing(null)} onSave={save} />}
     </AppShell>
