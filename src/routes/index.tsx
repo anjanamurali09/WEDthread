@@ -94,7 +94,7 @@ function Landing() {
         <div className="lg:col-span-6 relative" data-reveal>
           <div className="relative overflow-hidden shadow-2xl blob-2 group">
             <img src={heroImg} alt="Bride and groom embraced beneath ivy-covered arches overlooking a lake at sunset"
-              className="w-full h-[560px] object-cover object-[25%_70%] transition-transform duration-[1200ms] group-hover:scale-105"
+              className="w-full h-[560px] object-cover object-bottom transition-transform duration-[1200ms] group-hover:scale-105"
               width={1200} height={1500} loading="eager" decoding="async" />
             <div className="absolute inset-0 bg-gradient-to-t from-ink/30 via-transparent to-transparent" />
           </div>
