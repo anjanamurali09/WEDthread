@@ -247,12 +247,19 @@ function GuestsPage() {
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
           <input value={q} onChange={(e) => setQ(e.target.value)} placeholder="Search name or email…" className="w-full rounded-full border border-line pl-10 pr-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-clay" />
         </div>
-        <div className="flex gap-1 flex-wrap">
-          {[...DIETARY, ...ALLERGIES].map((t) => (
-            <button key={t} onClick={() => setFilterDiet(filterDiet === t ? null : t)}
-              className={`text-[11px] rounded-full border px-2.5 py-0.5 ${filterDiet === t ? "bg-clay text-paper border-clay" : "border-line hover:bg-stone text-muted-foreground"}`}>{t}</button>
-          ))}
-        </div>
+        <FilterSelect label="Family / Group" value={filterHousehold} onChange={setFilterHousehold}
+          options={households.map((h) => ({ value: h, label: h }))} />
+        <FilterSelect label="Dietary" value={filterDiet} onChange={setFilterDiet}
+          options={[...DIETARY, ...ALLERGIES].map((t) => ({ value: t, label: t }))} />
+        <FilterSelect label="Event" value={filterEvent} onChange={setFilterEvent}
+          options={events.map((e) => ({ value: e.id, label: e.name }))} />
+        <FilterSelect label="RSVP status" value={filterRsvp} onChange={setFilterRsvp}
+          options={[
+            { value: "attending", label: "Attending" },
+            { value: "declined", label: "Declined" },
+            { value: "pending", label: "Pending" },
+            { value: "maybe", label: "Maybe" },
+          ]} />
         <div className="relative">
           <button onClick={() => setColsOpen((v) => !v)} className="inline-flex items-center gap-2 rounded-full border border-line px-4 py-2 text-sm hover:bg-stone">
             <Columns3 className="h-4 w-4" /> Columns
