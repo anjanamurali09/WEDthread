@@ -132,9 +132,10 @@ export function AppShell({ children, title, subtitle, actions, decor }: { childr
       {/* Sidebar */}
       <aside className="relative z-10 hidden md:flex md:w-64 lg:w-72 shrink-0 flex-col border-r border-line/60 bg-pearl/70 backdrop-blur-sm sticky top-0 h-screen">
         <div className="px-6 pt-8 pb-6">
-          <Link to="/dashboard" className="flex items-center gap-2 group mb-6">
-            <span className="font-serif text-2xl tracking-tight">Vowzy</span>
+          <Link to="/dashboard" className="inline-flex items-center gap-2 group mb-6 select-none" draggable={false}>
+            <span className="font-serif text-2xl tracking-tight select-none" style={{ WebkitUserDrag: "none" } as any}>Vowzy</span>
           </Link>
+
           <WorkspaceSwitcher />
         </div>
         <nav className="px-3 flex-1 overflow-y-auto">
@@ -190,9 +191,11 @@ export function AppShell({ children, title, subtitle, actions, decor }: { childr
             <div>
               {title && (
                 <>
-                  <p className="text-[11px] uppercase tracking-[0.25em] text-cherry inline-flex items-center gap-2 mb-2">
-                    <span className="h-px w-8 bg-cherry" /> Vowzy
-                  </p>
+                  <nav className="text-[11px] uppercase tracking-[0.25em] text-cherry inline-flex items-center gap-2 mb-2" aria-label="Breadcrumb">
+                    <Link to="/dashboard" className="hover:underline">Home</Link>
+                    <span className="text-ink/30">/</span>
+                    <span className="text-ink/60">{title}</span>
+                  </nav>
                   <h1 className="font-serif text-3xl md:text-5xl text-ink leading-[0.95]">{title}</h1>
                 </>
               )}
@@ -201,6 +204,7 @@ export function AppShell({ children, title, subtitle, actions, decor }: { childr
             {actions}
           </header>
         )}
+
 
         <div className="px-4 md:px-10 pb-16">{children}</div>
 
