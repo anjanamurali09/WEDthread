@@ -10,6 +10,7 @@ import {
 } from "lucide-react";
 import { DatePicker } from "@/components/ui/datepicker";
 import { cn } from "@/lib/utils";
+import { PhotoEmptyState } from "@/components/photo-empty-state";
 
 export const Route = createFileRoute("/_authenticated/events")({ component: EventsPage });
 
@@ -110,21 +111,17 @@ function EventsPage() {
     >
       {isLoading ? <p className="text-muted-foreground text-sm">Loading…</p> :
         events.length === 0 ? (
-          <div className="rounded-3xl bg-gradient-to-br from-blush-soft via-cream to-sage/20 border border-line p-10 md:p-14">
-            <div className="text-center">
-              <CalendarDays className="h-8 w-8 mx-auto text-clay" />
-              <h3 className="mt-4 font-serif text-3xl">No events yet</h3>
-              <p className="mt-2 text-sm text-ink/70 max-w-xl mx-auto">A wedding is rarely one day. Add a mehendi, a welcome cocktail, a beach ceremony, a farewell brunch, whatever your two families are celebrating.</p>
-            </div>
-            <div className="mt-8">
-              <p className="text-center text-[11px] uppercase tracking-widest text-clay">Popular starts</p>
-              <div className="mt-4 flex flex-wrap justify-center gap-2">
-                {SUGGESTIONS.map((s) => (
-                  <button key={s} onClick={() => setEditing({ name: s })} className="rounded-full bg-paper border border-line px-4 py-1.5 text-xs hover:bg-clay hover:text-paper hover:border-clay transition-colors cursor-pointer">+ {s}</button>
-                ))}
-              </div>
-            </div>
-          </div>
+          <PhotoEmptyState
+            photo="marigold"
+            variant="landscape"
+            eyebrow="Every celebration in one place"
+            title="A wedding is rarely one day"
+            body="Add a mehendi, a welcome cocktail, a beach ceremony, a farewell brunch — whatever your two families are celebrating. Start with one of the traditions below or write your own."
+          >
+            {SUGGESTIONS.map((s) => (
+              <button key={s} onClick={() => setEditing({ name: s })} className="rounded-full bg-paper border border-line px-4 py-1.5 text-xs hover:bg-clay hover:text-paper hover:border-clay transition-colors cursor-pointer">+ {s}</button>
+            ))}
+          </PhotoEmptyState>
         ) : (
           <div className="grid md:grid-cols-2 xl:grid-cols-3 gap-4">
             {events.map((e, i) => (
