@@ -1,7 +1,8 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
-import { ExternalLink, ImageOff, Sparkles, Heart } from "lucide-react";
+import { ExternalLink, ImageOff, Sparkles, Heart, Star } from "lucide-react";
+import { cn } from "@/lib/utils";
 
 export const Route = createFileRoute("/w/$slug/registry")({ component: PublicRegistry });
 
@@ -64,7 +65,7 @@ function PublicRegistry() {
           {wedding.partner_a} <span className="text-wine italic">&</span> {wedding.partner_b}
         </h1>
         <p className="mt-6 max-w-xl mx-auto text-sm text-muted-foreground">
-          Your presence is the greatest gift — but if you'd like to celebrate with something more, here are a few things we've been dreaming of.
+          Your presence is the greatest gift, but if you'd like to celebrate with something more, here are a few things we've been dreaming of.
         </p>
       </header>
 
@@ -73,7 +74,7 @@ function PublicRegistry() {
         {items.length === 0 ? (
           <div className="rounded-3xl border border-dashed border-line p-16 text-center bg-paper">
             <p className="font-serif text-2xl">The registry is being curated</p>
-            <p className="mt-2 text-sm text-muted-foreground">Check back soon — the couple is adding items.</p>
+            <p className="mt-2 text-sm text-muted-foreground">Check back soon. The couple is adding items.</p>
           </div>
         ) : (
           <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-5">
@@ -83,7 +84,10 @@ function PublicRegistry() {
                 href={it.product_url ?? "#"}
                 target="_blank"
                 rel="noreferrer noopener"
-                className="paper-card overflow-hidden group flex flex-col transition-all hover:-translate-y-1 hover:shadow-lg"
+                className={cn(
+                  "paper-card overflow-hidden group relative flex flex-col transition-all hover:-translate-y-1 hover:shadow-lg",
+                  it.is_most_wanted && "ring-2 ring-rose-deep",
+                )}
               >
                 <div className="aspect-square bg-pearl border-b border-line overflow-hidden">
                   {it.image_url ? (
@@ -92,15 +96,20 @@ function PublicRegistry() {
                     <div className="w-full h-full grid place-items-center text-muted-foreground/40"><ImageOff className="h-10 w-10" /></div>
                   )}
                 </div>
+                {it.is_most_wanted && (
+                  <span className="absolute top-2 left-2 inline-flex items-center gap-1 rounded-full bg-rose-deep text-pearl px-2.5 py-1 text-[10px] font-medium uppercase tracking-wide">
+                    <Star className="h-3 w-3 fill-current" /> Most wanted
+                  </span>
+                )}
                 <div className="p-5 flex-1 flex flex-col">
                   {it.retailer && <p className="text-[10px] uppercase tracking-widest text-muted-foreground">{it.retailer}</p>}
                   <p className="mt-1 font-serif text-lg leading-snug line-clamp-2 flex-1">{it.title}</p>
                   <div className="mt-3 flex items-center justify-between">
                     {it.price_cents ? (
-                      <span className="text-sm font-medium text-wine">{formatPrice(it.price_cents, country)}</span>
+                      <span className="text-sm font-medium text-rose-deep">{formatPrice(it.price_cents, country)}</span>
                     ) : <span />}
                     {it.product_url && (
-                      <span className="inline-flex items-center gap-1 text-xs text-cherry group-hover:underline underline-offset-2">
+                      <span className="inline-flex items-center gap-1 text-xs text-sage-deep group-hover:underline underline-offset-2">
                         View <ExternalLink className="h-3 w-3" />
                       </span>
                     )}

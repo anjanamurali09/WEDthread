@@ -21,15 +21,18 @@ import { Route as AuthenticatedWebsiteRouteImport } from './routes/_authenticate
 import { Route as AuthenticatedVenuesRouteImport } from './routes/_authenticated/venues'
 import { Route as AuthenticatedVendorsRouteImport } from './routes/_authenticated/vendors'
 import { Route as AuthenticatedSeatingRouteImport } from './routes/_authenticated/seating'
+import { Route as AuthenticatedRsvpQuestionsRouteImport } from './routes/_authenticated/rsvp-questions'
 import { Route as AuthenticatedRegistryRouteImport } from './routes/_authenticated/registry'
 import { Route as AuthenticatedOnboardingRouteImport } from './routes/_authenticated/onboarding'
 import { Route as AuthenticatedMessagesRouteImport } from './routes/_authenticated/messages'
+import { Route as AuthenticatedMenuRouteImport } from './routes/_authenticated/menu'
 import { Route as AuthenticatedLeadsRouteImport } from './routes/_authenticated/leads'
 import { Route as AuthenticatedGuestsRouteImport } from './routes/_authenticated/guests'
 import { Route as AuthenticatedEventsRouteImport } from './routes/_authenticated/events'
 import { Route as AuthenticatedDashboardRouteImport } from './routes/_authenticated/dashboard'
+import { Route as AuthenticatedBudgetRouteImport } from './routes/_authenticated/budget'
 import { Route as WSlugRegistryRouteImport } from './routes/w.$slug.registry'
-import { Route as AuthenticatedWebsiteEditRouteImport } from './routes/_authenticated/website.edit'
+import { Route as AuthenticatedWebsiteEditRouteImport } from './routes/_authenticated/website_.edit'
 
 const AuthRoute = AuthRouteImport.update({
   id: '/auth',
@@ -90,6 +93,12 @@ const AuthenticatedSeatingRoute = AuthenticatedSeatingRouteImport.update({
   path: '/seating',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
+const AuthenticatedRsvpQuestionsRoute =
+  AuthenticatedRsvpQuestionsRouteImport.update({
+    id: '/rsvp-questions',
+    path: '/rsvp-questions',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
 const AuthenticatedRegistryRoute = AuthenticatedRegistryRouteImport.update({
   id: '/registry',
   path: '/registry',
@@ -103,6 +112,11 @@ const AuthenticatedOnboardingRoute = AuthenticatedOnboardingRouteImport.update({
 const AuthenticatedMessagesRoute = AuthenticatedMessagesRouteImport.update({
   id: '/messages',
   path: '/messages',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
+const AuthenticatedMenuRoute = AuthenticatedMenuRouteImport.update({
+  id: '/menu',
+  path: '/menu',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
 const AuthenticatedLeadsRoute = AuthenticatedLeadsRouteImport.update({
@@ -125,6 +139,11 @@ const AuthenticatedDashboardRoute = AuthenticatedDashboardRouteImport.update({
   path: '/dashboard',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
+const AuthenticatedBudgetRoute = AuthenticatedBudgetRouteImport.update({
+  id: '/budget',
+  path: '/budget',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
 const WSlugRegistryRoute = WSlugRegistryRouteImport.update({
   id: '/registry',
   path: '/registry',
@@ -132,25 +151,28 @@ const WSlugRegistryRoute = WSlugRegistryRouteImport.update({
 } as any)
 const AuthenticatedWebsiteEditRoute =
   AuthenticatedWebsiteEditRouteImport.update({
-    id: '/edit',
-    path: '/edit',
-    getParentRoute: () => AuthenticatedWebsiteRoute,
+    id: '/website_/edit',
+    path: '/website/edit',
+    getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/auth': typeof AuthRouteWithChildren
+  '/budget': typeof AuthenticatedBudgetRoute
   '/dashboard': typeof AuthenticatedDashboardRoute
   '/events': typeof AuthenticatedEventsRoute
   '/guests': typeof AuthenticatedGuestsRoute
   '/leads': typeof AuthenticatedLeadsRoute
+  '/menu': typeof AuthenticatedMenuRoute
   '/messages': typeof AuthenticatedMessagesRoute
   '/onboarding': typeof AuthenticatedOnboardingRoute
   '/registry': typeof AuthenticatedRegistryRoute
+  '/rsvp-questions': typeof AuthenticatedRsvpQuestionsRoute
   '/seating': typeof AuthenticatedSeatingRoute
   '/vendors': typeof AuthenticatedVendorsRoute
   '/venues': typeof AuthenticatedVenuesRoute
-  '/website': typeof AuthenticatedWebsiteRouteWithChildren
+  '/website': typeof AuthenticatedWebsiteRoute
   '/auth/callback': typeof AuthCallbackRoute
   '/auth/role': typeof AuthRoleRoute
   '/rsvp/$token': typeof RsvpTokenRoute
@@ -161,17 +183,20 @@ export interface FileRoutesByFullPath {
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/budget': typeof AuthenticatedBudgetRoute
   '/dashboard': typeof AuthenticatedDashboardRoute
   '/events': typeof AuthenticatedEventsRoute
   '/guests': typeof AuthenticatedGuestsRoute
   '/leads': typeof AuthenticatedLeadsRoute
+  '/menu': typeof AuthenticatedMenuRoute
   '/messages': typeof AuthenticatedMessagesRoute
   '/onboarding': typeof AuthenticatedOnboardingRoute
   '/registry': typeof AuthenticatedRegistryRoute
+  '/rsvp-questions': typeof AuthenticatedRsvpQuestionsRoute
   '/seating': typeof AuthenticatedSeatingRoute
   '/vendors': typeof AuthenticatedVendorsRoute
   '/venues': typeof AuthenticatedVenuesRoute
-  '/website': typeof AuthenticatedWebsiteRouteWithChildren
+  '/website': typeof AuthenticatedWebsiteRoute
   '/auth/callback': typeof AuthCallbackRoute
   '/auth/role': typeof AuthRoleRoute
   '/rsvp/$token': typeof RsvpTokenRoute
@@ -185,23 +210,26 @@ export interface FileRoutesById {
   '/': typeof IndexRoute
   '/_authenticated': typeof AuthenticatedRouteRouteWithChildren
   '/auth': typeof AuthRouteWithChildren
+  '/_authenticated/budget': typeof AuthenticatedBudgetRoute
   '/_authenticated/dashboard': typeof AuthenticatedDashboardRoute
   '/_authenticated/events': typeof AuthenticatedEventsRoute
   '/_authenticated/guests': typeof AuthenticatedGuestsRoute
   '/_authenticated/leads': typeof AuthenticatedLeadsRoute
+  '/_authenticated/menu': typeof AuthenticatedMenuRoute
   '/_authenticated/messages': typeof AuthenticatedMessagesRoute
   '/_authenticated/onboarding': typeof AuthenticatedOnboardingRoute
   '/_authenticated/registry': typeof AuthenticatedRegistryRoute
+  '/_authenticated/rsvp-questions': typeof AuthenticatedRsvpQuestionsRoute
   '/_authenticated/seating': typeof AuthenticatedSeatingRoute
   '/_authenticated/vendors': typeof AuthenticatedVendorsRoute
   '/_authenticated/venues': typeof AuthenticatedVenuesRoute
-  '/_authenticated/website': typeof AuthenticatedWebsiteRouteWithChildren
+  '/_authenticated/website': typeof AuthenticatedWebsiteRoute
   '/auth/callback': typeof AuthCallbackRoute
   '/auth/role': typeof AuthRoleRoute
   '/rsvp/$token': typeof RsvpTokenRoute
   '/w/$slug': typeof WSlugRouteWithChildren
   '/auth/': typeof AuthIndexRoute
-  '/_authenticated/website/edit': typeof AuthenticatedWebsiteEditRoute
+  '/_authenticated/website_/edit': typeof AuthenticatedWebsiteEditRoute
   '/w/$slug/registry': typeof WSlugRegistryRoute
 }
 export interface FileRouteTypes {
@@ -209,13 +237,16 @@ export interface FileRouteTypes {
   fullPaths:
     | '/'
     | '/auth'
+    | '/budget'
     | '/dashboard'
     | '/events'
     | '/guests'
     | '/leads'
+    | '/menu'
     | '/messages'
     | '/onboarding'
     | '/registry'
+    | '/rsvp-questions'
     | '/seating'
     | '/vendors'
     | '/venues'
@@ -230,13 +261,16 @@ export interface FileRouteTypes {
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
+    | '/budget'
     | '/dashboard'
     | '/events'
     | '/guests'
     | '/leads'
+    | '/menu'
     | '/messages'
     | '/onboarding'
     | '/registry'
+    | '/rsvp-questions'
     | '/seating'
     | '/vendors'
     | '/venues'
@@ -253,13 +287,16 @@ export interface FileRouteTypes {
     | '/'
     | '/_authenticated'
     | '/auth'
+    | '/_authenticated/budget'
     | '/_authenticated/dashboard'
     | '/_authenticated/events'
     | '/_authenticated/guests'
     | '/_authenticated/leads'
+    | '/_authenticated/menu'
     | '/_authenticated/messages'
     | '/_authenticated/onboarding'
     | '/_authenticated/registry'
+    | '/_authenticated/rsvp-questions'
     | '/_authenticated/seating'
     | '/_authenticated/vendors'
     | '/_authenticated/venues'
@@ -269,7 +306,7 @@ export interface FileRouteTypes {
     | '/rsvp/$token'
     | '/w/$slug'
     | '/auth/'
-    | '/_authenticated/website/edit'
+    | '/_authenticated/website_/edit'
     | '/w/$slug/registry'
   fileRoutesById: FileRoutesById
 }
@@ -367,6 +404,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedSeatingRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/rsvp-questions': {
+      id: '/_authenticated/rsvp-questions'
+      path: '/rsvp-questions'
+      fullPath: '/rsvp-questions'
+      preLoaderRoute: typeof AuthenticatedRsvpQuestionsRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/registry': {
       id: '/_authenticated/registry'
       path: '/registry'
@@ -386,6 +430,13 @@ declare module '@tanstack/react-router' {
       path: '/messages'
       fullPath: '/messages'
       preLoaderRoute: typeof AuthenticatedMessagesRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/menu': {
+      id: '/_authenticated/menu'
+      path: '/menu'
+      fullPath: '/menu'
+      preLoaderRoute: typeof AuthenticatedMenuRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_authenticated/leads': {
@@ -416,6 +467,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedDashboardRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/budget': {
+      id: '/_authenticated/budget'
+      path: '/budget'
+      fullPath: '/budget'
+      preLoaderRoute: typeof AuthenticatedBudgetRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/w/$slug/registry': {
       id: '/w/$slug/registry'
       path: '/registry'
@@ -423,53 +481,50 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof WSlugRegistryRouteImport
       parentRoute: typeof WSlugRoute
     }
-    '/_authenticated/website/edit': {
-      id: '/_authenticated/website/edit'
-      path: '/edit'
+    '/_authenticated/website_/edit': {
+      id: '/_authenticated/website_/edit'
+      path: '/website/edit'
       fullPath: '/website/edit'
       preLoaderRoute: typeof AuthenticatedWebsiteEditRouteImport
-      parentRoute: typeof AuthenticatedWebsiteRoute
+      parentRoute: typeof AuthenticatedRouteRoute
     }
   }
 }
 
-interface AuthenticatedWebsiteRouteChildren {
-  AuthenticatedWebsiteEditRoute: typeof AuthenticatedWebsiteEditRoute
-}
-
-const AuthenticatedWebsiteRouteChildren: AuthenticatedWebsiteRouteChildren = {
-  AuthenticatedWebsiteEditRoute: AuthenticatedWebsiteEditRoute,
-}
-
-const AuthenticatedWebsiteRouteWithChildren =
-  AuthenticatedWebsiteRoute._addFileChildren(AuthenticatedWebsiteRouteChildren)
-
 interface AuthenticatedRouteRouteChildren {
+  AuthenticatedBudgetRoute: typeof AuthenticatedBudgetRoute
   AuthenticatedDashboardRoute: typeof AuthenticatedDashboardRoute
   AuthenticatedEventsRoute: typeof AuthenticatedEventsRoute
   AuthenticatedGuestsRoute: typeof AuthenticatedGuestsRoute
   AuthenticatedLeadsRoute: typeof AuthenticatedLeadsRoute
+  AuthenticatedMenuRoute: typeof AuthenticatedMenuRoute
   AuthenticatedMessagesRoute: typeof AuthenticatedMessagesRoute
   AuthenticatedOnboardingRoute: typeof AuthenticatedOnboardingRoute
   AuthenticatedRegistryRoute: typeof AuthenticatedRegistryRoute
+  AuthenticatedRsvpQuestionsRoute: typeof AuthenticatedRsvpQuestionsRoute
   AuthenticatedSeatingRoute: typeof AuthenticatedSeatingRoute
   AuthenticatedVendorsRoute: typeof AuthenticatedVendorsRoute
   AuthenticatedVenuesRoute: typeof AuthenticatedVenuesRoute
-  AuthenticatedWebsiteRoute: typeof AuthenticatedWebsiteRouteWithChildren
+  AuthenticatedWebsiteRoute: typeof AuthenticatedWebsiteRoute
+  AuthenticatedWebsiteEditRoute: typeof AuthenticatedWebsiteEditRoute
 }
 
 const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
+  AuthenticatedBudgetRoute: AuthenticatedBudgetRoute,
   AuthenticatedDashboardRoute: AuthenticatedDashboardRoute,
   AuthenticatedEventsRoute: AuthenticatedEventsRoute,
   AuthenticatedGuestsRoute: AuthenticatedGuestsRoute,
   AuthenticatedLeadsRoute: AuthenticatedLeadsRoute,
+  AuthenticatedMenuRoute: AuthenticatedMenuRoute,
   AuthenticatedMessagesRoute: AuthenticatedMessagesRoute,
   AuthenticatedOnboardingRoute: AuthenticatedOnboardingRoute,
   AuthenticatedRegistryRoute: AuthenticatedRegistryRoute,
+  AuthenticatedRsvpQuestionsRoute: AuthenticatedRsvpQuestionsRoute,
   AuthenticatedSeatingRoute: AuthenticatedSeatingRoute,
   AuthenticatedVendorsRoute: AuthenticatedVendorsRoute,
   AuthenticatedVenuesRoute: AuthenticatedVenuesRoute,
-  AuthenticatedWebsiteRoute: AuthenticatedWebsiteRouteWithChildren,
+  AuthenticatedWebsiteRoute: AuthenticatedWebsiteRoute,
+  AuthenticatedWebsiteEditRoute: AuthenticatedWebsiteEditRoute,
 }
 
 const AuthenticatedRouteRouteWithChildren =
@@ -509,3 +564,13 @@ const rootRouteChildren: RootRouteChildren = {
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
+
+import type { getRouter } from './router.tsx'
+import type { startInstance } from './start.ts'
+declare module '@tanstack/react-start' {
+  interface Register {
+    ssr: true
+    router: Awaited<ReturnType<typeof getRouter>>
+    config: Awaited<ReturnType<typeof startInstance.getOptions>>
+  }
+}

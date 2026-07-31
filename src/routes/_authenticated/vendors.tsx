@@ -60,7 +60,7 @@ function VendorsPage() {
   const anyFilter = tier1Id || tier2Id || tag || q;
 
   return (
-    <AppShell title="Vendors" subtitle="Filter by category, subcategory, and tags — from mehendi artists to invitation designers.">
+    <AppShell title="Vendors" subtitle="Filter by category, subcategory, and tags, from mehendi artists to invitation designers.">
       {/* Search */}
       <div className="relative max-w-xl mb-5">
         <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />

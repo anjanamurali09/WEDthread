@@ -152,7 +152,7 @@ export function VendorOnboardingForm() {
           status === "approved" ? "bg-sage-soft text-ink" : status === "rejected" ? "bg-wine-soft text-wine" : "bg-blush-soft text-cherry"
         }`}>
           <CheckCircle2 className="h-4 w-4" />
-          {status === "approved" ? "Your listing is live." : status === "rejected" ? "Listing needs changes — see notes." : "Submitted — waiting for review."}
+          {status === "approved" ? "Your listing is live." : status === "rejected" ? "Listing needs changes, see notes." : "Submitted, waiting for review."}
         </div>
       )}
 

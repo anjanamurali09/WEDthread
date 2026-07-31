@@ -128,7 +128,7 @@ export function VenueOnboardingForm() {
           status === "approved" ? "bg-sage-soft text-ink" : status === "rejected" ? "bg-wine-soft text-wine" : "bg-blush-soft text-cherry"
         }`}>
           <CheckCircle2 className="h-4 w-4" />
-          {status === "approved" ? "Your venue is live." : status === "rejected" ? "Listing needs changes." : "Submitted — waiting for review."}
+          {status === "approved" ? "Your venue is live." : status === "rejected" ? "Listing needs changes." : "Submitted, waiting for review."}
         </div>
       )}
 

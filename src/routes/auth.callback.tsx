@@ -7,7 +7,7 @@ import { ROLE_LANDING, type AppRole } from "@/hooks/use-active-role";
 export const Route = createFileRoute("/auth/callback")({
   head: () => ({
     meta: [
-      { title: "Signing you in — Vowzy" },
+      { title: "Signing you in · Vowzy" },
       { name: "robots", content: "noindex" },
     ],
   }),

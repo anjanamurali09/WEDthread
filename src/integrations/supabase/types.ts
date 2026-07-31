@@ -14,6 +14,33 @@ export type Database = {
   }
   public: {
     Tables: {
+      affiliate_partners: {
+        Row: {
+          business_name: string
+          country: string
+          created_at: string
+          id: string
+          status: Database["public"]["Enums"]["vendor_status"]
+          website_url: string
+        }
+        Insert: {
+          business_name: string
+          country: string
+          created_at?: string
+          id?: string
+          status?: Database["public"]["Enums"]["vendor_status"]
+          website_url: string
+        }
+        Update: {
+          business_name?: string
+          country?: string
+          created_at?: string
+          id?: string
+          status?: Database["public"]["Enums"]["vendor_status"]
+          website_url?: string
+        }
+        Relationships: []
+      }
       booking_leads: {
         Row: {
           budget_max: number | null
@@ -172,7 +199,13 @@ export type Database = {
       events: {
         Row: {
           address: string | null
+          category_completion: Json
           city: string | null
+          completion_done: boolean
+          completion_fraction_current: number
+          completion_fraction_total: number
+          completion_mode: string
+          completion_percent: number
           country: string | null
           created_at: string
           description: string | null
@@ -180,6 +213,7 @@ export type Database = {
           event_date: string | null
           event_end_time: string | null
           event_time: string | null
+          food_included: boolean
           id: string
           name: string
           sort_order: number
@@ -188,7 +222,13 @@ export type Database = {
         }
         Insert: {
           address?: string | null
+          category_completion?: Json
           city?: string | null
+          completion_done?: boolean
+          completion_fraction_current?: number
+          completion_fraction_total?: number
+          completion_mode?: string
+          completion_percent?: number
           country?: string | null
           created_at?: string
           description?: string | null
@@ -196,6 +236,7 @@ export type Database = {
           event_date?: string | null
           event_end_time?: string | null
           event_time?: string | null
+          food_included?: boolean
           id?: string
           name: string
           sort_order?: number
@@ -204,7 +245,13 @@ export type Database = {
         }
         Update: {
           address?: string | null
+          category_completion?: Json
           city?: string | null
+          completion_done?: boolean
+          completion_fraction_current?: number
+          completion_fraction_total?: number
+          completion_mode?: string
+          completion_percent?: number
           country?: string | null
           created_at?: string
           description?: string | null
@@ -212,6 +259,7 @@ export type Database = {
           event_date?: string | null
           event_end_time?: string | null
           event_time?: string | null
+          food_included?: boolean
           id?: string
           name?: string
           sort_order?: number
@@ -284,6 +332,7 @@ export type Database = {
           id: string
           last_name: string | null
           phone: string | null
+          rsvp_submitted_at: string | null
           rsvp_token: string
           wedding_id: string
         }
@@ -300,6 +349,7 @@ export type Database = {
           id?: string
           last_name?: string | null
           phone?: string | null
+          rsvp_submitted_at?: string | null
           rsvp_token?: string
           wedding_id: string
         }
@@ -316,6 +366,7 @@ export type Database = {
           id?: string
           last_name?: string | null
           phone?: string | null
+          rsvp_submitted_at?: string | null
           rsvp_token?: string
           wedding_id?: string
         }
@@ -549,6 +600,7 @@ export type Database = {
         Row: {
           country_code: string | null
           created_at: string
+          currency_code: string | null
           id: string
           is_public: boolean
           message: string | null
@@ -558,6 +610,7 @@ export type Database = {
         Insert: {
           country_code?: string | null
           created_at?: string
+          currency_code?: string | null
           id?: string
           is_public?: boolean
           message?: string | null
@@ -567,6 +620,7 @@ export type Database = {
         Update: {
           country_code?: string | null
           created_at?: string
+          currency_code?: string | null
           id?: string
           is_public?: boolean
           message?: string | null
@@ -590,6 +644,7 @@ export type Database = {
           description: string | null
           id: string
           image_url: string | null
+          is_most_wanted: boolean
           price_cents: number | null
           product_url: string | null
           quantity: number
@@ -606,6 +661,7 @@ export type Database = {
           description?: string | null
           id?: string
           image_url?: string | null
+          is_most_wanted?: boolean
           price_cents?: number | null
           product_url?: string | null
           quantity?: number
@@ -622,6 +678,7 @@ export type Database = {
           description?: string | null
           id?: string
           image_url?: string | null
+          is_most_wanted?: boolean
           price_cents?: number | null
           product_url?: string | null
           quantity?: number
@@ -671,6 +728,115 @@ export type Database = {
           target_type?: string
         }
         Relationships: []
+      }
+      rsvp_questions: {
+        Row: {
+          created_at: string
+          depends_on_question_id: string | null
+          depends_on_value: string | null
+          event_ids: string[]
+          id: string
+          is_required: boolean
+          options: string[]
+          question_text: string
+          question_type: Database["public"]["Enums"]["rsvp_question_type"]
+          sort_order: number
+          updated_at: string
+          wedding_id: string
+        }
+        Insert: {
+          created_at?: string
+          depends_on_question_id?: string | null
+          depends_on_value?: string | null
+          event_ids?: string[]
+          id?: string
+          is_required?: boolean
+          options?: string[]
+          question_text: string
+          question_type?: Database["public"]["Enums"]["rsvp_question_type"]
+          sort_order?: number
+          updated_at?: string
+          wedding_id: string
+        }
+        Update: {
+          created_at?: string
+          depends_on_question_id?: string | null
+          depends_on_value?: string | null
+          event_ids?: string[]
+          id?: string
+          is_required?: boolean
+          options?: string[]
+          question_text?: string
+          question_type?: Database["public"]["Enums"]["rsvp_question_type"]
+          sort_order?: number
+          updated_at?: string
+          wedding_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "rsvp_questions_depends_on_question_id_fkey"
+            columns: ["depends_on_question_id"]
+            isOneToOne: false
+            referencedRelation: "rsvp_questions"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "rsvp_questions_wedding_id_fkey"
+            columns: ["wedding_id"]
+            isOneToOne: false
+            referencedRelation: "weddings"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      rsvp_responses: {
+        Row: {
+          answer_text: string | null
+          answered_at: string
+          event_id: string | null
+          guest_id: string
+          id: string
+          question_id: string
+        }
+        Insert: {
+          answer_text?: string | null
+          answered_at?: string
+          event_id?: string | null
+          guest_id: string
+          id?: string
+          question_id: string
+        }
+        Update: {
+          answer_text?: string | null
+          answered_at?: string
+          event_id?: string | null
+          guest_id?: string
+          id?: string
+          question_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "rsvp_responses_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "events"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "rsvp_responses_guest_id_fkey"
+            columns: ["guest_id"]
+            isOneToOne: false
+            referencedRelation: "guests"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "rsvp_responses_question_id_fkey"
+            columns: ["question_id"]
+            isOneToOne: false
+            referencedRelation: "rsvp_questions"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       seat_assignments: {
         Row: {
@@ -1178,6 +1344,14 @@ export type Database = {
       weddings: {
         Row: {
           accent_color: string | null
+          attendance_accept_label: string
+          attendance_allow_maybe: boolean
+          attendance_decline_label: string
+          attendance_maybe_label: string
+          attendance_question_text: string
+          budget_currency: string
+          budget_limit: number | null
+          budget_setup_completed: boolean
           cover_photo_url: string | null
           created_at: string
           destination_city: string | null
@@ -1200,6 +1374,14 @@ export type Database = {
         }
         Insert: {
           accent_color?: string | null
+          attendance_accept_label?: string
+          attendance_allow_maybe?: boolean
+          attendance_decline_label?: string
+          attendance_maybe_label?: string
+          attendance_question_text?: string
+          budget_currency?: string
+          budget_limit?: number | null
+          budget_setup_completed?: boolean
           cover_photo_url?: string | null
           created_at?: string
           destination_city?: string | null
@@ -1222,6 +1404,14 @@ export type Database = {
         }
         Update: {
           accent_color?: string | null
+          attendance_accept_label?: string
+          attendance_allow_maybe?: boolean
+          attendance_decline_label?: string
+          attendance_maybe_label?: string
+          attendance_question_text?: string
+          budget_currency?: string
+          budget_limit?: number | null
+          budget_setup_completed?: boolean
           cover_photo_url?: string | null
           created_at?: string
           destination_city?: string | null
@@ -1244,6 +1434,209 @@ export type Database = {
         }
         Relationships: []
       }
+      menu_sections: {
+        Row: {
+          created_at: string
+          event_id: string
+          id: string
+          name: string
+          sort_order: number
+        }
+        Insert: {
+          created_at?: string
+          event_id: string
+          id?: string
+          name: string
+          sort_order?: number
+        }
+        Update: {
+          created_at?: string
+          event_id?: string
+          id?: string
+          name?: string
+          sort_order?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "menu_sections_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "events"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      menu_items: {
+        Row: {
+          created_at: string
+          description: string | null
+          dietary_tags: string[]
+          id: string
+          name: string
+          section_id: string
+          sort_order: number
+        }
+        Insert: {
+          created_at?: string
+          description?: string | null
+          dietary_tags?: string[]
+          id?: string
+          name: string
+          section_id: string
+          sort_order?: number
+        }
+        Update: {
+          created_at?: string
+          description?: string | null
+          dietary_tags?: string[]
+          id?: string
+          name?: string
+          section_id?: string
+          sort_order?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "menu_items_section_id_fkey"
+            columns: ["section_id"]
+            isOneToOne: false
+            referencedRelation: "menu_sections"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      expenses: {
+        Row: {
+          amount: number
+          category: string | null
+          created_at: string
+          custom_fields: Json
+          description: string | null
+          event_id: string | null
+          id: string
+          name: string
+          paid_by: string | null
+          paid_date: string | null
+          payment_method: string | null
+          sort_order: number
+          status: string
+          wedding_id: string
+        }
+        Insert: {
+          amount?: number
+          category?: string | null
+          created_at?: string
+          custom_fields?: Json
+          description?: string | null
+          event_id?: string | null
+          id?: string
+          name: string
+          paid_by?: string | null
+          paid_date?: string | null
+          payment_method?: string | null
+          sort_order?: number
+          status?: string
+          wedding_id: string
+        }
+        Update: {
+          amount?: number
+          category?: string | null
+          created_at?: string
+          custom_fields?: Json
+          description?: string | null
+          event_id?: string | null
+          id?: string
+          name?: string
+          paid_by?: string | null
+          paid_date?: string | null
+          payment_method?: string | null
+          sort_order?: number
+          status?: string
+          wedding_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "expenses_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "events"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "expenses_wedding_id_fkey"
+            columns: ["wedding_id"]
+            isOneToOne: false
+            referencedRelation: "weddings"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      budget_categories: {
+        Row: {
+          created_at: string
+          id: string
+          name: string
+          sort_order: number
+          wedding_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          name: string
+          sort_order?: number
+          wedding_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          name?: string
+          sort_order?: number
+          wedding_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "budget_categories_wedding_id_fkey"
+            columns: ["wedding_id"]
+            isOneToOne: false
+            referencedRelation: "weddings"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      budget_custom_columns: {
+        Row: {
+          created_at: string
+          id: string
+          name: string
+          sort_order: number
+          type: string
+          wedding_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          name: string
+          sort_order?: number
+          type: string
+          wedding_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          name?: string
+          sort_order?: number
+          type?: string
+          wedding_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "budget_custom_columns_wedding_id_fkey"
+            columns: ["wedding_id"]
+            isOneToOne: false
+            referencedRelation: "weddings"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Views: {
       [_ in never]: never
@@ -1252,19 +1645,41 @@ export type Database = {
       get_rsvp_context: {
         Args: { _token: string }
         Returns: {
-          city: string
+          attendance_accept_label: string
+          attendance_allow_maybe: boolean
+          attendance_decline_label: string
+          attendance_maybe_label: string
+          attendance_question_text: string
+          city: string | null
           current_plus_ones: number
           current_status: Database["public"]["Enums"]["rsvp_status"]
-          event_date: string
-          event_id: string
-          event_name: string
-          event_time: string
+          event_date: string | null
+          event_id: string | null
+          event_name: string | null
+          event_time: string | null
           guest_id: string
           guest_name: string
           partner_a: string
           partner_b: string
-          venue_name: string
+          rsvp_submitted_at: string | null
+          venue_name: string | null
           wedding_id: string
+        }[]
+      }
+      get_rsvp_questions: {
+        Args: { _token: string }
+        Returns: {
+          depends_on_question_id: string | null
+          depends_on_value: string | null
+          event_id: string | null
+          event_name: string | null
+          existing_answer: string | null
+          is_required: boolean
+          options: string[]
+          question_id: string
+          question_text: string
+          question_type: Database["public"]["Enums"]["rsvp_question_type"]
+          sort_order: number
         }[]
       }
       has_role: {
@@ -1274,11 +1689,24 @@ export type Database = {
         }
         Returns: boolean
       }
+      set_rsvp_submitted: {
+        Args: { _submitted: boolean; _token: string }
+        Returns: undefined
+      }
       submit_rsvp: {
         Args: {
           _event_id: string
           _plus_ones: number
           _status: Database["public"]["Enums"]["rsvp_status"]
+          _token: string
+        }
+        Returns: undefined
+      }
+      submit_rsvp_answer: {
+        Args: {
+          _answer_text: string
+          _event_id: string | null
+          _question_id: string
           _token: string
         }
         Returns: undefined
@@ -1293,6 +1721,7 @@ export type Database = {
         | "thank_you"
         | "custom"
       message_status: "queued" | "sending" | "sent" | "delivered" | "failed"
+      rsvp_question_type: "yes_no" | "multiple_choice" | "short_text"
       rsvp_status: "pending" | "attending" | "declined" | "maybe"
       vendor_status: "pending" | "approved" | "rejected"
       venue_status: "pending" | "approved" | "rejected"
@@ -1432,6 +1861,7 @@ export const Constants = {
         "custom",
       ],
       message_status: ["queued", "sending", "sent", "delivered", "failed"],
+      rsvp_question_type: ["yes_no", "multiple_choice", "short_text"],
       rsvp_status: ["pending", "attending", "declined", "maybe"],
       vendor_status: ["pending", "approved", "rejected"],
       venue_status: ["pending", "approved", "rejected"],

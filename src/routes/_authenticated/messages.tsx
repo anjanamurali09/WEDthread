@@ -7,6 +7,7 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { MessageCircle, Send, Plus, Trash2, X, ExternalLink } from "lucide-react";
 import { PhotoEmptyState } from "@/components/photo-empty-state";
+import { formatNumber } from "@/lib/utils";
 
 export const Route = createFileRoute("/_authenticated/messages")({ component: MessagesPage });
 
@@ -39,7 +40,7 @@ function MessagesPage() {
   const [editing, setEditing] = useState<any | null>(null);
   const [sending, setSending] = useState<any | null>(null);
 
-  const { data: templates = [] } = useQuery({
+  const { data: templates = [], isLoading: templatesLoading } = useQuery({
     queryKey: ["templates", wedding?.id],
     enabled: !!wedding?.id,
     queryFn: async () => {
@@ -48,7 +49,7 @@ function MessagesPage() {
     },
   });
 
-  const { data: sends = [] } = useQuery({
+  const { data: sends = [], isLoading: sendsLoading } = useQuery({
     queryKey: ["sends", wedding?.id],
     enabled: !!wedding?.id,
     queryFn: async () => {
@@ -90,17 +91,19 @@ function MessagesPage() {
       subtitle="WhatsApp templates with merge tags. Preview per guest, then open in WhatsApp, one tap to send, no logins."
       actions={
         <div className="flex gap-2">
-          {templates.length === 0 && <button onClick={seedDefaults} className="rounded-full border border-line px-4 py-2 text-sm hover:bg-stone">Load starter templates</button>}
+          {!templatesLoading && templates.length === 0 && <button onClick={seedDefaults} className="rounded-full border border-line px-4 py-2 text-sm hover:bg-stone">Load starter templates</button>}
           <button onClick={() => setEditing({ kind: "custom", name: "", body: "" })} className="inline-flex items-center gap-2 rounded-full bg-ink text-paper px-5 py-2 text-sm hover:bg-clay"><Plus className="h-4 w-4" /> New template</button>
         </div>
       }
     >
-      {templates.length === 0 ? (
+      {templatesLoading ? (
+        <p className="text-sm text-muted-foreground">Loading…</p>
+      ) : templates.length === 0 ? (
         <PhotoEmptyState
           photo="bridal"
           eyebrow="Messages"
           title="Speak in your own voice"
-          body="Load the four starters — save-the-date, RSVP, reminder, thank-you — then edit each one so it sounds like you, not us."
+          body="Load the four starters (save-the-date, RSVP, reminder, thank-you), then edit each one so it sounds like you, not us."
         >
           <button onClick={seedDefaults} className="inline-flex items-center gap-2 rounded-full bg-ink text-paper px-5 py-2.5 text-sm hover:bg-clay"><Send className="h-4 w-4" /> Load starter templates</button>
         </PhotoEmptyState>
@@ -125,7 +128,8 @@ function MessagesPage() {
 
       <section className="mt-10">
         <h2 className="font-serif text-2xl mb-4">Recent sends</h2>
-        {sends.length === 0 ? <p className="text-sm text-muted-foreground">No sends logged yet.</p> :
+        {sendsLoading ? <p className="text-sm text-muted-foreground">Loading…</p> :
+         sends.length === 0 ? <p className="text-sm text-muted-foreground">No sends logged yet.</p> :
           <div className="paper-card overflow-hidden">
             <table className="w-full text-sm">
               <thead className="bg-stone/50 text-left text-xs uppercase tracking-widest text-muted-foreground">
@@ -242,7 +246,7 @@ function SendDialog({ template, guests, events, invites, wedding, onClose }: any
         </label>
 
         <div className="mt-4 flex items-center justify-between">
-          <p className="text-xs text-muted-foreground">{eligibleGuests.length} guests · {selected.size} selected</p>
+          <p className="text-xs text-muted-foreground">{formatNumber(eligibleGuests.length)} guests · {formatNumber(selected.size)} selected</p>
           <button onClick={() => setSelected(new Set(eligibleGuests.map((g: any) => g.id)))} className="text-xs text-clay">Select all</button>
         </div>
         <div className="mt-2 border border-line rounded-2xl max-h-56 overflow-y-auto">
@@ -266,7 +270,7 @@ function SendDialog({ template, guests, events, invites, wedding, onClose }: any
         <div className="mt-6 flex justify-end gap-2">
           <button onClick={onClose} className="rounded-full px-5 py-2 text-sm border border-line hover:bg-stone">Cancel</button>
           <button disabled={selected.size === 0} onClick={openAll} className="rounded-full bg-clay text-paper px-6 py-2 text-sm hover:bg-ink disabled:opacity-50 inline-flex items-center gap-2">
-            Open {selected.size} WhatsApp chat{selected.size === 1 ? "" : "s"} <ExternalLink className="h-3 w-3" />
+            Open {formatNumber(selected.size)} WhatsApp chat{selected.size === 1 ? "" : "s"} <ExternalLink className="h-3 w-3" />
           </button>
         </div>
         <p className="mt-3 text-[11px] text-muted-foreground">Vowzy opens each chat with the message pre-filled, you tap send in WhatsApp. This works with your personal number, no Twilio setup needed. (Business API auto-send coming soon.)</p>

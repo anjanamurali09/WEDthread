@@ -1,39 +1,41 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { AppShell } from "@/components/app-shell";
 import { GiftBoxDecor } from "@/components/gift-box-decor";
 import { useCurrentWedding } from "@/lib/wedding-hooks";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { useServerFn } from "@tanstack/react-start";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-import { ExternalLink, Plus, Trash2, Globe2, Share2, Copy, Check, MessageCircle, Loader2, ImageOff, X } from "lucide-react";
-import { fetchProductPreview } from "@/lib/product-preview.functions";
-import { PhotoEmptyState } from "@/components/photo-empty-state";
+import { ExternalLink, Plus, Trash2, Globe2, Share2, Copy, Check, MessageCircle, X, Star, Loader2 } from "lucide-react";
+import { cn, formatNumber } from "@/lib/utils";
+import { Dropdown } from "@/components/dropdown";
+import { CURRENCIES, formatMoney, type CurrencyCode } from "@/lib/currency";
 
 export const Route = createFileRoute("/_authenticated/registry")({ component: RegistryPage });
 
-const COUNTRY_SITES: Record<string, { name: string; url: string }[]> = {
-  US: [{ name: "Amazon", url: "https://amazon.com" }, { name: "Crate & Barrel", url: "https://crateandbarrel.com" }, { name: "West Elm", url: "https://westelm.com" }, { name: "Williams-Sonoma", url: "https://williams-sonoma.com" }],
-  UK: [{ name: "John Lewis", url: "https://johnlewis.com" }, { name: "Selfridges", url: "https://selfridges.com" }, { name: "Amazon UK", url: "https://amazon.co.uk" }],
-  IN: [{ name: "Amazon India", url: "https://amazon.in" }, { name: "Fabindia", url: "https://fabindia.com" }, { name: "Nicobar", url: "https://nicobar.com" }, { name: "Good Earth", url: "https://goodearth.in" }],
-  AE: [{ name: "Amazon.ae", url: "https://amazon.ae" }, { name: "Bloomingdale's UAE", url: "https://bloomingdales.ae" }, { name: "Ounass", url: "https://ounass.ae" }, { name: "Level Shoes", url: "https://levelshoes.com" }, { name: "Crate & Barrel", url: "https://crateandbarrel.ae" }, { name: "Marina Home", url: "https://marinahome.com" }, { name: "Tiffany & Co.", url: "https://tiffany.ae" }],
-  AU: [{ name: "David Jones", url: "https://davidjones.com" }, { name: "Myer", url: "https://myer.com.au" }, { name: "Amazon AU", url: "https://amazon.com.au" }],
-  CA: [{ name: "Hudson's Bay", url: "https://thebay.com" }, { name: "Amazon.ca", url: "https://amazon.ca" }, { name: "Indigo", url: "https://indigo.ca" }],
-};
+type ProductMetadata = { success: true; name: string | null; image: string | null; price: number | null } | { success: false };
+
+async function fetchProductMetadata(url: string): Promise<ProductMetadata> {
+  const { data, error } = await supabase.functions.invoke<ProductMetadata>("fetch-product-metadata", { body: { url } });
+  if (error || !data) return { success: false };
+  return data;
+}
 
 const COUNTRIES = [
   ["US", "United States"], ["UK", "United Kingdom"], ["IN", "India"],
   ["AE", "UAE"], ["AU", "Australia"], ["CA", "Canada"],
 ] as const;
 
-const CURRENCY: Record<string, { code: string; symbol: string; locale: string }> = {
-  US: { code: "USD", symbol: "$",   locale: "en-US" },
-  UK: { code: "GBP", symbol: "£",   locale: "en-GB" },
-  IN: { code: "INR", symbol: "₹",   locale: "en-IN" },
-  AE: { code: "AED", symbol: "AED", locale: "en-AE" },
-  AU: { code: "AUD", symbol: "A$",  locale: "en-AU" },
-  CA: { code: "CAD", symbol: "C$",  locale: "en-CA" },
+// Currency dropdown order: local currency first, then by relevance to that country's
+// couples, not alphabetical. Also doubles as the default currency (first entry) for
+// registries created before the selector existed (registries.currency_code is null).
+const CURRENCY_ORDER_BY_COUNTRY: Record<string, CurrencyCode[]> = {
+  AE: ["AED", "INR", "GBP", "USD", "AUD", "CAD"],
+  IN: ["INR", "AED", "GBP", "USD", "AUD", "CAD"],
+  UK: ["GBP", "INR", "AED", "USD", "AUD", "CAD"],
+  US: ["USD", "INR", "GBP", "AED", "AUD", "CAD"],
+  AU: ["AUD", "INR", "GBP", "AED", "USD", "CAD"],
+  CA: ["CAD", "INR", "GBP", "AED", "USD", "AUD"],
 };
 
 function withUtm(rawUrl: string): string {
@@ -47,22 +49,12 @@ function withUtm(rawUrl: string): string {
   } catch { return rawUrl; }
 }
 
-function formatPrice(cents: number, countryCode: string) {
-  const c = CURRENCY[countryCode] ?? CURRENCY.US;
-  try {
-    return new Intl.NumberFormat(c.locale, { style: "currency", currency: c.code, maximumFractionDigits: 2 }).format(cents / 100);
-  } catch {
-    return `${c.symbol} ${(cents / 100).toFixed(2)}`;
-  }
-}
-
 function RegistryPage() {
-  const { data: wedding } = useCurrentWedding();
+  const { data: wedding, isLoading: weddingLoading } = useCurrentWedding();
   const qc = useQueryClient();
-  const preview = useServerFn(fetchProductPreview);
   const [shareOpen, setShareOpen] = useState(false);
 
-  const { data: registry } = useQuery({
+  const { data: registry, isLoading: registryLoading } = useQuery({
     queryKey: ["registry", wedding?.id],
     enabled: !!wedding?.id,
     queryFn: async () => {
@@ -82,7 +74,7 @@ function RegistryPage() {
     onError: (e: any) => toast.error(e.message),
   });
 
-  const { data: items = [] } = useQuery({
+  const { data: items = [], isLoading: itemsLoading } = useQuery({
     queryKey: ["registry-items", registry?.id],
     enabled: !!registry?.id,
     queryFn: async () => (await supabase.from("registry_items").select("*").eq("registry_id", registry!.id).order("sort_order")).data ?? [],
@@ -96,34 +88,51 @@ function RegistryPage() {
     onSuccess: () => qc.invalidateQueries({ queryKey: ["registry", wedding?.id] }),
   });
 
-  const [form, setForm] = useState({ title: "", product_url: "", price: "", retailer: "", image_url: "" });
-  const [fetching, setFetching] = useState(false);
-  const [autoFilled, setAutoFilled] = useState(false);
+  const setCurrency = useMutation({
+    mutationFn: async (currency: string) => {
+      const { error } = await supabase.from("registries").update({ currency_code: currency }).eq("id", registry!.id);
+      if (error) throw error;
+    },
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["registry", wedding?.id] }),
+  });
 
-  // Auto-fetch preview when URL looks valid
-  useEffect(() => {
-    const url = form.product_url.trim();
-    if (!url || !/^https?:\/\//i.test(url)) { setAutoFilled(false); return; }
-    let cancelled = false;
-    setFetching(true);
-    const t = setTimeout(async () => {
-      try {
-        const p = await preview({ data: { url } });
-        if (cancelled) return;
+  const { data: affiliatePartners = [] } = useQuery({
+    queryKey: ["affiliate-partners", registry?.country_code],
+    enabled: !!registry?.country_code,
+    queryFn: async () => (await supabase.from("affiliate_partners").select("*")
+      .eq("status", "approved").eq("country", registry!.country_code!)).data ?? [],
+  });
+
+  const [form, setForm] = useState({ title: "", product_url: "", price: "", retailer: "", image_url: "", is_most_wanted: false });
+  const [fetchingDetails, setFetchingDetails] = useState(false);
+  const [autoFillFailed, setAutoFillFailed] = useState(false);
+
+  const onUrlBlur = async () => {
+    const raw = form.product_url.trim();
+    const looksLikeUrl = /^https?:\/\//i.test(raw) || /^[a-z0-9-]+(\.[a-z0-9-]+)+(\/|$)/i.test(raw);
+    if (!raw || !looksLikeUrl) return;
+    const url = /^https?:\/\//i.test(raw) ? raw : `https://${raw}`;
+    setFetchingDetails(true);
+    setAutoFillFailed(false);
+    try {
+      const result = await fetchProductMetadata(url);
+      if (result.success) {
         setForm((f) => ({
           ...f,
-          title: f.title || p.title || "",
-          image_url: f.image_url || p.image || "",
-          retailer: f.retailer || p.retailer || "",
-          price: f.price || (p.price ? String(p.price) : ""),
+          title: f.title || result.name || "",
+          image_url: f.image_url || result.image || "",
+          price: f.price || (result.price != null ? String(result.price) : ""),
         }));
-        setAutoFilled(!!(p.title || p.image));
-      } catch { /* silent */ }
-      finally { if (!cancelled) setFetching(false); }
-    }, 500);
-    return () => { cancelled = true; clearTimeout(t); setFetching(false); };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [form.product_url]);
+        setAutoFillFailed(false);
+      } else {
+        setAutoFillFailed(true);
+      }
+    } catch {
+      setAutoFillFailed(true);
+    } finally {
+      setFetchingDetails(false);
+    }
+  };
 
   const addItem = useMutation({
     mutationFn: async () => {
@@ -135,13 +144,14 @@ function RegistryPage() {
         retailer: form.retailer || null,
         image_url: form.image_url || null,
         price_cents: form.price ? Math.round(parseFloat(form.price) * 100) : null,
+        is_most_wanted: form.is_most_wanted,
       });
       if (error) throw error;
     },
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["registry-items", registry?.id] });
-      setForm({ title: "", product_url: "", price: "", retailer: "", image_url: "" });
-      setAutoFilled(false);
+      setForm({ title: "", product_url: "", price: "", retailer: "", image_url: "", is_most_wanted: false });
+      setAutoFillFailed(false);
       toast.success("Added");
     },
     onError: (e: any) => toast.error(e.message),
@@ -151,6 +161,19 @@ function RegistryPage() {
     mutationFn: async (id: string) => { const { error } = await supabase.from("registry_items").delete().eq("id", id); if (error) throw error; },
     onSuccess: () => qc.invalidateQueries({ queryKey: ["registry-items", registry?.id] }),
   });
+
+  const toggleMostWanted = useMutation({
+    mutationFn: async ({ id, next }: { id: string; next: boolean }) => {
+      const { error } = await supabase.from("registry_items").update({ is_most_wanted: next }).eq("id", id);
+      if (error) throw error;
+    },
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["registry-items", registry?.id] }),
+    onError: (e: any) => toast.error(e.message),
+  });
+
+  if (weddingLoading || registryLoading) {
+    return <AppShell title="Registry" decor={<GiftBoxDecor />}><p className="text-sm text-muted-foreground">Loading…</p></AppShell>;
+  }
 
   if (!wedding) {
     return <AppShell title="Registry" decor={<GiftBoxDecor />}><p className="text-sm text-muted-foreground">Finish onboarding first to create a registry.</p></AppShell>;
@@ -165,7 +188,7 @@ function RegistryPage() {
           <div className="mt-6 grid grid-cols-2 sm:grid-cols-3 gap-2">
             {COUNTRIES.map(([code, name]) => (
               <button key={code} onClick={() => createRegistry.mutate(code)} disabled={createRegistry.isPending} className="rounded-2xl border border-line p-4 text-left hover:border-wine disabled:opacity-60">
-                <p className="font-serif text-lg">{name}</p>
+                <p className="font-sans text-lg font-semibold">{name}</p>
                 <p className="text-[11px] uppercase tracking-widest text-muted-foreground">{code}</p>
               </button>
             ))}
@@ -175,18 +198,21 @@ function RegistryPage() {
     );
   }
 
-  const sites = COUNTRY_SITES[registry.country_code ?? "US"] ?? [];
   const shareUrl = typeof window !== "undefined" ? `${window.location.origin}/w/${wedding.slug}/registry` : "";
+  const countryOptions = COUNTRIES.map(([code, name]) => ({ value: code, label: name }));
+  const currencyOrder = CURRENCY_ORDER_BY_COUNTRY[registry.country_code ?? "US"] ?? CURRENCY_ORDER_BY_COUNTRY.US;
+  const currencyOptions = currencyOrder.map((code) => ({ value: code, label: `${code} — ${CURRENCIES[code].label}` }));
+  const currencyCode: CurrencyCode = (registry.currency_code as CurrencyCode) || currencyOrder[0];
 
   return (
-    <AppShell title="Registry" subtitle="Paste any product link — we'll grab the photo, title and price automatically." decor={<GiftBoxDecor />}>
+    <AppShell title="Registry" subtitle="Add gifts and share one link with your guests." decor={<GiftBoxDecor />}>
       {/* Share bar */}
       <div className="paper-card p-4 md:p-5 mb-6 flex items-center justify-between gap-4 flex-wrap">
         <div className="min-w-0">
           <p className="text-[11px] uppercase tracking-widest text-cherry">Your registry link</p>
           <p className="mt-1 font-mono text-xs md:text-sm truncate">{shareUrl || `…/w/${wedding.slug}/registry`}</p>
         </div>
-        <button onClick={() => setShareOpen(true)} className="inline-flex items-center gap-2 rounded-full bg-wine text-pearl px-5 py-2.5 text-sm hover:bg-cherry transition-colors">
+        <button onClick={() => setShareOpen(true)} className="inline-flex items-center gap-2 rounded-full bg-sage-deep text-pearl px-5 py-2.5 text-sm hover:bg-sage-deep-hover transition-colors">
           <Share2 className="h-4 w-4" /> Share
         </button>
       </div>
@@ -194,25 +220,41 @@ function RegistryPage() {
       <div className="grid lg:grid-cols-3 gap-6">
         <section className="lg:col-span-2 space-y-6">
           <div className="paper-card p-6">
-            <div className="flex items-center justify-between gap-4 flex-wrap">
-              <div>
-                <p className="text-[11px] uppercase tracking-widest text-cherry">Country</p>
-                <select value={registry.country_code ?? "US"} onChange={(e) => setCountry.mutate(e.target.value)} className="mt-1 rounded-full border border-line bg-pearl px-4 py-2 text-sm">
-                  {COUNTRIES.map(([code, name]) => <option key={code} value={code}>{name}</option>)}
-                </select>
+            <div className="flex items-start justify-between gap-4 flex-wrap">
+              <div className="flex gap-4 flex-wrap">
+                <div>
+                  <p className="text-[11px] uppercase tracking-widest text-cherry">Country</p>
+                  <Dropdown
+                    className="mt-1 w-48"
+                    value={registry.country_code ?? "US"}
+                    onChange={(v) => setCountry.mutate(v)}
+                    options={countryOptions}
+                    placeholder="Country"
+                  />
+                </div>
+                <div>
+                  <p className="text-[11px] uppercase tracking-widest text-cherry">Currency</p>
+                  <Dropdown
+                    className="mt-1 w-48"
+                    value={currencyCode}
+                    onChange={(v) => setCurrency.mutate(v)}
+                    options={currencyOptions}
+                    placeholder="Currency"
+                  />
+                </div>
               </div>
               <div className="text-xs text-muted-foreground">
-                {items.length} item{items.length === 1 ? "" : "s"}
+                {formatNumber(items.length)} item{items.length === 1 ? "" : "s"}
               </div>
             </div>
 
-            {sites.length > 0 && (
+            {affiliatePartners.length > 0 && (
               <>
                 <p className="mt-6 text-[11px] uppercase tracking-widest text-muted-foreground">Popular retailers</p>
                 <div className="mt-2 flex flex-wrap gap-2">
-                  {sites.map((s) => (
-                    <a key={s.name} href={s.url} target="_blank" rel="noreferrer" className="inline-flex items-center gap-1.5 rounded-full border border-line bg-paper px-3 py-1.5 text-xs hover:border-wine">
-                      <Globe2 className="h-3 w-3" /> {s.name} <ExternalLink className="h-3 w-3 opacity-50" />
+                  {affiliatePartners.map((p: any) => (
+                    <a key={p.id} href={p.website_url} target="_blank" rel="noreferrer" className="inline-flex items-center gap-1.5 rounded-full border border-line bg-paper px-3 py-1.5 text-xs hover:border-wine">
+                      <Globe2 className="h-3 w-3" /> {p.business_name} <ExternalLink className="h-3 w-3 opacity-50" />
                     </a>
                   ))}
                 </div>
@@ -220,80 +262,94 @@ function RegistryPage() {
             )}
           </div>
 
-          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
-            {items.length === 0 ? (
-              <div className="col-span-full">
-                <PhotoEmptyState
-                  photo="garden"
-                  variant="landscape"
-                  eyebrow="Your registry"
-                  title="A few things you've been dreaming of"
-                  body="Paste any product link on the right — we'll grab the photo, price, and retailer automatically."
-                />
-              </div>
-            ) : items.map((it: any) => (
-              <div key={it.id} className="paper-card overflow-hidden group relative flex flex-col">
-                <div className="aspect-square bg-pearl border-b border-line overflow-hidden">
-                  {it.image_url ? (
-                    <img src={it.image_url} alt={it.title} loading="lazy" className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" onError={(e) => { (e.currentTarget as HTMLImageElement).style.display = "none"; }} />
-                  ) : (
-                    <div className="w-full h-full grid place-items-center text-muted-foreground/40">
-                      <ImageOff className="h-6 w-6" />
-                    </div>
+          {itemsLoading ? (
+            <p className="text-sm text-muted-foreground">Loading…</p>
+          ) : items.length === 0 ? (
+            <section className="warm-wash rounded-[40px] border border-line/60 px-6 md:px-12 py-10 text-center max-w-2xl mx-auto">
+              <p className="text-[11px] uppercase tracking-[0.3em] text-cherry">Your registry</p>
+              <h3 className="mt-2 font-serif text-3xl md:text-4xl leading-tight">A few things you've been dreaming of</h3>
+              <p className="mt-3 text-sm text-ink/70 leading-relaxed">Add a product link, name, and price on the right — whatever you're hoping for.</p>
+            </section>
+          ) : (
+            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
+              {items.map((it: any) => (
+                <div key={it.id} className={cn(
+                  "paper-card overflow-hidden group relative flex flex-col",
+                  it.is_most_wanted && "ring-2 ring-rose-deep",
+                )}>
+                  {it.is_most_wanted && (
+                    <span className="absolute top-1.5 left-1.5 inline-flex items-center gap-1 rounded-full bg-rose-deep text-pearl px-2 py-0.5 text-[9px] font-medium uppercase tracking-wide">
+                      <Star className="h-2.5 w-2.5 fill-current" /> Most wanted
+                    </span>
                   )}
-                </div>
-                <div className="p-3 flex-1 flex flex-col gap-1">
-                  {it.retailer && <p className="text-[9px] uppercase tracking-widest text-muted-foreground truncate">{it.retailer}</p>}
-                  <p className="font-serif text-sm leading-snug line-clamp-2 flex-1">{it.title}</p>
-                  <div className="flex items-center justify-between gap-2 mt-1">
-                    {it.price_cents ? (
-                      <span className="text-xs font-medium text-wine">{formatPrice(it.price_cents, registry.country_code ?? "US")}</span>
-                    ) : <span />}
-                    {it.product_url && (
-                      <a href={it.product_url} target="_blank" rel="noreferrer" className="inline-flex items-center gap-0.5 text-[10px] text-cherry hover:underline underline-offset-2">
-                        View <ExternalLink className="h-2.5 w-2.5" />
-                      </a>
-                    )}
+                  <div className="pt-6 px-3 pb-3 flex-1 flex flex-col gap-1">
+                    {it.retailer && <p className="text-[9px] uppercase tracking-widest text-muted-foreground truncate">{it.retailer}</p>}
+                    <p className="font-sans text-sm font-medium leading-snug line-clamp-2 flex-1">{it.title}</p>
+                    <div className="flex items-center justify-between gap-2 mt-1">
+                      {it.price_cents ? (
+                        <span className="text-xs font-medium text-rose-deep">{formatMoney(it.price_cents / 100, currencyCode)}</span>
+                      ) : <span />}
+                      {it.product_url && (
+                        <a href={it.product_url} target="_blank" rel="noreferrer" className="inline-flex items-center gap-0.5 text-[10px] text-sage-deep hover:underline underline-offset-2">
+                          View <ExternalLink className="h-2.5 w-2.5" />
+                        </a>
+                      )}
+                    </div>
+                  </div>
+                  <div className="absolute top-1.5 right-1.5 flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                    <button onClick={() => toggleMostWanted.mutate({ id: it.id, next: !it.is_most_wanted })}
+                      className={cn("rounded-full bg-pearl/90 backdrop-blur p-1", it.is_most_wanted ? "text-rose-deep" : "text-muted-foreground hover:text-rose-deep")}
+                      title={it.is_most_wanted ? "Remove from most wanted" : "Mark as most wanted"}>
+                      <Star className={cn("h-3 w-3", it.is_most_wanted && "fill-current")} />
+                    </button>
+                    <button onClick={() => removeItem.mutate(it.id)} className="rounded-full bg-pearl/90 backdrop-blur p-1 text-muted-foreground hover:text-cherry">
+                      <Trash2 className="h-3 w-3" />
+                    </button>
                   </div>
                 </div>
-                <button onClick={() => removeItem.mutate(it.id)} className="absolute top-1.5 right-1.5 rounded-full bg-pearl/90 backdrop-blur p-1 opacity-0 group-hover:opacity-100 transition-opacity text-muted-foreground hover:text-cherry">
-                  <Trash2 className="h-3 w-3" />
-                </button>
-              </div>
-            ))}
-          </div>
+              ))}
+            </div>
+          )}
 
         </section>
 
         <aside className="paper-card p-6 h-fit lg:sticky lg:top-6">
-          <h3 className="font-serif text-xl">Add item</h3>
-          <p className="mt-1 text-xs text-muted-foreground">Paste a product URL — photo and details auto-fill.</p>
+          <h3 className="font-sans text-xl font-semibold">Add item</h3>
+          <p className="mt-1 text-xs text-muted-foreground">Paste a product URL below.</p>
           <div className="mt-4 space-y-3">
-            <div className="relative">
-              <input placeholder="Product URL (paste here first)" value={form.product_url} onChange={(e) => setForm({ ...form, product_url: e.target.value })} className="w-full rounded-2xl border border-line bg-pearl px-4 py-2.5 pr-10 text-sm focus:outline-none focus:ring-2 focus:ring-cherry" />
-              {fetching && <Loader2 className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 animate-spin text-cherry" />}
-              {!fetching && autoFilled && <Check className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-emerald-600" />}
-            </div>
-
-            {form.image_url && (
-              <div className="relative rounded-2xl overflow-hidden border border-line bg-pearl">
-                <img src={form.image_url} alt="preview" className="w-full h-40 object-cover" onError={() => setForm((f) => ({ ...f, image_url: "" }))} />
-                <button onClick={() => setForm({ ...form, image_url: "" })} className="absolute top-2 right-2 rounded-full bg-pearl/90 p-1 text-muted-foreground hover:text-cherry">
-                  <X className="h-3.5 w-3.5" />
-                </button>
+            <div>
+              <div className="relative">
+                <input placeholder="Product URL" value={form.product_url}
+                  onChange={(e) => { setForm({ ...form, product_url: e.target.value }); setAutoFillFailed(false); }}
+                  onBlur={onUrlBlur}
+                  className="w-full rounded-2xl border border-line bg-pearl px-4 py-2.5 pr-9 text-sm focus:outline-none focus:ring-2 focus:ring-cherry" />
+                {fetchingDetails && <Loader2 className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 animate-spin text-cherry" />}
               </div>
-            )}
+              {autoFillFailed && <p className="mt-1.5 text-xs text-muted-foreground">Couldn't find product details — fill in below.</p>}
+            </div>
 
             <input placeholder="Title" value={form.title} onChange={(e) => setForm({ ...form, title: e.target.value })} className="w-full rounded-2xl border border-line bg-pearl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-cherry" />
 
             <div className="grid grid-cols-2 gap-2">
               <input placeholder="Retailer" value={form.retailer} onChange={(e) => setForm({ ...form, retailer: e.target.value })} className="rounded-2xl border border-line bg-pearl px-4 py-2.5 text-sm" />
               <div className="relative">
-                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-xs text-muted-foreground pointer-events-none">{(CURRENCY[registry.country_code ?? "US"] ?? CURRENCY.US).symbol}</span>
+                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-xs text-muted-foreground pointer-events-none">{CURRENCIES[currencyCode].symbol}</span>
                 <input placeholder="Price" type="number" step="0.01" value={form.price} onChange={(e) => setForm({ ...form, price: e.target.value })} className="w-full rounded-2xl border border-line bg-pearl pl-10 pr-3 py-2.5 text-sm" />
               </div>
             </div>
-            <button onClick={() => addItem.mutate()} disabled={addItem.isPending} className="w-full inline-flex items-center justify-center gap-2 rounded-full bg-wine text-pearl py-2.5 text-sm hover:bg-cherry disabled:opacity-60">
+
+            <input placeholder="Image URL (optional)" value={form.image_url} onChange={(e) => setForm({ ...form, image_url: e.target.value })} className="w-full rounded-2xl border border-line bg-pearl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-cherry" />
+
+            <button type="button" onClick={() => setForm({ ...form, is_most_wanted: !form.is_most_wanted })}
+              className={cn(
+                "w-full inline-flex items-center justify-center gap-2 rounded-2xl border py-2.5 text-sm transition-colors",
+                form.is_most_wanted ? "bg-rose-deep text-pearl border-rose-deep" : "border-line text-muted-foreground hover:bg-stone",
+              )}>
+              <Star className={cn("h-4 w-4", form.is_most_wanted && "fill-current")} />
+              {form.is_most_wanted ? "Marked as most wanted" : "Mark as most wanted"}
+            </button>
+
+            <button onClick={() => addItem.mutate()} disabled={addItem.isPending} className="w-full inline-flex items-center justify-center gap-2 rounded-full bg-rose-deep text-pearl py-2.5 text-sm hover:bg-rose-deep-hover disabled:opacity-60">
               <Plus className="h-4 w-4" /> Add to registry
             </button>
           </div>
@@ -338,7 +394,7 @@ function ShareDialog({ url, wedding, onClose }: { url: string; wedding: any; onC
           </div>
         </div>
 
-        <p className="mt-5 text-[11px] text-muted-foreground text-center">Your registry is public — anyone with this link can view it. It also appears on your wedding site.</p>
+        <p className="mt-5 text-[11px] text-muted-foreground text-center">Your registry is public: anyone with this link can view it. It also appears on your wedding site.</p>
       </div>
     </div>
   );

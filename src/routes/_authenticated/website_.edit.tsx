@@ -10,8 +10,9 @@ import { TEMPLATES, SECTION_LIBRARY, getTemplate, type SectionType } from "@/lib
 import { DndContext, closestCenter, PointerSensor, useSensor, useSensors, type DragEndEvent } from "@dnd-kit/core";
 import { SortableContext, arrayMove, useSortable, verticalListSortingStrategy } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
+import { formatNumber } from "@/lib/utils";
 
-export const Route = createFileRoute("/_authenticated/website/edit")({ component: EditorPage });
+export const Route = createFileRoute("/_authenticated/website_/edit")({ component: EditorPage });
 
 type Section = {
   id: string;
@@ -32,7 +33,7 @@ function EditorPage() {
   const custom = (wedding?.site_customization as any) ?? {};
   const palette = { ...template.palette, ...(custom.palette ?? {}) };
 
-  const { data: rawSections = [] } = useQuery({
+  const { data: rawSections = [], isLoading: sectionsLoading } = useQuery({
     queryKey: ["website-sections", wedding?.id],
     enabled: !!wedding?.id,
     queryFn: async () => {
@@ -43,9 +44,12 @@ function EditorPage() {
     },
   });
 
-  // If no sections yet, seed from template
+  // If no sections yet, seed from template. Must wait for the fetch to actually settle
+  // (sectionsLoading false) — otherwise rawSections' default `[]` while still loading is
+  // indistinguishable from "genuinely empty", and this would insert duplicate default
+  // sections on top of a wedding's real (not-yet-loaded) sections.
   useEffect(() => {
-    if (!wedding?.id || rawSections.length > 0) return;
+    if (!wedding?.id || sectionsLoading || rawSections.length > 0) return;
     (async () => {
       const rows = template.sections.map((type, i) => {
         const def = SECTION_LIBRARY.find((s) => s.type === type)!;
@@ -61,7 +65,7 @@ function EditorPage() {
       await (supabase as any).from("website_sections").insert(rows);
       qc.invalidateQueries({ queryKey: ["website-sections", wedding.id] });
     })();
-  }, [wedding?.id, rawSections.length, template.sections, qc]);
+  }, [wedding?.id, sectionsLoading, rawSections.length, template.sections, qc]);
 
   const sections = rawSections;
   const selected = sections.find((s) => s.id === selectedId) ?? null;
@@ -126,6 +130,8 @@ function EditorPage() {
     invalidateWedding(wedding.id);
   };
 
+  const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 4 } }));
+
   if (!wedding) return null;
   const url = `/w/${wedding.slug ?? ""}`;
 
@@ -140,15 +146,18 @@ function EditorPage() {
         </div>
       }
     >
+      {sectionsLoading ? (
+        <p className="text-sm text-muted-foreground">Loading…</p>
+      ) : (
       <div className="grid lg:grid-cols-[320px_1fr] gap-6">
         {/* LEFT: section list + template controls */}
         <div className="space-y-4">
           <div className="paper-card p-4">
             <div className="flex items-center justify-between mb-3">
               <p className="text-[10px] uppercase tracking-widest text-wine">Sections</p>
-              <span className="text-xs text-muted-foreground">{sections.length}</span>
+              <span className="text-xs text-muted-foreground">{formatNumber(sections.length)}</span>
             </div>
-            <DndContext sensors={useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 4 } }))} collisionDetection={closestCenter} onDragEnd={onDragEnd}>
+            <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={onDragEnd}>
               <SortableContext items={sections.map((s) => s.id)} strategy={verticalListSortingStrategy}>
                 <div className="space-y-1.5">
                   {sections.map((s) => (
@@ -203,6 +212,7 @@ function EditorPage() {
           </div>
         </div>
       </div>
+      )}
     </AppShell>
   );
 }
@@ -503,7 +513,7 @@ export function RenderSection({ section, palette, template, wedding }: {
       return (
         <section className="px-6 py-20 text-center" style={{ background: palette.soft }}>
           <p style={displayFont} className="text-2xl md:text-3xl max-w-2xl mx-auto leading-snug">"{c.text}"</p>
-          {c.author && <p className="mt-4 text-xs opacity-60 uppercase tracking-widest">— {c.author}</p>}
+          {c.author && <p className="mt-4 text-xs opacity-60 uppercase tracking-widest">by {c.author}</p>}
         </section>
       );
     default:

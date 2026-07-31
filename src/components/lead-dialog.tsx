@@ -6,6 +6,7 @@ import { toast } from "sonner";
 import { useCurrentWedding } from "@/lib/wedding-hooks";
 import { utmParams, type LeadKind } from "@/lib/lead-utm";
 import { Send } from "lucide-react";
+import { formatNumber } from "@/lib/utils";
 
 type Target = { id: string; name: string; city?: string | null; country?: string | null; currency?: string | null };
 
@@ -51,7 +52,7 @@ export function LeadDialog({
     setMessage(
       `Hi ${target.name},\n\nWe're planning our wedding${
         wedding?.destination_city ? ` in ${wedding.destination_city}${wedding.destination_country ? ", " + wedding.destination_country : ""}` : ""
-      }${wedding?.est_guest_count ? ` for around ${wedding.est_guest_count} guests` : ""}. Could you share availability and packages?\n\nThank you!`,
+      }${wedding?.est_guest_count ? ` for around ${formatNumber(wedding.est_guest_count)} guests` : ""}. Could you share availability and packages?\n\nThank you!`,
     );
   }, [open, target, wedding, me]);
 

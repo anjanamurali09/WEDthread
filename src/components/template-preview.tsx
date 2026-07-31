@@ -24,7 +24,7 @@ export function TemplatePreview({ t, names }: { t: Template; names: { a: string;
             <p className="mt-2 leading-none" style={{ ...display, fontSize: 20 }}>{A}</p>
             <p className="italic text-[13px] my-0.5" style={{ color: palette.accent, ...display }}>&</p>
             <p className="leading-none" style={{ ...display, fontSize: 20 }}>{B}</p>
-            <p className="mt-2 text-[8px] opacity-70">— Dubai · Nov 2026 —</p>
+            <p className="mt-2 text-[8px] opacity-70">Dubai · Nov 2026</p>
           </div>
         </div>
       );

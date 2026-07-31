@@ -2,19 +2,34 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { useMemo, useRef, useState } from "react";
 import Papa from "papaparse";
 import { AppShell } from "@/components/app-shell";
-import { useCurrentWedding, useEvents, useGuests, useInvites, useInvalidateWedding, type Guest, type Invite } from "@/lib/wedding-hooks";
+import { useCurrentWedding, useEvents, useGuests, useInvites, useInvalidateWedding, type Guest, type Invite, type Wedding } from "@/lib/wedding-hooks";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { Plus, Upload, Download, X, Trash2, Search, MessageCircle, Copy, FileText, Columns3, Check, ChevronDown } from "lucide-react";
-import { PhotoEmptyState, OvalPhotoOrnament } from "@/components/photo-empty-state";
+import { formatNumber } from "@/lib/utils";
+import { PhotoEmptyState } from "@/components/photo-empty-state";
+import { DIETARY, ALLERGIES } from "@/lib/dietary-tags";
+import { DEFAULT_ACCEPT_LABEL, DEFAULT_DECLINE_LABEL, DEFAULT_MAYBE_LABEL } from "@/components/rsvp-form";
+import { summarizeGuestRsvps } from "@/lib/rsvp-stats";
+
+// Mirrors the wording the couple set on the RSVP builder (weddings.attendance_*_label,
+// defaulting the same as the guest-facing form) so this table never drifts out of sync.
+function rsvpStatusLabel(status: string, wedding?: Wedding | null): string {
+  if (status === "attending") return wedding?.attendance_accept_label || DEFAULT_ACCEPT_LABEL;
+  if (status === "declined") return wedding?.attendance_decline_label || DEFAULT_DECLINE_LABEL;
+  if (status === "maybe") return wedding?.attendance_maybe_label || DEFAULT_MAYBE_LABEL;
+  return "Pending";
+}
+
+const RSVP_STATUS_STYLE: Record<string, string> = {
+  attending: "border-sage-deep/50 text-sage-deep",
+  declined: "border-clay/40 text-clay",
+};
 
 export const Route = createFileRoute("/_authenticated/guests")({
   component: GuestsPage,
   validateSearch: (s: Record<string, unknown>) => ({ event: typeof s.event === "string" ? s.event : undefined }),
 });
-
-const DIETARY = ["Vegetarian","Vegan","Halal","Kosher","Jain","Gluten-free","Pescatarian"];
-const ALLERGIES = ["Nuts","Dairy","Shellfish","Eggs","Soy","Sesame","Wheat"];
 
 type ColKey = "name" | "household" | "email" | "phone" | "dietary" | "events" | "rsvp";
 const ALL_COLS: { key: ColKey; label: string }[] = [
@@ -29,16 +44,17 @@ const ALL_COLS: { key: ColKey; label: string }[] = [
 const DEFAULT_COLS: ColKey[] = ["name", "household", "email", "phone", "dietary", "events", "rsvp"];
 
 function GuestsPage() {
-  const { data: wedding } = useCurrentWedding();
-  const { data: events = [] } = useEvents(wedding?.id);
-  const { data: guests = [] } = useGuests(wedding?.id);
-  const { data: invites = [] } = useInvites(wedding?.id);
+  const { data: wedding, isLoading: weddingLoading } = useCurrentWedding();
+  const { data: events = [], isLoading: eventsLoading } = useEvents(wedding?.id);
+  const { data: guests = [], isLoading: guestsLoading } = useGuests(wedding?.id);
+  const { data: invites = [], isLoading: invitesLoading } = useInvites(wedding?.id);
+  const loading = weddingLoading || eventsLoading || guestsLoading || invitesLoading;
   const invalidate = useInvalidateWedding();
   const { event: scopeEventId } = Route.useSearch();
   const scopeEvent = scopeEventId ? events.find((e) => e.id === scopeEventId) : undefined;
   const [editing, setEditing] = useState<Partial<Guest> | null>(null);
   const [q, setQ] = useState("");
-  const [filterDiet, setFilterDiet] = useState<string | null>(null);
+  const [filterDiet, setFilterDiet] = useState<string[]>([]);
   const [filterHousehold, setFilterHousehold] = useState<string | null>(null);
   const [filterEvent, setFilterEvent] = useState<string | null>(null);
   const [filterRsvp, setFilterRsvp] = useState<string | null>(null);
@@ -76,7 +92,7 @@ function GuestsPage() {
     return guests.filter((g) => {
       if (scopedGuestIds && !scopedGuestIds.has(g.id)) return false;
       if (q && !g.full_name.toLowerCase().includes(q.toLowerCase()) && !(g.email || "").toLowerCase().includes(q.toLowerCase())) return false;
-      if (filterDiet && !(g.dietary_tags?.includes(filterDiet) || g.food_allergies?.includes(filterDiet))) return false;
+      if (filterDiet.length && !filterDiet.some((d) => g.dietary_tags?.includes(d) || g.food_allergies?.includes(d))) return false;
       if (filterHousehold && g.household_group !== filterHousehold) return false;
       const gi = inviteByGuest.get(g.id) ?? [];
       if (filterEvent && !gi.some((i) => i.event_id === filterEvent)) return false;
@@ -85,8 +101,8 @@ function GuestsPage() {
     });
   }, [guests, q, filterDiet, filterHousehold, filterEvent, filterRsvp, scopedGuestIds, inviteByGuest]);
 
-  const anyFilter = !!(q || filterDiet || filterHousehold || filterEvent || filterRsvp);
-  const clearFilters = () => { setQ(""); setFilterDiet(null); setFilterHousehold(null); setFilterEvent(null); setFilterRsvp(null); };
+  const anyFilter = !!(q || filterDiet.length || filterHousehold || filterEvent || filterRsvp);
+  const clearFilters = () => { setQ(""); setFilterDiet([]); setFilterHousehold(null); setFilterEvent(null); setFilterRsvp(null); };
 
   const importCsv = () => fileRef.current?.click();
 
@@ -132,7 +148,7 @@ function GuestsPage() {
         });
         const { error } = await supabase.from("guests").insert(inserts);
         if (error) return toast.error(error.message);
-        toast.success(`Imported ${inserts.length} guests`);
+        toast.success(`Imported ${formatNumber(inserts.length)} guests`);
         invalidate(wedding.id);
       },
     });
@@ -204,11 +220,15 @@ function GuestsPage() {
     toast.success("RSVP link copied");
   };
 
-  const stats = {
-    total: guests.length,
-    attending: invites.filter((i) => i.rsvp_status === "attending").length,
-    pending: invites.filter((i) => i.rsvp_status === "pending").length,
-  };
+  // A guest counts as Attending if they've accepted at least one of their (relevant)
+  // invited events, and as Pending unless they've given a firm accept/decline to EVERY
+  // one of them — narrows to a single event's invite when that event is filtered/scoped.
+  // See src/lib/rsvp-stats.ts for the shared per-guest definition used across the app.
+  const activeEventId = filterEvent || scopeEventId || null;
+  const stats = useMemo(() => {
+    const { attending, pending } = summarizeGuestRsvps(filtered.map((g) => g.id), invites, activeEventId);
+    return { total: filtered.length, attending, pending };
+  }, [filtered, invites, activeEventId]);
 
   return (
     <AppShell
@@ -231,18 +251,15 @@ function GuestsPage() {
         </div>
       )}
 
-      {/* Signature header strip: oval photo ornament + stats, echoes the homepage hero motif. */}
-      <section className="warm-wash rounded-[36px] border border-line/60 overflow-hidden mb-6 grid md:grid-cols-[220px_1fr] gap-6 md:gap-8 items-center p-5 md:p-6">
-        <div className="relative h-40 md:h-44">
-          <OvalPhotoOrnament photo="garden" className="absolute inset-0 h-full w-full" />
-          <span aria-hidden className="pointer-events-none absolute -bottom-3 -right-3 h-10 w-14 blob bg-blush-soft" />
-        </div>
-        <div className="grid grid-cols-3 gap-3">
-          <Stat label="Total guests" value={stats.total} />
-          <Stat label="Attending" value={stats.attending} accent />
-          <Stat label="Pending replies" value={stats.pending} />
-        </div>
-      </section>
+      {loading ? (
+        <p className="text-sm text-muted-foreground">Loading…</p>
+      ) : (
+        <>
+          <section className="grid grid-cols-3 gap-3 md:gap-4 mb-6">
+            <Stat label="Total guests" value={stats.total} />
+            <Stat label="Attending" value={stats.attending} tone="sage" />
+            <Stat label="Pending replies" value={stats.pending} tone="gold" />
+          </section>
 
 
       <div className="flex flex-wrap gap-2 mb-4 items-center">
@@ -252,7 +269,7 @@ function GuestsPage() {
         </div>
         <FilterSelect label="Family / Group" value={filterHousehold} onChange={setFilterHousehold}
           options={households.map((h) => ({ value: h, label: h }))} />
-        <FilterSelect label="Dietary" value={filterDiet} onChange={setFilterDiet}
+        <FilterMultiSelect label="Dietary" value={filterDiet} onChange={setFilterDiet}
           options={[...DIETARY, ...ALLERGIES].map((t) => ({ value: t, label: t }))} />
         <FilterSelect label="Event" value={filterEvent} onChange={setFilterEvent}
           options={events.map((e) => ({ value: e.id, label: e.name }))} />
@@ -292,9 +309,9 @@ function GuestsPage() {
       <div className="flex items-center justify-between mb-3 text-xs text-muted-foreground">
         <p>
           {anyFilter ? (
-            <><span className="font-medium text-ink">{filtered.length}</span> of {guests.length} guests match</>
+            <><span className="font-medium text-ink">{formatNumber(filtered.length)}</span> of {formatNumber(guests.length)} guests match</>
           ) : (
-            <><span className="font-medium text-ink">{guests.length}</span> guest{guests.length === 1 ? "" : "s"}</>
+            <><span className="font-medium text-ink">{formatNumber(guests.length)}</span> guest{guests.length === 1 ? "" : "s"}</>
           )}
         </p>
         {anyFilter && (
@@ -307,8 +324,8 @@ function GuestsPage() {
         <PhotoEmptyState
           photo="cane"
           eyebrow="Your guest list"
-          title="Start with the names that matter"
-          body="Add guests one by one, or download the CSV template and import a whole spreadsheet — every Add-guest field is a column, so nothing gets lost in translation."
+          title="Build your guest list"
+          body="Add guests one by one, or download the CSV template and import a whole spreadsheet. Every Add-guest field is a column, so nothing gets lost in translation."
         >
           <button onClick={downloadTemplate} className="inline-flex items-center gap-2 rounded-full bg-ink text-paper px-5 py-2.5 text-sm hover:bg-clay"><FileText className="h-4 w-4" /> Download CSV template</button>
           <button onClick={() => setEditing({})} className="inline-flex items-center gap-2 rounded-full border border-ink px-5 py-2.5 text-sm hover:bg-blush-soft"><Plus className="h-4 w-4" /> Add first guest</button>
@@ -318,13 +335,13 @@ function GuestsPage() {
           <table className="w-full text-sm">
             <thead className="bg-stone/50 text-left text-xs uppercase tracking-widest text-muted-foreground">
               <tr>
-                {showCol("name") && <th className="px-4 py-3">Guest name</th>}
-                {showCol("household") && <th className="px-4 py-3">Family / Group</th>}
-                {showCol("email") && <th className="px-4 py-3">Email</th>}
-                {showCol("phone") && <th className="px-4 py-3">Phone</th>}
-                {showCol("dietary") && <th className="px-4 py-3">Dietary</th>}
-                {showCol("events") && <th className="px-4 py-3">Event</th>}
-                {showCol("rsvp") && <th className="px-4 py-3">RSVP status</th>}
+                {showCol("name") && <th className="px-4 py-3 whitespace-nowrap">Guest name</th>}
+                {showCol("household") && <th className="px-4 py-3 whitespace-nowrap">Family / Group</th>}
+                {showCol("email") && <th className="px-4 py-3 whitespace-nowrap">Email</th>}
+                {showCol("phone") && <th className="px-4 py-3 whitespace-nowrap">Phone</th>}
+                {showCol("dietary") && <th className="px-4 py-3 whitespace-nowrap">Dietary</th>}
+                {showCol("events") && <th className="px-4 py-3 whitespace-nowrap">Event</th>}
+                {showCol("rsvp") && <th className="px-4 py-3 whitespace-nowrap">RSVP status</th>}
                 <th className="px-4 py-3"></th>
               </tr>
             </thead>
@@ -333,15 +350,15 @@ function GuestsPage() {
                 const gi = inviteByGuest.get(g.id) ?? [];
                 return (
                   <tr key={g.id} className="border-t border-line hover:bg-stone/30 align-top">
-                    {showCol("name") && <td className="px-4 py-3 font-medium">{g.full_name}</td>}
-                    {showCol("household") && <td className="px-4 py-3 text-xs text-muted-foreground">{g.household_group || "—"}</td>}
-                    {showCol("email") && <td className="px-4 py-3 text-xs text-muted-foreground">{g.email || "—"}</td>}
-                    {showCol("phone") && <td className="px-4 py-3 text-xs text-muted-foreground">{g.phone || "—"}</td>}
+                    {showCol("name") && <td className="px-4 py-3 font-medium whitespace-nowrap">{g.full_name}</td>}
+                    {showCol("household") && <td className="px-4 py-3 text-xs text-muted-foreground whitespace-nowrap">{g.household_group || "—"}</td>}
+                    {showCol("email") && <td className="px-4 py-3 text-xs text-muted-foreground whitespace-nowrap">{g.email || "—"}</td>}
+                    {showCol("phone") && <td className="px-4 py-3 text-xs text-muted-foreground whitespace-nowrap">{g.phone || "—"}</td>}
                     {showCol("dietary") && (
                       <td className="px-4 py-3">
                         <div className="flex flex-wrap gap-1">
-                          {g.dietary_tags?.map((t) => <span key={t} className="text-[10px] bg-clay-soft text-clay rounded-full px-2 py-0.5">{t}</span>)}
-                          {g.food_allergies?.map((t) => <span key={t} className="text-[10px] bg-destructive/10 text-destructive rounded-full px-2 py-0.5">⚠ {t}</span>)}
+                          {g.dietary_tags?.map((t) => <span key={t} className="text-[10px] bg-clay-soft text-clay rounded-full px-2 py-0.5 whitespace-nowrap">{t}</span>)}
+                          {g.food_allergies?.map((t) => <span key={t} className="text-[10px] bg-destructive/10 text-destructive rounded-full px-2 py-0.5 whitespace-nowrap">⚠ {t}</span>)}
                           {!g.dietary_tags?.length && !g.food_allergies?.length && <span className="text-xs text-muted-foreground">—</span>}
                         </div>
                       </td>
@@ -352,7 +369,7 @@ function GuestsPage() {
                           {gi.length === 0 && <span className="text-xs text-muted-foreground">—</span>}
                           {gi.map((i) => {
                             const ev = events.find((e) => e.id === i.event_id);
-                            return <span key={i.id} className="text-[11px] rounded-full border border-line px-2 py-0.5 w-fit">{ev?.name ?? "?"}</span>;
+                            return <span key={i.id} className="text-[11px] rounded-full border border-line px-2 py-0.5 w-fit whitespace-nowrap">{ev?.name ?? "?"}</span>;
                           })}
                         </div>
                       </td>
@@ -362,8 +379,8 @@ function GuestsPage() {
                         <div className="flex flex-col gap-1">
                           {gi.length === 0 && <span className="text-xs text-muted-foreground">—</span>}
                           {gi.map((i) => {
-                            const color = i.rsvp_status === "attending" ? "bg-clay-soft text-clay" : i.rsvp_status === "declined" ? "bg-destructive/10 text-destructive" : "bg-stone text-muted-foreground";
-                            return <span key={i.id} className={`text-[10px] rounded-full px-2 py-0.5 w-fit capitalize ${color}`}>{i.rsvp_status}</span>;
+                            const style = RSVP_STATUS_STYLE[i.rsvp_status] ?? "border-line text-muted-foreground";
+                            return <span key={i.id} className={`text-[11px] rounded-full border px-2 py-0.5 w-fit whitespace-nowrap ${style}`}>{rsvpStatusLabel(i.rsvp_status, wedding)}</span>;
                           })}
                         </div>
                       </td>
@@ -384,18 +401,25 @@ function GuestsPage() {
           </table>
         </div>
       )}
-
+        </>
+      )}
 
       {editing && <GuestDialog guest={editing} events={events} existingInvites={editing.id ? (inviteByGuest.get(editing.id) ?? []) : []} onClose={() => setEditing(null)} onSave={save} />}
     </AppShell>
   );
 }
 
-function Stat({ label, value, accent }: { label: string; value: number; accent?: boolean }) {
+const STAT_TONE = {
+  sage: { card: "bg-sage-soft/50 border border-sage-deep/20", text: "text-sage-deep" },
+  gold: { card: "bg-gold-soft/50 border border-gold-deep/20", text: "text-gold-deep" },
+} as const;
+
+function Stat({ label, value, tone }: { label: string; value: number; tone?: keyof typeof STAT_TONE }) {
+  const t = tone ? STAT_TONE[tone] : null;
   return (
-    <div className="paper-card p-5">
+    <div className={`paper-card p-5 ${t?.card ?? ""}`}>
       <p className="text-[10px] uppercase tracking-widest text-muted-foreground">{label}</p>
-      <p className={`mt-2 font-serif text-3xl ${accent ? "text-clay" : ""}`}>{value}</p>
+      <p className={`mt-2 font-serif text-3xl ${t?.text ?? ""}`}>{formatNumber(value)}</p>
     </div>
   );
 }
@@ -432,7 +456,7 @@ function GuestDialog({ guest, events, existingInvites, onClose, onSave }: {
             <F label="Email" type="email" value={form.email ?? ""} onChange={(v) => setForm({ ...form, email: v })} />
             <F label="Phone (with country code)" value={form.phone ?? ""} onChange={(v) => setForm({ ...form, phone: v })} placeholder="+91 98…" />
           </div>
-          <F label="Household / family group" value={form.household_group ?? ""} onChange={(v) => setForm({ ...form, household_group: v })} placeholder="e.g. Rao family" />
+          <F label="Family / Group" value={form.household_group ?? ""} onChange={(v) => setForm({ ...form, household_group: v })} placeholder="e.g. Rao family" />
 
           <div>
             <p className="text-xs uppercase tracking-widest text-muted-foreground mb-2">Dietary tags</p>
@@ -518,6 +542,41 @@ function FilterSelect({ label, value, onChange, options }: {
                 className={`w-full text-left px-3 py-2 text-sm rounded-xl hover:bg-blush-soft flex items-center justify-between gap-2 ${value === o.value ? "font-medium" : ""}`}>
                 <span className="truncate">{o.label}</span>
                 {value === o.value && <Check className="h-3.5 w-3.5 text-cherry shrink-0" />}
+              </button>
+            ))}
+          </div>
+        </>
+      )}
+    </div>
+  );
+}
+
+function FilterMultiSelect({ label, value, onChange, options }: {
+  label: string; value: string[]; onChange: (v: string[]) => void;
+  options: { value: string; label: string }[];
+}) {
+  const [open, setOpen] = useState(false);
+  const toggle = (v: string) => onChange(value.includes(v) ? value.filter((x) => x !== v) : [...value, v]);
+  return (
+    <div className="relative">
+      <button onClick={() => setOpen((v) => !v)}
+        className={`inline-flex items-center gap-2 rounded-full border px-3 py-2 text-xs cursor-pointer transition-colors ${value.length ? "bg-clay text-paper border-clay" : "border-line hover:bg-stone"}`}>
+        <span className="uppercase tracking-widest text-[10px] opacity-80">{label}</span>
+        <span className="font-medium">{value.length ? `${formatNumber(value.length)} selected` : "Any"}</span>
+        <ChevronDown className="h-3 w-3 opacity-70" />
+      </button>
+      {open && (
+        <>
+          <div className="fixed inset-0 z-10" onClick={() => setOpen(false)} />
+          <div className="absolute left-0 mt-2 z-20 w-56 max-h-72 overflow-y-auto rounded-2xl border border-line bg-pearl shadow-lg p-1.5">
+            <button onClick={() => { onChange([]); setOpen(false); }}
+              className={`w-full text-left px-3 py-2 text-sm rounded-xl hover:bg-blush-soft ${!value.length ? "font-medium" : ""}`}>Any</button>
+            {options.length === 0 && <p className="px-3 py-2 text-xs text-muted-foreground">No options yet</p>}
+            {options.map((o) => (
+              <button key={o.value} onClick={() => toggle(o.value)}
+                className={`w-full text-left px-3 py-2 text-sm rounded-xl hover:bg-blush-soft flex items-center justify-between gap-2 ${value.includes(o.value) ? "font-medium" : ""}`}>
+                <span className="truncate">{o.label}</span>
+                {value.includes(o.value) && <Check className="h-3.5 w-3.5 text-cherry shrink-0" />}
               </button>
             ))}
           </div>

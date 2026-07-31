@@ -1,6 +1,6 @@
 import { Link, useRouter, useLocation } from "@tanstack/react-router";
 import { useSignOut } from "@/lib/wedding-hooks";
-import { CalendarDays, LayoutDashboard, Users, Grid3x3, MessageCircle, Globe, LogOut, Store, MapPin, Sparkles, Gift, ChevronDown, Plus, Inbox } from "lucide-react";
+import { CalendarDays, LayoutDashboard, Users, Grid3x3, MessageCircle, Globe, LogOut, Store, MapPin, Sparkles, Gift, ChevronDown, Plus, Inbox, ListChecks, Utensils, Wallet } from "lucide-react";
 import type { ReactNode } from "react";
 import { useState } from "react";
 import { useActiveRole, type AppRole } from "@/hooks/use-active-role";
@@ -71,8 +71,11 @@ const NAV_BY_ROLE: Record<AppRole, ReadonlyArray<{ to: string; label: string; ic
     { to: "/dashboard", label: "Overview", icon: LayoutDashboard },
     { to: "/events", label: "Events", icon: CalendarDays },
     { to: "/guests", label: "Guests", icon: Users },
+    { to: "/rsvp-questions", label: "RSVP", icon: ListChecks },
     { to: "/seating", label: "Seating", icon: Grid3x3 },
+    { to: "/menu", label: "Menu", icon: Utensils },
     { to: "/registry", label: "Registry", icon: Gift },
+    { to: "/budget", label: "Budget", icon: Wallet },
     { to: "/messages", label: "Messages", icon: MessageCircle },
     { to: "/website", label: "Website", icon: Globe },
   ],
@@ -80,7 +83,10 @@ const NAV_BY_ROLE: Record<AppRole, ReadonlyArray<{ to: string; label: string; ic
     { to: "/dashboard", label: "Overview", icon: LayoutDashboard },
     { to: "/events", label: "Events", icon: CalendarDays },
     { to: "/guests", label: "Guests", icon: Users },
+    { to: "/rsvp-questions", label: "RSVP", icon: ListChecks },
     { to: "/seating", label: "Seating", icon: Grid3x3 },
+    { to: "/menu", label: "Menu", icon: Utensils },
+    { to: "/budget", label: "Budget", icon: Wallet },
     { to: "/messages", label: "Messages", icon: MessageCircle },
   ],
   vendor: [
@@ -118,7 +124,7 @@ export function AppShell({ children, title, subtitle, actions, decor }: { childr
   };
 
   return (
-    <div className="min-h-screen bg-pearl text-ink flex relative overflow-hidden">
+    <div className="min-h-screen bg-pearl text-ink flex relative">
       {/* Ambient decorations — page can override via `decor` prop */}
       {decor ?? (
         <>

@@ -31,7 +31,7 @@ export function whatsappUrl(
   id: string,
 ): string {
   const clean = phone.replace(/[^\d]/g, "");
-  const tag = `\n\n— via Vowzy · ref:${kind}:${id}`;
+  const tag = `\n\nvia Vowzy · ref:${kind}:${id}`;
   const text = encodeURIComponent(message + tag);
   return `https://wa.me/${clean}?text=${text}`;
 }

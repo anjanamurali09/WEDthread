@@ -47,7 +47,7 @@ const S = {
 
 export const SECTION_LIBRARY: SectionDef[] = [
   { ...S.hero, defaultContent: { eyebrow: "Together with their families", tagline: "are getting married" } },
-  { ...S.story, defaultContent: { title: "Our story", body: "Tell your love story here — how you met, the proposal, the little moments in between." } },
+  { ...S.story, defaultContent: { title: "Our story", body: "Tell your love story here: how you met, the proposal, the little moments in between." } },
   { ...S.events, defaultContent: { title: "Celebrations" } },
   { ...S.gallery, defaultContent: { title: "Moments", images: [] } },
   { ...S.party, defaultContent: { title: "Wedding party", members: [] } },
@@ -82,7 +82,7 @@ export const TEMPLATES: Template[] = [
   { id: "ebba-alessandro",   name: "Ebba & Alessandro",   desc: "Ivory arch framed by lush painted garden.",          layout: "arch",      palette: { bg: "#F5EFE2", ink: "#254C33", accent: "#B75E3B", soft: "#D9E4D0" }, fonts: { display: "Fraunces", body: "Instrument Sans" }, sections: ["hero","story","events","gallery","travel","rsvp"] },
   { id: "chloe-lucas",       name: "Chloe & Lucas",       desc: "Warm greige with silver-leaf botanical overlay.",    layout: "polaroid",  palette: { bg: "#DED4C4", ink: "#4A5240", accent: "#8B7A5E", soft: "#EDE7D9" }, fonts: { display: "Fraunces", body: "Instrument Sans" }, sections: ["hero","story","events","gallery","registry","rsvp"] },
   { id: "celine-daniel",     name: "Céline & Daniel",     desc: "Neon-lime type over hot-pink to peach gradient.",    layout: "gradient",  palette: { bg: "#F55D7A", ink: "#EEFF6B", accent: "#EEFF6B", soft: "#FF9E7C" }, fonts: { display: "Fraunces", body: "Instrument Sans" }, sections: ["hero","events","story","rsvp"] },
-  { id: "pearl-wine",        name: "Pearl & Wine",        desc: "Vowzy signature — pearl, cream, cherry.",            layout: "stack",     palette: { bg: "#FDFCF7", ink: "#1A1512", accent: "#E63950", soft: "#F7F1E3" }, fonts: { display: "Fraunces", body: "Instrument Sans" }, sections: ["hero","story","events","gallery","registry","rsvp"] },
+  { id: "pearl-wine",        name: "Pearl & Wine",        desc: "Vowzy signature: pearl, cream, cherry.",            layout: "stack",     palette: { bg: "#FDFCF7", ink: "#1A1512", accent: "#E63950", soft: "#F7F1E3" }, fonts: { display: "Fraunces", body: "Instrument Sans" }, sections: ["hero","story","events","gallery","registry","rsvp"] },
 ];
 
 export const getTemplate = (id?: string | null) =>

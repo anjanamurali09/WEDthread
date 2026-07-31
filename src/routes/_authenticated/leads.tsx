@@ -5,6 +5,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useState } from "react";
 import { toast } from "sonner";
 import { Inbox, Mail, Phone, Calendar, Users } from "lucide-react";
+import { formatNumber } from "@/lib/utils";
 
 export const Route = createFileRoute("/_authenticated/leads")({ component: LeadsPage });
 
@@ -30,10 +31,10 @@ function LeadsPage() {
   return (
     <AppShell title="Leads" subtitle="Inquiries from couples who found your listing on Vowzy.">
       <div className="flex flex-wrap gap-2 mb-6">
-        <button onClick={() => setFilter("all")} className={`chip ${filter === "all" ? "chip-active" : ""}`}>All ({leads.length})</button>
+        <button onClick={() => setFilter("all")} className={`chip ${filter === "all" ? "chip-active" : ""}`}>All ({formatNumber(leads.length)})</button>
         {STATUSES.map((s) => (
           <button key={s} onClick={() => setFilter(s)} className={`chip ${filter === s ? "chip-active" : ""}`}>
-            {s} ({leads.filter((l: any) => l.status === s).length})
+            {s} ({formatNumber(leads.filter((l: any) => l.status === s).length)})
           </button>
         ))}
       </div>
@@ -57,7 +58,7 @@ function LeadsPage() {
                     {l.contact_email && <span className="inline-flex items-center gap-1"><Mail className="h-3 w-3" /> {l.contact_email}</span>}
                     {l.contact_phone && <span className="inline-flex items-center gap-1"><Phone className="h-3 w-3" /> {l.contact_phone}</span>}
                     {l.event_date && <span className="inline-flex items-center gap-1"><Calendar className="h-3 w-3" /> {new Date(l.event_date).toLocaleDateString()}</span>}
-                    {l.guest_count && <span className="inline-flex items-center gap-1"><Users className="h-3 w-3" /> {l.guest_count}</span>}
+                    {l.guest_count && <span className="inline-flex items-center gap-1"><Users className="h-3 w-3" /> {formatNumber(l.guest_count)}</span>}
                     {l.city && <span>{l.city}{l.country ? ", " + l.country : ""}</span>}
                   </div>
                 </div>
@@ -67,7 +68,7 @@ function LeadsPage() {
               </div>
               <p className="mt-3 text-sm text-ink/80 whitespace-pre-line">{l.message}</p>
               {(l.budget_min || l.budget_max) && (
-                <p className="mt-2 text-xs text-muted-foreground">Budget: {l.budget_min ?? "?"} – {l.budget_max ?? "?"} {l.currency ?? ""}</p>
+                <p className="mt-2 text-xs text-muted-foreground">Budget: {l.budget_min != null ? formatNumber(l.budget_min) : "?"} – {l.budget_max != null ? formatNumber(l.budget_max) : "?"} {l.currency ?? ""}</p>
               )}
               <p className="mt-2 text-[10px] uppercase tracking-widest text-muted-foreground">
                 via {l.utm_source}/{l.utm_medium}{l.utm_campaign ? ` · ${l.utm_campaign}` : ""} · {new Date(l.created_at).toLocaleString()}

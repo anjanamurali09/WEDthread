@@ -3,6 +3,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { Link } from "@tanstack/react-router";
 import { VendorOnboardingForm } from "@/components/onboarding/vendor-form";
 import { Inbox, Store, CheckCircle2, Clock, XCircle } from "lucide-react";
+import { formatNumber } from "@/lib/utils";
 
 export function VendorDashboard() {
   const { data: vendor, isLoading } = useQuery({
@@ -15,7 +16,7 @@ export function VendorDashboard() {
     },
   });
 
-  const { data: leads = [] } = useQuery({
+  const { data: leads = [], isLoading: leadsLoading } = useQuery({
     queryKey: ["my-vendor-leads", vendor?.id],
     enabled: !!vendor?.id,
     queryFn: async () => (await supabase.from("booking_leads" as any).select("*").eq("target_vendor_id", vendor!.id).order("created_at", { ascending: false }).limit(5)).data ?? [],
@@ -49,12 +50,12 @@ export function VendorDashboard() {
         </div>
         <div className="paper-card p-5">
           <p className="text-[10px] uppercase tracking-widest text-muted-foreground">Leads</p>
-          <p className="font-serif text-4xl mt-2">{leads.length}</p>
+          <p className="font-serif text-4xl mt-2">{leadsLoading ? "–" : formatNumber(leads.length)}</p>
           <p className="text-xs text-muted-foreground mt-1">recent inquiries</p>
         </div>
         <div className="paper-card p-5">
           <p className="text-[10px] uppercase tracking-widest text-muted-foreground">Photos</p>
-          <p className="font-serif text-4xl mt-2">{vendor.photos?.length ?? 0}</p>
+          <p className="font-serif text-4xl mt-2">{formatNumber(vendor.photos?.length ?? 0)}</p>
           <p className="text-xs text-muted-foreground mt-1">uploaded</p>
         </div>
       </section>
@@ -64,14 +65,16 @@ export function VendorDashboard() {
           <h3 className="font-serif text-2xl inline-flex items-center gap-2"><Inbox className="h-5 w-5" /> Recent leads</h3>
           <Link to={"/leads" as any} className="text-xs text-cherry uppercase tracking-widest">View all</Link>
         </div>
-        {leads.length === 0 ? (
+        {leadsLoading ? (
+          <p className="text-sm text-muted-foreground">Loading…</p>
+        ) : leads.length === 0 ? (
           <p className="text-sm text-muted-foreground">No leads yet. Couples who click "I'm interested" on your listing will appear here.</p>
         ) : (
           <ul className="divide-y divide-line/60">
             {leads.map((l: any) => (
               <li key={l.id} className="py-3">
                 <p className="font-medium text-sm">{l.contact_name ?? "New inquiry"}</p>
-                <p className="text-xs text-muted-foreground">{l.event_date ? new Date(l.event_date).toLocaleDateString() : "Date TBD"} · {l.guest_count ?? "?"} guests · {l.city ?? ""}</p>
+                <p className="text-xs text-muted-foreground">{l.event_date ? new Date(l.event_date).toLocaleDateString() : "Date TBD"} · {l.guest_count != null ? formatNumber(l.guest_count) : "?"} guests · {l.city ?? ""}</p>
                 <p className="text-xs mt-1 line-clamp-2 text-ink/70">{l.message}</p>
               </li>
             ))}
@@ -90,7 +93,7 @@ export function VendorDashboard() {
 function StatusBanner({ status }: { status: string }) {
   const map: Record<string, { icon: any; cls: string; msg: string }> = {
     approved: { icon: CheckCircle2, cls: "bg-sage-soft text-ink", msg: "Your listing is live and visible to couples." },
-    pending:  { icon: Clock,        cls: "bg-blush-soft text-cherry", msg: "Submitted — a Vowzy admin is reviewing your listing." },
+    pending:  { icon: Clock,        cls: "bg-blush-soft text-cherry", msg: "Submitted. A Vowzy admin is reviewing your listing." },
     rejected: { icon: XCircle,      cls: "bg-wine-soft text-wine", msg: "Your listing needs changes before it goes live." },
   };
   const s = map[status] ?? map.pending;

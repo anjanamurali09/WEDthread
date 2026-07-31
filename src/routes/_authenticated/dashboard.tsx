@@ -5,14 +5,15 @@ import { CoupleDashboard } from "@/components/dashboards/couple-dashboard";
 import { VendorDashboard } from "@/components/dashboards/vendor-dashboard";
 import { VenueDashboard } from "@/components/dashboards/venue-dashboard";
 import { useCurrentWedding } from "@/lib/wedding-hooks";
+import { formatNumber } from "@/lib/utils";
 
 export const Route = createFileRoute("/_authenticated/dashboard")({ component: Dashboard });
 
 function Dashboard() {
   const { active, isLoading } = useActiveRole();
-  const { data: wedding } = useCurrentWedding();
+  const { data: wedding, isLoading: weddingLoading } = useCurrentWedding();
 
-  if (isLoading || !active) return <AppShell title="Loading…"><div /></AppShell>;
+  if (isLoading || !active || weddingLoading) return <AppShell title="Loading…"><div /></AppShell>;
 
   if (active === "vendor") {
     return <AppShell title="Vendor workspace" subtitle="Your listing, your leads, and your bookings."><VendorDashboard /></AppShell>;
@@ -32,7 +33,7 @@ function Dashboard() {
   }
   // couple / admin
   return (
-    <AppShell title={wedding ? `${wedding.partner_a} & ${wedding.partner_b}` : "Your wedding"} subtitle={wedding?.destination_city ? `${wedding.destination_city}${wedding.destination_country ? ", " + wedding.destination_country : ""} · ${wedding.est_guest_count ?? "-"} guests estimated` : undefined}>
+    <AppShell title={wedding ? `${wedding.partner_a} & ${wedding.partner_b}` : "Your wedding"} subtitle={wedding?.destination_city ? `${wedding.destination_city}${wedding.destination_country ? ", " + wedding.destination_country : ""} · ${wedding.est_guest_count != null ? formatNumber(wedding.est_guest_count) : "-"} guests estimated` : undefined}>
       <CoupleDashboard />
     </AppShell>
   );

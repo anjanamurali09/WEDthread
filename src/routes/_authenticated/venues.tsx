@@ -7,6 +7,7 @@ import { MapPin, Users2, Search, MessageCircle, Send } from "lucide-react";
 import { LeadDialog } from "@/components/lead-dialog";
 import { whatsappUrl, buildLeadMessage } from "@/lib/lead-utm";
 import { useCurrentWedding } from "@/lib/wedding-hooks";
+import { formatNumber } from "@/lib/utils";
 
 export const Route = createFileRoute("/_authenticated/venues")({ component: VenuesPage });
 
@@ -30,7 +31,7 @@ function VenuesPage() {
   );
 
   return (
-    <AppShell title="Venues" subtitle="Palaces, resorts, vineyards, hill retreats — filter by destination, capacity and price.">
+    <AppShell title="Venues" subtitle="Palaces, resorts, vineyards, hill retreats. Filter by destination, capacity and price.">
       <div className="flex flex-wrap gap-2 mb-4">
         <div className="relative flex-1 min-w-[260px]">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
@@ -75,7 +76,7 @@ function VenuesPage() {
                     {priceLabel && <span className="text-xs text-cherry font-medium">{priceLabel}{v.currency ? ` ${v.currency}` : ""}</span>}
                   </div>
                   <p className="text-xs text-muted-foreground mt-1 inline-flex items-center gap-1"><MapPin className="h-3 w-3" /> {v.city}, {v.country}</p>
-                  {(v.capacity_seated || v.capacity) && <p className="text-xs text-muted-foreground inline-flex items-center gap-1 mt-1"><Users2 className="h-3 w-3" /> up to {v.capacity_seated ?? v.capacity} seated{v.capacity_standing ? ` · ${v.capacity_standing} standing` : ""}</p>}
+                  {(v.capacity_seated || v.capacity) && <p className="text-xs text-muted-foreground inline-flex items-center gap-1 mt-1"><Users2 className="h-3 w-3" /> up to {formatNumber(v.capacity_seated ?? v.capacity)} seated{v.capacity_standing ? ` · ${formatNumber(v.capacity_standing)} standing` : ""}</p>}
                   {v.description && <p className="mt-3 text-sm text-ink/70 line-clamp-2">{v.description}</p>}
                   {v.facilities?.length > 0 && (
                     <div className="mt-3 flex flex-wrap gap-1">

@@ -3,7 +3,7 @@ import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Sparkles, MapPin, CalendarDays } from "lucide-react";
 import { getTemplate } from "@/lib/website-templates";
-import { RenderSection } from "./_authenticated/website.edit";
+import { RenderSection } from "./_authenticated/website_.edit";
 
 export const Route = createFileRoute("/w/$slug")({ component: WeddingSite });
 

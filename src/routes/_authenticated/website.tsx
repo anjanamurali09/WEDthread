@@ -7,6 +7,7 @@ import { toast } from "sonner";
 import { Copy, Check, ExternalLink, Pencil } from "lucide-react";
 import { TEMPLATES } from "@/lib/website-templates";
 import { TemplatePreview } from "@/components/template-preview";
+import { formatNumber } from "@/lib/utils";
 
 export const Route = createFileRoute("/_authenticated/website")({ component: WebsitePage });
 
@@ -24,7 +25,7 @@ function WebsitePage() {
     setSaving(false);
     if (error) return toast.error(error.message);
     invalidate(wedding.id);
-    toast.success("Template selected — open the editor to customize");
+    toast.success("Template selected. Open the editor to customize");
   };
 
   const togglePublish = async () => {
@@ -41,7 +42,7 @@ function WebsitePage() {
   const activeId = wedding.site_template_id ?? "pearl-wine";
 
   return (
-    <AppShell title="Wedding website" subtitle="Pick a template, then click Edit to customize every section — text, photos, order.">
+    <AppShell title="Wedding website" subtitle="Pick a template, then click Edit to customize every section: text, photos, order.">
       <div className="paper-card p-6 md:p-8">
         <div className="flex flex-wrap items-center justify-between gap-4">
           <div className="flex items-center gap-3">
@@ -63,7 +64,7 @@ function WebsitePage() {
         </div>
       </div>
 
-      <h2 className="font-serif text-2xl mt-10 mb-4">Templates <span className="text-sm text-muted-foreground font-sans">· {TEMPLATES.length} to choose from</span></h2>
+      <h2 className="font-serif text-2xl mt-10 mb-4">Templates <span className="text-sm text-muted-foreground font-sans">· {formatNumber(TEMPLATES.length)} to choose from</span></h2>
       <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
         {TEMPLATES.map((t) => {
           const active = activeId === t.id;

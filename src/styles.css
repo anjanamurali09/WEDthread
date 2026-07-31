@@ -23,8 +23,18 @@
   --color-sage: var(--sage);
   --color-sage-soft: var(--sage-soft);
   --color-sage-soft-hover: var(--sage-soft-hover);
+  --color-sage-deep: var(--sage-deep);
+  --color-sage-deep-hover: var(--sage-deep-hover);
   --color-teal: var(--teal);
   --color-rose: var(--rose);
+  --color-rose-deep: var(--rose-deep);
+  --color-rose-deep-hover: var(--rose-deep-hover);
+  --color-gold-soft: var(--gold-soft);
+  --color-gold-deep: var(--gold-deep);
+  --color-periwinkle-soft: var(--periwinkle-soft);
+  --color-periwinkle-deep: var(--periwinkle-deep);
+  --color-terracotta-soft: var(--terracotta-soft);
+  --color-terracotta-deep: var(--terracotta-deep);
 
   --radius-sm: 8px;
   --radius-md: 14px;
@@ -79,7 +89,7 @@
   --paper: #FBF7EC;                        /* soft cream card */
   --cream: #F7F1E1;                        /* deeper cream */
   --cream-hover: #FBF7EC;                  /* lighter cream for hover */
-  --beige: #ECE3CE;                        /* warm beige */
+  --beige: var(--stone);                   /* alias — was its own dull tan hex, now a single source of truth with --stone */
   --wine: #8A1226;                         /* wine — anchor accent */
   --wine-soft: #FADCE1;                    /* wine wash */
   --wine-soft-hover: #FDF0F2;              /* lighter wine wash for hover */
@@ -89,13 +99,23 @@
   --blush-soft: #FCEEEB;
   --blush-soft-hover: #FFF8F6;             /* lighter blush for hover */
   --rose: #D48891;                         /* dusty rose */
+  --rose-deep: #B5677D;                    /* deep rose — registry primary actions */
+  --rose-deep-hover: #D48891;              /* brighter rose for hover */
   --sage: #B6C7A6;                         /* sage tint */
   --sage-soft: #E4EDD8;
   --sage-soft-hover: #EEF5E6;              /* lighter sage for hover */
+  --sage-deep: #6B8F5C;                    /* deep sage — registry secondary actions */
+  --sage-deep-hover: #85A874;              /* brighter sage for hover */
+  --gold-soft: #F4E8CE;                    /* dusty mustard wash — homepage feature-grid accent */
+  --gold-deep: #B8935A;
+  --periwinkle-soft: #E5E7F5;              /* dusty blue-violet wash — homepage feature-grid accent */
+  --periwinkle-deep: #7C86B5;
+  --terracotta-soft: #F6E3D6;              /* muted burnt-orange wash — homepage feature-grid accent */
+  --terracotta-deep: #C17A56;
   --teal: #7B928C;
   --ink: #1A1512;                          /* rich near-black */
-  --stone: #F4EEDD;
-  --stone-2: #E8DEC5;
+  --stone: #FFFDF9;                        /* warm white — single source of truth for the stone/beige surface family (table headers, hover/selected rows, ring tracks) */
+  --stone-2: var(--stone);                 /* alias — was its own dull ivory hex, now a single source of truth with --stone */
   --line: #E4D9BE;
 
   --background: var(--pearl);
@@ -221,7 +241,6 @@
   opacity: 0;
   transform: translateY(28px);
   transition: opacity 700ms cubic-bezier(.22,.61,.36,1), transform 700ms cubic-bezier(.22,.61,.36,1);
-  will-change: opacity, transform;
 }
 [data-reveal][data-visible="true"] {
   opacity: 1;
@@ -288,4 +307,83 @@
 .float-b { animation: float-b 12s ease-in-out infinite; }
 .float-c { animation: float-c 14s ease-in-out infinite; }
 
+/* Feature-grid mockup micro-animations. Each card loops continuously and
+   independently (different total durations so they drift out of phase
+   rather than syncing up). Duration/delay are supplied per-element via
+   inline `animation` shorthand; these keyframes just define the shape. */
+
+/* Generic "pop then settle" bump, reused (with per-element duration/delay)
+   for Multi-Event notes, Guest List pills/tags, and Registry/Vendor cards. */
+@keyframes pop-once {
+  0% { scale: 1; }
+  6% { scale: 1.09; }
+  14%, 100% { scale: 1; }
+}
+
+/* Seating: one table (with its seats) and a cursor icon share the same
+   duration/keyframe percentages so they move in lockstep, reading as a
+   click-drag-drop of that table to a new spot and back. */
+@keyframes table-drag {
+  0%, 12% { translate: 0 0; }
+  32%, 55% { translate: -15px 30px; }
+  75%, 100% { translate: 0 0; }
+}
+@keyframes cursor-drag {
+  0%, 7% { opacity: 0; translate: -4px -4px; }
+  10% { opacity: 1; translate: 0 0; }
+  32% { opacity: 1; translate: -15px 30px; }
+  38%, 47% { opacity: 0; translate: -15px 30px; }
+  50%, 52% { opacity: 1; translate: -15px 30px; }
+  75% { opacity: 1; translate: 0 0; }
+  81%, 100% { opacity: 0; translate: 0 0; }
+}
+
+/* Registry: seamless auto-scroll marquee. The track renders the item list
+   twice back to back; translating exactly -50% loops without a visible seam. */
+@keyframes marquee-scroll {
+  from { translate: 0 0; }
+  to { translate: -50% 0; }
+}
+
+/* WhatsApp: three sequential bubble reveals + a brief "sent" checkmark,
+   all sharing one 9s cycle so they hold together then fade out as a group. */
+@keyframes wa-check {
+  0%, 8% { opacity: 0; scale: 0.5; }
+  11% { opacity: 1; scale: 1.15; }
+  16% { opacity: 1; scale: 1; }
+  22%, 100% { opacity: 0; scale: 0.8; }
+}
+@keyframes wa-bubble-1 {
+  0%, 3% { opacity: 0; scale: 0.7; }
+  8% { opacity: 1; scale: 1; }
+  88% { opacity: 1; scale: 1; }
+  94%, 100% { opacity: 0; scale: 0.85; }
+}
+@keyframes wa-bubble-2 {
+  0%, 26% { opacity: 0; scale: 0.7; }
+  31% { opacity: 1; scale: 1; }
+  88% { opacity: 1; scale: 1; }
+  94%, 100% { opacity: 0; scale: 0.85; }
+}
+@keyframes wa-bubble-3 {
+  0%, 51% { opacity: 0; scale: 0.7; }
+  56% { opacity: 1; scale: 1; }
+  88% { opacity: 1; scale: 1; }
+  94%, 100% { opacity: 0; scale: 0.85; }
+}
+
+/* Vendor Marketplace: 10 pills cycling through 5 fixed slots as two groups
+   of 5, each item popping in on its own turn, holding, then the whole group
+   fades out together before the next group's turn. One rule per item since
+   each needs its own absolute appear/hold/hide offsets in the shared 10s cycle. */
+@keyframes vendor-0 { 0% { opacity:0; scale:0.7; } 2% { opacity:1; scale:1; } 40% { opacity:1; scale:1; } 45%,100% { opacity:0; scale:0.8; } }
+@keyframes vendor-1 { 0%,4% { opacity:0; scale:0.7; } 6% { opacity:1; scale:1; } 40% { opacity:1; scale:1; } 45%,100% { opacity:0; scale:0.8; } }
+@keyframes vendor-2 { 0%,8% { opacity:0; scale:0.7; } 10% { opacity:1; scale:1; } 40% { opacity:1; scale:1; } 45%,100% { opacity:0; scale:0.8; } }
+@keyframes vendor-3 { 0%,12% { opacity:0; scale:0.7; } 14% { opacity:1; scale:1; } 40% { opacity:1; scale:1; } 45%,100% { opacity:0; scale:0.8; } }
+@keyframes vendor-4 { 0%,16% { opacity:0; scale:0.7; } 18% { opacity:1; scale:1; } 40% { opacity:1; scale:1; } 45%,100% { opacity:0; scale:0.8; } }
+@keyframes vendor-5 { 0%,50% { opacity:0; scale:0.7; } 52% { opacity:1; scale:1; } 90% { opacity:1; scale:1; } 95%,100% { opacity:0; scale:0.8; } }
+@keyframes vendor-6 { 0%,54% { opacity:0; scale:0.7; } 56% { opacity:1; scale:1; } 90% { opacity:1; scale:1; } 95%,100% { opacity:0; scale:0.8; } }
+@keyframes vendor-7 { 0%,58% { opacity:0; scale:0.7; } 60% { opacity:1; scale:1; } 90% { opacity:1; scale:1; } 95%,100% { opacity:0; scale:0.8; } }
+@keyframes vendor-8 { 0%,62% { opacity:0; scale:0.7; } 64% { opacity:1; scale:1; } 90% { opacity:1; scale:1; } 95%,100% { opacity:0; scale:0.8; } }
+@keyframes vendor-9 { 0%,66% { opacity:0; scale:0.7; } 68% { opacity:1; scale:1; } 90% { opacity:1; scale:1; } 95%,100% { opacity:0; scale:0.8; } }
 

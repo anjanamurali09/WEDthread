@@ -14,7 +14,7 @@ export const Route = createFileRoute("/auth/role")({
   validateSearch: searchSchema,
   head: () => ({
     meta: [
-      { title: "Choose your role — Vowzy" },
+      { title: "Choose your role · Vowzy" },
       { name: "description", content: "Tell us how you'll use Vowzy." },
     ],
   }),

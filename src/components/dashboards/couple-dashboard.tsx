@@ -2,29 +2,35 @@ import { Link, useNavigate } from "@tanstack/react-router";
 import { useEffect } from "react";
 import { useCurrentWedding, useEvents, useGuests, useInvites } from "@/lib/wedding-hooks";
 import { CalendarDays, Users, Grid3x3, Globe, ArrowRight, MessageCircle } from "lucide-react";
+import { formatNumber } from "@/lib/utils";
+import { summarizeGuestRsvps } from "@/lib/rsvp-stats";
 
 export function CoupleDashboard() {
   const navigate = useNavigate();
   const { data: wedding, isLoading } = useCurrentWedding();
-  const { data: events = [] } = useEvents(wedding?.id);
-  const { data: guests = [] } = useGuests(wedding?.id);
-  const { data: invites = [] } = useInvites(wedding?.id);
+  const { data: events = [], isLoading: eventsLoading } = useEvents(wedding?.id);
+  const { data: guests = [], isLoading: guestsLoading } = useGuests(wedding?.id);
+  const { data: invites = [], isLoading: invitesLoading } = useInvites(wedding?.id);
 
   useEffect(() => {
     if (!isLoading && !wedding) navigate({ to: "/onboarding", replace: true });
   }, [wedding, isLoading, navigate]);
 
   if (!wedding) return null;
+  if (eventsLoading || guestsLoading || invitesLoading) {
+    return <p className="text-sm text-muted-foreground">Loading…</p>;
+  }
 
-  const rsvpd = invites.filter((i) => i.rsvp_status !== "pending").length;
-  const attending = invites.filter((i) => i.rsvp_status === "attending").length;
-  const totalInvites = invites.length;
+  // Per-guest, not per-invite-record: a guest attending 3 of 4 invited events still
+  // counts once in "attending," and only counts as "responded" once every event they're
+  // invited to has a firm accept/decline. See src/lib/rsvp-stats.ts.
+  const { invited: totalInvites, attending, responded: rsvpd } = summarizeGuestRsvps(guests.map((g) => g.id), invites);
 
   return (
     <>
       <section className="paper-card p-6 md:p-8">
         <div className="flex items-center justify-between">
-          <h2 className="font-serif text-2xl">Your ceremonies</h2>
+          <h2 className="font-serif text-2xl">Your events</h2>
           <Link to="/events" className="text-xs text-clay uppercase tracking-widest inline-flex items-center gap-1">Manage <ArrowRight className="h-3 w-3" /></Link>
         </div>
         {events.length === 0 ? (
@@ -50,9 +56,9 @@ export function CoupleDashboard() {
       </section>
 
       <section className="mt-8 grid md:grid-cols-2 lg:grid-cols-4 gap-4">
-        <Tile to="/events" icon={CalendarDays} label="Events" value={String(events.length)} sub={events.length === 1 ? "ceremony" : "ceremonies"} bg="bg-sage-soft" />
-        <Tile to="/guests" icon={Users} label="Guests" value={String(guests.length)} sub={`${attending} attending`} bg="bg-blush-soft" />
-        <Tile to="/seating" icon={Grid3x3} label="RSVPs" value={`${totalInvites ? Math.round((rsvpd / totalInvites) * 100) : 0}%`} sub={`${rsvpd} of ${totalInvites} responded`} bg="bg-cream" />
+        <Tile to="/events" icon={CalendarDays} label="Events" value={formatNumber(events.length)} sub={events.length === 1 ? "ceremony" : "ceremonies"} bg="bg-sage-soft" />
+        <Tile to="/guests" icon={Users} label="Guests" value={formatNumber(guests.length)} sub={`${formatNumber(attending)} attending`} bg="bg-blush-soft" />
+        <Tile to="/seating" icon={Grid3x3} label="RSVPs" value={`${totalInvites ? Math.round((rsvpd / totalInvites) * 100) : 0}%`} sub={`${formatNumber(rsvpd)} of ${formatNumber(totalInvites)} responded`} bg="bg-cream" />
         <Tile to="/website" icon={Globe} label="Website" value={wedding.site_published ? "Live" : "Draft"} sub={`/w/${wedding.slug ?? "-"}`} bg="bg-wine-soft" />
       </section>
 

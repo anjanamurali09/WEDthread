@@ -10,7 +10,7 @@ export const EMPTY_PHOTOS = {
   marigold: { url: decorMarigold.url, alt: "Marigold garlands and greenery hanging from a wedding mandap ceiling", pos: "50% 60%" },
   garden:   { url: gardenParty.url,   alt: "Guests in pastel outfits gathered on a garden lawn at a wedding cocktail hour", pos: "50% 45%" },
   bridal:   { url: bridalParty.url,   alt: "Bride and groom laughing with the wedding party in embellished outfits", pos: "50% 35%" },
-  cane:     { url: caneChair.url,     alt: "Rattan wedding chair with a hand fan and a green ribbon place setting", pos: "50% 55%" },
+  cane:     { url: caneChair.url,     alt: "Rattan wedding chair with a hand fan and a green ribbon place setting", pos: "50% 80%" },
 } as const;
 
 export type PhotoKey = keyof typeof EMPTY_PHOTOS;

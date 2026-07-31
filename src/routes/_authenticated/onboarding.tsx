@@ -57,7 +57,7 @@ function Onboarding() {
       if (error) throw error;
       await markCompleted();
       toast.success("Wedding created. Let's add your events.");
-      navigate({ to: "/events" });
+      navigate({ to: "/dashboard" });
     } catch (err: any) {
       toast.error(err.message ?? "Something went wrong");
     } finally { setSaving(false); }

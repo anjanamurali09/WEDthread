@@ -8,6 +8,7 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { Plus, X, Trash2, Circle, Square, RectangleHorizontal, Music, GlassWater, Mic, DoorOpen, Palette, Users } from "lucide-react";
 import { OvalPhotoOrnament } from "@/components/photo-empty-state";
+import { formatNumber } from "@/lib/utils";
 
 export const Route = createFileRoute("/_authenticated/seating")({
   component: SeatingPage,
@@ -27,10 +28,10 @@ const FIXTURE_KINDS: { kind: string; label: string; icon: any; color: string; w:
 ];
 
 function SeatingPage() {
-  const { data: wedding } = useCurrentWedding();
-  const { data: events = [] } = useEvents(wedding?.id);
-  const { data: guests = [] } = useGuests(wedding?.id);
-  const { data: invites = [] } = useInvites(wedding?.id);
+  const { data: wedding, isLoading: weddingLoading } = useCurrentWedding();
+  const { data: events = [], isLoading: eventsLoading } = useEvents(wedding?.id);
+  const { data: guests = [], isLoading: guestsLoading } = useGuests(wedding?.id);
+  const { data: invites = [], isLoading: invitesLoading } = useInvites(wedding?.id);
   const search = Route.useSearch();
   const [eventId, setEventId] = useState<string>("");
   const qc = useQueryClient();
@@ -52,23 +53,29 @@ function SeatingPage() {
     },
   });
 
-  const { data: tables = [] } = useQuery({
+  const { data: tables = [], isLoading: tablesLoading } = useQuery({
     queryKey: ["tables", eventId],
     enabled: !!eventId,
     queryFn: async () => (await supabase.from("wedding_tables").select("*").eq("event_id", eventId).order("sort_order")).data ?? [],
   });
 
-  const { data: fixtures = [] } = useQuery({
+  const { data: fixtures = [], isLoading: fixturesLoading } = useQuery({
     queryKey: ["fixtures", eventId],
     enabled: !!eventId,
     queryFn: async () => (await supabase.from("seating_fixtures").select("*").eq("event_id", eventId)).data ?? [],
   });
 
-  const { data: seats = [] } = useQuery({
+  const { data: seats = [], isLoading: seatsLoading } = useQuery({
     queryKey: ["seats", eventId, tables.map((t: any) => t.id).join(",")],
     enabled: tables.length > 0,
     queryFn: async () => (await supabase.from("seat_assignments").select("*").in("table_id", tables.map((t: any) => t.id))).data ?? [],
   });
+
+  // While events have resolved but the effect above hasn't yet picked an eventId (or the
+  // event-scoped queries are still in flight), the canvas would otherwise render with an
+  // empty/wrong-scoped table list for a moment — so treat that gap as loading too.
+  const loading = weddingLoading || eventsLoading || guestsLoading || invitesLoading
+    || (events.length > 0 && !eventId) || tablesLoading || fixturesLoading || seatsLoading;
 
   const attendingIds = useMemo(
     () => new Set(invites.filter((i) => i.event_id === eventId && i.rsvp_status !== "declined").map((i) => i.guest_id)),
@@ -152,7 +159,7 @@ function SeatingPage() {
     qc.invalidateQueries({ queryKey: ["seats", eventId] });
   };
 
-  if (!events.length) {
+  if (!eventsLoading && !events.length) {
     return (
       <AppShell title="Seating" subtitle="Add events first.">
         <p className="text-muted-foreground text-sm">Head to Events to add a ceremony.</p>
@@ -172,15 +179,18 @@ function SeatingPage() {
         </select>
       }
     >
+      {loading ? (
+        <p className="text-sm text-muted-foreground">Loading…</p>
+      ) : (
       <DndContext onDragEnd={handleGuestDrop}>
         <div className="grid lg:grid-cols-[300px_1fr] gap-4">
           {/* Guest sidebar */}
           <aside className="paper-card p-5 h-fit lg:sticky lg:top-6">
             <div className="flex items-center gap-2 mb-3">
               <Users className="h-4 w-4 text-clay" />
-              <h3 className="font-serif text-xl">Manage guests</h3>
+              <h3 className="font-sans text-xl font-semibold">Manage guests</h3>
             </div>
-            <p className="text-[11px] uppercase tracking-widest text-clay">Unseated · {unseated.length}</p>
+            <p className="text-[11px] uppercase tracking-widest text-clay">Unseated · {formatNumber(unseated.length)}</p>
             <p className="text-xs text-muted-foreground mt-1">Drag onto a table.</p>
             <div className="mt-4 space-y-1.5 max-h-[65vh] overflow-y-auto pr-1">
               {unseated.length === 0 && <p className="text-xs text-muted-foreground italic">Everyone attending has a seat.</p>}
@@ -213,6 +223,7 @@ function SeatingPage() {
           </div>
         </div>
       </DndContext>
+      )}
     </AppShell>
   );
 }
@@ -248,7 +259,7 @@ function Toolbar({ floorColor, onFloor, onAddTable, onAddFixture, tableCount }: 
           </div>
         )}
       </div>
-      <span className="ml-auto text-xs text-muted-foreground">{tableCount} table{tableCount === 1 ? "" : "s"}</span>
+      <span className="ml-auto text-xs text-muted-foreground">{formatNumber(tableCount)} table{tableCount === 1 ? "" : "s"}</span>
     </div>
   );
 }
@@ -271,63 +282,92 @@ function GuestChip({ id, name }: { id: string; name: string }) {
   );
 }
 
-/* --- Canvas --- */
+/* --- Canvas ---
+   Tables/fixtures store pos_x/pos_y/width/height as pixel coordinates in a fixed
+   CANVAS_W x CANVAS_H logical space. To keep any layout fitting fully on any screen
+   size (no cropping, no horizontal scroll), the logical canvas is rendered at a
+   uniform CSS scale that fits the actual container — like a stage that zooms to fit
+   its frame rather than resizing its coordinate system. */
 function FloorCanvas({ floorColor, tables, fixtures, seats, guests, onUpdateTable, onUpdateFixture, onDeleteTable, onDeleteFixture, onUnseat, onFirstTable }: any) {
   const [selected, setSelected] = useState<{ kind: "table" | "fixture"; id: string } | null>(null);
+  const wrapRef = useRef<HTMLDivElement>(null);
+  const [scale, setScale] = useState(1);
+
+  useEffect(() => {
+    const el = wrapRef.current;
+    if (!el) return;
+    const recompute = () => {
+      const width = el.clientWidth;
+      const maxHeight = window.innerHeight * 0.75;
+      const next = Math.min(width / CANVAS_W, maxHeight / CANVAS_H) || 1;
+      setScale(next);
+    };
+    recompute();
+    const ro = new ResizeObserver(recompute);
+    ro.observe(el);
+    window.addEventListener("resize", recompute);
+    return () => { ro.disconnect(); window.removeEventListener("resize", recompute); };
+  }, []);
+
   return (
-    <div className="rounded-3xl border border-line overflow-hidden shadow-inner">
-      <div
-        className="relative"
-        style={{
-          width: "100%",
-          height: `min(75vh, ${CANVAS_H}px)`,
-          background: floorColor,
-          backgroundImage: "radial-gradient(circle, rgba(0,0,0,0.05) 1px, transparent 1px)",
-          backgroundSize: "24px 24px",
-        }}
-        onClick={() => setSelected(null)}
-      >
-        {tables.length === 0 && fixtures.length === 0 && (
-          <div className="absolute inset-0 flex flex-col items-center justify-center text-center pointer-events-none px-6">
-            <div className="pointer-events-none">
-              <OvalPhotoOrnament photo="cane" className="h-32 w-44 md:h-40 md:w-56" />
+    <div ref={wrapRef} className="rounded-3xl border border-line overflow-hidden shadow-inner">
+      <div className="relative" style={{ width: "100%", height: CANVAS_H * scale }} onClick={() => setSelected(null)}>
+        <div
+          className="absolute top-0 left-0"
+          style={{
+            width: CANVAS_W,
+            height: CANVAS_H,
+            transform: `scale(${scale})`,
+            transformOrigin: "0 0",
+            background: floorColor,
+            backgroundImage: "radial-gradient(circle, rgba(0,0,0,0.05) 1px, transparent 1px)",
+            backgroundSize: "24px 24px",
+          }}
+        >
+          {tables.length === 0 && fixtures.length === 0 && (
+            <div className="absolute inset-0 flex flex-col items-center justify-center text-center pointer-events-none px-6">
+              <div className="pointer-events-none">
+                <OvalPhotoOrnament photo="cane" className="h-32 w-44 md:h-40 md:w-56" />
+              </div>
+              <p className="mt-5 font-serif text-3xl text-ink/80">Every seat a story</p>
+              <p className="text-sm text-muted-foreground mt-1 max-w-sm">Drop in your first table, then drag guests from the sidebar to give everyone a place at the celebration.</p>
+              <button
+                onClick={(e) => { e.stopPropagation(); onFirstTable(); }}
+                className="pointer-events-auto mt-5 inline-flex items-center gap-2 rounded-full bg-ink text-paper px-5 py-2.5 text-sm hover:bg-clay cursor-pointer">
+                <Plus className="h-4 w-4" /> Add first table
+              </button>
             </div>
-            <p className="mt-5 font-serif text-3xl text-ink/80">Every seat a story</p>
-            <p className="text-sm text-muted-foreground mt-1 max-w-sm">Drop in your first table, then drag guests from the sidebar to give everyone a place at the celebration.</p>
-            <button
-              onClick={(e) => { e.stopPropagation(); onFirstTable(); }}
-              className="pointer-events-auto mt-5 inline-flex items-center gap-2 rounded-full bg-ink text-paper px-5 py-2.5 text-sm hover:bg-clay cursor-pointer">
-              <Plus className="h-4 w-4" /> Add first table
-            </button>
-          </div>
-        )}
+          )}
 
-
-        {fixtures.map((f: any) => (
-          <FixtureNode key={f.id} fixture={f} selected={selected?.kind === "fixture" && selected.id === f.id}
-            onSelect={() => setSelected({ kind: "fixture", id: f.id })}
-            onUpdate={(patch: any) => onUpdateFixture(f.id, patch)}
-            onDelete={() => onDeleteFixture(f.id)} />
-        ))}
-        {tables.map((t: any) => {
-          const at = seats.filter((s: any) => s.table_id === t.id);
-          const seated = at.map((a: any) => ({ a, g: guests.find((x: any) => x.id === a.guest_id) })).filter((x: any) => x.g);
-          return (
-            <TableNode key={t.id} table={t} seated={seated}
-              selected={selected?.kind === "table" && selected.id === t.id}
-              onSelect={() => setSelected({ kind: "table", id: t.id })}
-              onUpdate={(patch: any) => onUpdateTable(t.id, patch)}
-              onDelete={() => onDeleteTable(t.id)}
-              onUnseat={onUnseat} />
-          );
-        })}
+          {fixtures.map((f: any) => (
+            <FixtureNode key={f.id} fixture={f} scale={scale} selected={selected?.kind === "fixture" && selected.id === f.id}
+              onSelect={() => setSelected({ kind: "fixture", id: f.id })}
+              onUpdate={(patch: any) => onUpdateFixture(f.id, patch)}
+              onDelete={() => onDeleteFixture(f.id)} />
+          ))}
+          {tables.map((t: any) => {
+            const at = seats.filter((s: any) => s.table_id === t.id);
+            const seated = at.map((a: any) => ({ a, g: guests.find((x: any) => x.id === a.guest_id) })).filter((x: any) => x.g);
+            return (
+              <TableNode key={t.id} table={t} seated={seated} scale={scale}
+                selected={selected?.kind === "table" && selected.id === t.id}
+                onSelect={() => setSelected({ kind: "table", id: t.id })}
+                onUpdate={(patch: any) => onUpdateTable(t.id, patch)}
+                onDelete={() => onDeleteTable(t.id)}
+                onUnseat={onUnseat} />
+            );
+          })}
+        </div>
       </div>
     </div>
   );
 }
 
-/* --- Draggable pointer element (used for table + fixture) --- */
-function useMovable(pos: { x: number; y: number }, onEnd: (p: { x: number; y: number }) => void) {
+/* --- Draggable pointer element (used for table + fixture) ---
+   Pointer deltas are real screen pixels, but positions are stored in the fixed
+   logical canvas space, so deltas are divided by the current render scale to
+   convert them back to logical units before applying. */
+function useMovable(pos: { x: number; y: number }, onEnd: (p: { x: number; y: number }) => void, scale = 1) {
   const [drag, setDrag] = useState<{ x: number; y: number } | null>(null);
   const startRef = useRef<{ px: number; py: number; ox: number; oy: number } | null>(null);
   const onPointerDown = (e: React.PointerEvent) => {
@@ -338,8 +378,8 @@ function useMovable(pos: { x: number; y: number }, onEnd: (p: { x: number; y: nu
   };
   const onPointerMove = (e: React.PointerEvent) => {
     if (!startRef.current) return;
-    const nx = startRef.current.ox + (e.clientX - startRef.current.px);
-    const ny = startRef.current.oy + (e.clientY - startRef.current.py);
+    const nx = startRef.current.ox + (e.clientX - startRef.current.px) / scale;
+    const ny = startRef.current.oy + (e.clientY - startRef.current.py) / scale;
     setDrag({ x: Math.max(0, nx), y: Math.max(0, ny) });
   };
   const onPointerUp = (e: React.PointerEvent) => {
@@ -353,9 +393,10 @@ function useMovable(pos: { x: number; y: number }, onEnd: (p: { x: number; y: nu
 }
 
 /* --- Table --- */
-function TableNode({ table, seated, selected, onSelect, onUpdate, onDelete, onUnseat }: any) {
-  const { setNodeRef, isOver } = useDroppable({ id: `table:${table.id}` });
-  const { handlers, current } = useMovable({ x: table.pos_x, y: table.pos_y }, (p) => onUpdate({ pos_x: p.x, pos_y: p.y }));
+function TableNode({ table, seated, scale, selected, onSelect, onUpdate, onDelete, onUnseat }: any) {
+  const noCapacity = !table.seats || table.seats <= 0;
+  const { setNodeRef, isOver } = useDroppable({ id: `table:${table.id}`, disabled: noCapacity });
+  const { handlers, current } = useMovable({ x: table.pos_x, y: table.pos_y }, (p) => onUpdate({ pos_x: p.x, pos_y: p.y }), scale);
   const isRound = table.shape === "round";
   const over = seated.length > table.seats;
   const seatCount = Math.max(seated.length, 1);
@@ -400,12 +441,13 @@ function TableNode({ table, seated, selected, onSelect, onUpdate, onDelete, onUn
           boxShadow: "0 4px 14px rgba(26,21,18,0.12)",
         }}
       >
-        <p className="font-serif text-[13px] leading-tight text-ink px-2 truncate max-w-full">{table.label}</p>
-        <p className="text-[10px] text-ink/70">{seated.length}/{table.seats}</p>
+        <p className="font-sans text-[13px] font-medium leading-tight text-ink px-2 truncate max-w-full">{table.label}</p>
+        {!noCapacity && <p className="text-[10px] text-ink/70">{formatNumber(seated.length)}/{formatNumber(table.seats)}</p>}
       </div>
 
       {selected && (
         <div data-nodrag onClick={(e) => e.stopPropagation()}
+          style={{ transform: `scale(${1 / scale})`, transformOrigin: "top center" }}
           className="absolute -bottom-2 left-1/2 -translate-x-1/2 translate-y-full mt-2 bg-paper border border-line rounded-2xl shadow-lg p-3 flex items-center gap-2 whitespace-nowrap z-30">
           <input
             defaultValue={table.label}
@@ -486,8 +528,8 @@ function ChairChip({ x, y, size, name, initials, hasDiet, dietary, notes, onUnse
 }
 
 /* --- Fixture --- */
-function FixtureNode({ fixture, selected, onSelect, onUpdate, onDelete }: any) {
-  const { handlers, current } = useMovable({ x: fixture.pos_x, y: fixture.pos_y }, (p) => onUpdate({ pos_x: p.x, pos_y: p.y }));
+function FixtureNode({ fixture, scale, selected, onSelect, onUpdate, onDelete }: any) {
+  const { handlers, current } = useMovable({ x: fixture.pos_x, y: fixture.pos_y }, (p) => onUpdate({ pos_x: p.x, pos_y: p.y }), scale);
   const [resize, setResize] = useState<{ w: number; h: number } | null>(null);
   const size = resize ?? { w: fixture.width, h: fixture.height };
   const startResize = (e: React.PointerEvent) => {
@@ -495,8 +537,8 @@ function FixtureNode({ fixture, selected, onSelect, onUpdate, onDelete }: any) {
     (e.currentTarget as HTMLElement).setPointerCapture(e.pointerId);
     const start = { x: e.clientX, y: e.clientY, w: fixture.width, h: fixture.height };
     const move = (ev: PointerEvent) => setResize({
-      w: Math.max(60, start.w + (ev.clientX - start.x)),
-      h: Math.max(30, start.h + (ev.clientY - start.y)),
+      w: Math.max(60, start.w + (ev.clientX - start.x) / scale),
+      h: Math.max(30, start.h + (ev.clientY - start.y) / scale),
     });
     const up = () => {
       window.removeEventListener("pointermove", move);
@@ -534,9 +576,11 @@ function FixtureNode({ fixture, selected, onSelect, onUpdate, onDelete }: any) {
           <div
             data-nodrag
             onPointerDown={startResize}
+            style={{ transform: `scale(${1 / scale})`, transformOrigin: "bottom right" }}
             className="absolute -right-1.5 -bottom-1.5 h-4 w-4 bg-paper border border-ink rounded-sm cursor-nwse-resize z-30"
           />
           <div data-nodrag onClick={(e) => e.stopPropagation()}
+            style={{ transform: `scale(${1 / scale})`, transformOrigin: "top center" }}
             className="absolute -bottom-2 left-1/2 -translate-x-1/2 translate-y-full mt-2 bg-paper border border-line rounded-2xl shadow-lg p-2 flex items-center gap-2 z-30 whitespace-nowrap">
             <input
               defaultValue={fixture.label ?? ""}
