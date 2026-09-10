@@ -14,6 +14,7 @@ type Cat = { id: string; name: string; slug: string | null; parent_id: string | 
 
 function VendorsPage() {
   const [q, setQ] = useState("");
+  const [location, setLocation] = useState("");
   const [tier1Id, setTier1Id] = useState<string>("");
   const [tier2Id, setTier2Id] = useState<string>("");
   const [tag, setTag] = useState<string>("");
@@ -50,29 +51,35 @@ function VendorsPage() {
     return Array.from(s).sort();
   }, [vendors]);
 
-  const filtered = (vendors as any[]).filter((v) =>
-    (activeCatIds.length === 0 || activeCatIds.includes(v.category_id)) &&
-    (!tag || (v.tags ?? []).includes(tag)) &&
-    (!q || v.business_name.toLowerCase().includes(q.toLowerCase()) || (v.description ?? "").toLowerCase().includes(q.toLowerCase()))
-  );
+  const filtered = (vendors as any[]).filter((v) => {
+    const loc = location.trim().toLowerCase();
+    return (
+      (activeCatIds.length === 0 || activeCatIds.includes(v.category_id)) &&
+      (!tag || (v.tags ?? []).includes(tag)) &&
+      (!loc || (v.home_city || "").toLowerCase().includes(loc) || (v.home_country || "").toLowerCase().includes(loc)) &&
+      (!q || v.business_name.toLowerCase().includes(q.toLowerCase()) || (v.description ?? "").toLowerCase().includes(q.toLowerCase()))
+    );
+  });
 
-  const clear = () => { setTier1Id(""); setTier2Id(""); setTag(""); setQ(""); };
-  const anyFilter = tier1Id || tier2Id || tag || q;
+  const clear = () => { setTier1Id(""); setTier2Id(""); setTag(""); setQ(""); setLocation(""); };
+  const anyFilter = tier1Id || tier2Id || tag || q || location;
 
   return (
     <AppShell title="Vendors" subtitle="Filter by category, subcategory, and tags, from mehendi artists to invitation designers.">
-      {/* Search */}
-      <div className="relative max-w-xl mb-5">
-        <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-        <input value={q} onChange={(e) => setQ(e.target.value)} placeholder="Search vendors, styles, cities…" className="w-full rounded-full border border-line pl-10 pr-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-cherry bg-pearl" />
-      </div>
-
-      {/* Tier 1 chips */}
+      {/* Search + category + location */}
       <div className="flex flex-wrap gap-2 mb-3">
-        <button onClick={() => { setTier1Id(""); setTier2Id(""); }} className={`chip ${!tier1Id ? "chip-active" : ""}`}>All categories</button>
-        {tier1.map((c) => (
-          <button key={c.id} onClick={() => { setTier1Id(c.id); setTier2Id(""); }} className={`chip ${tier1Id === c.id ? "chip-active" : ""}`}>{c.name}</button>
-        ))}
+        <select value={tier1Id} onChange={(e) => { setTier1Id(e.target.value); setTier2Id(""); }} className="rounded-full border border-line px-4 py-2.5 text-sm bg-paper">
+          <option value="">All categories</option>
+          {tier1.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
+        </select>
+        <div className="relative flex-1 min-w-[200px]">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+          <input value={q} onChange={(e) => setQ(e.target.value)} placeholder="Search vendors, styles…" className="w-full rounded-full border border-line pl-10 pr-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-cherry bg-pearl" />
+        </div>
+        <div className="relative flex-1 min-w-[200px]">
+          <MapPin className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+          <input value={location} onChange={(e) => setLocation(e.target.value)} placeholder="Location: city or country…" className="w-full rounded-full border border-line pl-10 pr-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-cherry bg-pearl" />
+        </div>
       </div>
 
       {/* Tier 2 chips */}
@@ -89,13 +96,13 @@ function VendorsPage() {
       {allTags.length > 0 && (
         <div className="flex flex-wrap gap-1.5 mb-5">
           {allTags.slice(0, 24).map((t) => (
-            <button key={t} onClick={() => setTag(tag === t ? "" : t)} className={`text-[11px] rounded-full px-2.5 py-1 border ${tag === t ? "bg-wine text-pearl border-wine" : "border-line text-ink/70 hover:bg-cream"}`}>#{t}</button>
+            <button key={t} onClick={() => setTag(tag === t ? "" : t)} className={`text-sm rounded-full px-2.5 py-1 border ${tag === t ? "bg-wine text-pearl border-wine" : "border-line text-ink hover:bg-cream"}`}>#{t}</button>
           ))}
         </div>
       )}
 
       {anyFilter && (
-        <button onClick={clear} className="mb-6 inline-flex items-center gap-1 text-xs text-muted-foreground hover:text-cherry"><X className="h-3 w-3" /> Clear filters</button>
+        <button onClick={clear} className="mb-6 inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-cherry"><X className="h-3 w-3" /> Clear filters</button>
       )}
 
       <style>{`
@@ -126,19 +133,19 @@ function VendorsPage() {
                 <div className="p-5 flex-1 flex flex-col">
                   <div className="flex items-start justify-between gap-2">
                     <h3 className="font-serif text-xl">{v.business_name}</h3>
-                    {priceLabel && <span className="text-xs text-cherry font-medium">{priceLabel}{v.currency ? ` ${v.currency}` : ""}</span>}
+                    {priceLabel && <span className="text-sm text-cherry font-medium">{priceLabel}{v.currency ? ` ${v.currency}` : ""}</span>}
                   </div>
-                  {(v.home_city || v.home_country) && <p className="text-xs text-muted-foreground mt-1 inline-flex items-center gap-1"><MapPin className="h-3 w-3" /> {[v.home_city, v.home_country].filter(Boolean).join(", ")}</p>}
-                  {v.description && <p className="mt-3 text-sm text-ink/70 line-clamp-3">{v.description}</p>}
+                  {(v.home_city || v.home_country) && <p className="text-sm text-muted-foreground mt-1 inline-flex items-center gap-1"><MapPin className="h-3 w-3" /> {[v.home_city, v.home_country].filter(Boolean).join(", ")}</p>}
+                  {v.description && <p className="mt-3 text-sm text-ink line-clamp-3">{v.description}</p>}
                   {v.tags?.length > 0 && <div className="mt-3 flex flex-wrap gap-1">{v.tags.slice(0, 4).map((t: string) => <span key={t} className="text-[10px] rounded-full bg-cream px-2 py-0.5">{t}</span>)}</div>}
                   <div className="mt-auto pt-4 flex gap-2">
                     <button onClick={() => setLeadFor({ kind: "vendor", target: { id: v.id, name: v.business_name, city: v.home_city, country: v.home_country, currency: v.currency } })}
-                      className="flex-1 rounded-full bg-cherry text-pearl text-xs px-3 py-2 hover:bg-wine transition-colors inline-flex items-center justify-center gap-1">
+                      className="flex-1 rounded-full bg-cherry text-pearl text-sm px-3 py-2 hover:bg-wine transition-colors inline-flex items-center justify-center gap-1">
                       <Send className="h-3 w-3" /> I'm interested
                     </button>
                     {waHref && (
                       <a href={waHref} target="_blank" rel="noreferrer"
-                        className="rounded-full border border-line text-xs px-3 py-2 hover:border-cherry inline-flex items-center gap-1">
+                        className="rounded-full border border-line text-sm px-3 py-2 hover:border-cherry inline-flex items-center gap-1">
                         <MessageCircle className="h-3 w-3" /> WhatsApp
                       </a>
                     )}

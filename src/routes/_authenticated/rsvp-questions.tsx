@@ -1,15 +1,17 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { AppShell } from "@/components/app-shell";
-import { useCurrentWedding, useEvents, useRsvpQuestions, type RsvpQuestion, type Event, type Wedding } from "@/lib/wedding-hooks";
+import { useCurrentWedding, useEvents, useGuests, useRsvpQuestions, useRsvpResponses, type RsvpQuestion, type Event, type Guest, type Wedding } from "@/lib/wedding-hooks";
+import { ShareRsvpDialog } from "@/components/share-rsvp-dialog";
 import { supabase } from "@/integrations/supabase/client";
 import { useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
-import { Plus, Trash2, X, GripVertical, CheckCircle2, ListFilter, Type as TypeIcon, Sparkles, ChevronDown, Check, Lock, Eye } from "lucide-react";
+import { Plus, Trash2, X, GripVertical, CheckCircle2, ListFilter, Type as TypeIcon, Sparkles, ChevronDown, Check, Lock, Eye, Share2, Table2, Columns3 } from "lucide-react";
 import { DndContext, closestCenter, PointerSensor, useSensor, useSensors, type DragEndEvent } from "@dnd-kit/core";
 import { SortableContext, arrayMove, useSortable, verticalListSortingStrategy } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
 import { cn, formatNumber } from "@/lib/utils";
+import { ConfirmDialog } from "@/components/confirm-dialog";
 import { RsvpPageBody, rsvpAnswerKey, DEFAULT_ATTENDANCE_TEXT, DEFAULT_ACCEPT_LABEL, DEFAULT_DECLINE_LABEL, DEFAULT_MAYBE_LABEL, type RsvpEventRow, type RsvpQuestionRow, type RsvpSaveStatus } from "@/components/rsvp-form";
 
 export const Route = createFileRoute("/_authenticated/rsvp-questions")({ component: RsvpQuestionsPage });
@@ -17,28 +19,18 @@ export const Route = createFileRoute("/_authenticated/rsvp-questions")({ compone
 type QuestionType = RsvpQuestion["question_type"];
 
 const QUESTION_TYPES: { value: QuestionType; label: string; icon: any }[] = [
-  { value: "yes_no", label: "Yes / No", icon: CheckCircle2 },
+  { value: "yes_no", label: "Single choice", icon: CheckCircle2 },
   { value: "multiple_choice", label: "Multiple choice", icon: ListFilter },
   { value: "short_text", label: "Short text", icon: TypeIcon },
 ];
 
-type QuickAddTemplate =
-  | { kind: "info"; label: string; note: string }
-  | { kind: "question"; label: string; questionType: QuestionType; options?: string[] };
+type QuickAddTemplate = { label: string; questionType: QuestionType; options?: string[] };
 
-// Attendance itself isn't offered as a plain yes/no template — guests already
-// confirm attendance per event via the Accept / Maybe / Decline buttons on
-// the RSVP page, so a duplicate question would just be confusing.
 const QUICK_ADD_TEMPLATES: QuickAddTemplate[] = [
-  {
-    kind: "info",
-    label: "Please confirm your attendance to our wedding",
-    note: "Guests already confirm attendance for each event they're invited to via the Accept / Maybe / Decline buttons — no need to add this as a separate question.",
-  },
-  { kind: "question", label: "Do you have any dietary restrictions we should know about?", questionType: "short_text" },
-  { kind: "question", label: "Which meal would you prefer?", questionType: "multiple_choice", options: ["Vegetarian", "Non-vegetarian", "Vegan"] },
-  { kind: "question", label: "Will you need transportation to the venue?", questionType: "yes_no" },
-  { kind: "question", label: "Any song requests to get you on the dance floor?", questionType: "short_text" },
+  { label: "Do you have any dietary restrictions we should know about?", questionType: "short_text" },
+  { label: "Which meal would you prefer?", questionType: "multiple_choice", options: ["Vegetarian", "Non-vegetarian", "Vegan"] },
+  { label: "Will you need transportation to the venue?", questionType: "yes_no", options: ["Yes", "No"] },
+  { label: "Any song requests to get you on the dance floor?", questionType: "short_text" },
 ];
 
 function eventLabel(eventIds: string[], events: Event[]): string {
@@ -84,10 +76,14 @@ function buildPreviewEventRows(events: Event[], statusMap: Record<string, { stat
 function RsvpQuestionsPage() {
   const { data: wedding } = useCurrentWedding();
   const { data: events = [] } = useEvents(wedding?.id);
+  const { data: guests = [] } = useGuests(wedding?.id);
   const { data: questions = [], isLoading } = useRsvpQuestions(wedding?.id);
   const qc = useQueryClient();
   const [editing, setEditing] = useState<Partial<RsvpQuestion> | null>(null);
   const [previewOpen, setPreviewOpen] = useState(false);
+  const [shareOpen, setShareOpen] = useState(false);
+  const [responsesOpen, setResponsesOpen] = useState(false);
+  const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
 
   const invalidateQuestions = () => qc.invalidateQueries({ queryKey: ["rsvp-questions", wedding?.id] });
 
@@ -111,12 +107,13 @@ function RsvpQuestionsPage() {
       wedding_id: wedding.id,
       question_text: q.question_text!.trim(),
       question_type: q.question_type ?? "short_text",
-      options: q.question_type === "multiple_choice" ? (q.options ?? []).filter((o) => o.trim()) : [],
+      options: q.question_type === "multiple_choice" || q.question_type === "yes_no" ? (q.options ?? []).filter((o) => o.trim()) : [],
       event_ids: q.event_ids ?? [],
       is_required: q.is_required ?? false,
       depends_on_question_id: q.depends_on_question_id || null,
       depends_on_value: q.depends_on_question_id ? (q.depends_on_value || null) : null,
       sort_order: q.sort_order ?? questions.length,
+      guest_column_label: q.guest_column_label?.trim() || null,
     };
     try {
       if (q.id) {
@@ -133,11 +130,16 @@ function RsvpQuestionsPage() {
   };
 
   const del = async (id: string) => {
-    if (!confirm("Delete this question? Any guest answers to it will also be removed.")) return;
     const { error } = await supabase.from("rsvp_questions").delete().eq("id", id);
     if (error) return toast.error(error.message);
     toast.success("Deleted");
     invalidateQuestions();
+  };
+
+  const confirmDelete = async () => {
+    if (!confirmDeleteId) return;
+    await del(confirmDeleteId);
+    setConfirmDeleteId(null);
   };
 
   const updateAttendanceSettings = async (patch: Partial<Pick<Wedding, "attendance_question_text" | "attendance_allow_maybe" | "attendance_accept_label" | "attendance_decline_label" | "attendance_maybe_label">>) => {
@@ -155,11 +157,14 @@ function RsvpQuestionsPage() {
       subtitle="Ask guests what you need to know, per ceremony or across the whole wedding."
       actions={
         <div className="flex items-center gap-2">
+          <button onClick={() => setResponsesOpen(true)} className="inline-flex items-center gap-2 rounded-full border border-line/70 bg-paper px-5 py-2.5 text-sm hover:bg-stone cursor-pointer">
+            <Table2 className="h-4 w-4" /> See responses
+          </button>
           <button onClick={() => setPreviewOpen(true)} className="inline-flex items-center gap-2 rounded-full border border-line/70 bg-paper px-5 py-2.5 text-sm hover:bg-stone cursor-pointer">
             <Eye className="h-4 w-4" /> Preview
           </button>
-          <button onClick={() => setEditing({})} className="inline-flex items-center gap-2 rounded-full bg-ink text-paper px-5 py-2.5 text-sm hover:bg-clay cursor-pointer">
-            <Plus className="h-4 w-4" /> Add question
+          <button onClick={() => setShareOpen(true)} className="inline-flex items-center gap-2 rounded-full bg-ink text-paper px-5 py-2.5 text-sm hover:bg-clay cursor-pointer">
+            <Share2 className="h-4 w-4" /> Share
           </button>
         </div>
       }
@@ -179,17 +184,21 @@ function RsvpQuestionsPage() {
           </div>
         ) : (
           <>
-            <p className="text-xs text-muted-foreground mb-3">{formatNumber(questions.length)} question{questions.length === 1 ? "" : "s"} · drag to reorder</p>
+            <p className="text-sm text-muted-foreground mb-3">{formatNumber(questions.length)} question{questions.length === 1 ? "" : "s"} · drag to reorder</p>
             <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={onDragEnd}>
               <SortableContext items={questions.map((q) => q.id)} strategy={verticalListSortingStrategy}>
                 <div className="space-y-3">
                   {questions.map((q) => (
                     <QuestionRow key={q.id} question={q} events={events}
-                      onEdit={() => setEditing(q)} onDelete={() => del(q.id)} />
+                      onEdit={() => setEditing(q)} onDelete={() => setConfirmDeleteId(q.id)} />
                   ))}
                 </div>
               </SortableContext>
             </DndContext>
+            <button onClick={() => setEditing({})}
+              className="mt-3 inline-flex items-center gap-1.5 rounded-full bg-cherry text-paper px-4 py-2 text-sm hover:bg-ink cursor-pointer">
+              <Plus className="h-3.5 w-3.5" /> Add question
+            </button>
           </>
         )
       }
@@ -198,6 +207,24 @@ function RsvpQuestionsPage() {
       {previewOpen && wedding && (
         <RsvpGuestPreview wedding={wedding} events={events} questions={questions} onClose={() => setPreviewOpen(false)} />
       )}
+      {shareOpen && wedding && (
+        <ShareRsvpDialog wedding={wedding} guests={guests} onClose={() => setShareOpen(false)} />
+      )}
+      {responsesOpen && wedding && (
+        <RsvpResponsesView wedding={wedding} events={events} guests={guests} questions={questions} onClose={() => setResponsesOpen(false)} />
+      )}
+      {confirmDeleteId && (() => {
+        const q = questions.find((qq) => qq.id === confirmDeleteId);
+        return (
+          <ConfirmDialog
+            title="Delete question"
+            description={`Delete "${q?.question_text ?? "this question"}"? Any guest answers to it will also be removed. This can't be undone.`}
+            confirmLabel="Delete question"
+            onConfirm={confirmDelete}
+            onCancel={() => setConfirmDeleteId(null)}
+          />
+        );
+      })()}
     </AppShell>
   );
 }
@@ -243,14 +270,14 @@ function AttendanceSettingsCard({ wedding, onUpdate }: {
       </span>
       <div className="min-w-0 flex-1">
         <p className="font-sans text-lg font-semibold">Attendance question</p>
-        <p className="text-xs text-muted-foreground mt-1">
+        <p className="text-sm text-muted-foreground mt-1">
           Automatically asked for every event a guest is invited to, plus how many they're bringing. It's always included, not something you add below, but you can customize the wording.
         </p>
         <input value={text} onChange={(e) => setText(e.target.value)} onBlur={commitText}
           placeholder={DEFAULT_ATTENDANCE_TEXT}
           className="mt-3 w-full rounded-lg border border-line/70 px-4 py-2.5 text-sm bg-pearl focus:outline-none focus:ring-2 focus:ring-sage-deep transition-colors" />
-        <p className="mt-1.5 text-[11px] text-muted-foreground">Use <code className="px-1 rounded bg-stone">{"{event}"}</code> to insert the event's name.</p>
-        <label className="mt-3 flex items-center gap-2 text-xs cursor-pointer select-none">
+        <p className="mt-1.5 text-sm text-muted-foreground">Use <code className="px-1 rounded bg-stone">{"{event}"}</code> to insert the event's name.</p>
+        <label className="mt-3 flex items-center gap-2 text-sm cursor-pointer select-none">
           <input type="checkbox" checked={wedding.attendance_allow_maybe}
             onChange={(e) => onUpdate({ attendance_allow_maybe: e.target.checked })}
             className="h-3.5 w-3.5 accent-sage-deep cursor-pointer" />
@@ -258,24 +285,24 @@ function AttendanceSettingsCard({ wedding, onUpdate }: {
         </label>
 
         <div className="mt-4 pt-4 border-t border-line/60">
-          <p className="text-xs uppercase tracking-widest text-muted-foreground">Button labels</p>
+          <p className="text-sm uppercase tracking-widest text-muted-foreground">Button labels</p>
           <div className={cn("mt-2 grid gap-3", wedding.attendance_allow_maybe ? "sm:grid-cols-3" : "sm:grid-cols-2")}>
             <label className="block">
-              <span className="text-[11px] text-muted-foreground">Accept</span>
+              <span className="text-sm text-muted-foreground">Accept</span>
               <input value={acceptLabel} onChange={(e) => setAcceptLabel(e.target.value)} onBlur={commitAcceptLabel}
                 placeholder={DEFAULT_ACCEPT_LABEL}
                 className="mt-1 w-full rounded-lg border border-line/70 px-3 py-2 text-sm bg-pearl focus:outline-none focus:ring-2 focus:ring-sage-deep transition-colors" />
             </label>
             {wedding.attendance_allow_maybe && (
               <label className="block">
-                <span className="text-[11px] text-muted-foreground">Maybe</span>
+                <span className="text-sm text-muted-foreground">Maybe</span>
                 <input value={maybeLabel} onChange={(e) => setMaybeLabel(e.target.value)} onBlur={commitMaybeLabel}
                   placeholder={DEFAULT_MAYBE_LABEL}
                   className="mt-1 w-full rounded-lg border border-line/70 px-3 py-2 text-sm bg-pearl focus:outline-none focus:ring-2 focus:ring-sage-deep transition-colors" />
               </label>
             )}
             <label className="block">
-              <span className="text-[11px] text-muted-foreground">Decline</span>
+              <span className="text-sm text-muted-foreground">Decline</span>
               <input value={declineLabel} onChange={(e) => setDeclineLabel(e.target.value)} onBlur={commitDeclineLabel}
                 placeholder={DEFAULT_DECLINE_LABEL}
                 className="mt-1 w-full rounded-lg border border-line/70 px-3 py-2 text-sm bg-pearl focus:outline-none focus:ring-2 focus:ring-sage-deep transition-colors" />
@@ -284,7 +311,7 @@ function AttendanceSettingsCard({ wedding, onUpdate }: {
         </div>
 
         <div className="mt-3 flex flex-wrap items-center gap-1.5">
-          <span className="text-[10px] uppercase tracking-widest rounded-full bg-sage-soft px-2 py-0.5 text-ink/70">Every event</span>
+          <span className="text-[10px] uppercase tracking-widest rounded-full bg-sage-soft px-2 py-0.5 text-ink">Every event</span>
           <span className="text-[10px] uppercase tracking-widest rounded-full bg-stone px-2 py-0.5 text-muted-foreground">Built-in</span>
         </div>
       </div>
@@ -300,6 +327,26 @@ function RsvpGuestPreview({ wedding, events, questions, onClose }: {
   const [saveStatus, setSaveStatus] = useState<Record<string, RsvpSaveStatus>>({});
   const [rsvpSaveStatus, setRsvpSaveStatus] = useState<Record<string, RsvpSaveStatus>>({});
   const [submitted, setSubmitted] = useState(false);
+
+  // Event-scoped questions only render once that event's status is "attending"/"maybe"
+  // (RsvpPageBody's `showQuestions` gate) — correct for a real guest, since asking about
+  // song requests for an event they haven't accepted doesn't make sense. But a brand new
+  // preview starts every event at "pending" (no real guest behind it), so any
+  // event-scoped question was invisible until the couple manually clicked Accept on that
+  // exact event card first — with no indication that's why it was missing. Defaulting
+  // every event to "attending" here makes the preview show everything by default, the
+  // same way the global "Help us plan" section already does unconditionally, while still
+  // leaving status toggleable to check decline/maybe behavior if wanted.
+  useEffect(() => {
+    setStatusMap((prev) => {
+      let changed = false;
+      const next = { ...prev };
+      events.forEach((e) => {
+        if (!(e.id in next)) { next[e.id] = { status: "attending", plusOnes: 0 }; changed = true; }
+      });
+      return changed ? next : prev;
+    });
+  }, [events]);
 
   const eventRows = buildPreviewEventRows(events, statusMap);
   const questionRows = expandQuestionsForPreview(questions, events);
@@ -317,10 +364,10 @@ function RsvpGuestPreview({ wedding, events, questions, onClose }: {
   return (
     <div className="fixed inset-0 z-50 bg-ink/60 overflow-y-auto">
       <div className="sticky top-0 z-10 bg-ink text-pearl px-6 py-3 flex items-center justify-between gap-4">
-        <p className="text-xs uppercase tracking-widest">
+        <p className="text-sm uppercase tracking-widest">
           <Eye className="inline h-3.5 w-3.5 mr-2 -mt-0.5" /> Preview — this is what your guests see
         </p>
-        <button onClick={onClose} className="inline-flex items-center gap-1.5 rounded-full border border-pearl/30 px-4 py-1.5 text-xs hover:bg-pearl/10 cursor-pointer">
+        <button onClick={onClose} className="inline-flex items-center gap-1.5 rounded-full border border-pearl/30 px-4 py-1.5 text-sm hover:bg-pearl/10 cursor-pointer">
           <X className="h-3.5 w-3.5" /> Close preview
         </button>
       </div>
@@ -336,6 +383,88 @@ function RsvpGuestPreview({ wedding, events, questions, onClose }: {
           onRespond={onRespond} onAnswerNow={onAnswer} onAnswerDebounced={onAnswer} onBlurAnswer={() => {}}
           onSubmit={() => setSubmitted(true)} onUnsubmit={() => setSubmitted(false)}
         />
+      </div>
+    </div>
+  );
+}
+
+// One column per (question, event) pair — same granularity rsvp_responses actually
+// keys answers by (see rsvpAnswerKey: question_id + event_id), so a question scoped
+// to three events genuinely has up to three independent answers per guest, and this
+// shows exactly that rather than collapsing them into one ambiguous cell.
+function RsvpResponsesView({ wedding, events, guests, questions, onClose }: {
+  wedding: Wedding; events: Event[]; guests: Guest[]; questions: RsvpQuestion[]; onClose: () => void;
+}) {
+  const { data: responses = [], isLoading } = useRsvpResponses(wedding.id);
+
+  const columns = useMemo(() => {
+    const cols: { key: string; questionId: string; eventId: string | null; label: string; sub: string }[] = [];
+    questions.forEach((q) => {
+      if (!q.event_ids.length) {
+        cols.push({ key: `${q.id}:global`, questionId: q.id, eventId: null, label: q.question_text, sub: "All events" });
+      } else {
+        q.event_ids.forEach((eid) => {
+          cols.push({ key: `${q.id}:${eid}`, questionId: q.id, eventId: eid, label: q.question_text, sub: events.find((e) => e.id === eid)?.name ?? "?" });
+        });
+      }
+    });
+    return cols;
+  }, [questions, events]);
+
+  const answerMap = useMemo(() => {
+    const m = new Map<string, string>();
+    responses.forEach((r) => m.set(`${r.guest_id}:${r.question_id}:${r.event_id ?? "global"}`, r.answer_text ?? ""));
+    return m;
+  }, [responses]);
+
+  return (
+    <div className="fixed inset-0 z-50 bg-ink/60 flex items-center justify-center p-4" onClick={onClose}>
+      <div className="bg-paper rounded-[32px] w-full max-w-6xl max-h-[85vh] flex flex-col shadow-2xl border border-line/70" onClick={(e) => e.stopPropagation()}>
+        <div className="flex items-center justify-between px-6 py-4 border-b border-line/60 shrink-0">
+          <div>
+            <h3 className="font-serif text-2xl">Responses</h3>
+            <p className="text-sm text-muted-foreground mt-0.5">Exactly what each guest submitted, one column per question.</p>
+          </div>
+          <button onClick={onClose} className="text-muted-foreground hover:text-ink cursor-pointer"><X className="h-4 w-4" /></button>
+        </div>
+        <div className="flex-1 overflow-auto">
+          {isLoading ? (
+            <p className="p-6 text-sm text-muted-foreground">Loading…</p>
+          ) : guests.length === 0 ? (
+            <p className="p-6 text-sm text-muted-foreground">No guests yet.</p>
+          ) : columns.length === 0 ? (
+            <p className="p-6 text-sm text-muted-foreground">No questions yet — add one to start collecting responses.</p>
+          ) : (
+            <table className="w-full text-xs">
+              <thead className="bg-sage-soft text-left text-muted-foreground sticky top-0">
+                <tr>
+                  <th className="px-4 py-3 whitespace-nowrap uppercase tracking-widest">Guest</th>
+                  {columns.map((c) => (
+                    <th key={c.key} className="px-4 py-3 whitespace-nowrap align-top">
+                      <p className="font-sans text-ink normal-case">{c.label}</p>
+                      <p className="mt-0.5 uppercase tracking-widest">{c.sub}</p>
+                    </th>
+                  ))}
+                </tr>
+              </thead>
+              <tbody>
+                {guests.map((g) => (
+                  <tr key={g.id} className="border-t border-line">
+                    <td className="px-4 py-3 font-medium whitespace-nowrap">{g.full_name}</td>
+                    {columns.map((c) => {
+                      const answer = answerMap.get(`${g.id}:${c.questionId}:${c.eventId ?? "global"}`);
+                      return (
+                        <td key={c.key} className="px-4 py-3 whitespace-nowrap">
+                          {answer ? answer : <span className="text-muted-foreground">—</span>}
+                        </td>
+                      );
+                    })}
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          )}
+        </div>
       </div>
     </div>
   );
@@ -361,12 +490,17 @@ function QuestionRow({ question, events, onEdit, onDelete }: {
         <p className="font-sans text-lg font-semibold truncate">{question.question_text}</p>
         <div className="mt-1 flex flex-wrap items-center gap-1.5">
           <span className="text-[10px] uppercase tracking-widest rounded-full bg-stone px-2 py-0.5 text-muted-foreground">{typeInfo.label}</span>
-          <span className="text-[10px] uppercase tracking-widest rounded-full bg-sage-soft px-2 py-0.5 text-ink/70">{eventLabel(question.event_ids, events)}</span>
-          {question.is_required && <span className="text-[10px] uppercase tracking-widest rounded-full bg-rose-deep/15 px-2 py-0.5 text-rose-deep">Required</span>}
-          {question.depends_on_question_id && <span className="text-[10px] uppercase tracking-widest rounded-full bg-blush-soft px-2 py-0.5 text-ink/70">Conditional</span>}
+          <span className="text-[10px] uppercase tracking-widest rounded-full bg-sage-soft px-2 py-0.5 text-ink">{eventLabel(question.event_ids, events)}</span>
+          {question.is_required && <span className="text-[10px] uppercase tracking-widest rounded-full bg-cherry/15 px-2 py-0.5 text-cherry">Required</span>}
+          {question.depends_on_question_id && <span className="text-[10px] uppercase tracking-widest rounded-full bg-blush-soft px-2 py-0.5 text-ink">Conditional</span>}
+          {question.guest_column_label && (
+            <span className="inline-flex items-center gap-1 text-xs uppercase tracking-widest rounded-full bg-clay-soft px-2 py-0.5 text-clay">
+              <Columns3 className="h-2.5 w-2.5" /> Column: {question.guest_column_label}
+            </span>
+          )}
         </div>
       </div>
-      <button onClick={onEdit} className="text-xs rounded-full border border-line px-3 py-1.5 hover:bg-stone cursor-pointer shrink-0">Edit</button>
+      <button onClick={onEdit} className="text-sm rounded-full border border-line px-3 py-1.5 hover:bg-stone cursor-pointer shrink-0">Edit</button>
       <button onClick={onDelete} className="text-muted-foreground hover:text-cherry p-1 shrink-0 cursor-pointer"><Trash2 className="h-3.5 w-3.5" /></button>
     </div>
   );
@@ -392,7 +526,7 @@ function QuestionDialog({ question, events, questions, onClose, onSave }: {
   const validate = (next: Partial<RsvpQuestion>, opts: string[]) => {
     const e: Record<string, string> = {};
     if (!next.question_text || !next.question_text.trim()) e.question_text = "Please enter a question.";
-    if (next.question_type === "multiple_choice" && opts.filter((o) => o.trim()).length < 2) {
+    if ((next.question_type === "multiple_choice" || next.question_type === "yes_no") && opts.filter((o) => o.trim()).length < 2) {
       e.options = "Add at least two options.";
     }
     setErrors(e);
@@ -403,6 +537,20 @@ function QuestionDialog({ question, events, questions, onClose, onSave }: {
     const next = { ...form, [key]: value };
     setForm(next);
     validate(next, optionInputs);
+  };
+
+  // Switching to Single choice seeds "Yes"/"No" as a starting point (still fully
+  // editable, unlike the old hardcoded yes/no) rather than dropping the couple into
+  // two blank option fields — only when there's nothing worth keeping already.
+  const setQuestionType = (type: QuestionType) => {
+    const next = { ...form, question_type: type };
+    setForm(next);
+    if (type === "yes_no" && optionInputs.every((o) => !o.trim())) {
+      setOptionInputs(["Yes", "No"]);
+      validate(next, ["Yes", "No"]);
+    } else {
+      validate(next, optionInputs);
+    }
   };
 
   const setDependsOn = (id: string) => {
@@ -438,7 +586,6 @@ function QuestionDialog({ question, events, questions, onClose, onSave }: {
   };
 
   const applyTemplate = (t: QuickAddTemplate) => {
-    if (t.kind === "info") { toast.info(t.note); return; }
     const opts = t.options ?? ["", ""];
     const next = { ...form, question_text: t.label, question_type: t.questionType };
     setForm(next);
@@ -453,8 +600,8 @@ function QuestionDialog({ question, events, questions, onClose, onSave }: {
       <div className="warm-wash rounded-[32px] max-w-lg w-full p-8 max-h-[90vh] overflow-y-auto shadow-2xl border border-line/70" onClick={(e) => e.stopPropagation()}>
         <div className="flex items-start justify-between">
           <div className="flex items-center gap-2">
-            <span className="grid h-8 w-8 place-items-center rounded-full bg-rose-deep/15 text-rose-deep"><Sparkles className="h-3.5 w-3.5" /></span>
-            <h3 className="font-serif text-2xl">{question.id ? "Edit question" : "Add question"}</h3>
+            <span className="grid h-8 w-8 place-items-center rounded-full bg-sage-soft text-sage-deep"><Sparkles className="h-3.5 w-3.5" /></span>
+            <h3 className="font-serif text-xl">{question.id ? "Edit question" : "Add question"}</h3>
           </div>
           <button onClick={onClose} className="text-muted-foreground hover:text-ink cursor-pointer"><X className="h-4 w-4" /></button>
         </div>
@@ -478,7 +625,7 @@ function QuestionDialog({ question, events, questions, onClose, onSave }: {
             <textarea rows={2} value={form.question_text ?? ""} onChange={(e) => setField("question_text", e.target.value)}
               placeholder="e.g. Any dietary restrictions we should know about?"
               className={cn(
-                "mt-1 w-full rounded-lg border border-line/70 px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-rose-deep bg-pearl transition-colors",
+                "mt-1 w-full rounded-lg border border-line/70 px-4 py-3 text-xs focus:outline-none focus:ring-2 focus:ring-sage-deep bg-pearl transition-colors",
                 touched.question_text && errors.question_text && "border-cherry focus:ring-cherry",
               )} />
             {touched.question_text && errors.question_text && (
@@ -492,10 +639,10 @@ function QuestionDialog({ question, events, questions, onClose, onSave }: {
               {QUESTION_TYPES.map((t) => {
                 const on = form.question_type === t.value;
                 return (
-                  <button key={t.value} type="button" onClick={() => setField("question_type", t.value)}
+                  <button key={t.value} type="button" onClick={() => setQuestionType(t.value)}
                     className={cn(
                       "inline-flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-xs transition-colors cursor-pointer",
-                      on ? "bg-rose-deep text-pearl border-rose-deep" : pillOff,
+                      on ? "bg-sage-deep text-pearl border-sage-deep" : pillOff,
                     )}>
                     <t.icon className="h-3.5 w-3.5" /> {t.label}
                   </button>
@@ -504,21 +651,21 @@ function QuestionDialog({ question, events, questions, onClose, onSave }: {
             </div>
           </div>
 
-          {form.question_type === "multiple_choice" && (
+          {(form.question_type === "multiple_choice" || form.question_type === "yes_no") && (
             <div>
               <span className="text-xs uppercase tracking-widest text-muted-foreground">Options</span>
               <div className="mt-2 space-y-2">
                 {optionInputs.map((opt, i) => (
                   <div key={i} className="flex items-center gap-2">
                     <input value={opt} onChange={(e) => setOption(i, e.target.value)} placeholder={`Option ${i + 1}`}
-                      className="flex-1 rounded-2xl border border-line/70 px-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-rose-deep bg-pearl" />
+                      className="flex-1 rounded-2xl border border-line/70 px-4 py-2 text-xs focus:outline-none focus:ring-2 focus:ring-sage-deep bg-pearl" />
                     {optionInputs.length > 2 && (
                       <button type="button" onClick={() => removeOption(i)} className="text-muted-foreground hover:text-cherry p-1 cursor-pointer"><X className="h-3.5 w-3.5" /></button>
                     )}
                   </div>
                 ))}
               </div>
-              <button type="button" onClick={addOption} className="mt-2 text-xs text-rose-deep hover:underline cursor-pointer">+ Add option</button>
+              <button type="button" onClick={addOption} className="mt-2 text-xs text-sage-deep hover:underline cursor-pointer">+ Add option</button>
               {touched.options && errors.options && (
                 <p className="mt-1.5 text-xs text-cherry flex items-center gap-1"><span className="inline-block h-1 w-1 rounded-full bg-cherry" />{errors.options}</p>
               )}
@@ -552,19 +699,27 @@ function QuestionDialog({ question, events, questions, onClose, onSave }: {
           </div>
 
           <div>
+            <span className="text-xs uppercase tracking-widest text-muted-foreground">Custom column (optional)</span>
+            <input value={form.guest_column_label ?? ""} onChange={(e) => setField("guest_column_label", e.target.value)}
+              placeholder="e.g. Starter"
+              className="mt-1 w-full rounded-2xl border border-line/70 px-4 py-3 text-xs focus:outline-none focus:ring-2 focus:ring-sage-deep bg-pearl transition-colors" />
+            <p className="mt-1.5 text-xs text-muted-foreground">Name it and each guest's answer shows up as its own column in Guests, right alongside phone and email. Leave blank to keep this question answer-log only.</p>
+          </div>
+
+          <div>
             <span className="text-xs uppercase tracking-widest text-muted-foreground">Response</span>
             <div className="mt-2 flex flex-wrap gap-2">
               <button type="button" onClick={() => setField("is_required", false)}
                 className={cn(
                   "inline-flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-xs transition-colors cursor-pointer",
-                  !form.is_required ? "bg-rose-deep text-pearl border-rose-deep" : pillOff,
+                  !form.is_required ? "bg-sage-deep text-pearl border-sage-deep" : pillOff,
                 )}>
                 Optional
               </button>
               <button type="button" onClick={() => setField("is_required", true)}
                 className={cn(
                   "inline-flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-xs transition-colors cursor-pointer",
-                  form.is_required ? "bg-rose-deep text-pearl border-rose-deep" : pillOff,
+                  form.is_required ? "bg-sage-deep text-pearl border-sage-deep" : pillOff,
                 )}>
                 Required
               </button>
@@ -582,31 +737,24 @@ function QuestionDialog({ question, events, questions, onClose, onSave }: {
             {dependsOnQuestion && (
               <div className="mt-3">
                 <span className="text-xs uppercase tracking-widest text-muted-foreground">…was answered</span>
-                {dependsOnQuestion.question_type === "yes_no" ? (
+                {dependsOnQuestion.question_type === "yes_no" || dependsOnQuestion.question_type === "multiple_choice" ? (
                   <select value={form.depends_on_value ?? ""} onChange={(e) => setField("depends_on_value", e.target.value)}
-                    className="mt-1 w-full rounded-2xl border border-line/70 px-4 py-3 text-sm bg-pearl focus:outline-none focus:ring-2 focus:ring-sage-deep">
-                    <option value="">Select…</option>
-                    <option value="Yes">Yes</option>
-                    <option value="No">No</option>
-                  </select>
-                ) : dependsOnQuestion.question_type === "multiple_choice" ? (
-                  <select value={form.depends_on_value ?? ""} onChange={(e) => setField("depends_on_value", e.target.value)}
-                    className="mt-1 w-full rounded-2xl border border-line/70 px-4 py-3 text-sm bg-pearl focus:outline-none focus:ring-2 focus:ring-sage-deep">
+                    className="mt-1 w-full rounded-2xl border border-line/70 px-4 py-3 text-xs bg-pearl focus:outline-none focus:ring-2 focus:ring-sage-deep">
                     <option value="">Select…</option>
                     {(dependsOnQuestion.options ?? []).map((o) => <option key={o} value={o}>{o}</option>)}
                   </select>
                 ) : (
                   <input value={form.depends_on_value ?? ""} onChange={(e) => setField("depends_on_value", e.target.value)}
                     placeholder="Expected answer"
-                    className="mt-1 w-full rounded-2xl border border-line/70 px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-sage-deep bg-pearl" />
+                    className="mt-1 w-full rounded-2xl border border-line/70 px-4 py-3 text-xs focus:outline-none focus:ring-2 focus:ring-sage-deep bg-pearl" />
                 )}
               </div>
             )}
           </div>
 
           <div className="flex justify-end gap-2 pt-4">
-            <button type="button" onClick={onClose} className="rounded-full px-5 py-2 text-sm border border-line/70 hover:bg-stone cursor-pointer bg-pearl">Cancel</button>
-            <button disabled={saving} className="rounded-full bg-rose-deep text-pearl px-6 py-2 text-sm hover:bg-rose-deep-hover disabled:opacity-60 cursor-pointer">{saving ? "Saving…" : "Save question"}</button>
+            <button type="button" onClick={onClose} className="rounded-full px-5 py-2 text-xs border border-line/70 hover:bg-stone cursor-pointer bg-pearl">Cancel</button>
+            <button disabled={saving} className="rounded-full bg-ink text-paper px-6 py-2 text-xs hover:bg-clay disabled:opacity-60 cursor-pointer">{saving ? "Saving…" : "Save question"}</button>
           </div>
         </form>
       </div>
@@ -623,7 +771,7 @@ function DependsOnPicker({ value, onChange, options }: {
   return (
     <div className="relative mt-2">
       <button type="button" onClick={() => setOpen((v) => !v)}
-        className="w-full flex items-center justify-between gap-3 rounded-2xl border border-line/70 bg-pearl pl-4 pr-3 py-3 text-sm text-left focus:outline-none focus:ring-2 focus:ring-sage-deep cursor-pointer">
+        className="w-full flex items-center justify-between gap-3 rounded-2xl border border-line/70 bg-pearl pl-4 pr-3 py-3 text-xs text-left focus:outline-none focus:ring-2 focus:ring-sage-deep cursor-pointer">
         <span className={cn("truncate", !active && "text-muted-foreground")}>
           {active ? (active.label.length > 60 ? `${active.label.slice(0, 60)}…` : active.label) : "No condition, always show"}
         </span>
@@ -634,12 +782,12 @@ function DependsOnPicker({ value, onChange, options }: {
           <div className="fixed inset-0 z-10" onClick={() => setOpen(false)} />
           <div className="absolute left-0 right-0 mt-2 z-20 max-h-56 overflow-y-auto rounded-2xl border border-line bg-pearl shadow-lg p-1.5">
             <button type="button" onClick={() => { onChange(""); setOpen(false); }}
-              className={cn("w-full text-left px-3 py-2 text-sm rounded-xl hover:bg-blush-soft cursor-pointer", !value && "font-medium")}>
+              className={cn("w-full text-left px-3 py-2 text-xs rounded-xl hover:bg-blush-soft cursor-pointer", !value && "font-medium")}>
               No condition, always show
             </button>
             {options.map((o) => (
               <button type="button" key={o.value} onClick={() => { onChange(o.value); setOpen(false); }}
-                className={cn("w-full text-left px-3 py-2 text-sm rounded-xl hover:bg-blush-soft cursor-pointer flex items-center justify-between gap-2", value === o.value && "font-medium")}>
+                className={cn("w-full text-left px-3 py-2 text-xs rounded-xl hover:bg-blush-soft cursor-pointer flex items-center justify-between gap-2", value === o.value && "font-medium")}>
                 <span className="truncate">{o.label}</span>
                 {value === o.value && <Check className="h-3.5 w-3.5 text-sage-deep shrink-0" />}
               </button>

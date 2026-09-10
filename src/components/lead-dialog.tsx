@@ -7,6 +7,7 @@ import { useCurrentWedding } from "@/lib/wedding-hooks";
 import { utmParams, type LeadKind } from "@/lib/lead-utm";
 import { Send } from "lucide-react";
 import { formatNumber } from "@/lib/utils";
+import { DatePicker } from "@/components/ui/datepicker";
 
 type Target = { id: string; name: string; city?: string | null; country?: string | null; currency?: string | null };
 
@@ -102,7 +103,7 @@ export function LeadDialog({
       <DialogContent className="max-w-lg rounded-3xl bg-pearl border-line p-0 overflow-hidden max-h-[90vh] overflow-y-auto">
         <div className="p-6 pb-4 border-b border-line/60">
           <DialogTitle className="font-serif text-2xl">I'm interested in {target.name}</DialogTitle>
-          <DialogDescription className="text-xs text-muted-foreground mt-1">
+          <DialogDescription className="text-sm text-muted-foreground mt-1">
             We'll send them your wedding details so they can check availability.
           </DialogDescription>
         </div>
@@ -115,7 +116,9 @@ export function LeadDialog({
             <Field label="Phone / WhatsApp"><input value={contactPhone} onChange={(e) => setContactPhone(e.target.value)} className="input" placeholder="+971 …" /></Field>
           </div>
           <div className="grid grid-cols-2 gap-3">
-            <Field label="Wedding date"><input type="date" value={eventDate} onChange={(e) => setEventDate(e.target.value)} className="input" /></Field>
+            <Field label="Wedding date">
+              <DatePicker value={eventDate} onChange={setEventDate} placeholder="Pick a date" className="rounded-xl px-3 py-[0.55rem]" />
+            </Field>
             <Field label="Guest count"><input type="number" value={guestCount} onChange={(e) => setGuestCount(e.target.value)} className="input" /></Field>
           </div>
           <div className="grid grid-cols-2 gap-3">
@@ -142,7 +145,7 @@ export function LeadDialog({
 function Field({ label, children }: { label: string; children: React.ReactNode }) {
   return (
     <label className="block">
-      <span className="text-[11px] uppercase tracking-widest text-muted-foreground">{label}</span>
+      <span className="text-sm uppercase tracking-widest text-muted-foreground">{label}</span>
       <div className="mt-1">{children}</div>
     </label>
   );

@@ -4,6 +4,7 @@ ALTER TABLE public.weddings ADD COLUMN IF NOT EXISTS attendance_accept_label tex
 ALTER TABLE public.weddings ADD COLUMN IF NOT EXISTS attendance_decline_label text NOT NULL DEFAULT 'Regretfully decline';
 ALTER TABLE public.weddings ADD COLUMN IF NOT EXISTS attendance_maybe_label text NOT NULL DEFAULT 'Maybe';
 
+DROP FUNCTION IF EXISTS public.get_rsvp_context(text);
 CREATE OR REPLACE FUNCTION public.get_rsvp_context(_token TEXT)
 RETURNS TABLE (
   guest_id UUID, guest_name TEXT, wedding_id UUID, partner_a TEXT, partner_b TEXT,

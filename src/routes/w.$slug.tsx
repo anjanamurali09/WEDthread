@@ -1,9 +1,10 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
-import { Sparkles, MapPin, CalendarDays } from "lucide-react";
+import { Sparkles } from "lucide-react";
 import { getTemplate } from "@/lib/website-templates";
-import { RenderSection } from "./_authenticated/website_.edit";
+import { SiteShell, type PageLayout } from "./_authenticated/website_.edit";
+import { useGoogleFonts } from "@/lib/google-fonts";
 
 export const Route = createFileRoute("/w/$slug")({ component: WeddingSite });
 
@@ -29,6 +30,20 @@ function WeddingSite() {
     })();
   }, [slug]);
 
+  // Hooks must run unconditionally, so this is computed before the loading/not-found
+  // early returns below rather than after them — same reason it can't be skipped when
+  // `wedding` is still null.
+  const custom = (wedding?.site_customization as any) ?? {};
+  const template = getTemplate(wedding?.site_template_id);
+  const palette = { ...template.palette, ...(custom.palette ?? {}) };
+  const effectiveTemplate = { ...template, fonts: { ...template.fonts, ...(custom.fonts ?? {}) } };
+  const fontScale = custom.fontScale ?? 1;
+  const pageLayout: PageLayout = custom.pageLayout ?? "scroll";
+
+  // Only load fonts this wedding's site actually uses — the sitewide pair plus any
+  // per-section overrides — not the whole curated font list.
+  useGoogleFonts([effectiveTemplate.fonts.display, effectiveTemplate.fonts.body, ...sections.map((s) => s.content?.fontFamily)]);
+
   if (loading) return <div className="min-h-screen grid place-items-center bg-pearl"><p className="text-sm text-muted-foreground">Loading…</p></div>;
   if (!wedding) return (
     <div className="min-h-screen grid place-items-center bg-pearl text-center px-6">
@@ -39,53 +54,25 @@ function WeddingSite() {
     </div>
   );
 
-  const template = getTemplate(wedding.site_template_id);
-  const palette = { ...template.palette, ...((wedding.site_customization as any)?.palette ?? {}) };
-
   // If no sections were seeded, fall back to a basic hero + events render
   const hasSections = sections.length > 0;
 
   return (
-    <div className="min-h-screen" style={{ background: palette.bg, color: palette.ink, fontFamily: `"${template.fonts.body}", sans-serif` }}>
+    <div className="min-h-screen" style={{ background: palette.bg, color: palette.ink, fontFamily: `"${effectiveTemplate.fonts.body}", sans-serif`, ["--site-scale" as any]: fontScale }}>
       {hasSections ? (
-        sections.map((s) => {
-          if (s.section_type === "events") {
-            return (
-              <section key={s.id} className="max-w-3xl mx-auto px-6 py-16">
-                <p className="text-center text-[11px] uppercase tracking-[0.25em]" style={{ color: palette.accent }}>{s.content?.title || "The celebrations"}</p>
-                <div className="mt-10 space-y-4">
-                  {events.map((e, i) => (
-                    <div key={e.id} className="rounded-3xl p-6 md:p-8" style={{ background: palette.soft }}>
-                      <div className="flex items-baseline gap-4">
-                        <span className="font-serif text-3xl" style={{ color: palette.accent, fontFamily: `"${template.fonts.display}", serif` }}>{String(i + 1).padStart(2, "0")}</span>
-                        <h3 className="text-3xl" style={{ fontFamily: `"${template.fonts.display}", serif` }}>{e.name}</h3>
-                      </div>
-                      <div className="mt-3 flex flex-wrap gap-x-6 gap-y-1 text-sm opacity-70">
-                        {e.event_date && <span className="inline-flex items-center gap-1"><CalendarDays className="h-3 w-3" /> {new Date(e.event_date).toLocaleDateString(undefined, { weekday: "long", month: "long", day: "numeric" })}{e.event_time ? ` · ${e.event_time.slice(0,5)}` : ""}</span>}
-                        {(e.venue_name || e.city) && <span className="inline-flex items-center gap-1"><MapPin className="h-3 w-3" /> {[e.venue_name, e.city].filter(Boolean).join(", ")}</span>}
-                      </div>
-                      {e.description && <p className="mt-4 text-sm opacity-75">{e.description}</p>}
-                    </div>
-                  ))}
-                  {events.length === 0 && <p className="text-center text-sm opacity-60">Details coming soon.</p>}
-                </div>
-              </section>
-            );
-          }
-          return <RenderSection key={s.id} section={s} palette={palette} template={template} wedding={wedding} />;
-        })
+        <SiteShell wedding={wedding} sections={sections} palette={palette} template={effectiveTemplate} events={events} layoutMode={pageLayout} />
       ) : (
         <section className="min-h-[92vh] flex flex-col items-center justify-center text-center px-6">
-          <p className="text-[11px] uppercase tracking-[0.35em]" style={{ color: palette.accent }}>Together with their families</p>
-          <h1 className="mt-8" style={{ fontFamily: `"${template.fonts.display}", serif`, fontSize: "clamp(3rem, 8vw, 6rem)", lineHeight: 0.95 }}>
+          <p className="text-sm uppercase tracking-[0.35em]" style={{ color: palette.accent }}>Together with their families</p>
+          <h1 className="mt-8" style={{ fontFamily: `"${effectiveTemplate.fonts.display}", serif`, fontSize: "calc(clamp(3rem, 8vw, 6rem) * var(--site-scale, 1))", lineHeight: 0.95 }}>
             {wedding.partner_a}<br /><span style={{ color: palette.accent }}>&</span><br />{wedding.partner_b}
           </h1>
         </section>
       )}
 
       <footer className="border-t py-6 text-center" style={{ borderColor: palette.soft }}>
-        <div className="inline-flex items-center gap-2 text-xs opacity-60">
-          <Sparkles className="h-3 w-3" style={{ color: palette.accent }} /> Made with Vowzy
+        <div className="inline-flex items-center gap-2 text-sm opacity-60">
+          <Sparkles className="h-3 w-3" style={{ color: palette.accent }} /> Made with WedThread
         </div>
       </footer>
     </div>

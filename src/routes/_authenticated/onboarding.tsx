@@ -1,10 +1,12 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
+import { useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useCurrentWedding } from "@/lib/wedding-hooks";
 import { useOnboardingDraft } from "@/hooks/use-onboarding-draft";
 import { toast } from "sonner";
 import { Sparkles, ArrowRight, Check, Loader2 } from "lucide-react";
+import { Logo } from "@/components/logo";
 
 export const Route = createFileRoute("/_authenticated/onboarding")({ component: Onboarding });
 
@@ -16,7 +18,8 @@ function slugify(a: string, b: string) {
 
 function Onboarding() {
   const navigate = useNavigate();
-  const { data: wedding, isLoading } = useCurrentWedding();
+  const qc = useQueryClient();
+  const { data: wedding, isLoading, isError, refetch } = useCurrentWedding();
   const [form, setForm] = useState({
     partner_a: "", partner_b: "",
     destination_city: "", destination_country: "",
@@ -44,7 +47,7 @@ function Onboarding() {
     try {
       const { data: u } = await supabase.auth.getUser();
       if (!u.user) throw new Error("Not signed in");
-      const slug = slugify(form.partner_a || "wedding", form.partner_b || "vowzy");
+      const slug = slugify(form.partner_a || "wedding", form.partner_b || "wedthread");
       const { error } = await supabase.from("weddings").insert({
         owner_id: u.user.id,
         partner_a: form.partner_a,
@@ -54,7 +57,19 @@ function Onboarding() {
         est_guest_count: Number(form.est_guest_count) || null,
         slug,
       });
-      if (error) throw error;
+      if (error) {
+        // 23505 = unique_violation on weddings(owner_id) — the DB-level safeguard against
+        // duplicate weddings. Means one already exists (created by us, another tab, or a
+        // moment ago), regardless of what the client-side check believed. Don't show this
+        // as an error — just take them to it.
+        if (error.code === "23505") {
+          await qc.invalidateQueries({ queryKey: ["current-wedding"] });
+          toast.message("You already have a wedding set up — taking you there.");
+          navigate({ to: "/dashboard", replace: true });
+          return;
+        }
+        throw error;
+      }
       await markCompleted();
       toast.success("Wedding created. Let's add your events.");
       navigate({ to: "/dashboard" });
@@ -62,6 +77,20 @@ function Onboarding() {
       toast.error(err.message ?? "Something went wrong");
     } finally { setSaving(false); }
   };
+
+  // If the lookup itself failed, do NOT fall through to the create-wedding form — that's
+  // exactly the bug that let a transient error create duplicate blank weddings for a
+  // returning couple. Show a retry instead of ever guessing "no wedding" from an error.
+  if (isError) {
+    return (
+      <div className="min-h-screen grid place-items-center bg-pearl text-center px-6">
+        <div>
+          <p className="text-sm text-muted-foreground">Couldn't check whether you already have a wedding set up.</p>
+          <button onClick={() => refetch()} className="mt-3 text-sm underline hover:text-ink cursor-pointer">Try again</button>
+        </div>
+      </div>
+    );
+  }
 
   // Stay on the loading screen while the wedding lookup is in flight AND
   // while a redirect to /dashboard is queued (wedding present). Rendering the
@@ -76,9 +105,9 @@ function Onboarding() {
       <div className="max-w-2xl w-full">
         <div className="flex items-center gap-2 mb-8">
           <span className="grid h-9 w-9 place-items-center rounded-full bg-clay text-paper"><Sparkles className="h-4 w-4" /></span>
-          <span className="font-serif text-2xl">Vowzy</span>
+          <Logo />
         </div>
-        <p className="text-xs uppercase tracking-[0.2em] text-clay">Start your wedding</p>
+        <p className="text-sm uppercase tracking-[0.2em] text-clay">Start your wedding</p>
         <h1 className="mt-3 font-serif text-4xl md:text-5xl">Tell us who's getting married, and where.</h1>
         <p className="mt-3 text-muted-foreground">You can change everything later. This is just so the app knows what to call the wedding.</p>
 
@@ -97,7 +126,7 @@ function Onboarding() {
             <button disabled={saving} className="inline-flex justify-center items-center gap-2 rounded-full bg-ink text-paper px-8 py-3.5 text-sm font-medium hover:bg-clay disabled:opacity-60">
               {saving ? "Creating…" : (<>Continue <ArrowRight className="h-4 w-4" /></>)}
             </button>
-            <span className="text-xs text-muted-foreground inline-flex items-center gap-1.5">
+            <span className="text-sm text-muted-foreground inline-flex items-center gap-1.5">
               {autoSaving ? (<><Loader2 className="h-3 w-3 animate-spin" /> Saving…</>)
                 : savedAt ? (<><Check className="h-3 w-3 text-clay" /> Draft saved</>)
                 : "Autosaves as you type"}
@@ -114,7 +143,7 @@ function Field({ label, value, onChange, type = "text", required, placeholder }:
 }) {
   return (
     <label className="block">
-      <span className="text-xs uppercase tracking-widest text-muted-foreground">{label}{required && <span className="text-cherry ml-0.5">*</span>}</span>
+      <span className="text-sm uppercase tracking-widest text-muted-foreground">{label}{required && <span className="text-cherry ml-0.5">*</span>}</span>
       <input type={type} required={required} placeholder={placeholder} value={value} onChange={(e) => onChange(e.target.value)}
         className="mt-1 w-full rounded-2xl border border-line bg-paper px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-clay" />
     </label>

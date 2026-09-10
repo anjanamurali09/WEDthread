@@ -6,6 +6,7 @@ import { toast } from "sonner";
 import { Sparkles } from "lucide-react";
 import { Link, useNavigate } from "@tanstack/react-router";
 import { ROLE_LANDING, type AppRole } from "@/hooks/use-active-role";
+import { resolveCoupleLanding } from "@/lib/wedding-hooks";
 
 type Mode = "signin" | "signup";
 
@@ -21,15 +22,10 @@ async function routeAfterSignIn(navigate: ReturnType<typeof useNavigate>) {
     await supabase.from("user_roles").insert({ user_id: u.user.id, role: "couple" });
     active = "couple";
   }
-  window.localStorage.setItem("vowzy.activeRole", active);
+  window.localStorage.setItem("wedthread.activeRole", active);
   if (active === "couple") {
-    const { data: w } = await supabase
-      .from("weddings")
-      .select("id")
-      .eq("owner_id", u.user.id)
-      .limit(1)
-      .maybeSingle();
-    navigate({ to: (w ? "/dashboard" : "/onboarding") as any });
+    const landing = await resolveCoupleLanding(u.user.id);
+    navigate({ to: landing as any });
     return;
   }
   navigate({ to: ROLE_LANDING[active] as any });
@@ -89,7 +85,7 @@ export function LoginDialog({
   const google = async () => {
     setLoading(true);
     try {
-      try { window.sessionStorage.setItem("vowzy.authIntent", mode); } catch {}
+      try { window.sessionStorage.setItem("wedthread.authIntent", mode); } catch {}
       const result = await lovable.auth.signInWithOAuth("google", {
         redirect_uri: window.location.origin + "/auth/callback",
       });
@@ -109,7 +105,7 @@ export function LoginDialog({
             <DialogTitle className="font-serif text-xl">
               {mode === "signup" ? "Create your account" : "Welcome back"}
             </DialogTitle>
-            <DialogDescription className="text-xs text-muted-foreground">
+            <DialogDescription className="text-sm text-muted-foreground">
               {mode === "signup" ? "You'll pick your role next" : "Sign in to continue"}
             </DialogDescription>
           </div>
@@ -133,13 +129,13 @@ export function LoginDialog({
               {loading ? "Please wait…" : mode === "signup" ? "Create account" : "Sign in"}
             </button>
           </form>
-          <p className="mt-4 text-xs text-center text-muted-foreground">
+          <p className="mt-4 text-sm text-center text-muted-foreground">
             {mode === "signup" ? "Already have an account?" : "New here?"}{" "}
             <button onClick={() => setMode(mode === "signup" ? "signin" : "signup")} className="text-cherry underline underline-offset-4">
               {mode === "signup" ? "Sign in" : "Create an account"}
             </button>
           </p>
-          <p className="mt-5 text-[11px] text-center text-muted-foreground">
+          <p className="mt-5 text-sm text-center text-muted-foreground">
             Prefer the full page? <Link to="/auth" onClick={() => close(false)} className="underline underline-offset-2 hover:text-cherry">Open sign-in page</Link>
           </p>
         </div>

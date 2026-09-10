@@ -1,8 +1,9 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
-import { ExternalLink, ImageOff, Sparkles, Heart, Star } from "lucide-react";
+import { ExternalLink, Sparkles, Heart, Star } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { RetailerFallback } from "@/components/retailer-fallback";
 
 export const Route = createFileRoute("/w/$slug/registry")({ component: PublicRegistry });
 
@@ -60,7 +61,7 @@ function PublicRegistry() {
     <div className="min-h-screen bg-pearl">
       {/* Hero */}
       <header className="max-w-5xl mx-auto px-6 pt-16 pb-12 text-center">
-        <p className="text-[11px] uppercase tracking-[0.35em] text-cherry">Wedding registry</p>
+        <p className="text-sm uppercase tracking-[0.35em] text-cherry">Wedding registry</p>
         <h1 className="mt-6 font-serif" style={{ fontSize: "clamp(2.5rem, 6vw, 4.5rem)", lineHeight: 1 }}>
           {wedding.partner_a} <span className="text-wine italic">&</span> {wedding.partner_b}
         </h1>
@@ -93,7 +94,8 @@ function PublicRegistry() {
                   {it.image_url ? (
                     <img src={it.image_url} alt={it.title} loading="lazy" className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
                   ) : (
-                    <div className="w-full h-full grid place-items-center text-muted-foreground/40"><ImageOff className="h-10 w-10" /></div>
+                    <RetailerFallback productUrl={it.product_url} retailer={it.retailer}
+                      iconClassName="h-14 w-14" textClassName="text-sm" />
                   )}
                 </div>
                 {it.is_most_wanted && (
@@ -109,7 +111,7 @@ function PublicRegistry() {
                       <span className="text-sm font-medium text-rose-deep">{formatPrice(it.price_cents, country)}</span>
                     ) : <span />}
                     {it.product_url && (
-                      <span className="inline-flex items-center gap-1 text-xs text-sage-deep group-hover:underline underline-offset-2">
+                      <span className="inline-flex items-center gap-1 text-sm text-sage-deep group-hover:underline underline-offset-2">
                         View <ExternalLink className="h-3 w-3" />
                       </span>
                     )}
@@ -121,15 +123,15 @@ function PublicRegistry() {
         )}
 
         <div className="mt-16 text-center">
-          <Link to="/w/$slug" params={{ slug }} className="inline-flex items-center gap-2 text-xs uppercase tracking-widest text-muted-foreground hover:text-cherry">
+          <Link to="/w/$slug" params={{ slug }} className="inline-flex items-center gap-2 text-sm uppercase tracking-widest text-muted-foreground hover:text-cherry">
             <Heart className="h-3 w-3" /> Back to wedding site
           </Link>
         </div>
       </main>
 
       <footer className="border-t border-line py-6 text-center">
-        <div className="inline-flex items-center gap-2 text-xs text-muted-foreground">
-          <Sparkles className="h-3 w-3 text-cherry" /> Made with Vowzy
+        <div className="inline-flex items-center gap-2 text-sm text-muted-foreground">
+          <Sparkles className="h-3 w-3 text-cherry" /> Made with WedThread
         </div>
       </footer>
     </div>

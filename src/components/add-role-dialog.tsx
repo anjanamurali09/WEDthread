@@ -46,8 +46,8 @@ export function AddRoleDialog({
       <DialogContent className="max-w-lg rounded-3xl bg-pearl border-line p-0 overflow-hidden">
         <div className="p-6 pb-4 border-b border-line/60">
           <DialogTitle className="font-serif text-2xl">Add another role</DialogTitle>
-          <DialogDescription className="text-xs text-muted-foreground mt-1">
-            Pick another way to use Vowzy. You can switch between roles anytime.
+          <DialogDescription className="text-sm text-muted-foreground mt-1">
+            Pick another way to use WedThread. You can switch between roles anytime.
           </DialogDescription>
         </div>
         <div className="p-4 space-y-2 max-h-[70vh] overflow-y-auto">
@@ -65,7 +65,7 @@ export function AddRoleDialog({
                 </span>
                 <div className="min-w-0 flex-1">
                   <p className="font-serif text-lg">{label}</p>
-                  <p className="text-xs text-muted-foreground mt-0.5">{desc}</p>
+                  <p className="text-sm text-muted-foreground mt-0.5">{desc}</p>
                 </div>
                 {already && <span className="text-[10px] uppercase tracking-widest text-muted-foreground self-center">Added</span>}
                 {saving === role && <span className="text-[10px] uppercase tracking-widest text-cherry self-center">Adding…</span>}

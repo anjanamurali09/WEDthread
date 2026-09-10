@@ -13,6 +13,7 @@
 -- name/greeting + any global questions, just no per-event RSVP cards) rather
 -- than vanishing. Event scoping itself is unchanged: an event can still only
 -- appear via an actual guest_event_invites row, never leaked wholesale.
+DROP FUNCTION IF EXISTS public.get_rsvp_context(text);
 CREATE OR REPLACE FUNCTION public.get_rsvp_context(_token TEXT)
 RETURNS TABLE (
   guest_id UUID, guest_name TEXT, wedding_id UUID, partner_a TEXT, partner_b TEXT,

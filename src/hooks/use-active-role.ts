@@ -13,7 +13,7 @@ export const ROLE_LANDING: Record<AppRole, string> = {
   admin: "/dashboard",
 };
 
-const STORAGE_KEY = "vowzy.activeRole";
+const STORAGE_KEY = "wedthread.activeRole";
 
 export function useMyRoles() {
   return useQuery({

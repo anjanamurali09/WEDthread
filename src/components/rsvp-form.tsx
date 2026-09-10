@@ -1,6 +1,7 @@
 import { useMemo, useState } from "react";
 import { Sparkles, Check, X as XIcon, HelpCircle, MapPin, CalendarDays, Loader2, ChevronDown } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { Logo } from "@/components/logo";
 
 export type RsvpEventRow = {
   event_id: string; event_name: string; event_date: string | null; event_time: string | null;
@@ -94,15 +95,15 @@ export function RsvpPageBody({
     <div className="max-w-2xl mx-auto">
       <div className="flex items-center gap-2 justify-center mb-8">
         <span className="grid h-8 w-8 place-items-center rounded-full bg-clay text-paper"><Sparkles className="h-3.5 w-3.5" /></span>
-        <span className="font-serif text-xl">Vowzy</span>
+        <Logo sizeClassName="text-xl" />
       </div>
-      <p className="text-center text-[11px] uppercase tracking-[0.25em] text-clay">You are invited to celebrate</p>
+      <p className="text-center text-sm uppercase tracking-[0.25em] text-clay">You are invited to celebrate</p>
       <h1 className="mt-4 text-center font-serif text-4xl md:text-6xl leading-tight">{partnerA} <span className="text-clay">&</span> {partnerB}</h1>
       <p className="mt-4 text-center text-muted-foreground">
         Dear <span className="text-ink">{guestName}</span>, {eventRows.length > 0 ? "please respond to each event below." : "we're finalizing your invitation details."}
       </p>
       {hasRequiredQuestion && (
-        <p className="mt-3 text-center text-xs text-muted-foreground">
+        <p className="mt-3 text-center text-sm text-muted-foreground">
           <span className="text-cherry">*</span> Required — everything else is optional
         </p>
       )}
@@ -120,12 +121,12 @@ export function RsvpPageBody({
             <div key={r.event_id} className="warm-wash rounded-[28px] border border-line/60 p-6">
               <p className="text-[10px] uppercase tracking-widest text-clay">Event</p>
               <h3 className="font-serif text-2xl mt-1">{r.event_name}</h3>
-              <p className="text-xs text-muted-foreground mt-1 flex items-center gap-1">
+              <p className="text-sm text-muted-foreground mt-1 flex items-center gap-1">
                 <CalendarDays className="h-3 w-3" />
                 {r.event_date ? new Date(r.event_date).toLocaleDateString(undefined, { weekday: "long", month: "long", day: "numeric", year: "numeric" }) : "Date TBD"}
                 {r.event_time ? ` · ${r.event_time.slice(0,5)}` : ""}
               </p>
-              {(r.venue_name || r.city) && <p className="text-xs text-muted-foreground mt-1.5 flex items-center gap-1"><MapPin className="h-3 w-3" /> {[r.venue_name, r.city].filter(Boolean).join(" · ")}</p>}
+              {(r.venue_name || r.city) && <p className="text-sm text-muted-foreground mt-1.5 flex items-center gap-1"><MapPin className="h-3 w-3" /> {[r.venue_name, r.city].filter(Boolean).join(" · ")}</p>}
 
               <p className="mt-5 text-sm text-ink">{renderAttendanceText(attendanceQuestionText, r.event_name)}</p>
               <div className="mt-2 flex flex-wrap items-center gap-2">
@@ -141,7 +142,7 @@ export function RsvpPageBody({
               </div>
 
               {r.current_status === "attending" && (
-                <div className="mt-4 flex items-center gap-3 text-xs text-muted-foreground">
+                <div className="mt-4 flex items-center gap-3 text-sm text-muted-foreground">
                   Bringing:
                   <PlusOnesPicker value={r.current_plus_ones} disabled={submitted} onChange={(n) => onRespond(r.event_id, "attending", n)} />
                 </div>
@@ -194,7 +195,7 @@ export function RsvpPageBody({
             <p className="mt-1.5 text-sm text-muted-foreground">
               Thank you, {guestName}. Your responses are saved, the couple will see them right away.
             </p>
-            <button type="button" onClick={onUnsubmit} className="mt-4 text-xs text-muted-foreground underline hover:text-ink cursor-pointer">
+            <button type="button" onClick={onUnsubmit} className="mt-4 text-sm text-muted-foreground underline hover:text-ink cursor-pointer">
               Edit my responses
             </button>
           </div>
@@ -208,16 +209,16 @@ export function RsvpPageBody({
               {submitting ? "Submitting…" : "Submit RSVP"}
             </button>
             {!readyToSubmit && (
-              <p className="mt-2 text-xs text-muted-foreground">
+              <p className="mt-2 text-sm text-muted-foreground">
                 {!allEventsResponded ? "Please respond to each event above to finish your RSVP." : "A few required questions above still need an answer."}
               </p>
             )}
-            {submitError && <p className="mt-2 text-xs text-cherry">{submitError}</p>}
+            {submitError && <p className="mt-2 text-sm text-cherry">{submitError}</p>}
           </div>
         )
       )}
 
-      <p className="mt-10 text-center text-[11px] uppercase tracking-widest text-muted-foreground">Powered by Vowzy</p>
+      <p className="mt-10 text-center text-sm uppercase tracking-widest text-muted-foreground">Powered by WedThread</p>
     </div>
   );
 }
@@ -246,7 +247,7 @@ function PlusOnesPicker({ value, onChange, disabled }: { value: number; onChange
     <div className="relative">
       <button type="button" disabled={disabled} onClick={() => setOpen((v) => !v)}
         className={cn(
-          "inline-flex items-center gap-1.5 rounded-full border border-line px-3 py-1 bg-paper text-xs transition-colors",
+          "inline-flex items-center gap-1.5 rounded-full border border-line px-3 py-1 bg-paper text-sm transition-colors",
           disabled ? "opacity-60 cursor-not-allowed" : "hover:bg-stone cursor-pointer",
         )}>
         {label(value)}
@@ -290,11 +291,13 @@ function RsvpQuestionField({ question: q, value, status, disabled, onAnswerNow, 
 
       {q.question_type === "yes_no" && (
         <div className="mt-2 flex gap-2">
-          {["Yes", "No"].map((opt) => (
+          {/* Falls back to Yes/No for questions saved before options became
+              customizable (empty options array from that era). */}
+          {(q.options.length ? q.options : ["Yes", "No"]).map((opt) => (
             <button key={opt} type="button" disabled={disabled} onClick={() => onAnswerNow(opt)}
               className={cn(
                 "inline-flex items-center gap-1.5 rounded-full border px-4 py-1.5 text-sm transition-colors",
-                value === opt ? "bg-rose-deep text-pearl border-rose-deep" : "border-line hover:bg-blush-soft/50 bg-pearl",
+                value === opt ? "bg-sage-deep text-pearl border-sage-deep" : "border-line hover:bg-sage-soft/50 bg-pearl",
                 disabled ? "opacity-60 cursor-not-allowed" : "cursor-pointer",
               )}>
               {opt}
@@ -321,7 +324,7 @@ function RsvpQuestionField({ question: q, value, status, disabled, onAnswerNow, 
       {q.question_type === "short_text" && (
         <input value={value ?? ""} disabled={disabled} onChange={(e) => onAnswerDebounced(e.target.value)} onBlur={onBlur}
           placeholder="Your answer"
-          className="mt-2 w-full rounded-lg border border-line/70 px-4 py-2.5 text-sm bg-pearl focus:outline-none focus:ring-2 focus:ring-rose-deep transition-colors disabled:opacity-60 disabled:cursor-not-allowed" />
+          className="mt-2 w-full rounded-lg border border-line/70 px-4 py-2.5 text-sm bg-pearl focus:outline-none focus:ring-2 focus:ring-sage-deep transition-colors disabled:opacity-60 disabled:cursor-not-allowed" />
       )}
     </div>
   );

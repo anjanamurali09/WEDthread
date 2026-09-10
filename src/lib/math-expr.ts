@@ -2,7 +2,9 @@
 // (e.g. "500+200", "1200/3"). Recursive-descent over +,-,*,/ and parens,
 // no eval/Function — avoids exposing arbitrary JS execution from user input.
 export function evalMathExpr(input: string): number | null {
-  const src = input.trim();
+  // Strip thousands-separator commas (amount fields display "5,000+200" while
+  // typing) — everything below still only ever sees plain digits/operators.
+  const src = input.trim().replace(/,/g, "");
   if (!src) return null;
   if (!/^[0-9+\-*/().\s]+$/.test(src)) return null;
 

@@ -54,7 +54,7 @@ RETURNS TABLE (
   existing_answer TEXT
 ) LANGUAGE sql STABLE SECURITY DEFINER SET search_path = public AS $$
   SELECT q.id, q.question_text, q.question_type, q.options, q.is_required, q.sort_order,
-         NULL::UUID, NULL::TEXT,
+         NULL::UUID AS event_id, NULL::TEXT AS event_name,
          q.depends_on_question_id, q.depends_on_value,
          r.answer_text
   FROM public.guests g
@@ -65,7 +65,7 @@ RETURNS TABLE (
   UNION ALL
 
   SELECT q.id, q.question_text, q.question_type, q.options, q.is_required, q.sort_order,
-         e.id, e.name,
+         e.id AS event_id, e.name AS event_name,
          q.depends_on_question_id, q.depends_on_value,
          r.answer_text
   FROM public.guests g

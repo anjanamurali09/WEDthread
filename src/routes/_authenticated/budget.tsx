@@ -3,18 +3,23 @@ import { useMemo, useState } from "react";
 import { AppShell } from "@/components/app-shell";
 import {
   useCurrentWedding, useEvents, useExpenses, useBudgetCategories, useBudgetCustomColumns,
-  type Expense, type BudgetCategory, type BudgetCustomColumn,
+  type Expense, type Event, type BudgetCategory, type BudgetCustomColumn,
 } from "@/lib/wedding-hooks";
 import { supabase } from "@/integrations/supabase/client";
 import { useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
-import { Plus, Trash2, Pencil, Check, X, Wallet, ChevronDown, Settings, SlidersHorizontal } from "lucide-react";
+import { Plus, Trash2, Pencil, Check, X, Wallet, ChevronDown, Settings, SlidersHorizontal, Download, PieChart as PieChartIcon, BarChart3, Columns3, DollarSign } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { PhotoEmptyState } from "@/components/photo-empty-state";
 import { DatePicker } from "@/components/ui/datepicker";
-import { CURRENCIES, formatMoney, type CurrencyCode } from "@/lib/currency";
+import { Calendar } from "@/components/ui/calendar";
+import { format } from "date-fns";
+import { CURRENCIES, formatMoney, formatAmountInput, parseAmountInput, formatAmountDisplay, type CurrencyCode } from "@/lib/currency";
 import { evalMathExpr } from "@/lib/math-expr";
 import { Dropdown, type DropdownOption } from "@/components/dropdown";
+import { exportBudgetExcel, exportBudgetPdf, customFieldDisplay } from "@/lib/budget-export";
+import {
+  ResponsiveContainer, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, PieChart, Pie, Cell,
+} from "recharts";
 
 export const Route = createFileRoute("/_authenticated/budget")({ component: BudgetPage });
 
@@ -36,6 +41,66 @@ const PAYMENT_METHOD_OPTIONS: { value: string; label: string }[] = [
   { value: "UPI", label: "UPI" }, { value: "Cheque", label: "Cheque" }, { value: "Other", label: "Other" },
 ];
 
+// Pie-slice palette, alternating the app's navy/blue and gold/yellow accents so it
+// reads as part of the same theme rather than a generic rainbow.
+const PIE_COLORS = [
+  "var(--sage-deep)", "var(--rose-deep)", "var(--wine)", "var(--gold-deep)", "var(--cherry)", "var(--periwinkle-deep)",
+];
+
+const capitalize = (s: string) => s.replace(/\b\w/g, (c) => c.toUpperCase());
+
+const round2 = (n: number) => Math.round(n * 100) / 100;
+
+// Reformats on every keystroke, then restores the caret by digit count rather than
+// raw character index — inserting/removing a comma mid-typing otherwise shoves the
+// caret to the end after every keystroke, which makes editing a number you've
+// already typed (not just appending to it) unusable.
+function reformatKeepingCaret(e: React.ChangeEvent<HTMLInputElement>, currency: string, setValue: (v: string) => void) {
+  const input = e.target;
+  const digitsBeforeCaret = input.value.slice(0, input.selectionStart ?? input.value.length).replace(/[^\d]/g, "").length;
+  const formatted = formatAmountInput(input.value, currency);
+  setValue(formatted);
+  requestAnimationFrame(() => {
+    let count = 0;
+    let pos = formatted.length;
+    for (let i = 0; i < formatted.length; i++) {
+      if (/\d/.test(formatted[i])) count++;
+      if (count === digitsBeforeCaret) { pos = i + 1; break; }
+    }
+    if (digitsBeforeCaret === 0) pos = 0;
+    input.setSelectionRange(pos, pos);
+  });
+}
+
+// Compact "AED ⌄" trigger meant to sit as the left segment of a combined
+// currency+amount field — the couple can change currency right from wherever
+// they're already typing an amount, not just from Settings.
+function CurrencyPrefixButton({ value, onChange, triggerClassName }: { value: string; onChange: (code: string) => void; triggerClassName?: string }) {
+  const [open, setOpen] = useState(false);
+  return (
+    <div className="relative shrink-0">
+      <button type="button" onClick={() => setOpen((v) => !v)} data-static
+        className={cn("flex items-center gap-1 text-sm font-medium text-ink cursor-pointer hover:text-cherry", triggerClassName ?? "pl-4 pr-2 py-2.5")}>
+        {value} <ChevronDown className={cn("h-3 w-3 text-muted-foreground transition-transform", open && "rotate-180")} />
+      </button>
+      {open && (
+        <>
+          <div className="fixed inset-0 z-10" onClick={() => setOpen(false)} />
+          <div className="absolute left-0 top-full mt-2 z-20 w-52 max-h-64 overflow-y-auto rounded-2xl border border-line bg-pearl shadow-lg p-1.5">
+            {Object.entries(CURRENCIES).map(([code, c]) => (
+              <button type="button" key={code} onClick={() => { onChange(code); setOpen(false); }}
+                className={cn("w-full text-left px-3 py-2 text-sm rounded-xl hover:bg-blush-soft cursor-pointer flex items-center justify-between gap-2", value === code && "font-medium")}>
+                <span className="truncate">{code} · {c.label}</span>
+                {value === code && <Check className="h-3.5 w-3.5 text-sage-deep shrink-0" />}
+              </button>
+            ))}
+          </div>
+        </>
+      )}
+    </div>
+  );
+}
+
 type Option = DropdownOption;
 
 function CategoryDropdown({ value, onChange, categories, onCreate }: {
@@ -51,6 +116,7 @@ function CategoryDropdown({ value, onChange, categories, onCreate }: {
   };
   return (
     <Dropdown
+      size="sm"
       value={value} onChange={onChange} placeholder="Category"
       options={categories.map((c) => ({ value: c.name, label: c.name }))}
       footer={
@@ -58,7 +124,7 @@ function CategoryDropdown({ value, onChange, categories, onCreate }: {
           <div className="flex items-center gap-1.5 p-1">
             <input autoFocus value={draft} onChange={(e) => setDraft(e.target.value)} onKeyDown={(e) => e.key === "Enter" && create()}
               placeholder="New category" onClick={(e) => e.stopPropagation()}
-              className="flex-1 rounded-lg border border-line px-2 py-1.5 text-xs focus:outline-none focus:ring-2 focus:ring-clay bg-paper" />
+              className="flex-1 rounded-lg border border-line px-2 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-clay bg-paper" />
             <button type="button" onClick={(e) => { e.stopPropagation(); create(); }} className="rounded-lg bg-ink text-paper p-1.5 cursor-pointer"><Check className="h-3 w-3" /></button>
           </div>
         ) : (
@@ -82,7 +148,7 @@ function FilterChip({ label, value, options, onChange }: { label: string; value:
       <button type="button" onClick={() => setOpen((v) => !v)}
         className={cn(
           "inline-flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-xs transition-colors cursor-pointer",
-          isSet ? "bg-clay text-paper border-clay" : "bg-paper text-ink/70 border-line hover:bg-stone",
+          isSet ? "bg-clay text-paper border-clay" : "bg-paper text-ink border-line hover:bg-stone",
         )}>
         {isSet ? active?.label ?? label : label} <ChevronDown className="h-3 w-3" />
       </button>
@@ -91,12 +157,12 @@ function FilterChip({ label, value, options, onChange }: { label: string; value:
           <div className="fixed inset-0 z-10" onClick={() => setOpen(false)} />
           <div className="absolute left-0 mt-2 z-20 min-w-[170px] max-h-64 overflow-y-auto rounded-2xl border border-line bg-pearl shadow-lg p-1.5">
             <button type="button" onClick={() => { onChange(""); setOpen(false); }}
-              className={cn("w-full text-left px-3 py-2 text-sm rounded-xl hover:bg-blush-soft cursor-pointer", !isSet && "font-medium")}>
+              className={cn("w-full text-left px-3 py-2 text-xs rounded-xl hover:bg-blush-soft cursor-pointer", !isSet && "font-medium")}>
               All {label.toLowerCase()}
             </button>
             {options.map((o) => (
               <button type="button" key={o.value} onClick={() => { onChange(o.value); setOpen(false); }}
-                className={cn("w-full text-left px-3 py-2 text-sm rounded-xl hover:bg-blush-soft cursor-pointer", value === o.value && "font-medium")}>
+                className={cn("w-full text-left px-3 py-2 text-xs rounded-xl hover:bg-blush-soft cursor-pointer", value === o.value && "font-medium")}>
                 {o.label}
               </button>
             ))}
@@ -107,11 +173,193 @@ function FilterChip({ label, value, options, onChange }: { label: string; value:
   );
 }
 
-function customFieldDisplay(col: BudgetCustomColumn, raw: unknown): string | null {
-  if (raw === undefined || raw === null || raw === "") return null;
-  if (col.type === "boolean") return raw ? "Yes" : "No";
-  if (col.type === "date" && typeof raw === "string") return new Date(raw + "T00:00:00").toLocaleDateString(undefined, { month: "short", day: "numeric", year: "numeric" });
-  return String(raw);
+type VisibleCols = { category: boolean; description: boolean; event: boolean; paidBy: boolean; status: boolean };
+const COLUMN_TOGGLES: { key: keyof VisibleCols; label: string }[] = [
+  { key: "category", label: "Category" },
+  { key: "description", label: "Description" },
+  { key: "event", label: "Event" },
+  { key: "paidBy", label: "Paid by" },
+  { key: "status", label: "Status" },
+];
+
+// Which fields show per expense row — separate from the Category/Paid by/etc.
+// filters above, which narrow which rows appear; this only changes what's
+// visible on the rows that are already showing.
+function ColumnsPicker({ value, onChange }: { value: VisibleCols; onChange: (v: VisibleCols) => void }) {
+  const [open, setOpen] = useState(false);
+  const hiddenCount = COLUMN_TOGGLES.filter((c) => !value[c.key]).length;
+  return (
+    <div className="relative">
+      <button type="button" onClick={() => setOpen((v) => !v)}
+        className={cn(
+          "inline-flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-xs transition-colors cursor-pointer",
+          hiddenCount > 0 ? "bg-clay text-paper border-clay" : "bg-paper text-ink border-line hover:bg-stone",
+        )}>
+        <Columns3 className="h-3 w-3" /> Columns <ChevronDown className="h-3 w-3" />
+      </button>
+      {open && (
+        <>
+          <div className="fixed inset-0 z-10" onClick={() => setOpen(false)} />
+          <div className="absolute left-0 mt-2 z-20 min-w-[170px] rounded-2xl border border-line bg-pearl shadow-lg p-1.5">
+            {COLUMN_TOGGLES.map((c) => (
+              <button type="button" key={c.key} onClick={() => onChange({ ...value, [c.key]: !value[c.key] })}
+                className="w-full flex items-center justify-between gap-2 text-left px-3 py-2 text-xs rounded-xl hover:bg-blush-soft cursor-pointer">
+                {c.label}
+                {value[c.key] && <Check className="h-3.5 w-3.5 text-sage-deep shrink-0" />}
+              </button>
+            ))}
+          </div>
+        </>
+      )}
+    </div>
+  );
+}
+
+function ExportMenu({ onExportExcel, onExportPdf }: { onExportExcel: () => void; onExportPdf: () => void }) {
+  const [open, setOpen] = useState(false);
+  return (
+    <div className="relative">
+      <button type="button" onClick={() => setOpen((v) => !v)}
+        className="inline-flex items-center gap-2 rounded-full border border-line/70 bg-paper px-5 py-2.5 text-sm hover:bg-stone cursor-pointer focus:outline-none">
+        <Download className="h-4 w-4" /> Export
+      </button>
+      {open && (
+        <>
+          <div className="fixed inset-0 z-10" onClick={() => setOpen(false)} />
+          <div className="absolute right-0 top-full mt-2 z-20 min-w-[180px] rounded-2xl border border-line bg-pearl shadow-lg p-1.5">
+            <button type="button" onClick={() => { onExportExcel(); setOpen(false); }}
+              className="w-full text-left px-3 py-2 text-sm rounded-xl hover:bg-blush-soft cursor-pointer focus:outline-none">
+              Export as Excel
+            </button>
+            <button type="button" onClick={() => { onExportPdf(); setOpen(false); }}
+              className="w-full text-left px-3 py-2 text-sm rounded-xl hover:bg-blush-soft cursor-pointer focus:outline-none">
+              Export as PDF
+            </button>
+          </div>
+        </>
+      )}
+    </div>
+  );
+}
+
+type BreakdownDimension = "category" | "paid_by" | "event" | "status";
+const BREAKDOWN_DIMENSIONS: { value: BreakdownDimension; label: string }[] = [
+  { value: "category", label: "Category" },
+  { value: "paid_by", label: "Paid by" },
+  { value: "event", label: "Event" },
+  { value: "status", label: "Status" },
+];
+
+function groupExpensesBy(expenses: Expense[], dimension: BreakdownDimension, events: Event[]): [string, number][] {
+  const m = new Map<string, number>();
+  expenses.forEach((e) => {
+    const key =
+      dimension === "category" ? (e.category || "Uncategorized") :
+      dimension === "paid_by" ? (e.paid_by ? capitalize(e.paid_by) : "Unspecified") :
+      dimension === "event" ? (e.event_id ? (events.find((ev) => ev.id === e.event_id)?.name ?? "Unknown event") : "No specific event") :
+      (e.status === "paid" ? "Paid" : "Pending");
+    m.set(key, (m.get(key) ?? 0) + e.amount);
+  });
+  return Array.from(m.entries()).sort((a, b) => b[1] - a[1]);
+}
+
+// One reusable "spend broken down by X" widget — the couple picks both the grouping
+// (category/paid by/event/status) and the chart shape. The overall budget total
+// already shows once, on the Total spent card above; these widgets only ever chart
+// what was actually spent, grouped whichever way is selected, so that number isn't
+// repeated a second and third time here.
+function ExpenseBreakdownWidget({ expenses, events, categories, money, defaultDimension }: {
+  expenses: Expense[]; events: Event[]; categories: BudgetCategory[]; money: (n: number) => string; defaultDimension: BreakdownDimension;
+}) {
+  const [dimension, setDimension] = useState<BreakdownDimension>(defaultDimension);
+  const [chartType, setChartType] = useState<"bar" | "pie">("bar");
+  const [showBudget, setShowBudget] = useState(false);
+
+  // Only category and event have an allocated budget to compare against — paid_by and
+  // status don't. A pie can't show "spent" and "budget" as two values per slice, so
+  // comparing against budget always renders as a grouped bar chart instead.
+  const canShowBudget = dimension === "category" || dimension === "event";
+  const comparingBudget = canShowBudget && showBudget;
+
+  const grouped = useMemo(() => groupExpensesBy(expenses, dimension, events), [expenses, dimension, events]);
+  const data = useMemo(() => grouped.map(([name, spent]) => {
+    if (!comparingBudget) return { name, spent };
+    const budget = dimension === "category"
+      ? categories.find((c) => c.name === name)?.allocated_amount ?? 0
+      : events.find((e) => e.name === name)?.allocated_amount ?? 0;
+    return { name, spent, budget };
+  }), [grouped, comparingBudget, dimension, categories, events]);
+
+  return (
+    <div className="paper-card p-4 md:p-5 flex flex-col">
+      <div className="flex flex-wrap items-start justify-between gap-4">
+        <p className="text-sm uppercase tracking-widest text-cherry">By {BREAKDOWN_DIMENSIONS.find((d) => d.value === dimension)?.label.toLowerCase()}</p>
+
+        <div className="flex items-center gap-2 shrink-0">
+          {canShowBudget && (
+            <button type="button" onClick={() => setShowBudget((v) => !v)}
+              className={cn("rounded-full border px-3 py-1 text-[10px] transition-colors cursor-pointer", showBudget ? "bg-ink text-paper border-ink" : "border-line text-muted-foreground hover:bg-stone")}>
+              vs Budget
+            </button>
+          )}
+          <div className="inline-flex rounded-full border border-line p-0.5">
+            <button type="button" onClick={() => setChartType("bar")} title="Bar chart"
+              className={cn("rounded-full p-1.5 cursor-pointer", chartType === "bar" || comparingBudget ? "bg-ink text-paper" : "text-muted-foreground hover:text-ink")}>
+              <BarChart3 className="h-3.5 w-3.5" />
+            </button>
+            <button type="button" onClick={() => setChartType("pie")} title="Pie chart" disabled={comparingBudget}
+              className={cn(
+                "rounded-full p-1.5",
+                comparingBudget ? "text-muted-foreground/40 cursor-not-allowed"
+                  : chartType === "pie" ? "bg-ink text-paper cursor-pointer"
+                  : "text-muted-foreground hover:text-ink cursor-pointer",
+              )}>
+              <PieChartIcon className="h-3.5 w-3.5" />
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <div className="mt-3 flex flex-wrap gap-1.5">
+        {BREAKDOWN_DIMENSIONS.map((d) => (
+          <button key={d.value} type="button" onClick={() => setDimension(d.value)}
+            className={cn("rounded-full border px-3 py-1 text-[10px] transition-colors cursor-pointer", dimension === d.value ? "bg-ink text-paper border-ink" : "border-line text-muted-foreground hover:bg-stone")}>
+            {d.label}
+          </button>
+        ))}
+      </div>
+
+      <div className="mt-3 flex-1 min-h-[160px]">
+        {data.length === 0 ? (
+          <div className="h-full min-h-[160px] flex items-center justify-center text-center">
+            <p className="text-sm text-muted-foreground max-w-[220px]">Log an expense to see it charted here.</p>
+          </div>
+        ) : (
+          <ResponsiveContainer width="100%" height={170}>
+            {chartType === "bar" || comparingBudget ? (
+              <BarChart data={data} margin={{ left: 0, right: 8, top: 8, bottom: 0 }}>
+                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="var(--line)" />
+                <XAxis dataKey="name" tick={{ fontSize: 10 }} interval={0} tickLine={false} height={30} />
+                <YAxis hide />
+                <Tooltip formatter={(v: number) => money(v)} contentStyle={{ fontSize: 12, borderRadius: 12 }} />
+                {comparingBudget && <Legend wrapperStyle={{ fontSize: 12 }} />}
+                <Bar dataKey="spent" name="Spent" fill="var(--sage-deep)" radius={[6, 6, 0, 0]} />
+                {comparingBudget && <Bar dataKey="budget" name="Budget" fill="var(--cherry)" radius={[6, 6, 0, 0]} />}
+              </BarChart>
+            ) : (
+              <PieChart>
+                <Tooltip formatter={(v: number) => money(v)} contentStyle={{ fontSize: 12, borderRadius: 12 }} />
+                <Legend wrapperStyle={{ fontSize: 12 }} />
+                <Pie data={data} dataKey="spent" nameKey="name" outerRadius={62}>
+                  {data.map((_, i) => <Cell key={i} fill={PIE_COLORS[i % PIE_COLORS.length]} />)}
+                </Pie>
+              </PieChart>
+            )}
+          </ResponsiveContainer>
+        )}
+      </div>
+    </div>
+  );
 }
 
 function BudgetPage() {
@@ -123,7 +371,7 @@ function BudgetPage() {
   const qc = useQueryClient();
 
   const [editingLimit, setEditingLimit] = useState(false);
-  const [limitDraft, setLimitDraft] = useState(wedding?.budget_limit != null ? String(wedding.budget_limit) : "");
+  const [limitDraft, setLimitDraft] = useState(wedding?.budget_limit != null ? formatAmountInput(String(wedding.budget_limit), wedding?.budget_currency ?? "USD") : "");
   const [settingsOpen, setSettingsOpen] = useState(false);
 
   const [filterCategory, setFilterCategory] = useState("");
@@ -131,6 +379,7 @@ function BudgetPage() {
   const [filterEvent, setFilterEvent] = useState("");
   const [filterStatus, setFilterStatus] = useState("");
   const [customFilters, setCustomFilters] = useState<Record<string, string>>({});
+  const [visibleCols, setVisibleCols] = useState<VisibleCols>({ category: true, description: true, event: true, paidBy: true, status: true });
 
   const currency = wedding?.budget_currency ?? "USD";
   const money = (n: number) => formatMoney(n, currency);
@@ -150,6 +399,25 @@ function BudgetPage() {
       m.set(key, (m.get(key) ?? 0) + e.amount);
     });
     return Array.from(m.entries()).sort((a, b) => b[1] - a[1]);
+  }, [expenses]);
+
+  // Built from the distinct paid_by values actually present on this wedding's expenses
+  // (not the fixed preset list), so custom "Other…" entries show up as filter options too.
+  // Keyed case-insensitively (and trimmed) so "Groom" and "groom" typed on different
+  // expenses collapse into one option instead of showing up as two identical-looking
+  // entries — the filter itself compares the same way, below.
+  const paidByOptions = useMemo(() => {
+    const seen = new Map<string, string>();
+    expenses.forEach((e) => {
+      const trimmed = e.paid_by?.trim();
+      if (!trimmed) return;
+      const key = trimmed.toLowerCase();
+      if (!seen.has(key)) {
+        const preset = PAID_BY_OPTIONS.find((o) => o.value === key);
+        seen.set(key, preset?.label ?? capitalize(trimmed));
+      }
+    });
+    return Array.from(seen, ([value, label]) => ({ value, label })).sort((a, b) => a.label.localeCompare(b.label));
   }, [expenses]);
 
   const customColumnOptions = useMemo(() => {
@@ -174,7 +442,7 @@ function BudgetPage() {
   const filteredExpenses = useMemo(() => {
     return expenses.filter((e) => {
       if (filterCategory && (e.category || "Uncategorized") !== filterCategory) return false;
-      if (filterPaidBy && e.paid_by !== filterPaidBy) return false;
+      if (filterPaidBy && e.paid_by?.trim().toLowerCase() !== filterPaidBy) return false;
       if (filterEvent && e.event_id !== filterEvent) return false;
       if (filterStatus && e.status !== filterStatus) return false;
       for (const col of customColumns) {
@@ -194,10 +462,17 @@ function BudgetPage() {
   const saveLimit = async () => {
     if (!wedding) return;
     const trimmed = limitDraft.trim();
-    const n = trimmed === "" ? null : Math.max(0, Math.round(Number(trimmed)));
+    const n = trimmed === "" ? null : Math.max(0, Math.round(parseAmountInput(trimmed)));
     const { error } = await supabase.from("weddings").update({ budget_limit: n }).eq("id", wedding.id);
     if (error) return toast.error(error.message);
     setEditingLimit(false);
+    invalidateWedding();
+  };
+
+  const changeCurrency = async (code: string) => {
+    if (!wedding) return;
+    const { error } = await supabase.from("weddings").update({ budget_currency: code }).eq("id", wedding.id);
+    if (error) return toast.error(error.message);
     invalidateWedding();
   };
 
@@ -211,7 +486,7 @@ function BudgetPage() {
 
   const addExpense = async (form: {
     name: string; amount: number; description: string; category: string; status: "pending" | "paid";
-    event_id: string; paid_by: string; payment_method: string; paid_date: string; custom_fields: Record<string, unknown>;
+    event_id: string; paid_by: string; payment_method: string; paid_date: string; due_date: string; custom_fields: Record<string, unknown>;
   }) => {
     if (!wedding) return;
     const { error } = await supabase.from("expenses").insert({
@@ -222,25 +497,29 @@ function BudgetPage() {
       category: form.category || null,
       status: form.status,
       event_id: form.event_id || null,
-      paid_by: form.paid_by || null,
+      paid_by: form.paid_by.trim() || null,
       payment_method: form.payment_method.trim() || null,
       paid_date: form.paid_date || null,
+      due_date: form.due_date || null,
       custom_fields: form.custom_fields as any,
     });
     if (error) return toast.error(error.message);
     invalidateExpenses();
-    toast.success("Added");
   };
 
-  const toggleStatus = async (exp: Expense) => {
-    const next = exp.status === "paid" ? "pending" : "paid";
-    const { error } = await supabase.from("expenses").update({ status: next }).eq("id", exp.id);
-    if (error) return toast.error(error.message);
-    invalidateExpenses();
+  // Updates the local cache immediately rather than waiting on invalidateExpenses'
+  // refetch round-trip — that round-trip is what made toggling Paid/Pending (and any
+  // other inline edit) visibly lag; only falls back to a real refetch if the write
+  // itself fails, to pull the row back in sync with the server.
+  const updateExpenseField = async (id: string, patch: Partial<Pick<Expense, "status" | "amount" | "event_id" | "paid_by" | "payment_method" | "paid_date" | "due_date">>) => {
+    qc.setQueryData<Expense[]>(["expenses", wedding?.id], (old) => old?.map((e) => (e.id === id ? { ...e, ...patch } : e)));
+    const { error } = await supabase.from("expenses").update(patch).eq("id", id);
+    if (error) { toast.error(error.message); invalidateExpenses(); }
   };
+
+  const toggleStatus = (exp: Expense) => updateExpenseField(exp.id, { status: exp.status === "paid" ? "pending" : "paid" });
 
   const deleteExpense = async (id: string) => {
-    if (!confirm("Delete this expense?")) return;
     const { error } = await supabase.from("expenses").delete().eq("id", id);
     if (error) return toast.error(error.message);
     invalidateExpenses();
@@ -280,180 +559,387 @@ function BudgetPage() {
 
   const loading = eventsLoading || expensesLoading || categoriesLoading || customColumnsLoading;
 
+  // Exports always cover every expense on the wedding, ignoring active filters.
+  const exportInput = () => ({
+    weddingLabel: wedding.slug || wedding.id,
+    currency, totalSpent, budgetLimit: limit, categoryTotals, expenses, customColumns,
+  });
+
   return (
     <AppShell
       title="Budget"
       subtitle="Track what you're spending, and set a limit if you want to keep an eye on it."
       actions={
-        <button onClick={() => setSettingsOpen(true)} className="inline-flex items-center gap-2 rounded-full border border-line/70 bg-paper px-5 py-2.5 text-sm hover:bg-stone cursor-pointer">
-          <Settings className="h-4 w-4" /> Settings
-        </button>
+        <div className="flex items-center gap-2">
+          <ExportMenu
+            onExportExcel={() => exportBudgetExcel(exportInput())}
+            onExportPdf={() => exportBudgetPdf(exportInput())}
+          />
+          <button onClick={() => setSettingsOpen(true)} className="inline-flex items-center gap-2 rounded-full border border-line/70 bg-paper px-5 py-2.5 text-sm hover:bg-stone cursor-pointer">
+            <Settings className="h-4 w-4" /> Settings
+          </button>
+        </div>
       }
     >
       {loading ? (
         <p className="text-sm text-muted-foreground">Loading…</p>
       ) : (
       <>
-      {/* Summary */}
-      <div className="paper-card p-6 md:p-8 mb-6">
-        <div className="flex flex-wrap items-start justify-between gap-6">
+      {/* Summary: total spent full-width on top, two independently-configurable
+          breakdown widgets below it */}
+      <div className="paper-card p-3 md:p-4 mb-6">
+        <div className="flex flex-wrap items-start justify-between gap-4">
           <div>
-            <p className="text-[11px] uppercase tracking-widest text-cherry">Total spent</p>
-            <p className="mt-1 font-sans font-semibold tabular-nums text-4xl">{money(totalSpent)}</p>
+            <p className="text-sm uppercase tracking-widest text-cherry">Total spent</p>
+            <p className="mt-0.5 font-sans font-semibold tabular-nums text-2xl">{money(totalSpent)}</p>
             {pct !== null && (
-              <p className={cn("mt-2 text-sm font-medium", overBudget ? "text-cherry" : "text-sage-deep")}>
+              <p className={cn("mt-1 text-sm font-medium", overBudget ? "text-destructive" : "text-sage-deep")}>
                 {overBudget ? `${pct - 100}% over budget` : `${pct}% of budget used`}
               </p>
             )}
+            {overBudget && <p className="mt-0.5 text-sm text-destructive">You have exceeded your budget.</p>}
           </div>
+
+          {/* The gap between the two numbers doubles as a spent-vs-limit rail: fill
+              tracks progress toward the limit (capped visually at 100%, since a
+              literal 260%-long bar isn't legible), with a $ marker riding the front
+              edge — so the empty space reads as "how much runway is left," not just
+              whitespace. */}
+          {pct !== null && limit != null && (
+            <div className="hidden sm:block flex-1 min-w-[64px] self-center px-2">
+              <div className="relative h-1.5 rounded-full bg-line">
+                <div className={cn("h-full rounded-full transition-all", overBudget ? "bg-destructive" : "bg-sage-deep")}
+                  style={{ width: `${Math.min(100, pct)}%` }} />
+                <div className={cn("absolute top-1/2 grid h-6 w-6 -translate-y-1/2 -translate-x-1/2 place-items-center rounded-full text-pearl ring-2 ring-paper shadow-sm transition-all", overBudget ? "bg-destructive" : "bg-sage-deep")}
+                  style={{ left: `${Math.min(100, pct)}%` }} title={`${pct}% of budget`}>
+                  <DollarSign className="h-3.5 w-3.5" />
+                </div>
+              </div>
+            </div>
+          )}
+
           <div className="text-right">
-            <p className="text-[11px] uppercase tracking-widest text-muted-foreground">Budget limit</p>
-            {editingLimit ? (
-              <div className="mt-1 flex items-center gap-2">
-                <div className="relative">
-                  <span className="absolute left-3 top-1/2 -translate-y-1/2 text-sm text-muted-foreground">{CURRENCIES[currency as CurrencyCode]?.symbol ?? "$"}</span>
-                  <input autoFocus type="number" min={0} value={limitDraft} onChange={(e) => setLimitDraft(e.target.value)}
+            <p className="text-sm uppercase tracking-widest text-muted-foreground">Budget limit</p>
+            <div className="mt-0.5 flex items-center justify-end gap-1.5">
+              <CurrencyPrefixButton value={currency} onChange={changeCurrency} triggerClassName="text-base font-semibold py-0.5 pl-0 pr-1" />
+              {editingLimit ? (
+                <>
+                  <input autoFocus type="text" inputMode="decimal" value={limitDraft}
+                    onChange={(e) => reformatKeepingCaret(e, currency, setLimitDraft)}
                     onKeyDown={(e) => e.key === "Enter" && saveLimit()}
                     placeholder="No limit set"
-                    className="w-36 rounded-full border border-line bg-pearl pl-8 pr-3 py-1.5 text-sm text-right tabular-nums focus:outline-none focus:ring-2 focus:ring-clay" />
+                    className="w-56 rounded-full border border-line bg-pearl px-4 py-1.5 text-sm text-right tabular-nums focus:outline-none focus:ring-2 focus:ring-clay" />
+                  <button onClick={saveLimit} className="rounded-full bg-ink text-paper p-1.5 hover:bg-clay cursor-pointer"><Check className="h-3.5 w-3.5" /></button>
+                  <button onClick={() => { setEditingLimit(false); setLimitDraft(wedding.budget_limit != null ? formatAmountInput(String(wedding.budget_limit), currency) : ""); }}
+                    className="rounded-full border border-line p-1.5 hover:bg-stone cursor-pointer"><X className="h-3.5 w-3.5" /></button>
+                </>
+              ) : (
+                <div className="relative inline-block group">
+                  <button onClick={() => { setLimitDraft(limit != null ? formatAmountInput(String(limit), currency) : ""); setEditingLimit(true); }} data-static
+                    className="font-sans font-semibold tabular-nums text-base group-hover:text-cherry cursor-pointer">
+                    {limit != null ? formatAmountDisplay(limit, currency) : <span className="text-muted-foreground text-sm font-normal">Set a limit</span>}
+                  </button>
+                  <Pencil className="absolute -right-5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none" />
                 </div>
-                <button onClick={saveLimit} className="rounded-full bg-ink text-paper p-2 hover:bg-clay cursor-pointer"><Check className="h-3.5 w-3.5" /></button>
-                <button onClick={() => { setEditingLimit(false); setLimitDraft(wedding.budget_limit != null ? String(wedding.budget_limit) : ""); }}
-                  className="rounded-full border border-line p-2 hover:bg-stone cursor-pointer"><X className="h-3.5 w-3.5" /></button>
-              </div>
-            ) : (
-              <button onClick={() => setEditingLimit(true)} className="mt-1 inline-flex items-center gap-2 font-sans font-semibold tabular-nums text-2xl hover:text-cherry cursor-pointer">
-                {limit != null ? money(limit) : <span className="text-muted-foreground text-base font-normal">Set a limit</span>}
-                <Pencil className="h-3.5 w-3.5 text-muted-foreground" />
-              </button>
-            )}
+              )}
+            </div>
           </div>
         </div>
-
-        {pct !== null && (
-          <div className="mt-5 h-2.5 w-full rounded-full bg-stone overflow-hidden">
-            <div className={cn("h-full rounded-full transition-all", overBudget ? "bg-cherry" : "bg-sage-deep")}
-              style={{ width: `${Math.min(100, pct)}%` }} />
-          </div>
-        )}
       </div>
 
-      {/* Category summary boxes */}
-      {categoryTotals.length > 0 && (
-        <div className="flex flex-wrap gap-2 mb-6">
-          {categoryTotals.map(([cat, total]) => (
-            <div key={cat} className="rounded-2xl border border-line/60 bg-paper px-4 py-2.5">
-              <p className="text-[10px] uppercase tracking-widest text-muted-foreground">{cat}</p>
-              <p className="font-sans font-semibold tabular-nums text-lg">{money(total)}</p>
-            </div>
-          ))}
-        </div>
-      )}
+      <div className="grid lg:grid-cols-2 gap-6 mb-6 items-stretch">
+        <ExpenseBreakdownWidget expenses={expenses} events={events} categories={categories} money={money} defaultDimension="category" />
+        <ExpenseBreakdownWidget expenses={expenses} events={events} categories={categories} money={money} defaultDimension="paid_by" />
+      </div>
 
       {expenses.length === 0 ? (
-        <PhotoEmptyState
-          photo="garden"
-          variant="landscape"
-          eyebrow="Your budget"
-          title="Log your first expense"
-          body="Track vendor deposits, décor, catering, whatever you're paying for, and optionally tag it to a specific event."
-        />
+        <>
+          {/* Category summary boxes */}
+          {categoryTotals.length > 0 && (
+            <div className="flex flex-wrap gap-2 mb-6">
+              {categoryTotals.map(([cat, total]) => (
+                <div key={cat} className="rounded-lg border border-line/60 bg-paper px-4 py-2.5">
+                  <p className="text-[8px] uppercase tracking-widest text-muted-foreground">{cat}</p>
+                  <p className="font-sans font-semibold tabular-nums text-base">{money(total)}</p>
+                </div>
+              ))}
+            </div>
+          )}
+          <section className="warm-wash rounded-[40px] border border-line/60 px-6 md:px-12 py-10 text-center">
+            <p className="text-sm uppercase tracking-[0.3em] text-cherry">Your budget</p>
+            <h3 className="mt-2 font-serif text-2xl md:text-4xl leading-tight">Log your first expense</h3>
+            <p className="mt-3 text-sm text-ink leading-relaxed">Track vendor deposits, décor, catering, whatever you're paying for, and optionally tag it to a specific event.</p>
+          </section>
+        </>
       ) : (
         <div className="grid lg:grid-cols-3 gap-6">
-          <section className="lg:col-span-2 space-y-3">
-            <div className="flex flex-wrap items-center gap-2">
-              <SlidersHorizontal className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
-              <FilterChip label="Category" value={filterCategory} onChange={setFilterCategory}
-                options={categoryTotals.map(([c]) => ({ value: c, label: c }))} />
-              <FilterChip label="Paid by" value={filterPaidBy} onChange={setFilterPaidBy} options={PAID_BY_OPTIONS} />
-              <FilterChip label="Event" value={filterEvent} onChange={setFilterEvent}
-                options={events.map((e) => ({ value: e.id, label: e.name }))} />
-              <FilterChip label="Status" value={filterStatus} onChange={setFilterStatus}
-                options={[{ value: "pending", label: "Pending" }, { value: "paid", label: "Paid" }]} />
-              {customColumns.map((col) => (
-                <FilterChip key={col.id} label={col.name} value={customFilters[col.id] ?? ""}
-                  onChange={(v) => setCustomFilters((prev) => ({ ...prev, [col.id]: v }))}
-                  options={customColumnOptions[col.id] ?? []} />
-              ))}
-              {anyFilter && <button onClick={clearFilters} className="text-xs text-clay hover:underline cursor-pointer">Clear filters ×</button>}
+          <section className="lg:col-span-2">
+            {/* Category summary boxes — first in the left column so this row's top edge
+                sets the grid row's top, which the aside beside it aligns to. */}
+            <div className="space-y-2.5 mb-6">
+              {categoryTotals.length > 0 && (
+                <div className="flex flex-wrap gap-2">
+                  {categoryTotals.map(([cat, total]) => (
+                    <div key={cat} className="rounded-lg border border-line/60 bg-paper px-4 py-2.5">
+                      <p className="text-[8px] uppercase tracking-widest text-muted-foreground">{cat}</p>
+                      <p className="font-sans font-semibold tabular-nums text-base">{money(total)}</p>
+                    </div>
+                  ))}
+                </div>
+              )}
+              <div className="flex flex-wrap items-center gap-2">
+                <SlidersHorizontal className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
+                <FilterChip label="Category" value={filterCategory} onChange={setFilterCategory}
+                  options={categoryTotals.map(([c]) => ({ value: c, label: c }))} />
+                <FilterChip label="Paid by" value={filterPaidBy} onChange={setFilterPaidBy} options={paidByOptions} />
+                <FilterChip label="Event" value={filterEvent} onChange={setFilterEvent}
+                  options={events.map((e) => ({ value: e.id, label: e.name }))} />
+                <FilterChip label="Status" value={filterStatus} onChange={setFilterStatus}
+                  options={[{ value: "pending", label: "Pending" }, { value: "paid", label: "Paid" }]} />
+                {customColumns.map((col) => (
+                  <FilterChip key={col.id} label={col.name} value={customFilters[col.id] ?? ""}
+                    onChange={(v) => setCustomFilters((prev) => ({ ...prev, [col.id]: v }))}
+                    options={customColumnOptions[col.id] ?? []} />
+                ))}
+                {anyFilter && <button onClick={clearFilters} className="text-xs text-clay hover:underline cursor-pointer">Clear filters ×</button>}
+                <span className="w-px self-stretch bg-line shrink-0" />
+                <ColumnsPicker value={visibleCols} onChange={setVisibleCols} />
+              </div>
+              <p className="text-xs text-muted-foreground">{filteredExpenses.length} of {expenses.length} expense{expenses.length === 1 ? "" : "s"}</p>
             </div>
-            <p className="text-xs text-muted-foreground">{filteredExpenses.length} of {expenses.length} expense{expenses.length === 1 ? "" : "s"}</p>
 
-            {filteredExpenses.map((exp) => (
-              <ExpenseRow key={exp.id} expense={exp} eventName={events.find((e) => e.id === exp.event_id)?.name}
-                customColumns={customColumns} money={money}
-                onToggleStatus={() => toggleStatus(exp)} onDelete={() => deleteExpense(exp.id)} />
-            ))}
+            <div className="space-y-1.5">
+              {filteredExpenses.map((exp) => (
+                <ExpenseRow key={exp.id} expense={exp} events={events} visibleCols={visibleCols}
+                  customColumns={customColumns} currency={currency} money={money}
+                  onToggleStatus={() => toggleStatus(exp)} onDelete={() => deleteExpense(exp.id)}
+                  onUpdateField={(patch) => updateExpenseField(exp.id, patch)} />
+              ))}
+            </div>
           </section>
-          <aside className="paper-card p-6 h-fit lg:sticky lg:top-6">
-            <AddExpenseForm events={events} categories={categories} customColumns={customColumns} onCreateCategory={createCategory} onAdd={addExpense} />
+          <aside className="paper-card p-4 h-fit lg:sticky lg:top-6">
+            <AddExpenseForm events={events} categories={categories} customColumns={customColumns} currency={currency} onCreateCategory={createCategory} onAdd={addExpense} />
           </aside>
         </div>
       )}
 
       {expenses.length === 0 && (
-        <div className="paper-card p-6 mt-6 max-w-md">
-          <AddExpenseForm events={events} categories={categories} customColumns={customColumns} onCreateCategory={createCategory} onAdd={addExpense} />
+        <div className="paper-card p-4 mt-6 max-w-md">
+          <AddExpenseForm events={events} categories={categories} customColumns={customColumns} currency={currency} onCreateCategory={createCategory} onAdd={addExpense} />
         </div>
       )}
       </>
       )}
 
       {settingsOpen && (
-        <BudgetSettingsDialog wedding={wedding} categories={categories} customColumns={customColumns} onClose={() => setSettingsOpen(false)} />
+        <BudgetSettingsDialog wedding={wedding} categories={categories} customColumns={customColumns} events={events} onClose={() => setSettingsOpen(false)} />
       )}
     </AppShell>
   );
 }
 
-function ExpenseRow({ expense, eventName, customColumns, money, onToggleStatus, onDelete }: {
-  expense: Expense; eventName?: string; customColumns: BudgetCustomColumn[]; money: (n: number) => string;
+// Free-text, since who paid varies per couple — clicking the pill swaps it for an
+// input right in place, same footprint, so the row doesn't jump around.
+function EditablePaidByBadge({ value, onSave }: { value: string; onSave: (v: string) => void }) {
+  const [editing, setEditing] = useState(false);
+  const [draft, setDraft] = useState(value);
+
+  // Wrapped the same way as the other editable badges (event/payment/date) —
+  // a bare <button> as the direct flex child sat at a different cross-axis
+  // height than its div-wrapped siblings under the row's `items-center`,
+  // throwing this one badge's vertical alignment off from the rest.
+  if (editing) {
+    const commit = () => {
+      setEditing(false);
+      const trimmed = draft.trim();
+      if (trimmed !== value) onSave(trimmed);
+    };
+    return (
+      <div className="relative inline-flex shrink-0">
+        <input autoFocus value={draft} onChange={(e) => setDraft(e.target.value)} onBlur={commit}
+          onKeyDown={(e) => { if (e.key === "Enter") (e.target as HTMLInputElement).blur(); if (e.key === "Escape") { setDraft(value); setEditing(false); } }}
+          placeholder="Paid by"
+          className="text-[8px] uppercase tracking-widest rounded-full bg-blush-soft px-2 py-0.5 text-ink w-28 focus:outline-none focus:ring-1 focus:ring-clay" />
+      </div>
+    );
+  }
+  return (
+    <div className="relative inline-flex shrink-0">
+      <button type="button" onClick={() => { setDraft(value); setEditing(true); }} data-static
+        className="text-[8px] uppercase tracking-widest rounded-full bg-blush-soft px-2 py-0.5 text-ink hover:bg-blush-soft-hover cursor-pointer whitespace-nowrap">
+        {value ? `Paid by ${value}` : "Paid by"}
+      </button>
+    </div>
+  );
+}
+
+function EditablePaymentMethodBadge({ value, onSave }: { value: string; onSave: (v: string) => void }) {
+  const [open, setOpen] = useState(false);
+  return (
+    <div className="relative inline-flex shrink-0">
+      <button type="button" onClick={() => setOpen((v) => !v)} data-static
+        className="text-[8px] uppercase tracking-widest rounded-full bg-wine-soft px-2 py-0.5 text-ink hover:bg-wine-soft-hover cursor-pointer whitespace-nowrap">
+        {value || "Payment method"}
+      </button>
+      {open && (
+        <>
+          <div className="fixed inset-0 z-10" onClick={() => setOpen(false)} />
+          <div className="absolute left-0 top-full mt-1 z-20 min-w-[150px] rounded-2xl border border-line bg-pearl shadow-lg p-1.5">
+            {PAYMENT_METHOD_OPTIONS.map((o) => (
+              <button type="button" key={o.value} onClick={() => { onSave(o.value); setOpen(false); }}
+                className={cn("w-full text-left px-3 py-1.5 text-sm rounded-xl hover:bg-blush-soft cursor-pointer", value === o.value && "font-medium")}>
+                {o.label}
+              </button>
+            ))}
+          </div>
+        </>
+      )}
+    </div>
+  );
+}
+
+// One badge covers whichever date is relevant to the expense's current status —
+// "Due" for pending, "paid on" for paid — same as AddExpenseForm's single field,
+// so there's never a second stale date sitting next to it.
+function EditableDateBadge({ value, isDue, onSave }: { value: string | null; isDue: boolean; onSave: (v: string) => void }) {
+  const [open, setOpen] = useState(false);
+  const date = value ? new Date(value + "T00:00:00") : undefined;
+  const toneClass = isDue ? "bg-destructive/10 text-destructive hover:bg-destructive/15" : "bg-cream text-ink hover:bg-cream-hover";
+  const label = date ? format(date, "MMM d") : (isDue ? "Set due date" : "Set paid date");
+
+  return (
+    <div className="relative inline-flex shrink-0">
+      <button type="button" onClick={() => setOpen((v) => !v)} data-static
+        className={cn("text-[8px] uppercase tracking-widest rounded-full px-2 py-0.5 cursor-pointer whitespace-nowrap", toneClass)}>
+        {isDue && date ? `Due ${label}` : label}
+      </button>
+      {open && (
+        <>
+          <div className="fixed inset-0 z-10" onClick={() => setOpen(false)} />
+          <div className="absolute left-0 top-full mt-1 z-20 rounded-2xl border border-line bg-paper shadow-lg">
+            <Calendar mode="single" selected={date} initialFocus
+              onSelect={(d) => { onSave(d ? format(d, "yyyy-MM-dd") : ""); setOpen(false); }}
+              className="p-3 pointer-events-auto" />
+          </div>
+        </>
+      )}
+    </div>
+  );
+}
+
+function EditableEventBadge({ value, events, onSave }: { value: string; events: { id: string; name: string }[]; onSave: (v: string) => void }) {
+  const [open, setOpen] = useState(false);
+  const label = events.find((e) => e.id === value)?.name ?? "No event";
+  return (
+    <div className="relative inline-flex shrink-0">
+      <button type="button" onClick={() => setOpen((v) => !v)} data-static
+        className="text-[8px] uppercase tracking-widest rounded-full bg-sage-soft px-2 py-0.5 text-ink hover:bg-sage-soft-hover cursor-pointer whitespace-nowrap">
+        {label}
+      </button>
+      {open && (
+        <>
+          <div className="fixed inset-0 z-10" onClick={() => setOpen(false)} />
+          <div className="absolute left-0 top-full mt-1 z-20 min-w-[160px] max-h-64 overflow-y-auto rounded-2xl border border-line bg-pearl shadow-lg p-1.5">
+            <button type="button" onClick={() => { onSave(""); setOpen(false); }}
+              className={cn("w-full text-left px-3 py-1.5 text-sm rounded-xl hover:bg-blush-soft cursor-pointer", !value && "font-medium")}>
+              No event
+            </button>
+            {events.map((e) => (
+              <button type="button" key={e.id} onClick={() => { onSave(e.id); setOpen(false); }}
+                className={cn("w-full text-left px-3 py-1.5 text-sm rounded-xl hover:bg-blush-soft cursor-pointer", value === e.id && "font-medium")}>
+                {e.name}
+              </button>
+            ))}
+          </div>
+        </>
+      )}
+    </div>
+  );
+}
+
+// Same hover-reveal-pencil affordance as the overall budget limit — the number
+// itself is the click target, and swaps for a live-formatted input in place.
+function EditableAmountBadge({ amount, currency, money, onSave }: {
+  amount: number; currency: string; money: (n: number) => string; onSave: (n: number) => void;
+}) {
+  const [editing, setEditing] = useState(false);
+  const [draft, setDraft] = useState(() => formatAmountInput(String(amount), currency));
+
+  if (editing) {
+    const commit = () => {
+      setEditing(false);
+      const n = Math.max(0, Math.round(parseAmountInput(draft)));
+      if (n !== amount) onSave(n);
+    };
+    return (
+      <input autoFocus inputMode="decimal" value={draft}
+        onChange={(e) => reformatKeepingCaret(e, currency, setDraft)}
+        onBlur={commit}
+        onKeyDown={(e) => { if (e.key === "Enter") (e.target as HTMLInputElement).blur(); if (e.key === "Escape") { setDraft(formatAmountInput(String(amount), currency)); setEditing(false); } }}
+        className="w-28 shrink-0 rounded-full border border-line bg-pearl px-2.5 py-1 text-right text-sm font-sans font-semibold tabular-nums focus:outline-none focus:ring-2 focus:ring-clay" />
+    );
+  }
+  return (
+    <button type="button" onClick={() => { setDraft(formatAmountInput(String(amount), currency)); setEditing(true); }} data-static
+      className="group inline-flex items-center justify-end gap-1.5 shrink-0 min-w-[90px] font-sans font-semibold tabular-nums text-sm hover:text-cherry cursor-pointer">
+      {money(amount)}
+      <Pencil className="h-3 w-3 text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity" />
+    </button>
+  );
+}
+
+function ExpenseRow({ expense, events, customColumns, currency, money, visibleCols, onToggleStatus, onDelete, onUpdateField }: {
+  expense: Expense; events: { id: string; name: string }[]; customColumns: BudgetCustomColumn[]; currency: string; money: (n: number) => string;
+  visibleCols: VisibleCols;
   onToggleStatus: () => void; onDelete: () => void;
+  onUpdateField: (patch: Partial<Pick<Expense, "amount" | "event_id" | "paid_by" | "payment_method" | "paid_date" | "due_date">>) => void;
 }) {
   const paid = expense.status === "paid";
-  const paidByLabel = PAID_BY_OPTIONS.find((o) => o.value === expense.paid_by)?.label ?? expense.paid_by ?? undefined;
   const customBadges = customColumns
     .map((col) => ({ col, display: customFieldDisplay(col, (expense.custom_fields as Record<string, unknown>)?.[col.id]) }))
     .filter((c) => c.display !== null);
 
   return (
-    <div className="bg-paper rounded-md p-4 flex items-start gap-3 shadow-[inset_0_0_0_1px_rgb(0_0_0_/_0.06),0_1px_2px_rgb(0_0_0_/_0.03)]">
-      <span className="grid h-9 w-9 shrink-0 place-items-center rounded-full bg-clay-soft text-clay mt-0.5"><Wallet className="h-4 w-4" /></span>
-      <div className="min-w-0 flex-1">
-        <p className="text-sm font-medium text-ink truncate">{expense.name}</p>
-        {expense.description && <p className="mt-0.5 text-xs text-muted-foreground leading-snug">{expense.description}</p>}
-        <div className="mt-1.5 flex flex-wrap items-center gap-1.5">
-          {expense.category && <span className="text-[10px] uppercase tracking-widest rounded-full bg-stone px-2 py-0.5 text-muted-foreground">{expense.category}</span>}
-          {eventName && <span className="text-[10px] uppercase tracking-widest rounded-full bg-sage-soft px-2 py-0.5 text-ink/70">{eventName}</span>}
-          {paidByLabel && <span className="text-[10px] uppercase tracking-widest rounded-full bg-blush-soft px-2 py-0.5 text-ink/70">Paid by {paidByLabel}</span>}
-          {expense.payment_method && <span className="text-[10px] uppercase tracking-widest rounded-full bg-wine-soft px-2 py-0.5 text-ink/70">{expense.payment_method}</span>}
-          {expense.paid_date && <span className="text-[10px] uppercase tracking-widest rounded-full bg-cream px-2 py-0.5 text-ink/70">{new Date(expense.paid_date + "T00:00:00").toLocaleDateString(undefined, { month: "short", day: "numeric" })}</span>}
-          {customBadges.map(({ col, display }) => (
-            <span key={col.id} className="text-[10px] uppercase tracking-widest rounded-full bg-stone px-2 py-0.5 text-muted-foreground">{col.name}: {display}</span>
-          ))}
-        </div>
+    <div className="bg-paper rounded-md px-4 py-2.5 flex items-center gap-3 shadow-[inset_0_0_0_1px_rgb(0_0_0_/_0.06),0_1px_2px_rgb(0_0_0_/_0.03)]">
+      <div className="min-w-0 flex-1 flex flex-wrap items-center gap-1.5">
+        <p className="text-sm font-medium text-ink shrink-0">{expense.name}</p>
+        {visibleCols.description && expense.description && <span className="text-sm text-muted-foreground truncate">{expense.description}</span>}
+        {visibleCols.category && expense.category && <span className="text-[8px] uppercase tracking-widest rounded-full bg-stone px-2 py-0.5 text-muted-foreground shrink-0">{expense.category}</span>}
+        {visibleCols.event && <EditableEventBadge value={expense.event_id ?? ""} events={events} onSave={(v) => onUpdateField({ event_id: v || null })} />}
+        {visibleCols.paidBy && <EditablePaidByBadge value={expense.paid_by ?? ""} onSave={(v) => onUpdateField({ paid_by: v || null })} />}
+        <EditablePaymentMethodBadge value={expense.payment_method ?? ""} onSave={(v) => onUpdateField({ payment_method: v || null })} />
+        <EditableDateBadge value={paid ? expense.paid_date : expense.due_date} isDue={!paid}
+          onSave={(v) => onUpdateField(paid ? { paid_date: v || null } : { due_date: v || null })} />
+        {customBadges.map(({ col, display }) => (
+          <span key={col.id} className="text-[8px] uppercase tracking-widest rounded-full bg-stone px-2 py-0.5 text-muted-foreground shrink-0">{col.name}: {display}</span>
+        ))}
       </div>
-      <span className="font-sans font-semibold tabular-nums text-lg shrink-0">{money(expense.amount)}</span>
-      <button onClick={onToggleStatus}
-        className={cn(
-          "text-[10px] uppercase tracking-widest rounded-full px-3 py-1.5 shrink-0 transition-colors cursor-pointer",
-          paid ? "bg-sage-deep text-pearl hover:bg-sage-deep-hover" : "bg-stone text-muted-foreground hover:bg-blush-soft",
-        )}>
-        {paid ? "Paid" : "Pending"}
-      </button>
-      <button onClick={onDelete} className="text-muted-foreground hover:text-cherry p-1 shrink-0 cursor-pointer"><Trash2 className="h-3.5 w-3.5" /></button>
+      <EditableAmountBadge amount={expense.amount} currency={currency} money={money} onSave={(n) => onUpdateField({ amount: n })} />
+      <div className="flex items-center gap-1 shrink-0">
+        {visibleCols.status && (
+          <button onClick={onToggleStatus}
+            className={cn(
+              "w-[72px] text-center text-[8px] uppercase tracking-widest rounded-full px-3 py-1.5 transition-colors cursor-pointer",
+              paid ? "bg-sage-deep text-pearl hover:bg-sage-deep-hover" : "bg-destructive/10 text-destructive hover:bg-destructive/15",
+            )}>
+            {paid ? "Paid" : "Pending"}
+          </button>
+        )}
+        <button onClick={onDelete} className="text-muted-foreground hover:text-cherry p-1 cursor-pointer"><Trash2 className="h-3.5 w-3.5" /></button>
+      </div>
     </div>
   );
 }
 
-function AddExpenseForm({ events, categories, customColumns, onCreateCategory, onAdd }: {
+function AddExpenseForm({ events, categories, customColumns, currency, onCreateCategory, onAdd }: {
   events: { id: string; name: string }[];
   categories: BudgetCategory[];
   customColumns: BudgetCustomColumn[];
+  currency: string;
   onCreateCategory: (name: string) => Promise<void>;
   onAdd: (form: {
     name: string; amount: number; description: string; category: string; status: "pending" | "paid";
-    event_id: string; paid_by: string; payment_method: string; paid_date: string; custom_fields: Record<string, unknown>;
+    event_id: string; paid_by: string; payment_method: string; paid_date: string; due_date: string; custom_fields: Record<string, unknown>;
   }) => void;
 }) {
   const [name, setName] = useState("");
@@ -463,16 +949,25 @@ function AddExpenseForm({ events, categories, customColumns, onCreateCategory, o
   const [status, setStatus] = useState<"pending" | "paid">("pending");
   const [eventId, setEventId] = useState("");
   const [paidBy, setPaidBy] = useState("");
-  const [customPaidByOpen, setCustomPaidByOpen] = useState(false);
   const [paymentMethod, setPaymentMethod] = useState("Card");
-  const [paidDate, setPaidDate] = useState("");
+  // One field, meaning "when it's due" or "when it was paid" depending on status —
+  // an expense is either owed or settled, never both, so there's never a reason to
+  // fill in the other one too.
+  const [dateValue, setDateValue] = useState("");
   const [customValues, setCustomValues] = useState<Record<string, string>>({});
-  const isCustomPaidBy = paidBy !== "" && !PAID_BY_OPTIONS.some((o) => o.value === paidBy);
 
   const evaluated = evalMathExpr(amount);
 
   const onAmountBlur = () => {
-    if (evaluated != null && String(Math.round(evaluated)) !== amount) setAmount(String(Math.round(evaluated)));
+    if (evaluated != null) setAmount(formatAmountInput(String(Math.round(evaluated)), currency));
+  };
+
+  // Math expressions ("500+200") type through untouched — comma-grouping a partial
+  // expression doesn't make sense until it resolves to one number on blur — but a
+  // plain number gets grouped live as you type.
+  const onAmountChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (/[+\-*/]/.test(e.target.value)) setAmount(e.target.value);
+    else reformatKeepingCaret(e, currency, setAmount);
   };
 
   const setCustomValue = (id: string, v: string) => setCustomValues((prev) => ({ ...prev, [id]: v }));
@@ -485,77 +980,75 @@ function AddExpenseForm({ events, categories, customColumns, onCreateCategory, o
       if (raw === undefined || raw === "") return;
       custom_fields[col.id] = col.type === "number" ? Number(raw) : col.type === "boolean" ? raw === "true" : raw;
     });
-    onAdd({ name, amount: evaluated, description, category, status, event_id: eventId, paid_by: paidBy, payment_method: paymentMethod, paid_date: paidDate, custom_fields });
+    onAdd({
+      name, amount: evaluated, description, category, status, event_id: eventId, paid_by: paidBy, payment_method: paymentMethod,
+      paid_date: status === "paid" ? dateValue : "", due_date: status === "pending" ? dateValue : "", custom_fields,
+    });
     setName(""); setAmount(""); setDescription(""); setCategory(""); setStatus("pending");
-    setEventId(""); setPaidBy(""); setCustomPaidByOpen(false); setPaymentMethod("Card"); setPaidDate(""); setCustomValues({});
+    setEventId(""); setPaidBy(""); setPaymentMethod("Card"); setDateValue(""); setCustomValues({});
   };
 
   return (
     <div>
-      <h3 className="font-sans text-xl font-semibold">Add expense</h3>
-      <div className="mt-4 space-y-3">
+      <h3 className="font-sans text-sm font-semibold">Add expense</h3>
+      <div className="mt-3 space-y-2">
         <input placeholder="Expense name" value={name} onChange={(e) => setName(e.target.value)}
-          className="w-full rounded-2xl border border-line bg-pearl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-clay" />
-        <div>
-          <input placeholder="500 or 500+200" inputMode="decimal" value={amount} onChange={(e) => setAmount(e.target.value)} onBlur={onAmountBlur}
-            className="w-full rounded-2xl border border-line bg-pearl px-4 py-2.5 text-sm tabular-nums focus:outline-none focus:ring-2 focus:ring-clay" />
-          <p className="mt-1 text-[11px] text-muted-foreground">You can type simple math, e.g. "500+200" becomes 700.</p>
+          className="w-full rounded-xl border border-line bg-pearl px-3 py-2 text-xs focus:outline-none focus:ring-2 focus:ring-clay" />
+        <div className="relative">
+          <input placeholder="500 or 500+200" inputMode="decimal" value={amount} onChange={onAmountChange} onBlur={onAmountBlur}
+            className="w-full rounded-xl border border-line bg-pearl px-3 py-2 pr-12 text-xs tabular-nums focus:outline-none focus:ring-2 focus:ring-clay" />
+          <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-muted-foreground pointer-events-none">{currency}</span>
         </div>
         <textarea placeholder="Description (optional)" rows={2} value={description} onChange={(e) => setDescription(e.target.value)}
-          className="w-full rounded-2xl border border-line bg-pearl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-clay resize-none" />
+          className="w-full rounded-xl border border-line bg-pearl px-3 py-2 text-xs focus:outline-none focus:ring-2 focus:ring-clay resize-none" />
         <CategoryDropdown value={category} onChange={setCategory} categories={categories} onCreate={onCreateCategory} />
-        <Dropdown value={eventId} onChange={setEventId} placeholder="No specific event"
+        <Dropdown size="sm" value={eventId} onChange={setEventId} placeholder="No specific event"
           options={[{ value: "", label: "No specific event" }, ...events.map((e) => ({ value: e.id, label: e.name }))]} />
 
         <div>
-          <span className="text-[11px] uppercase tracking-widest text-muted-foreground">Paid by</span>
-          <div className="mt-1.5 flex gap-2">
-            {PAID_BY_OPTIONS.map((o) => (
-              <button key={o.value} type="button"
-                onClick={() => { setCustomPaidByOpen(false); setPaidBy(paidBy === o.value ? "" : o.value); }}
-                className={cn("flex-1 rounded-2xl border py-2 text-xs transition-colors cursor-pointer", paidBy === o.value ? "bg-ink text-paper border-ink" : "border-line text-muted-foreground hover:bg-stone")}>
-                {o.label}
-              </button>
-            ))}
-            {customPaidByOpen || isCustomPaidBy ? (
-              <input autoFocus value={paidBy} onChange={(e) => setPaidBy(e.target.value)}
-                onBlur={() => { if (!paidBy.trim()) setCustomPaidByOpen(false); }}
-                placeholder="Other…"
-                className="flex-1 min-w-0 rounded-2xl border border-ink bg-pearl px-2 py-2 text-xs text-center focus:outline-none focus:ring-2 focus:ring-clay" />
-            ) : (
-              <button type="button" onClick={() => { setPaidBy(""); setCustomPaidByOpen(true); }}
-                className="flex-1 rounded-2xl border border-dashed border-line py-2 text-xs text-muted-foreground hover:bg-stone cursor-pointer">
-                Other…
-              </button>
-            )}
-          </div>
+          <span className="text-[10px] uppercase tracking-widest text-muted-foreground">Paid by</span>
+          <input value={paidBy} onChange={(e) => setPaidBy(e.target.value)} placeholder="Paid by"
+            className="mt-1 w-full rounded-xl border border-line bg-pearl px-3 py-2 text-xs focus:outline-none focus:ring-2 focus:ring-clay" />
         </div>
 
-        <div className="grid grid-cols-2 gap-2">
-          <Dropdown value={paymentMethod} onChange={setPaymentMethod} placeholder="Payment method" options={PAYMENT_METHOD_OPTIONS} />
-          <DatePicker value={paidDate} onChange={setPaidDate} placeholder="Paid date" />
+        <div className="flex gap-1.5">
+          <button type="button" onClick={() => setStatus("pending")}
+            className={cn("flex-1 rounded-xl border py-1.5 text-xs transition-colors focus:outline-none", status === "pending" ? "bg-ink text-paper border-ink" : "border-line text-muted-foreground hover:bg-stone")}>
+            Pending
+          </button>
+          <button type="button" onClick={() => setStatus("paid")}
+            className={cn("flex-1 rounded-xl border py-1.5 text-xs transition-colors focus:outline-none", status === "paid" ? "bg-sage-deep text-pearl border-sage-deep" : "border-line text-muted-foreground hover:bg-stone")}>
+            Paid
+          </button>
+        </div>
+
+        <div className="grid grid-cols-2 gap-1.5">
+          <Dropdown size="sm" value={paymentMethod} onChange={setPaymentMethod} placeholder="Payment method" options={PAYMENT_METHOD_OPTIONS} />
+          <DatePicker value={dateValue} onChange={setDateValue} placeholder={status === "pending" ? "Due by" : "Paid date"} displayFormat="MMM d"
+            className="px-3 py-2 text-xs [&_svg]:h-3.5 [&_svg]:w-3.5" />
         </div>
 
         {customColumns.map((col) => (
           <div key={col.id}>
-            <span className="text-[11px] uppercase tracking-widest text-muted-foreground">{col.name}</span>
+            <span className="text-[10px] uppercase tracking-widest text-muted-foreground">{col.name}</span>
             <div className="mt-1">
               {col.type === "text" && (
                 <input value={customValues[col.id] ?? ""} onChange={(e) => setCustomValue(col.id, e.target.value)}
-                  className="w-full rounded-2xl border border-line bg-pearl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-clay" />
+                  className="w-full rounded-xl border border-line bg-pearl px-3 py-2 text-xs focus:outline-none focus:ring-2 focus:ring-clay" />
               )}
               {col.type === "number" && (
                 <input type="number" value={customValues[col.id] ?? ""} onChange={(e) => setCustomValue(col.id, e.target.value)}
-                  className="w-full rounded-2xl border border-line bg-pearl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-clay" />
+                  className="w-full rounded-xl border border-line bg-pearl px-3 py-2 text-xs focus:outline-none focus:ring-2 focus:ring-clay" />
               )}
               {col.type === "date" && (
-                <DatePicker value={customValues[col.id] ?? ""} onChange={(v) => setCustomValue(col.id, v)} placeholder="Pick a date" />
+                <DatePicker value={customValues[col.id] ?? ""} onChange={(v) => setCustomValue(col.id, v)} placeholder="Pick a date" displayFormat="MMM d"
+                  className="px-3 py-2 text-xs [&_svg]:h-3.5 [&_svg]:w-3.5" />
               )}
               {col.type === "boolean" && (
-                <div className="flex gap-2">
+                <div className="flex gap-1.5">
                   {[["true", "Yes"], ["false", "No"]].map(([v, l]) => (
                     <button key={v} type="button" onClick={() => setCustomValue(col.id, customValues[col.id] === v ? "" : v)}
-                      className={cn("flex-1 rounded-2xl border py-2 text-xs transition-colors cursor-pointer", customValues[col.id] === v ? "bg-ink text-paper border-ink" : "border-line text-muted-foreground hover:bg-stone")}>
+                      className={cn("flex-1 rounded-xl border py-1.5 text-xs transition-colors cursor-pointer focus:outline-none", customValues[col.id] === v ? "bg-ink text-paper border-ink" : "border-line text-muted-foreground hover:bg-stone")}>
                       {l}
                     </button>
                   ))}
@@ -565,18 +1058,8 @@ function AddExpenseForm({ events, categories, customColumns, onCreateCategory, o
           </div>
         ))}
 
-        <div className="flex gap-2">
-          <button type="button" onClick={() => setStatus("pending")}
-            className={cn("flex-1 rounded-2xl border py-2.5 text-sm transition-colors", status === "pending" ? "bg-ink text-paper border-ink" : "border-line text-muted-foreground hover:bg-stone")}>
-            Pending
-          </button>
-          <button type="button" onClick={() => setStatus("paid")}
-            className={cn("flex-1 rounded-2xl border py-2.5 text-sm transition-colors", status === "paid" ? "bg-sage-deep text-pearl border-sage-deep" : "border-line text-muted-foreground hover:bg-stone")}>
-            Paid
-          </button>
-        </div>
         <button onClick={submit} disabled={!name.trim() || evaluated == null}
-          className="w-full inline-flex items-center justify-center gap-2 rounded-full bg-rose-deep text-pearl py-2.5 text-sm hover:bg-rose-deep-hover disabled:opacity-60 cursor-pointer">
+          className="w-full inline-flex items-center justify-center gap-2 rounded-full bg-cherry text-paper py-2 text-xs hover:bg-ink disabled:opacity-60 cursor-pointer">
           <Plus className="h-4 w-4" /> Add expense
         </button>
       </div>
@@ -618,7 +1101,7 @@ function BudgetOnboarding({ onComplete }: {
       <p className="mt-1 text-sm text-muted-foreground">Takes under a minute. Everything here can be changed later from Settings.</p>
 
       <div className="mt-6">
-        <span className="text-xs uppercase tracking-widest text-muted-foreground">Do you have a budget in mind?</span>
+        <span className="text-sm uppercase tracking-widest text-muted-foreground">Do you have a budget in mind?</span>
         <div className="mt-2 flex gap-2">
           <button type="button" onClick={() => setHasBudget(true)}
             className={cn("flex-1 rounded-2xl border py-2.5 text-sm transition-colors cursor-pointer", hasBudget === true ? "bg-ink text-paper border-ink" : "border-line text-muted-foreground hover:bg-stone")}>
@@ -639,20 +1122,20 @@ function BudgetOnboarding({ onComplete }: {
       </div>
 
       <div className="mt-6">
-        <span className="text-xs uppercase tracking-widest text-muted-foreground">What currency?</span>
+        <span className="text-sm uppercase tracking-widest text-muted-foreground">What currency?</span>
         <Dropdown value={currency} onChange={setCurrency} placeholder="Currency" className="mt-2"
           options={Object.entries(CURRENCIES).map(([code, c]) => ({ value: code, label: `${c.label} (${c.symbol})` }))} />
       </div>
 
       <div className="mt-6">
-        <span className="text-xs uppercase tracking-widest text-muted-foreground">Select your categories</span>
-        <p className="mt-1 text-[11px] text-muted-foreground">Pre-checked with common defaults, uncheck anything you don't need. Add more anytime.</p>
+        <span className="text-sm uppercase tracking-widest text-muted-foreground">Select your categories</span>
+        <p className="mt-1 text-sm text-muted-foreground">Pre-checked with common defaults, uncheck anything you don't need. Add more anytime.</p>
         <div className="mt-2 flex flex-wrap gap-2">
           {DEFAULT_CATEGORIES.map((c) => {
             const on = selected.includes(c);
             return (
               <button key={c} type="button" onClick={() => toggleCategory(c)}
-                className={cn("inline-flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-xs transition-colors cursor-pointer", on ? "bg-sage-deep text-pearl border-sage-deep" : "bg-pearl text-ink/70 border-line hover:bg-stone")}>
+                className={cn("inline-flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-sm transition-colors cursor-pointer", on ? "bg-sage-deep text-pearl border-sage-deep" : "bg-pearl text-ink border-line hover:bg-stone")}>
                 {on && <Check className="h-3 w-3" />} {c}
               </button>
             );
@@ -661,7 +1144,7 @@ function BudgetOnboarding({ onComplete }: {
       </div>
 
       <div className="mt-8 flex items-center justify-between">
-        <button type="button" onClick={skip} disabled={saving} className="text-xs text-muted-foreground hover:text-ink underline cursor-pointer disabled:opacity-60">
+        <button type="button" onClick={skip} disabled={saving} className="text-sm text-muted-foreground hover:text-ink underline cursor-pointer disabled:opacity-60">
           Skip for now
         </button>
         <button onClick={submit} disabled={saving || hasBudget === null}
@@ -673,14 +1156,65 @@ function BudgetOnboarding({ onComplete }: {
   );
 }
 
-function BudgetSettingsDialog({ wedding, categories, customColumns, onClose }: {
-  wedding: { id: string; budget_currency: string };
+// A category's allocation is edited as either a % of the total budget or a plain
+// amount — typing one immediately computes and fills in the other. Two local text
+// states (not one canonical number) because "50" (%) and "50" (amount) look
+// identical but mean very different things; keeping them separate avoids the input
+// re-interpreting what's currently on screen every time the other field changes.
+function AllocationRow({ allocatedAmount, limit, currency, money, onSave }: {
+  allocatedAmount: number | null; limit: number; currency: string; money: (n: number) => string;
+  onSave: (amount: number | null) => void;
+}) {
+  const toPct = (amount: number) => String(round2((amount / limit) * 100));
+  const [amountStr, setAmountStr] = useState(allocatedAmount != null ? formatAmountInput(String(allocatedAmount), currency) : "");
+  const [pctStr, setPctStr] = useState(allocatedAmount != null ? toPct(allocatedAmount) : "");
+
+  const fromAmount = (raw: string) => {
+    setAmountStr(formatAmountInput(raw, currency));
+    const n = parseAmountInput(raw);
+    setPctStr(raw.trim() === "" ? "" : toPct(n));
+  };
+
+  // Percent is a plain number, not grouped like a currency amount — but still
+  // capped at 2 decimal places (e.g. 33.33), per how a percentage is normally written.
+  const fromPct = (raw: string) => {
+    if (!/^\d*\.?\d{0,2}$/.test(raw)) return;
+    setPctStr(raw);
+    const n = Number(raw);
+    setAmountStr(raw.trim() === "" || !Number.isFinite(n) ? "" : formatAmountInput(String(Math.round((n / 100) * limit)), currency));
+  };
+
+  const commit = () => {
+    const trimmed = amountStr.trim();
+    const amount = trimmed === "" ? null : Math.max(0, Math.round(parseAmountInput(trimmed)));
+    if (amount !== (allocatedAmount ?? null)) onSave(amount);
+  };
+
+  return (
+    <div className="mt-1.5 flex items-center gap-1.5">
+      <div className="relative w-20">
+        <input value={pctStr} onChange={(e) => fromPct(e.target.value)} onBlur={commit} placeholder="0" inputMode="decimal"
+          className="w-full rounded-full border border-line bg-pearl pl-2.5 pr-5 py-1.5 text-[10px] text-right tabular-nums focus:outline-none focus:ring-2 focus:ring-clay" />
+        <span className="absolute right-2.5 top-1/2 -translate-y-1/2 text-[10px] text-muted-foreground">%</span>
+      </div>
+      <span className="text-[10px] text-muted-foreground">=</span>
+      <input value={amountStr} onChange={(e) => fromAmount(e.target.value)} onBlur={commit} placeholder={money(0)} inputMode="decimal"
+        className="flex-1 min-w-0 rounded-full border border-line bg-pearl px-3 py-1.5 text-[10px] text-right tabular-nums focus:outline-none focus:ring-2 focus:ring-clay" />
+    </div>
+  );
+}
+
+function BudgetSettingsDialog({ wedding, categories, customColumns, events, onClose }: {
+  wedding: { id: string; budget_currency: string; budget_limit: number | null; budget_allocation_mode: string };
   categories: BudgetCategory[];
   customColumns: BudgetCustomColumn[];
+  events: Event[];
   onClose: () => void;
 }) {
   const qc = useQueryClient();
   const [currency, setCurrency] = useState(wedding.budget_currency);
+  const [limitStr, setLimitStr] = useState(wedding.budget_limit != null ? formatAmountInput(String(wedding.budget_limit), wedding.budget_currency) : "");
+  const [mode, setMode] = useState(wedding.budget_allocation_mode);
   const [newCategory, setNewCategory] = useState("");
   const [newColumnName, setNewColumnName] = useState("");
   const [newColumnType, setNewColumnType] = useState<BudgetCustomColumn["type"]>("text");
@@ -693,6 +1227,27 @@ function BudgetSettingsDialog({ wedding, categories, customColumns, onClose }: {
     const { error } = await supabase.from("weddings").update({ budget_currency: code }).eq("id", wedding.id);
     if (error) return toast.error(error.message);
     qc.invalidateQueries({ queryKey: ["current-wedding"] });
+  };
+
+  const saveBudgetLimit = async () => {
+    const trimmed = limitStr.trim();
+    const n = trimmed === "" ? null : Math.max(0, Math.round(parseAmountInput(trimmed)));
+    const { error } = await supabase.from("weddings").update({ budget_limit: n }).eq("id", wedding.id);
+    if (error) return toast.error(error.message);
+    qc.invalidateQueries({ queryKey: ["current-wedding"] });
+  };
+
+  const saveAllocationMode = async (next: string) => {
+    setMode(next);
+    const { error } = await supabase.from("weddings").update({ budget_allocation_mode: next }).eq("id", wedding.id);
+    if (error) return toast.error(error.message);
+    qc.invalidateQueries({ queryKey: ["current-wedding"] });
+  };
+
+  const saveEventAllocation = async (id: string, allocated_amount: number | null) => {
+    const { error } = await supabase.from("events").update({ allocated_amount }).eq("id", id);
+    if (error) return toast.error(error.message);
+    qc.invalidateQueries({ queryKey: ["events", wedding.id] });
   };
 
   const addCategory = async () => {
@@ -710,6 +1265,12 @@ function BudgetSettingsDialog({ wedding, categories, customColumns, onClose }: {
     invalidateCategories();
   };
 
+  const saveCategoryAllocation = async (id: string, allocated_amount: number | null) => {
+    const { error } = await supabase.from("budget_categories").update({ allocated_amount }).eq("id", id);
+    if (error) return toast.error(error.message);
+    invalidateCategories();
+  };
+
   const addColumn = async () => {
     const name = newColumnName.trim();
     if (!name) return;
@@ -720,7 +1281,6 @@ function BudgetSettingsDialog({ wedding, categories, customColumns, onClose }: {
   };
 
   const deleteColumn = async (id: string) => {
-    if (!confirm("Delete this custom column? Its values on existing expenses will no longer be shown.")) return;
     const { error } = await supabase.from("budget_custom_columns").delete().eq("id", id);
     if (error) return toast.error(error.message);
     invalidateColumns();
@@ -734,41 +1294,117 @@ function BudgetSettingsDialog({ wedding, categories, customColumns, onClose }: {
           <button onClick={onClose} className="text-muted-foreground hover:text-ink cursor-pointer"><X className="h-4 w-4" /></button>
         </div>
 
-        <div className="mt-6">
-          <span className="text-xs uppercase tracking-widest text-muted-foreground">Currency</span>
-          <Dropdown value={currency} onChange={saveCurrency} placeholder="Currency" className="mt-2"
-            options={Object.entries(CURRENCIES).map(([code, c]) => ({ value: code, label: `${c.label} (${c.symbol})` }))} />
-        </div>
-
-        <div className="mt-6">
-          <span className="text-xs uppercase tracking-widest text-muted-foreground">Categories</span>
-          <div className="mt-2 space-y-1.5">
-            {categories.map((c) => (
-              <div key={c.id} className="flex items-center justify-between gap-2 rounded-xl border border-line/60 px-3 py-2">
-                <span className="text-sm truncate">{c.name}</span>
-                <button onClick={() => deleteCategory(c.id)} className="text-muted-foreground hover:text-cherry cursor-pointer shrink-0"><Trash2 className="h-3.5 w-3.5" /></button>
-              </div>
-            ))}
-            {categories.length === 0 && <p className="text-xs text-muted-foreground italic">No categories yet.</p>}
+        <div className="mt-6 grid grid-cols-2 gap-3">
+          <div>
+            <span className="text-sm uppercase tracking-widest text-muted-foreground">Budget</span>
+            <input value={limitStr} onChange={(e) => reformatKeepingCaret(e, currency, setLimitStr)} onBlur={saveBudgetLimit}
+              onKeyDown={(e) => e.key === "Enter" && (e.target as HTMLInputElement).blur()}
+              placeholder="No limit set" inputMode="decimal"
+              className="mt-2 w-full rounded-2xl border border-line bg-pearl px-4 py-2.5 text-sm tabular-nums focus:outline-none focus:ring-2 focus:ring-clay" />
           </div>
-          <div className="mt-2 flex items-center gap-2">
-            <input value={newCategory} onChange={(e) => setNewCategory(e.target.value)} onKeyDown={(e) => e.key === "Enter" && addCategory()}
-              placeholder="New category" className="flex-1 rounded-2xl border border-line bg-pearl px-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-clay" />
-            <button onClick={addCategory} className="rounded-full bg-ink text-paper p-2.5 hover:bg-clay cursor-pointer shrink-0"><Plus className="h-3.5 w-3.5" /></button>
+          <div>
+            <span className="text-sm uppercase tracking-widest text-muted-foreground">Currency</span>
+            <Dropdown value={currency} onChange={saveCurrency} placeholder="Currency" className="mt-2"
+              options={Object.entries(CURRENCIES).map(([code, c]) => ({ value: code, label: `${c.label} (${c.symbol})` }))} />
           </div>
         </div>
 
         <div className="mt-6">
-          <span className="text-xs uppercase tracking-widest text-muted-foreground">Custom columns</span>
-          <p className="mt-1 text-[11px] text-muted-foreground">Extra fields you can fill in per expense, and filter by.</p>
+          <span className="text-sm uppercase tracking-widest text-muted-foreground">Budget planning</span>
+          <p className="mt-1 text-sm text-muted-foreground">Split your budget limit by category, or by event — whichever matches how you think about spending.</p>
+          <div className="mt-2 inline-flex rounded-full border border-line p-1">
+            <button type="button" onClick={() => saveAllocationMode("category")}
+              className={cn("rounded-full px-4 py-1.5 text-sm transition-colors cursor-pointer", mode === "category" ? "bg-ink text-paper" : "text-muted-foreground hover:text-ink")}>
+              Budget by category
+            </button>
+            <button type="button" onClick={() => saveAllocationMode("event")}
+              className={cn("rounded-full px-4 py-1.5 text-sm transition-colors cursor-pointer", mode === "event" ? "bg-ink text-paper" : "text-muted-foreground hover:text-ink")}>
+              Budget by event
+            </button>
+          </div>
+        </div>
+
+        {mode === "category" ? (
+          <div className="mt-6">
+            <span className="text-sm uppercase tracking-widest text-muted-foreground">Categories</span>
+            {wedding.budget_limit == null ? (
+              <p className="mt-1 text-sm text-muted-foreground">Set a total budget above to also give each category its own slice of it.</p>
+            ) : (() => {
+              const allocated = categories.reduce((sum, c) => sum + (c.allocated_amount ?? 0), 0);
+              const overAllocated = allocated > wedding.budget_limit;
+              return (
+                <>
+                  <p className={cn("mt-1 text-sm", overAllocated ? "text-destructive font-medium" : "text-muted-foreground")}>
+                    {formatMoney(allocated, currency)} of {formatMoney(wedding.budget_limit, currency)} allocated
+                  </p>
+                  {overAllocated && <p className="mt-0.5 text-sm text-destructive">You have exceeded your budget.</p>}
+                </>
+              );
+            })()}
+            <div className="mt-2 space-y-1.5">
+              {categories.map((c) => (
+                <div key={c.id} className="rounded-xl border border-line/60 px-3 py-2">
+                  <div className="flex items-center justify-between gap-2">
+                    <span className="text-sm truncate">{c.name}</span>
+                    <button onClick={() => deleteCategory(c.id)} className="text-muted-foreground hover:text-cherry cursor-pointer shrink-0"><Trash2 className="h-3.5 w-3.5" /></button>
+                  </div>
+                  {wedding.budget_limit != null && (
+                    <AllocationRow allocatedAmount={c.allocated_amount} limit={wedding.budget_limit} currency={currency}
+                      money={(n) => formatMoney(n, currency)} onSave={(amount) => saveCategoryAllocation(c.id, amount)} />
+                  )}
+                </div>
+              ))}
+              {categories.length === 0 && <p className="text-sm text-muted-foreground italic">No categories yet.</p>}
+            </div>
+            <div className="mt-2 flex items-center gap-2">
+              <input value={newCategory} onChange={(e) => setNewCategory(e.target.value)} onKeyDown={(e) => e.key === "Enter" && addCategory()}
+                placeholder="New category" className="flex-1 rounded-2xl border border-line bg-pearl px-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-clay" />
+              <button onClick={addCategory} className="rounded-full bg-ink text-paper p-2.5 hover:bg-clay cursor-pointer shrink-0"><Plus className="h-3.5 w-3.5" /></button>
+            </div>
+          </div>
+        ) : (
+          <div className="mt-6">
+            <span className="text-sm uppercase tracking-widest text-muted-foreground">Events</span>
+            {wedding.budget_limit == null ? (
+              <p className="mt-1 text-sm text-muted-foreground">Set a total budget above to also give each event its own slice of it.</p>
+            ) : (() => {
+              const allocated = events.reduce((sum, e) => sum + (e.allocated_amount ?? 0), 0);
+              const overAllocated = allocated > wedding.budget_limit;
+              return (
+                <>
+                  <p className={cn("mt-1 text-sm", overAllocated ? "text-destructive font-medium" : "text-muted-foreground")}>
+                    {formatMoney(allocated, currency)} of {formatMoney(wedding.budget_limit, currency)} allocated
+                  </p>
+                  {overAllocated && <p className="mt-0.5 text-sm text-destructive">You have exceeded your budget.</p>}
+                </>
+              );
+            })()}
+            <div className="mt-2 divide-y divide-line/60">
+              {events.map((e) => (
+                <div key={e.id} className="py-2.5 first:pt-0">
+                  <span className="text-sm truncate block">{e.name}</span>
+                  {wedding.budget_limit != null && (
+                    <AllocationRow allocatedAmount={e.allocated_amount} limit={wedding.budget_limit} currency={currency}
+                      money={(n) => formatMoney(n, currency)} onSave={(amount) => saveEventAllocation(e.id, amount)} />
+                  )}
+                </div>
+              ))}
+              {events.length === 0 && <p className="text-sm text-muted-foreground italic">No events yet — add one from the Events page.</p>}
+            </div>
+          </div>
+        )}
+
+        <div className="mt-6">
+          <span className="text-sm uppercase tracking-widest text-muted-foreground">Custom columns</span>
+          <p className="mt-1 text-sm text-muted-foreground">Extra fields you can fill in per expense, and filter by.</p>
           <div className="mt-2 space-y-1.5">
             {customColumns.map((col) => (
               <div key={col.id} className="flex items-center justify-between gap-2 rounded-xl border border-line/60 px-3 py-2">
-                <span className="text-sm truncate">{col.name} <span className="text-[10px] uppercase tracking-widest text-muted-foreground">{CUSTOM_COLUMN_TYPES.find((t) => t.value === col.type)?.label}</span></span>
+                <span className="text-sm truncate">{col.name} <span className="text-[8px] uppercase tracking-widest text-muted-foreground">{CUSTOM_COLUMN_TYPES.find((t) => t.value === col.type)?.label}</span></span>
                 <button onClick={() => deleteColumn(col.id)} className="text-muted-foreground hover:text-cherry cursor-pointer shrink-0"><Trash2 className="h-3.5 w-3.5" /></button>
               </div>
             ))}
-            {customColumns.length === 0 && <p className="text-xs text-muted-foreground italic">No custom columns yet.</p>}
+            {customColumns.length === 0 && <p className="text-sm text-muted-foreground italic">No custom columns yet.</p>}
           </div>
           <div className="mt-2 flex items-center gap-2">
             <input value={newColumnName} onChange={(e) => setNewColumnName(e.target.value)} placeholder="Column name"

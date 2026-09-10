@@ -15,6 +15,7 @@ import { Route as IndexRouteImport } from './routes/index'
 import { Route as AuthIndexRouteImport } from './routes/auth.index'
 import { Route as WSlugRouteImport } from './routes/w.$slug'
 import { Route as RsvpTokenRouteImport } from './routes/rsvp.$token'
+import { Route as FeaturesSlugRouteImport } from './routes/features.$slug'
 import { Route as AuthRoleRouteImport } from './routes/auth.role'
 import { Route as AuthCallbackRouteImport } from './routes/auth.callback'
 import { Route as AuthenticatedWebsiteRouteImport } from './routes/_authenticated/website'
@@ -24,6 +25,7 @@ import { Route as AuthenticatedSeatingRouteImport } from './routes/_authenticate
 import { Route as AuthenticatedRsvpQuestionsRouteImport } from './routes/_authenticated/rsvp-questions'
 import { Route as AuthenticatedRegistryRouteImport } from './routes/_authenticated/registry'
 import { Route as AuthenticatedOnboardingRouteImport } from './routes/_authenticated/onboarding'
+import { Route as AuthenticatedNotesRouteImport } from './routes/_authenticated/notes'
 import { Route as AuthenticatedMessagesRouteImport } from './routes/_authenticated/messages'
 import { Route as AuthenticatedMenuRouteImport } from './routes/_authenticated/menu'
 import { Route as AuthenticatedLeadsRouteImport } from './routes/_authenticated/leads'
@@ -32,7 +34,9 @@ import { Route as AuthenticatedEventsRouteImport } from './routes/_authenticated
 import { Route as AuthenticatedDashboardRouteImport } from './routes/_authenticated/dashboard'
 import { Route as AuthenticatedBudgetRouteImport } from './routes/_authenticated/budget'
 import { Route as WSlugRegistryRouteImport } from './routes/w.$slug.registry'
+import { Route as RsvpWSlugRouteImport } from './routes/rsvp.w.$slug'
 import { Route as AuthenticatedWebsiteEditRouteImport } from './routes/_authenticated/website_.edit'
+import { Route as AuthenticatedSettingsProfileRouteImport } from './routes/_authenticated/settings.profile'
 
 const AuthRoute = AuthRouteImport.update({
   id: '/auth',
@@ -61,6 +65,11 @@ const WSlugRoute = WSlugRouteImport.update({
 const RsvpTokenRoute = RsvpTokenRouteImport.update({
   id: '/rsvp/$token',
   path: '/rsvp/$token',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const FeaturesSlugRoute = FeaturesSlugRouteImport.update({
+  id: '/features/$slug',
+  path: '/features/$slug',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AuthRoleRoute = AuthRoleRouteImport.update({
@@ -109,6 +118,11 @@ const AuthenticatedOnboardingRoute = AuthenticatedOnboardingRouteImport.update({
   path: '/onboarding',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
+const AuthenticatedNotesRoute = AuthenticatedNotesRouteImport.update({
+  id: '/notes',
+  path: '/notes',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
 const AuthenticatedMessagesRoute = AuthenticatedMessagesRouteImport.update({
   id: '/messages',
   path: '/messages',
@@ -149,10 +163,21 @@ const WSlugRegistryRoute = WSlugRegistryRouteImport.update({
   path: '/registry',
   getParentRoute: () => WSlugRoute,
 } as any)
+const RsvpWSlugRoute = RsvpWSlugRouteImport.update({
+  id: '/rsvp/w/$slug',
+  path: '/rsvp/w/$slug',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const AuthenticatedWebsiteEditRoute =
   AuthenticatedWebsiteEditRouteImport.update({
     id: '/website_/edit',
     path: '/website/edit',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
+const AuthenticatedSettingsProfileRoute =
+  AuthenticatedSettingsProfileRouteImport.update({
+    id: '/settings/profile',
+    path: '/settings/profile',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
 
@@ -166,6 +191,7 @@ export interface FileRoutesByFullPath {
   '/leads': typeof AuthenticatedLeadsRoute
   '/menu': typeof AuthenticatedMenuRoute
   '/messages': typeof AuthenticatedMessagesRoute
+  '/notes': typeof AuthenticatedNotesRoute
   '/onboarding': typeof AuthenticatedOnboardingRoute
   '/registry': typeof AuthenticatedRegistryRoute
   '/rsvp-questions': typeof AuthenticatedRsvpQuestionsRoute
@@ -175,10 +201,13 @@ export interface FileRoutesByFullPath {
   '/website': typeof AuthenticatedWebsiteRoute
   '/auth/callback': typeof AuthCallbackRoute
   '/auth/role': typeof AuthRoleRoute
+  '/features/$slug': typeof FeaturesSlugRoute
   '/rsvp/$token': typeof RsvpTokenRoute
   '/w/$slug': typeof WSlugRouteWithChildren
   '/auth/': typeof AuthIndexRoute
+  '/settings/profile': typeof AuthenticatedSettingsProfileRoute
   '/website/edit': typeof AuthenticatedWebsiteEditRoute
+  '/rsvp/w/$slug': typeof RsvpWSlugRoute
   '/w/$slug/registry': typeof WSlugRegistryRoute
 }
 export interface FileRoutesByTo {
@@ -190,6 +219,7 @@ export interface FileRoutesByTo {
   '/leads': typeof AuthenticatedLeadsRoute
   '/menu': typeof AuthenticatedMenuRoute
   '/messages': typeof AuthenticatedMessagesRoute
+  '/notes': typeof AuthenticatedNotesRoute
   '/onboarding': typeof AuthenticatedOnboardingRoute
   '/registry': typeof AuthenticatedRegistryRoute
   '/rsvp-questions': typeof AuthenticatedRsvpQuestionsRoute
@@ -199,10 +229,13 @@ export interface FileRoutesByTo {
   '/website': typeof AuthenticatedWebsiteRoute
   '/auth/callback': typeof AuthCallbackRoute
   '/auth/role': typeof AuthRoleRoute
+  '/features/$slug': typeof FeaturesSlugRoute
   '/rsvp/$token': typeof RsvpTokenRoute
   '/w/$slug': typeof WSlugRouteWithChildren
   '/auth': typeof AuthIndexRoute
+  '/settings/profile': typeof AuthenticatedSettingsProfileRoute
   '/website/edit': typeof AuthenticatedWebsiteEditRoute
+  '/rsvp/w/$slug': typeof RsvpWSlugRoute
   '/w/$slug/registry': typeof WSlugRegistryRoute
 }
 export interface FileRoutesById {
@@ -217,6 +250,7 @@ export interface FileRoutesById {
   '/_authenticated/leads': typeof AuthenticatedLeadsRoute
   '/_authenticated/menu': typeof AuthenticatedMenuRoute
   '/_authenticated/messages': typeof AuthenticatedMessagesRoute
+  '/_authenticated/notes': typeof AuthenticatedNotesRoute
   '/_authenticated/onboarding': typeof AuthenticatedOnboardingRoute
   '/_authenticated/registry': typeof AuthenticatedRegistryRoute
   '/_authenticated/rsvp-questions': typeof AuthenticatedRsvpQuestionsRoute
@@ -226,10 +260,13 @@ export interface FileRoutesById {
   '/_authenticated/website': typeof AuthenticatedWebsiteRoute
   '/auth/callback': typeof AuthCallbackRoute
   '/auth/role': typeof AuthRoleRoute
+  '/features/$slug': typeof FeaturesSlugRoute
   '/rsvp/$token': typeof RsvpTokenRoute
   '/w/$slug': typeof WSlugRouteWithChildren
   '/auth/': typeof AuthIndexRoute
+  '/_authenticated/settings/profile': typeof AuthenticatedSettingsProfileRoute
   '/_authenticated/website_/edit': typeof AuthenticatedWebsiteEditRoute
+  '/rsvp/w/$slug': typeof RsvpWSlugRoute
   '/w/$slug/registry': typeof WSlugRegistryRoute
 }
 export interface FileRouteTypes {
@@ -244,6 +281,7 @@ export interface FileRouteTypes {
     | '/leads'
     | '/menu'
     | '/messages'
+    | '/notes'
     | '/onboarding'
     | '/registry'
     | '/rsvp-questions'
@@ -253,10 +291,13 @@ export interface FileRouteTypes {
     | '/website'
     | '/auth/callback'
     | '/auth/role'
+    | '/features/$slug'
     | '/rsvp/$token'
     | '/w/$slug'
     | '/auth/'
+    | '/settings/profile'
     | '/website/edit'
+    | '/rsvp/w/$slug'
     | '/w/$slug/registry'
   fileRoutesByTo: FileRoutesByTo
   to:
@@ -268,6 +309,7 @@ export interface FileRouteTypes {
     | '/leads'
     | '/menu'
     | '/messages'
+    | '/notes'
     | '/onboarding'
     | '/registry'
     | '/rsvp-questions'
@@ -277,10 +319,13 @@ export interface FileRouteTypes {
     | '/website'
     | '/auth/callback'
     | '/auth/role'
+    | '/features/$slug'
     | '/rsvp/$token'
     | '/w/$slug'
     | '/auth'
+    | '/settings/profile'
     | '/website/edit'
+    | '/rsvp/w/$slug'
     | '/w/$slug/registry'
   id:
     | '__root__'
@@ -294,6 +339,7 @@ export interface FileRouteTypes {
     | '/_authenticated/leads'
     | '/_authenticated/menu'
     | '/_authenticated/messages'
+    | '/_authenticated/notes'
     | '/_authenticated/onboarding'
     | '/_authenticated/registry'
     | '/_authenticated/rsvp-questions'
@@ -303,10 +349,13 @@ export interface FileRouteTypes {
     | '/_authenticated/website'
     | '/auth/callback'
     | '/auth/role'
+    | '/features/$slug'
     | '/rsvp/$token'
     | '/w/$slug'
     | '/auth/'
+    | '/_authenticated/settings/profile'
     | '/_authenticated/website_/edit'
+    | '/rsvp/w/$slug'
     | '/w/$slug/registry'
   fileRoutesById: FileRoutesById
 }
@@ -314,8 +363,10 @@ export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AuthenticatedRouteRoute: typeof AuthenticatedRouteRouteWithChildren
   AuthRoute: typeof AuthRouteWithChildren
+  FeaturesSlugRoute: typeof FeaturesSlugRoute
   RsvpTokenRoute: typeof RsvpTokenRoute
   WSlugRoute: typeof WSlugRouteWithChildren
+  RsvpWSlugRoute: typeof RsvpWSlugRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -360,6 +411,13 @@ declare module '@tanstack/react-router' {
       path: '/rsvp/$token'
       fullPath: '/rsvp/$token'
       preLoaderRoute: typeof RsvpTokenRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/features/$slug': {
+      id: '/features/$slug'
+      path: '/features/$slug'
+      fullPath: '/features/$slug'
+      preLoaderRoute: typeof FeaturesSlugRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/auth/role': {
@@ -425,6 +483,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedOnboardingRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/notes': {
+      id: '/_authenticated/notes'
+      path: '/notes'
+      fullPath: '/notes'
+      preLoaderRoute: typeof AuthenticatedNotesRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/messages': {
       id: '/_authenticated/messages'
       path: '/messages'
@@ -481,11 +546,25 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof WSlugRegistryRouteImport
       parentRoute: typeof WSlugRoute
     }
+    '/rsvp/w/$slug': {
+      id: '/rsvp/w/$slug'
+      path: '/rsvp/w/$slug'
+      fullPath: '/rsvp/w/$slug'
+      preLoaderRoute: typeof RsvpWSlugRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/_authenticated/website_/edit': {
       id: '/_authenticated/website_/edit'
       path: '/website/edit'
       fullPath: '/website/edit'
       preLoaderRoute: typeof AuthenticatedWebsiteEditRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/settings/profile': {
+      id: '/_authenticated/settings/profile'
+      path: '/settings/profile'
+      fullPath: '/settings/profile'
+      preLoaderRoute: typeof AuthenticatedSettingsProfileRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
   }
@@ -499,6 +578,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedLeadsRoute: typeof AuthenticatedLeadsRoute
   AuthenticatedMenuRoute: typeof AuthenticatedMenuRoute
   AuthenticatedMessagesRoute: typeof AuthenticatedMessagesRoute
+  AuthenticatedNotesRoute: typeof AuthenticatedNotesRoute
   AuthenticatedOnboardingRoute: typeof AuthenticatedOnboardingRoute
   AuthenticatedRegistryRoute: typeof AuthenticatedRegistryRoute
   AuthenticatedRsvpQuestionsRoute: typeof AuthenticatedRsvpQuestionsRoute
@@ -506,6 +586,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedVendorsRoute: typeof AuthenticatedVendorsRoute
   AuthenticatedVenuesRoute: typeof AuthenticatedVenuesRoute
   AuthenticatedWebsiteRoute: typeof AuthenticatedWebsiteRoute
+  AuthenticatedSettingsProfileRoute: typeof AuthenticatedSettingsProfileRoute
   AuthenticatedWebsiteEditRoute: typeof AuthenticatedWebsiteEditRoute
 }
 
@@ -517,6 +598,7 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedLeadsRoute: AuthenticatedLeadsRoute,
   AuthenticatedMenuRoute: AuthenticatedMenuRoute,
   AuthenticatedMessagesRoute: AuthenticatedMessagesRoute,
+  AuthenticatedNotesRoute: AuthenticatedNotesRoute,
   AuthenticatedOnboardingRoute: AuthenticatedOnboardingRoute,
   AuthenticatedRegistryRoute: AuthenticatedRegistryRoute,
   AuthenticatedRsvpQuestionsRoute: AuthenticatedRsvpQuestionsRoute,
@@ -524,6 +606,7 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedVendorsRoute: AuthenticatedVendorsRoute,
   AuthenticatedVenuesRoute: AuthenticatedVenuesRoute,
   AuthenticatedWebsiteRoute: AuthenticatedWebsiteRoute,
+  AuthenticatedSettingsProfileRoute: AuthenticatedSettingsProfileRoute,
   AuthenticatedWebsiteEditRoute: AuthenticatedWebsiteEditRoute,
 }
 
@@ -558,8 +641,10 @@ const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AuthenticatedRouteRoute: AuthenticatedRouteRouteWithChildren,
   AuthRoute: AuthRouteWithChildren,
+  FeaturesSlugRoute: FeaturesSlugRoute,
   RsvpTokenRoute: RsvpTokenRoute,
   WSlugRoute: WSlugRouteWithChildren,
+  RsvpWSlugRoute: RsvpWSlugRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

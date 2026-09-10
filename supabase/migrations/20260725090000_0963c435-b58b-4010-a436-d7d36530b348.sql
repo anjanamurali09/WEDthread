@@ -11,6 +11,7 @@ ALTER TABLE public.guests ADD COLUMN IF NOT EXISTS rsvp_submitted_at timestamptz
 -- 3. get_rsvp_context now also returns the wedding's attendance settings and
 -- the guest's submission state, so the guest page can render the right
 -- copy/options and lock state on load without a second round trip.
+DROP FUNCTION IF EXISTS public.get_rsvp_context(text);
 CREATE OR REPLACE FUNCTION public.get_rsvp_context(_token TEXT)
 RETURNS TABLE (
   guest_id UUID, guest_name TEXT, wedding_id UUID, partner_a TEXT, partner_b TEXT,

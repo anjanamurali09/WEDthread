@@ -29,7 +29,7 @@ function LeadsPage() {
   };
 
   return (
-    <AppShell title="Leads" subtitle="Inquiries from couples who found your listing on Vowzy.">
+    <AppShell title="Leads" subtitle="Inquiries from couples who found your listing on WedThread.">
       <div className="flex flex-wrap gap-2 mb-6">
         <button onClick={() => setFilter("all")} className={`chip ${filter === "all" ? "chip-active" : ""}`}>All ({formatNumber(leads.length)})</button>
         {STATUSES.map((s) => (
@@ -54,7 +54,7 @@ function LeadsPage() {
               <div className="flex flex-wrap items-start justify-between gap-3">
                 <div className="min-w-0">
                   <p className="font-serif text-xl">{l.contact_name ?? "New inquiry"}</p>
-                  <div className="mt-1 flex flex-wrap gap-3 text-xs text-muted-foreground">
+                  <div className="mt-1 flex flex-wrap gap-3 text-sm text-muted-foreground">
                     {l.contact_email && <span className="inline-flex items-center gap-1"><Mail className="h-3 w-3" /> {l.contact_email}</span>}
                     {l.contact_phone && <span className="inline-flex items-center gap-1"><Phone className="h-3 w-3" /> {l.contact_phone}</span>}
                     {l.event_date && <span className="inline-flex items-center gap-1"><Calendar className="h-3 w-3" /> {new Date(l.event_date).toLocaleDateString()}</span>}
@@ -62,13 +62,13 @@ function LeadsPage() {
                     {l.city && <span>{l.city}{l.country ? ", " + l.country : ""}</span>}
                   </div>
                 </div>
-                <select value={l.status} onChange={(e) => updateStatus(l.id, e.target.value)} className="text-xs rounded-full border border-line px-3 py-1 bg-paper capitalize">
+                <select value={l.status} onChange={(e) => updateStatus(l.id, e.target.value)} className="text-sm rounded-full border border-line px-3 py-1 bg-paper capitalize">
                   {STATUSES.map((s) => <option key={s} value={s}>{s}</option>)}
                 </select>
               </div>
-              <p className="mt-3 text-sm text-ink/80 whitespace-pre-line">{l.message}</p>
+              <p className="mt-3 text-sm text-ink whitespace-pre-line">{l.message}</p>
               {(l.budget_min || l.budget_max) && (
-                <p className="mt-2 text-xs text-muted-foreground">Budget: {l.budget_min != null ? formatNumber(l.budget_min) : "?"} – {l.budget_max != null ? formatNumber(l.budget_max) : "?"} {l.currency ?? ""}</p>
+                <p className="mt-2 text-sm text-muted-foreground">Budget: {l.budget_min != null ? formatNumber(l.budget_min) : "?"} – {l.budget_max != null ? formatNumber(l.budget_max) : "?"} {l.currency ?? ""}</p>
               )}
               <p className="mt-2 text-[10px] uppercase tracking-widest text-muted-foreground">
                 via {l.utm_source}/{l.utm_medium}{l.utm_campaign ? ` · ${l.utm_campaign}` : ""} · {new Date(l.created_at).toLocaleString()}

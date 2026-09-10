@@ -3,6 +3,7 @@ import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { Sparkles, HeartHandshake, Building2, Store, ShoppingBag, ClipboardList } from "lucide-react";
+import { Logo } from "@/components/logo";
 import { z } from "zod";
 import { addRoleForCurrentUser, ROLE_LANDING, type AppRole } from "@/hooks/use-active-role";
 
@@ -14,8 +15,8 @@ export const Route = createFileRoute("/auth/role")({
   validateSearch: searchSchema,
   head: () => ({
     meta: [
-      { title: "Choose your role · Vowzy" },
-      { name: "description", content: "Tell us how you'll use Vowzy." },
+      { title: "Choose your role · WedThread" },
+      { name: "description", content: "Tell us how you'll use WedThread." },
     ],
   }),
   component: RolePicker,
@@ -51,7 +52,7 @@ function RolePicker() {
           .eq("user_id", data.user.id)
           .limit(1);
         if (existing && existing.length > 0) {
-          window.localStorage.setItem("vowzy.activeRole", existing[0].role);
+          window.localStorage.setItem("wedthread.activeRole", existing[0].role);
           navigate({ to: "/dashboard" as any, replace: true });
           return;
         }
@@ -94,15 +95,15 @@ function RolePicker() {
       <div className="max-w-2xl mx-auto px-6 py-14">
         <Link to="/" className="inline-flex items-center gap-2">
           <span className="grid h-9 w-9 place-items-center rounded-full bg-cherry text-pearl"><Sparkles className="h-4 w-4" /></span>
-          <span className="font-serif text-2xl">Vowzy</span>
+          <Logo />
         </Link>
 
         <div className="mt-12">
-          <p className="text-[11px] uppercase tracking-[0.2em] text-cherry">
+          <p className="text-sm uppercase tracking-[0.2em] text-cherry">
             {add ? "Add another role" : "One more step"}
           </p>
           <h1 className="mt-2 font-serif text-4xl md:text-5xl leading-[1.05]">
-            {add ? "How else will you use Vowzy?" : "How will you use Vowzy?"}
+            {add ? "How else will you use WedThread?" : "How will you use WedThread?"}
           </h1>
           <p className="mt-3 text-sm text-muted-foreground">
             {add
@@ -123,10 +124,10 @@ function RolePicker() {
                 </span>
                 <div className="min-w-0">
                   <p className="font-serif text-xl">{label}</p>
-                  <p className="text-xs text-muted-foreground mt-0.5">{desc}</p>
+                  <p className="text-sm text-muted-foreground mt-0.5">{desc}</p>
                 </div>
                 {saving === role && (
-                  <span className="ml-auto text-xs text-cherry self-center">Setting up…</span>
+                  <span className="ml-auto text-sm text-cherry self-center">Setting up…</span>
                 )}
               </button>
             ))}

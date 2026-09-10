@@ -38,9 +38,9 @@ export function PhotoEmptyState({ photo, eyebrow, title, body, children, variant
           </div>
         </div>
         <div className="px-6 md:px-12 pt-6 pb-10 text-center max-w-2xl mx-auto">
-          {eyebrow && <p className="text-[11px] uppercase tracking-[0.3em] text-cherry">{eyebrow}</p>}
+          {eyebrow && <p className="text-sm uppercase tracking-[0.3em] text-cherry">{eyebrow}</p>}
           <h3 className="mt-2 font-serif text-3xl md:text-4xl leading-tight">{title}</h3>
-          {body && <p className="mt-3 text-sm text-ink/70 leading-relaxed">{body}</p>}
+          {body && <p className="mt-3 text-sm text-ink leading-relaxed">{body}</p>}
           {children && <div className="mt-6 flex flex-wrap justify-center gap-2">{children}</div>}
         </div>
       </section>
@@ -54,8 +54,8 @@ export function PhotoEmptyState({ photo, eyebrow, title, body, children, variant
           <img src={p.url} alt={p.alt} loading="lazy" className="w-full h-full object-cover" style={{ objectPosition: p.pos }} />
         </div>
         <div className="min-w-0">
-          <p className="font-serif text-base md:text-lg leading-tight truncate">{title}</p>
-          {body && <p className="text-xs text-ink/60 truncate">{body}</p>}
+          <p className="font-serif text-lg leading-tight truncate">{title}</p>
+          {body && <p className="text-sm text-ink truncate">{body}</p>}
         </div>
         {children && <div className="ml-auto flex gap-2 shrink-0">{children}</div>}
       </div>
@@ -72,9 +72,9 @@ export function PhotoEmptyState({ photo, eyebrow, title, body, children, variant
         <span aria-hidden className="pointer-events-none absolute -top-3 left-2 h-10 w-14 blob-2 bg-blush-soft" />
       </div>
       <div className="md:col-span-3 p-6 md:p-10 flex flex-col justify-center">
-        {eyebrow && <p className="text-[11px] uppercase tracking-[0.3em] text-cherry">{eyebrow}</p>}
+        {eyebrow && <p className="text-sm uppercase tracking-[0.3em] text-cherry">{eyebrow}</p>}
         <h3 className="mt-2 font-serif text-3xl md:text-4xl leading-tight">{title}</h3>
-        {body && <p className="mt-3 text-sm text-ink/70 leading-relaxed max-w-md">{body}</p>}
+        {body && <p className="mt-3 text-sm text-ink leading-relaxed max-w-md">{body}</p>}
         {children && <div className="mt-6 flex flex-wrap gap-2">{children}</div>}
       </div>
     </section>

@@ -3,11 +3,12 @@ import { useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Sparkles } from "lucide-react";
 import { ROLE_LANDING, type AppRole } from "@/hooks/use-active-role";
+import { resolveCoupleLanding } from "@/lib/wedding-hooks";
 
 export const Route = createFileRoute("/auth/callback")({
   head: () => ({
     meta: [
-      { title: "Signing you in · Vowzy" },
+      { title: "Signing you in · WedThread" },
       { name: "robots", content: "noindex" },
     ],
   }),
@@ -46,16 +47,11 @@ function AuthCallback() {
       }
 
       const active = roles[0].role as AppRole;
-      window.localStorage.setItem("vowzy.activeRole", active);
+      window.localStorage.setItem("wedthread.activeRole", active);
 
       if (active === "couple") {
-        const { data: w } = await supabase
-          .from("weddings")
-          .select("id")
-          .eq("owner_id", u.user.id)
-          .limit(1)
-          .maybeSingle();
-        navigate({ to: (w ? "/dashboard" : "/onboarding") as any, replace: true });
+        const landing = await resolveCoupleLanding(u.user.id);
+        navigate({ to: landing as any, replace: true });
         return;
       }
       navigate({ to: ROLE_LANDING[active] as any, replace: true });

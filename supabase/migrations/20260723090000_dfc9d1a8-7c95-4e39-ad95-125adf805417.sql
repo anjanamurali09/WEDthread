@@ -6,6 +6,7 @@
 -- submit_rsvp with the same "guest is tagged to this event" check
 -- submit_rsvp_answer already has, since it only verified same-wedding.
 
+DROP FUNCTION IF EXISTS public.get_rsvp_context(text);
 CREATE OR REPLACE FUNCTION public.get_rsvp_context(_token TEXT)
 RETURNS TABLE (
   guest_id UUID, guest_name TEXT, wedding_id UUID, partner_a TEXT, partner_b TEXT,

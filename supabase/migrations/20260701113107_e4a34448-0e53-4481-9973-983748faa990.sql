@@ -179,6 +179,7 @@ END;
 $$;
 GRANT EXECUTE ON FUNCTION public.submit_rsvp(TEXT, UUID, rsvp_status, INT) TO anon, authenticated;
 
+DROP FUNCTION IF EXISTS public.get_rsvp_context(text);
 CREATE OR REPLACE FUNCTION public.get_rsvp_context(_token TEXT)
 RETURNS TABLE (
   guest_id UUID, guest_name TEXT, wedding_id UUID, partner_a TEXT, partner_b TEXT,

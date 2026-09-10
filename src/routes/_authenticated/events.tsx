@@ -9,8 +9,10 @@ import {
   Plus, Trash2, X, CalendarDays, Users, Armchair, MapPin, Gift, Globe2, Handshake, ChevronRight, GripVertical, Check, Gauge, Utensils,
 } from "lucide-react";
 import { DatePicker } from "@/components/ui/datepicker";
+import { TimePicker } from "@/components/ui/timepicker";
 import { cn, formatNumber } from "@/lib/utils";
 import { PhotoEmptyState } from "@/components/photo-empty-state";
+import { ConfirmDialog } from "@/components/confirm-dialog";
 import { DndContext, closestCenter, PointerSensor, useSensor, useSensors, type DragEndEvent } from "@dnd-kit/core";
 import { SortableContext, arrayMove, useSortable, rectSortingStrategy } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
@@ -91,6 +93,7 @@ function EventsPage() {
   const qc = useQueryClient();
   const [editing, setEditing] = useState<Partial<Event> | null>(null);
   const [trackOpen, setTrackOpen] = useState(false);
+  const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
 
   // Global counts for wedding-wide categories (registry / website / vendors)
   const { data: counts, isLoading: countsLoading } = useQuery({
@@ -129,7 +132,6 @@ function EventsPage() {
       country: e.country || null, description: e.description || null,
       sort_order: e.sort_order ?? events.length,
       enabled_categories: (e as any).enabled_categories ?? ALL_CATEGORIES.map((c) => c.key),
-      food_included: (e as any).food_included ?? true,
     };
     try {
       if (e.id) {
@@ -139,7 +141,6 @@ function EventsPage() {
         const { error } = await supabase.from("events").insert(payload);
         if (error) throw error;
       }
-      toast.success("Saved");
       setEditing(null);
       invalidate(wedding.id);
     } catch (err: any) { toast.error(err.message); }
@@ -152,11 +153,16 @@ function EventsPage() {
   };
 
   const del = async (id: string) => {
-    if (!confirm("Delete this event? Guest invites for it will also be removed.")) return;
     const { error } = await supabase.from("events").delete().eq("id", id);
     if (error) return toast.error(error.message);
     toast.success("Deleted");
     invalidate(wedding?.id);
+  };
+
+  const confirmDelete = async () => {
+    if (!confirmDeleteId) return;
+    await del(confirmDeleteId);
+    setConfirmDeleteId(null);
   };
 
   const persistOrder = async (ordered: Event[]) => {
@@ -202,12 +208,12 @@ function EventsPage() {
             body="Add a mehendi, a welcome cocktail, a beach ceremony, a farewell brunch, whatever your two families are celebrating. Start with one of the traditions below or write your own."
           >
             {SUGGESTIONS.map((s) => (
-              <button key={s} onClick={() => setEditing({ name: s })} className="rounded-full bg-paper border border-line px-4 py-1.5 text-xs hover:bg-clay hover:text-paper hover:border-clay transition-colors cursor-pointer">+ {s}</button>
+              <button key={s} onClick={() => setEditing({ name: s })} className="shrink-0 whitespace-nowrap rounded-full bg-paper border border-line px-4 py-1.5 text-sm hover:bg-clay hover:text-paper hover:border-clay transition-colors cursor-pointer">+ {s}</button>
             ))}
           </PhotoEmptyState>
         ) : (
           <>
-            <p className="text-xs text-muted-foreground mb-3">{formatNumber(events.length)} event{events.length === 1 ? "" : "s"} · drag to reorder</p>
+            <p className="text-sm text-muted-foreground mb-3">{formatNumber(events.length)} event{events.length === 1 ? "" : "s"} · drag to reorder</p>
             <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={onDragEnd}>
               <SortableContext items={events.map((e) => e.id)} strategy={rectSortingStrategy}>
                 <div className="grid md:grid-cols-2 xl:grid-cols-3 gap-4">
@@ -221,7 +227,7 @@ function EventsPage() {
                       tableCount={tableCounts[e.id] ?? 0}
                       counts={counts}
                       onEdit={() => setEditing(e)}
-                      onDelete={() => del(e.id)}
+                      onDelete={() => setConfirmDeleteId(e.id)}
                     />
                   ))}
                 </div>
@@ -233,6 +239,21 @@ function EventsPage() {
 
       {editing && <EventDialog event={editing} onClose={() => setEditing(null)} onSave={save} />}
       {trackOpen && <TrackProgressModal events={events} onClose={() => setTrackOpen(false)} onSave={saveCategoryCompletion} />}
+      {confirmDeleteId && (() => {
+        const ev = events.find((e) => e.id === confirmDeleteId);
+        const invitedCount = invites.filter((i) => i.event_id === confirmDeleteId).length;
+        return (
+          <ConfirmDialog
+            title="Delete event"
+            description={invitedCount > 0
+              ? `Delete "${ev?.name ?? "this event"}"? ${formatNumber(invitedCount)} guest invite${invitedCount === 1 ? "" : "s"}, its seating plan, and its menu will all be removed. This can't be undone.`
+              : `Delete "${ev?.name ?? "this event"}"? Its seating plan and menu will also be removed. This can't be undone.`}
+            confirmLabel="Delete event"
+            onConfirm={confirmDelete}
+            onCancel={() => setConfirmDeleteId(null)}
+          />
+        );
+      })()}
     </AppShell>
   );
 }
@@ -255,7 +276,7 @@ function EventCard({ event, index, guests, invites, tableCount, counts, onEdit, 
     }
   };
 
-  const rows = ALL_CATEGORIES.filter((c) => enabled.includes(c.key) && (c.key !== "menu" || event.food_included));
+  const rows = ALL_CATEGORIES.filter((c) => enabled.includes(c.key));
 
   return (
     <div ref={setNodeRef} style={{ transform: CSS.Transform.toString(transform), transition, opacity: isDragging ? 0.4 : 1 }}
@@ -268,7 +289,7 @@ function EventCard({ event, index, guests, invites, tableCount, counts, onEdit, 
           <div className="min-w-0">
             <p className="text-[10px] uppercase tracking-widest text-clay">Event {index + 1}</p>
             <h3 className="mt-1 font-serif text-2xl truncate">{event.name}</h3>
-            <p className="text-xs text-muted-foreground mt-1">
+            <p className="text-sm text-muted-foreground mt-1">
               {event.event_date ? new Date(event.event_date).toLocaleDateString(undefined, { weekday: "short", month: "long", day: "numeric" }) : "Date TBD"}
               {event.event_time ? ` · ${event.event_time.slice(0, 5)}` : ""}
               {event.city || event.country ? ` · ${[event.city, event.country].filter(Boolean).join(", ")}` : ""}
@@ -291,7 +312,7 @@ function EventCard({ event, index, guests, invites, tableCount, counts, onEdit, 
             >
               <Icon className="h-4 w-4 text-clay shrink-0" />
               <span className="text-sm font-medium text-ink w-20 shrink-0">{c.label}</span>
-              <span className={cn("text-xs flex-1 truncate", s.hasData ? "text-ink/80" : "text-muted-foreground italic")}>{s.text}</span>
+              <span className={cn("text-sm flex-1 truncate", s.hasData ? "text-ink" : "text-muted-foreground italic")}>{s.text}</span>
               <ChevronRight className="h-3.5 w-3.5 text-muted-foreground group-hover:text-ink transition-colors" />
             </Link>
           );
@@ -299,8 +320,8 @@ function EventCard({ event, index, guests, invites, tableCount, counts, onEdit, 
       </div>
 
       <div className="mt-4 flex gap-2">
-        <button onClick={onEdit} className="text-xs rounded-full border border-line px-3 py-1.5 hover:bg-stone cursor-pointer">Edit event</button>
-        <button onClick={onDelete} className="text-xs rounded-full border border-line px-3 py-1.5 hover:bg-stone text-muted-foreground cursor-pointer ml-auto"><Trash2 className="h-3 w-3" /></button>
+        <button onClick={onEdit} className="text-sm rounded-full border border-line px-3 py-1.5 hover:bg-stone cursor-pointer">Edit event</button>
+        <button onClick={onDelete} className="text-sm rounded-full border border-line px-3 py-1.5 hover:bg-stone text-muted-foreground cursor-pointer ml-auto"><Trash2 className="h-3 w-3" /></button>
       </div>
     </div>
   );
@@ -365,19 +386,29 @@ function EventDialog({ event, onClose, onSave }: { event: Partial<Event>; onClos
             <F label="Name of event" required value={form.name ?? ""} onChange={(v) => setField("name", v)} placeholder="e.g. Sangeet" error={touched.name ? errors.name : undefined} />
             <div className="mt-2 flex flex-wrap gap-1.5">
               {SUGGESTIONS.map((s) => (
-                <button type="button" key={s} onClick={() => setField("name", s)} className="text-[11px] rounded-full border border-line px-2.5 py-0.5 hover:bg-stone text-muted-foreground cursor-pointer">{s}</button>
+                <button type="button" key={s} onClick={() => setField("name", s)} className="text-sm rounded-full border border-line px-2.5 py-0.5 hover:bg-stone text-muted-foreground cursor-pointer">{s}</button>
               ))}
             </div>
           </div>
           <div>
-            <label className="block text-xs uppercase tracking-widest text-muted-foreground">Date</label>
+            <label className="block text-sm uppercase tracking-widest text-muted-foreground">Date</label>
             <div className="mt-1">
               <DatePicker value={form.event_date ?? ""} onChange={(v) => setField("event_date", v)} placeholder="Pick a date" />
             </div>
           </div>
           <div className="grid grid-cols-2 gap-3">
-            <F label="Start time" type="time" value={form.event_time ?? ""} onChange={(v) => setField("event_time", v)} />
-            <F label="End time" type="time" value={(form as any).event_end_time ?? ""} onChange={(v) => setField("event_end_time" as any, v)} />
+            <div>
+              <label className="block text-sm uppercase tracking-widest text-muted-foreground">Start time</label>
+              <div className="mt-1">
+                <TimePicker value={form.event_time ?? ""} onChange={(v) => setField("event_time", v)} />
+              </div>
+            </div>
+            <div>
+              <label className="block text-sm uppercase tracking-widest text-muted-foreground">End time</label>
+              <div className="mt-1">
+                <TimePicker value={(form as any).event_end_time ?? ""} onChange={(v) => setField("event_end_time" as any, v)} />
+              </div>
+            </div>
           </div>
           <F label="Venue name" value={form.venue_name ?? ""} onChange={(v) => setField("venue_name", v)} placeholder="e.g. Jag Mandir" />
           <F label="Address" value={form.address ?? ""} onChange={(v) => setField("address", v)} />
@@ -386,21 +417,14 @@ function EventDialog({ event, onClose, onSave }: { event: Partial<Event>; onClos
             <F label="Country" value={form.country ?? ""} onChange={(v) => setField("country", v)} />
           </div>
           <div>
-            <label className="text-xs uppercase tracking-widest text-muted-foreground">Description / notes for guests</label>
+            <label className="text-sm uppercase tracking-widest text-muted-foreground">Description / notes for guests</label>
             <textarea rows={3} value={form.description ?? ""} onChange={(e) => setField("description", e.target.value)}
               className="mt-1 w-full rounded-2xl border border-line px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-clay bg-paper" />
           </div>
 
-          <label className="flex items-center gap-2 text-sm cursor-pointer select-none">
-            <input type="checkbox" checked={(form as any).food_included ?? true}
-              onChange={(e) => setField("food_included" as any, e.target.checked)}
-              className="h-4 w-4 accent-sage-deep cursor-pointer" />
-            Food included at this event
-          </label>
-
           <div className="pt-2">
-            <label className="text-xs uppercase tracking-widest text-muted-foreground">What does this event need?</label>
-            <p className="text-xs text-muted-foreground mt-1">Only these will show up on the event card.</p>
+            <label className="text-sm uppercase tracking-widest text-muted-foreground">What does this event need?</label>
+            <p className="text-sm text-muted-foreground mt-1">Only these will show up on the event card.</p>
             <div className="mt-3 flex flex-wrap gap-2">
               {ALL_CATEGORIES.map((c) => {
                 const on = enabled.includes(c.key);
@@ -411,7 +435,7 @@ function EventDialog({ event, onClose, onSave }: { event: Partial<Event>; onClos
                     type="button"
                     onClick={() => toggleCat(c.key)}
                     className={cn(
-                      "inline-flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-xs transition-colors cursor-pointer",
+                      "inline-flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-sm transition-colors cursor-pointer",
                       on ? "bg-ink text-paper border-ink" : "bg-paper text-ink border-line hover:bg-stone",
                     )}
                   >
@@ -468,7 +492,7 @@ function TrackProgressModal({ events, onClose, onSave }: {
         <div className="flex items-start justify-between">
           <div>
             <h3 className="font-serif text-2xl">Track progress</h3>
-            <p className="text-xs text-muted-foreground mt-1">Set completion for each part of your planning, per event.</p>
+            <p className="text-sm text-muted-foreground mt-1">Set completion for each part of your planning, per event.</p>
           </div>
           <button onClick={onClose} className="text-muted-foreground hover:text-ink cursor-pointer shrink-0"><X className="h-4 w-4" /></button>
         </div>
@@ -480,7 +504,7 @@ function TrackProgressModal({ events, onClose, onSave }: {
                 className="w-full flex items-center justify-between gap-3 rounded-2xl border border-line px-4 py-3 text-left hover:bg-stone/50 cursor-pointer transition-colors">
                 <div className="min-w-0">
                   <span className="font-sans text-lg font-semibold truncate block">{event.name}</span>
-                  <span className="text-xs text-muted-foreground">{eventOverallPercent(event)}% complete overall</span>
+                  <span className="text-sm text-muted-foreground">{eventOverallPercent(event)}% complete overall</span>
                 </div>
                 <ChevronRight className="h-4 w-4 text-muted-foreground shrink-0" />
               </button>
@@ -488,7 +512,7 @@ function TrackProgressModal({ events, onClose, onSave }: {
           </div>
         ) : (
           <div className="mt-6">
-            <button type="button" onClick={() => setSelectedId(null)} className="text-xs text-clay hover:underline cursor-pointer">← Choose a different event</button>
+            <button type="button" onClick={() => setSelectedId(null)} className="text-sm text-clay hover:underline cursor-pointer">← Choose a different event</button>
             <h4 className="font-serif text-xl mt-3">{selected.name}</h4>
 
             <div className="mt-4 space-y-4">
@@ -508,7 +532,7 @@ function TrackProgressModal({ events, onClose, onSave }: {
                         return (
                           <button key={m.value} type="button" onClick={() => updateEntry(k, { mode: m.value })}
                             className={cn(
-                              "rounded-full border px-3 py-1 text-xs transition-colors cursor-pointer",
+                              "rounded-full border px-3 py-1 text-sm transition-colors cursor-pointer",
                               on ? "bg-ink text-paper border-ink" : "bg-paper text-ink border-line hover:bg-stone",
                             )}>
                             {m.label}
@@ -557,7 +581,7 @@ function TrackProgressModal({ events, onClose, onSave }: {
             </div>
 
             <div className="flex items-center justify-end gap-3 pt-6">
-              {saved && !saving && <span className="text-xs text-sage-deep inline-flex items-center gap-1"><Check className="h-3.5 w-3.5" /> Saved</span>}
+              {saved && !saving && <span className="text-sm text-sage-deep inline-flex items-center gap-1"><Check className="h-3.5 w-3.5" /> Saved</span>}
               <button type="button" onClick={save} disabled={saving}
                 className="rounded-full bg-ink text-paper px-6 py-2 text-sm hover:bg-clay disabled:opacity-60 cursor-pointer">
                 {saving ? "Saving…" : "Save"}
@@ -575,7 +599,7 @@ function F({ label, value, onChange, type = "text", placeholder, required, error
 }) {
   return (
     <label className="block">
-      <span className="text-xs uppercase tracking-widest text-muted-foreground">
+      <span className="text-sm uppercase tracking-widest text-muted-foreground">
         {label} {required && <span className="text-cherry">*</span>}
       </span>
       <input
@@ -585,7 +609,7 @@ function F({ label, value, onChange, type = "text", placeholder, required, error
           error ? "border-cherry focus:ring-cherry" : "border-line focus:ring-clay",
         )}
       />
-      {error && <p className="mt-1.5 text-xs text-cherry flex items-center gap-1"><span className="inline-block h-1 w-1 rounded-full bg-cherry" />{error}</p>}
+      {error && <p className="mt-1.5 text-sm text-cherry flex items-center gap-1"><span className="inline-block h-1 w-1 rounded-full bg-cherry" />{error}</p>}
     </label>
   );
 }

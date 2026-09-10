@@ -4,13 +4,14 @@ import { supabase } from "@/integrations/supabase/client";
 import { lovable } from "@/integrations/lovable/index";
 import { toast } from "sonner";
 import { Sparkles } from "lucide-react";
+import { Logo } from "@/components/logo";
 import { ROLE_LANDING, type AppRole } from "@/hooks/use-active-role";
 
 export const Route = createFileRoute("/auth/")({
   head: () => ({
     meta: [
-      { title: "Sign in or join Vowzy" },
-      { name: "description", content: "Sign in or create your Vowzy account." },
+      { title: "Sign in or join WedThread" },
+      { name: "description", content: "Sign in or create your WedThread account." },
     ],
   }),
   component: AuthPage,
@@ -29,7 +30,7 @@ async function routeAfterSignIn(navigate: ReturnType<typeof useNavigate>) {
     await supabase.from("user_roles").insert({ user_id: u.user.id, role: "couple" });
     active = "couple";
   }
-  window.localStorage.setItem("vowzy.activeRole", active);
+  window.localStorage.setItem("wedthread.activeRole", active);
   if (active === "couple") {
     const { data: w } = await supabase
       .from("weddings")
@@ -95,7 +96,7 @@ function AuthPage() {
   const onGoogle = async () => {
     setLoading(true);
     try {
-      try { window.sessionStorage.setItem("vowzy.authIntent", mode); } catch {}
+      try { window.sessionStorage.setItem("wedthread.authIntent", mode); } catch {}
       const result = await lovable.auth.signInWithOAuth("google", {
         redirect_uri: window.location.origin + "/auth/callback",
       });
@@ -114,18 +115,18 @@ function AuthPage() {
       <div className="hidden lg:flex flex-col justify-between p-12 bg-ink text-pearl">
         <Link to="/" className="flex items-center gap-2">
           <span className="grid h-9 w-9 place-items-center rounded-full bg-cherry text-pearl"><Sparkles className="h-4 w-4" /></span>
-          <span className="font-serif text-2xl">Vowzy</span>
+          <Logo className="text-pearl" />
         </Link>
         <div>
-          <p className="text-xs uppercase tracking-[0.2em] text-cherry">Vowzy</p>
+          <p className="text-sm uppercase tracking-[0.2em] text-cherry">WedThread</p>
           <h2 className="mt-6 font-serif text-5xl leading-tight">
             One account. Every side of your wedding.
           </h2>
           <p className="mt-4 text-sm text-pearl/70 max-w-sm">
-            Couples, planners, venues, vendors, and sellers all live under one login. You'll pick how you'll use Vowzy after signing up.
+            Couples, planners, venues, vendors, and sellers all live under one login. You'll pick how you'll use WedThread after signing up.
           </p>
         </div>
-        <span className="text-xs text-pearl/50">© Vowzy</span>
+        <span className="text-sm text-pearl/50">© WedThread</span>
       </div>
 
       <div className="flex flex-col justify-center p-8 md:p-16">
@@ -143,18 +144,18 @@ function AuthPage() {
             <GoogleIcon /> Continue with Google
           </button>
 
-          <div className="my-6 flex items-center gap-4 text-[11px] uppercase tracking-widest text-muted-foreground">
+          <div className="my-6 flex items-center gap-4 text-sm uppercase tracking-widest text-muted-foreground">
             <div className="h-px flex-1 bg-line" /> or email <div className="h-px flex-1 bg-line" />
           </div>
 
           <form onSubmit={onEmail} className="space-y-4">
             <div>
-              <label className="text-xs uppercase tracking-widest text-muted-foreground">Email</label>
+              <label className="text-sm uppercase tracking-widest text-muted-foreground">Email</label>
               <input required type="email" value={email} onChange={(e) => setEmail(e.target.value)}
                 className="mt-1 w-full rounded-2xl border border-line bg-pearl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-cherry" />
             </div>
             <div>
-              <label className="text-xs uppercase tracking-widest text-muted-foreground">Password</label>
+              <label className="text-sm uppercase tracking-widest text-muted-foreground">Password</label>
               <input required type="password" minLength={6} value={password} onChange={(e) => setPassword(e.target.value)}
                 className="mt-1 w-full rounded-2xl border border-line bg-pearl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-cherry" />
             </div>

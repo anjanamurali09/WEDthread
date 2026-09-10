@@ -141,7 +141,7 @@ export function VendorOnboardingForm() {
   return (
     <div className="space-y-6 max-w-3xl">
       {!existing && (
-        <div className="text-xs text-muted-foreground inline-flex items-center gap-1.5">
+        <div className="text-sm text-muted-foreground inline-flex items-center gap-1.5">
           {autoSaving ? (<><Loader2 className="h-3 w-3 animate-spin" /> Saving draft…</>)
             : savedAt ? (<><Check className="h-3 w-3 text-clay" /> Draft saved</>)
             : "Autosaves as you type"}
@@ -194,7 +194,7 @@ export function VendorOnboardingForm() {
                   <button
                     type="button" key={c.id}
                     onClick={() => set("subcategory_ids", on ? form.subcategory_ids.filter((x: string) => x !== c.id) : [...form.subcategory_ids, c.id])}
-                    className={`text-xs rounded-full px-3 py-1 border ${on ? "bg-cherry text-pearl border-cherry" : "border-line text-ink/70 hover:bg-cream"}`}>
+                    className={`text-sm rounded-full px-3 py-1 border ${on ? "bg-cherry text-pearl border-cherry" : "border-line text-ink hover:bg-cream"}`}>
                     {c.name}
                   </button>
                 );
@@ -231,14 +231,14 @@ export function VendorOnboardingForm() {
 
       <Section title="Photos & video">
         <Field label={`Photos (${form.photos.length}/10)`}>
-          <input type="file" accept="image/*" multiple onChange={(e) => uploadPhotos(e.target.files)} className="text-xs" />
+          <input type="file" accept="image/*" multiple onChange={(e) => uploadPhotos(e.target.files)} className="text-sm" />
           {form.photos.length > 0 && (
             <div className="mt-3 grid grid-cols-3 md:grid-cols-5 gap-2">
               {form.photos.map((url: string, i: number) => (
                 <div key={i} className="relative aspect-square rounded-xl overflow-hidden border border-line group">
                   <img src={url} className="w-full h-full object-cover" alt="" />
                   <button type="button" onClick={() => set("photos", form.photos.filter((_: string, j: number) => j !== i))}
-                    className="absolute inset-0 bg-ink/60 text-pearl opacity-0 group-hover:opacity-100 text-xs">Remove</button>
+                    className="absolute inset-0 bg-ink/60 text-pearl opacity-0 group-hover:opacity-100 text-sm">Remove</button>
                 </div>
               ))}
             </div>
@@ -272,7 +272,7 @@ function Section({ title, children }: { title: string; children: React.ReactNode
 function Field({ label, children }: { label: string; children: React.ReactNode }) {
   return (
     <label className="block">
-      <span className="text-[11px] uppercase tracking-widest text-muted-foreground">{label}</span>
+      <span className="text-sm uppercase tracking-widest text-muted-foreground">{label}</span>
       <div className="mt-1">{children}</div>
     </label>
   );

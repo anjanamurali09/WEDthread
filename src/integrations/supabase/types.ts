@@ -199,6 +199,7 @@ export type Database = {
       events: {
         Row: {
           address: string | null
+          allocated_amount: number | null
           category_completion: Json
           city: string | null
           completion_done: boolean
@@ -222,6 +223,7 @@ export type Database = {
         }
         Insert: {
           address?: string | null
+          allocated_amount?: number | null
           category_completion?: Json
           city?: string | null
           completion_done?: boolean
@@ -245,6 +247,7 @@ export type Database = {
         }
         Update: {
           address?: string | null
+          allocated_amount?: number | null
           category_completion?: Json
           city?: string | null
           completion_done?: boolean
@@ -283,6 +286,7 @@ export type Database = {
           id: string
           plus_ones: number
           rsvp_at: string | null
+          rsvp_source: Database["public"]["Enums"]["rsvp_source"]
           rsvp_status: Database["public"]["Enums"]["rsvp_status"]
         }
         Insert: {
@@ -291,6 +295,7 @@ export type Database = {
           id?: string
           plus_ones?: number
           rsvp_at?: string | null
+          rsvp_source?: Database["public"]["Enums"]["rsvp_source"]
           rsvp_status?: Database["public"]["Enums"]["rsvp_status"]
         }
         Update: {
@@ -299,6 +304,7 @@ export type Database = {
           id?: string
           plus_ones?: number
           rsvp_at?: string | null
+          rsvp_source?: Database["public"]["Enums"]["rsvp_source"]
           rsvp_status?: Database["public"]["Enums"]["rsvp_status"]
         }
         Relationships: [
@@ -444,7 +450,8 @@ export type Database = {
           sent_at: string | null
           status: Database["public"]["Enums"]["message_status"]
           template_id: string | null
-          to_phone: string
+          to_email: string | null
+          to_phone: string | null
           wedding_id: string
         }
         Insert: {
@@ -459,7 +466,8 @@ export type Database = {
           sent_at?: string | null
           status?: Database["public"]["Enums"]["message_status"]
           template_id?: string | null
-          to_phone: string
+          to_email?: string | null
+          to_phone?: string | null
           wedding_id: string
         }
         Update: {
@@ -474,7 +482,8 @@ export type Database = {
           sent_at?: string | null
           status?: Database["public"]["Enums"]["message_status"]
           template_id?: string | null
-          to_phone?: string
+          to_email?: string | null
+          to_phone?: string | null
           wedding_id?: string
         }
         Relationships: [
@@ -735,6 +744,7 @@ export type Database = {
           depends_on_question_id: string | null
           depends_on_value: string | null
           event_ids: string[]
+          guest_column_label: string | null
           id: string
           is_required: boolean
           options: string[]
@@ -749,6 +759,7 @@ export type Database = {
           depends_on_question_id?: string | null
           depends_on_value?: string | null
           event_ids?: string[]
+          guest_column_label?: string | null
           id?: string
           is_required?: boolean
           options?: string[]
@@ -763,6 +774,7 @@ export type Database = {
           depends_on_question_id?: string | null
           depends_on_value?: string | null
           event_ids?: string[]
+          guest_column_label?: string | null
           id?: string
           is_required?: boolean
           options?: string[]
@@ -842,16 +854,19 @@ export type Database = {
         Row: {
           guest_id: string
           id: string
+          seat_index: number | null
           table_id: string
         }
         Insert: {
           guest_id: string
           id?: string
+          seat_index?: number | null
           table_id: string
         }
         Update: {
           guest_id?: string
           id?: string
+          seat_index?: number | null
           table_id?: string
         }
         Relationships: [
@@ -920,6 +935,56 @@ export type Database = {
         Relationships: [
           {
             foreignKeyName: "seating_fixtures_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "events"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      seating_areas: {
+        Row: {
+          color: string
+          created_at: string
+          event_id: string
+          height: number
+          id: string
+          label: string
+          pos_x: number
+          pos_y: number
+          sort_order: number
+          updated_at: string
+          width: number
+        }
+        Insert: {
+          color?: string
+          created_at?: string
+          event_id: string
+          height?: number
+          id?: string
+          label: string
+          pos_x?: number
+          pos_y?: number
+          sort_order?: number
+          updated_at?: string
+          width?: number
+        }
+        Update: {
+          color?: string
+          created_at?: string
+          event_id?: string
+          height?: number
+          id?: string
+          label?: string
+          pos_x?: number
+          pos_y?: number
+          sort_order?: number
+          updated_at?: string
+          width?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "seating_areas_event_id_fkey"
             columns: ["event_id"]
             isOneToOne: false
             referencedRelation: "events"
@@ -1125,6 +1190,7 @@ export type Database = {
       venues: {
         Row: {
           address: string | null
+          business_license_url: string | null
           capacity: number | null
           capacity_seated: number | null
           capacity_standing: number | null
@@ -1134,25 +1200,36 @@ export type Database = {
           created_at: string
           currency: string | null
           description: string | null
+          event_spaces: Json
           facilities: string[]
           gallery_urls: string[]
           hero_image: string | null
           id: string
+          is_featured: boolean
           long_description: string | null
+          menu_options: string[]
           name: string
           owner_id: string | null
+          packages: Json
           photos: string[]
+          price_max: number | null
+          price_min: number | null
           price_range: string | null
           price_tier: number | null
+          rentals_available: string[]
           restrictions: string[]
+          setting: string[]
           status: Database["public"]["Enums"]["venue_status"]
+          transportation: string[]
           updated_at: string
+          venue_type: string[]
           video_url: string | null
           website: string | null
           whatsapp: string | null
         }
         Insert: {
           address?: string | null
+          business_license_url?: string | null
           capacity?: number | null
           capacity_seated?: number | null
           capacity_standing?: number | null
@@ -1162,25 +1239,36 @@ export type Database = {
           created_at?: string
           currency?: string | null
           description?: string | null
+          event_spaces?: Json
           facilities?: string[]
           gallery_urls?: string[]
           hero_image?: string | null
           id?: string
+          is_featured?: boolean
           long_description?: string | null
+          menu_options?: string[]
           name: string
           owner_id?: string | null
+          packages?: Json
           photos?: string[]
+          price_max?: number | null
+          price_min?: number | null
           price_range?: string | null
           price_tier?: number | null
+          rentals_available?: string[]
           restrictions?: string[]
+          setting?: string[]
           status?: Database["public"]["Enums"]["venue_status"]
+          transportation?: string[]
           updated_at?: string
+          venue_type?: string[]
           video_url?: string | null
           website?: string | null
           whatsapp?: string | null
         }
         Update: {
           address?: string | null
+          business_license_url?: string | null
           capacity?: number | null
           capacity_seated?: number | null
           capacity_standing?: number | null
@@ -1190,19 +1278,29 @@ export type Database = {
           created_at?: string
           currency?: string | null
           description?: string | null
+          event_spaces?: Json
           facilities?: string[]
           gallery_urls?: string[]
           hero_image?: string | null
           id?: string
+          is_featured?: boolean
           long_description?: string | null
+          menu_options?: string[]
           name?: string
           owner_id?: string | null
+          packages?: Json
           photos?: string[]
+          price_max?: number | null
+          price_min?: number | null
           price_range?: string | null
           price_tier?: number | null
+          rentals_available?: string[]
           restrictions?: string[]
+          setting?: string[]
           status?: Database["public"]["Enums"]["venue_status"]
+          transportation?: string[]
           updated_at?: string
+          venue_type?: string[]
           video_url?: string | null
           website?: string | null
           whatsapp?: string | null
@@ -1298,6 +1396,8 @@ export type Database = {
           pos_x: number
           pos_y: number
           rotation: number
+          seat_arrangement: string | null
+          seat_layout: Json | null
           seats: number
           shape: string
           sort_order: number
@@ -1312,6 +1412,8 @@ export type Database = {
           pos_x?: number
           pos_y?: number
           rotation?: number
+          seat_arrangement?: string | null
+          seat_layout?: Json | null
           seats?: number
           shape?: string
           sort_order?: number
@@ -1326,6 +1428,8 @@ export type Database = {
           pos_x?: number
           pos_y?: number
           rotation?: number
+          seat_arrangement?: string | null
+          seat_layout?: Json | null
           seats?: number
           shape?: string
           sort_order?: number
@@ -1349,11 +1453,17 @@ export type Database = {
           attendance_decline_label: string
           attendance_maybe_label: string
           attendance_question_text: string
+          budget_allocation_mode: string
           budget_currency: string
           budget_limit: number | null
           budget_setup_completed: boolean
+          couple_photo_pan_x: number
+          couple_photo_pan_y: number
+          couple_photo_zoom: number
+          couple_photo_url: string | null
           cover_photo_url: string | null
           created_at: string
+          dashboard_layout: Json | null
           destination_city: string | null
           destination_country: string | null
           est_guest_count: number | null
@@ -1362,6 +1472,7 @@ export type Database = {
           owner_id: string
           partner_a: string
           partner_b: string
+          seating_shape_defaults: Json | null
           site_config: Json
           site_customization: Json
           site_published: boolean
@@ -1379,11 +1490,17 @@ export type Database = {
           attendance_decline_label?: string
           attendance_maybe_label?: string
           attendance_question_text?: string
+          budget_allocation_mode?: string
           budget_currency?: string
           budget_limit?: number | null
           budget_setup_completed?: boolean
+          couple_photo_pan_x?: number
+          couple_photo_pan_y?: number
+          couple_photo_zoom?: number
+          couple_photo_url?: string | null
           cover_photo_url?: string | null
           created_at?: string
+          dashboard_layout?: Json | null
           destination_city?: string | null
           destination_country?: string | null
           est_guest_count?: number | null
@@ -1392,6 +1509,7 @@ export type Database = {
           owner_id: string
           partner_a: string
           partner_b: string
+          seating_shape_defaults?: Json | null
           site_config?: Json
           site_customization?: Json
           site_published?: boolean
@@ -1409,11 +1527,17 @@ export type Database = {
           attendance_decline_label?: string
           attendance_maybe_label?: string
           attendance_question_text?: string
+          budget_allocation_mode?: string
           budget_currency?: string
           budget_limit?: number | null
           budget_setup_completed?: boolean
+          couple_photo_pan_x?: number
+          couple_photo_pan_y?: number
+          couple_photo_zoom?: number
+          couple_photo_url?: string | null
           cover_photo_url?: string | null
           created_at?: string
+          dashboard_layout?: Json | null
           destination_city?: string | null
           destination_country?: string | null
           est_guest_count?: number | null
@@ -1422,6 +1546,7 @@ export type Database = {
           owner_id?: string
           partner_a?: string
           partner_b?: string
+          seating_shape_defaults?: Json | null
           site_config?: Json
           site_customization?: Json
           site_published?: boolean
@@ -1433,6 +1558,137 @@ export type Database = {
           welcome_message?: string | null
         }
         Relationships: []
+      }
+      wedding_collaborators: {
+        Row: {
+          created_at: string
+          email: string
+          id: string
+          invited_by: string
+          user_id: string | null
+          wedding_id: string
+        }
+        Insert: {
+          created_at?: string
+          email: string
+          id?: string
+          invited_by: string
+          user_id?: string | null
+          wedding_id: string
+        }
+        Update: {
+          created_at?: string
+          email?: string
+          id?: string
+          invited_by?: string
+          user_id?: string | null
+          wedding_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "wedding_collaborators_wedding_id_fkey"
+            columns: ["wedding_id"]
+            isOneToOne: false
+            referencedRelation: "weddings"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      notes: {
+        Row: {
+          content: string
+          created_at: string
+          id: string
+          title: string | null
+          updated_at: string
+          wedding_id: string
+        }
+        Insert: {
+          content?: string
+          created_at?: string
+          id?: string
+          title?: string | null
+          updated_at?: string
+          wedding_id: string
+        }
+        Update: {
+          content?: string
+          created_at?: string
+          id?: string
+          title?: string | null
+          updated_at?: string
+          wedding_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "notes_wedding_id_fkey"
+            columns: ["wedding_id"]
+            isOneToOne: false
+            referencedRelation: "weddings"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      feature_waitlist: {
+        Row: {
+          created_at: string
+          feature: string
+          id: string
+          wedding_id: string
+        }
+        Insert: {
+          created_at?: string
+          feature: string
+          id?: string
+          wedding_id: string
+        }
+        Update: {
+          created_at?: string
+          feature?: string
+          id?: string
+          wedding_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "feature_waitlist_wedding_id_fkey"
+            columns: ["wedding_id"]
+            isOneToOne: false
+            referencedRelation: "weddings"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      feedback: {
+        Row: {
+          created_at: string
+          id: string
+          message: string | null
+          rating: number
+          wedding_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          message?: string | null
+          rating: number
+          wedding_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          message?: string | null
+          rating?: number
+          wedding_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "feedback_wedding_id_fkey"
+            columns: ["wedding_id"]
+            isOneToOne: false
+            referencedRelation: "weddings"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       menu_sections: {
         Row: {
@@ -1511,6 +1767,7 @@ export type Database = {
           created_at: string
           custom_fields: Json
           description: string | null
+          due_date: string | null
           event_id: string | null
           id: string
           name: string
@@ -1527,6 +1784,7 @@ export type Database = {
           created_at?: string
           custom_fields?: Json
           description?: string | null
+          due_date?: string | null
           event_id?: string | null
           id?: string
           name: string
@@ -1543,6 +1801,7 @@ export type Database = {
           created_at?: string
           custom_fields?: Json
           description?: string | null
+          due_date?: string | null
           event_id?: string | null
           id?: string
           name?: string
@@ -1572,6 +1831,7 @@ export type Database = {
       }
       budget_categories: {
         Row: {
+          allocated_amount: number | null
           created_at: string
           id: string
           name: string
@@ -1579,6 +1839,7 @@ export type Database = {
           wedding_id: string
         }
         Insert: {
+          allocated_amount?: number | null
           created_at?: string
           id?: string
           name: string
@@ -1586,6 +1847,7 @@ export type Database = {
           wedding_id: string
         }
         Update: {
+          allocated_amount?: number | null
           created_at?: string
           id?: string
           name?: string
@@ -1637,11 +1899,77 @@ export type Database = {
           },
         ]
       }
+      payment_reminders: {
+        Row: {
+          amount: number | null
+          created_at: string
+          due_date: string
+          expense_id: string | null
+          id: string
+          is_done: boolean
+          notes: string | null
+          title: string
+          updated_at: string
+          wedding_id: string
+        }
+        Insert: {
+          amount?: number | null
+          created_at?: string
+          due_date: string
+          expense_id?: string | null
+          id?: string
+          is_done?: boolean
+          notes?: string | null
+          title: string
+          updated_at?: string
+          wedding_id: string
+        }
+        Update: {
+          amount?: number | null
+          created_at?: string
+          due_date?: string
+          expense_id?: string | null
+          id?: string
+          is_done?: boolean
+          notes?: string | null
+          title?: string
+          updated_at?: string
+          wedding_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "payment_reminders_expense_id_fkey"
+            columns: ["expense_id"]
+            isOneToOne: false
+            referencedRelation: "expenses"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "payment_reminders_wedding_id_fkey"
+            columns: ["wedding_id"]
+            isOneToOne: false
+            referencedRelation: "weddings"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Views: {
       [_ in never]: never
     }
     Functions: {
+      create_guest_for_rsvp: {
+        Args: { _full_name: string; _slug: string }
+        Returns: { guest_id: string; rsvp_token: string }[]
+      }
+      get_guest_rsvp_token: {
+        Args: { _guest_id: string; _slug: string }
+        Returns: string
+      }
+      get_my_current_wedding: {
+        Args: Record<PropertyKey, never>
+        Returns: Database["public"]["Tables"]["weddings"]["Row"]
+      }
       get_rsvp_context: {
         Args: { _token: string }
         Returns: {
@@ -1682,12 +2010,54 @@ export type Database = {
           sort_order: number
         }[]
       }
+      get_wedding_rsvp_context: {
+        Args: { _slug: string }
+        Returns: {
+          attendance_accept_label: string
+          attendance_allow_maybe: boolean
+          attendance_decline_label: string
+          attendance_maybe_label: string
+          attendance_question_text: string
+          city: string | null
+          event_date: string | null
+          event_id: string | null
+          event_name: string | null
+          event_time: string | null
+          partner_a: string
+          partner_b: string
+          venue_name: string | null
+          wedding_id: string
+        }[]
+      }
+      get_wedding_rsvp_questions: {
+        Args: { _slug: string }
+        Returns: {
+          depends_on_question_id: string | null
+          depends_on_value: string | null
+          event_id: string | null
+          event_name: string | null
+          is_required: boolean
+          options: string[]
+          question_id: string
+          question_text: string
+          question_type: Database["public"]["Enums"]["rsvp_question_type"]
+          sort_order: number
+        }[]
+      }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]
           _user_id: string
         }
         Returns: boolean
+      }
+      has_wedding_access: {
+        Args: { _wedding_id: string }
+        Returns: boolean
+      }
+      match_guests_by_name: {
+        Args: { _full_name: string; _slug: string }
+        Returns: { guest_id: string; full_name: string; household_group: string | null }[]
       }
       set_rsvp_submitted: {
         Args: { _submitted: boolean; _token: string }
@@ -1722,6 +2092,7 @@ export type Database = {
         | "custom"
       message_status: "queued" | "sending" | "sent" | "delivered" | "failed"
       rsvp_question_type: "yes_no" | "multiple_choice" | "short_text"
+      rsvp_source: "guest_submitted" | "manual"
       rsvp_status: "pending" | "attending" | "declined" | "maybe"
       vendor_status: "pending" | "approved" | "rejected"
       venue_status: "pending" | "approved" | "rejected"
@@ -1862,6 +2233,7 @@ export const Constants = {
       ],
       message_status: ["queued", "sending", "sent", "delivered", "failed"],
       rsvp_question_type: ["yes_no", "multiple_choice", "short_text"],
+      rsvp_source: ["guest_submitted", "manual"],
       rsvp_status: ["pending", "attending", "declined", "maybe"],
       vendor_status: ["pending", "approved", "rejected"],
       venue_status: ["pending", "approved", "rejected"],

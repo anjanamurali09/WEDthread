@@ -16,6 +16,8 @@ interface DatePickerProps {
   className?: string;
   disabled?: boolean;
   required?: boolean;
+  /** date-fns format token for the closed button's label. Defaults to the full "PPP" form. */
+  displayFormat?: string;
 }
 
 export function DatePicker({
@@ -25,6 +27,7 @@ export function DatePicker({
   className,
   disabled,
   required,
+  displayFormat = "PPP",
 }: DatePickerProps) {
   const date = value ? new Date(value + "T00:00:00") : undefined;
 
@@ -42,7 +45,7 @@ export function DatePicker({
           )}
         >
           <CalendarIcon className="mr-2 h-4 w-4 text-clay" />
-          {date ? format(date, "PPP") : <span>{placeholder}</span>}
+          {date ? format(date, displayFormat) : <span>{placeholder}</span>}
         </Button>
       </PopoverTrigger>
       <PopoverContent className="w-auto p-0 border-line bg-paper" align="start">

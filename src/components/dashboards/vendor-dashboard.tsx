@@ -45,25 +45,25 @@ export function VendorDashboard() {
         <div className="paper-card p-5">
           <p className="text-[10px] uppercase tracking-widest text-muted-foreground">Listing</p>
           <p className="font-serif text-2xl mt-2">{vendor.business_name}</p>
-          <p className="text-xs text-muted-foreground mt-1">{[vendor.home_city, vendor.home_country].filter(Boolean).join(", ")}</p>
-          <p className="text-xs mt-2">{"$".repeat(vendor.price_tier ?? 3)} · {vendor.currency ?? "AED"}</p>
+          <p className="text-sm text-muted-foreground mt-1">{[vendor.home_city, vendor.home_country].filter(Boolean).join(", ")}</p>
+          <p className="text-sm mt-2">{"$".repeat(vendor.price_tier ?? 3)} · {vendor.currency ?? "AED"}</p>
         </div>
         <div className="paper-card p-5">
           <p className="text-[10px] uppercase tracking-widest text-muted-foreground">Leads</p>
           <p className="font-serif text-4xl mt-2">{leadsLoading ? "–" : formatNumber(leads.length)}</p>
-          <p className="text-xs text-muted-foreground mt-1">recent inquiries</p>
+          <p className="text-sm text-muted-foreground mt-1">recent inquiries</p>
         </div>
         <div className="paper-card p-5">
           <p className="text-[10px] uppercase tracking-widest text-muted-foreground">Photos</p>
           <p className="font-serif text-4xl mt-2">{formatNumber(vendor.photos?.length ?? 0)}</p>
-          <p className="text-xs text-muted-foreground mt-1">uploaded</p>
+          <p className="text-sm text-muted-foreground mt-1">uploaded</p>
         </div>
       </section>
 
       <section className="mt-8 paper-card p-6">
         <div className="flex items-center justify-between mb-4">
           <h3 className="font-serif text-2xl inline-flex items-center gap-2"><Inbox className="h-5 w-5" /> Recent leads</h3>
-          <Link to={"/leads" as any} className="text-xs text-cherry uppercase tracking-widest">View all</Link>
+          <Link to={"/leads" as any} className="text-sm text-cherry uppercase tracking-widest">View all</Link>
         </div>
         {leadsLoading ? (
           <p className="text-sm text-muted-foreground">Loading…</p>
@@ -74,8 +74,8 @@ export function VendorDashboard() {
             {leads.map((l: any) => (
               <li key={l.id} className="py-3">
                 <p className="font-medium text-sm">{l.contact_name ?? "New inquiry"}</p>
-                <p className="text-xs text-muted-foreground">{l.event_date ? new Date(l.event_date).toLocaleDateString() : "Date TBD"} · {l.guest_count != null ? formatNumber(l.guest_count) : "?"} guests · {l.city ?? ""}</p>
-                <p className="text-xs mt-1 line-clamp-2 text-ink/70">{l.message}</p>
+                <p className="text-sm text-muted-foreground">{l.event_date ? new Date(l.event_date).toLocaleDateString() : "Date TBD"} · {l.guest_count != null ? formatNumber(l.guest_count) : "?"} guests · {l.city ?? ""}</p>
+                <p className="text-sm mt-1 line-clamp-2 text-ink">{l.message}</p>
               </li>
             ))}
           </ul>
@@ -93,7 +93,7 @@ export function VendorDashboard() {
 function StatusBanner({ status }: { status: string }) {
   const map: Record<string, { icon: any; cls: string; msg: string }> = {
     approved: { icon: CheckCircle2, cls: "bg-sage-soft text-ink", msg: "Your listing is live and visible to couples." },
-    pending:  { icon: Clock,        cls: "bg-blush-soft text-cherry", msg: "Submitted. A Vowzy admin is reviewing your listing." },
+    pending:  { icon: Clock,        cls: "bg-blush-soft text-cherry", msg: "Submitted. A WedThread admin is reviewing your listing." },
     rejected: { icon: XCircle,      cls: "bg-wine-soft text-wine", msg: "Your listing needs changes before it goes live." },
   };
   const s = map[status] ?? map.pending;

@@ -1,0 +1,24 @@
+-- Bug fix: duplicate wedding rows getting created for a single couple.
+--
+-- Root cause was app-side (every "does this user already have a wedding" check treated a
+-- failed query as "no wedding" and routed straight into the create-wedding form — fixed in
+-- the app code alongside this migration). But a client-side check, however careful, can
+-- never fully rule out a race or a retry creating a second row. This migration adds the
+-- actual guarantee at the only place it can be enforced atomically: the database.
+--
+-- IMPORTANT — run the SELECT below FIRST and read the output before running the ALTER
+-- TABLE. If it returns any rows, you have existing duplicate weddings for the same
+-- owner_id (e.g. the blank ones from this bug) and the ALTER TABLE will fail with a clear
+-- "could not create unique index... Key (owner_id)=(...) is duplicated" error rather than
+-- silently deleting anything — that's intentional. Decide for yourself which row per
+-- owner_id to keep (real event/guest/budget data attached is a good signal) and delete the
+-- others manually, then re-run just the ALTER TABLE statement.
+--
+-- SELECT owner_id, id, partner_a, partner_b, slug, created_at
+-- FROM public.weddings
+-- WHERE owner_id IN (
+--   SELECT owner_id FROM public.weddings GROUP BY owner_id HAVING count(*) > 1
+-- )
+-- ORDER BY owner_id, created_at;
+
+ALTER TABLE public.weddings ADD CONSTRAINT weddings_owner_id_key UNIQUE (owner_id);
