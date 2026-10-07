@@ -5,6 +5,7 @@ import { toast } from "sonner";
 import { Logo } from "@/components/logo";
 import { ROLE_LANDING, type AppRole } from "@/hooks/use-active-role";
 import { cn } from "@/lib/utils";
+import { ForgotPasswordForm } from "@/components/forgot-password-form";
 
 // A rotating headline per photo — generic enough to pair with any listing
 // image that comes back from the query below.
@@ -94,7 +95,7 @@ export const Route = createFileRoute("/auth/")({
       { name: "description", content: "Sign in or create your WedThread account." },
     ],
   }),
-  validateSearch: (s: Record<string, unknown>): { mode?: "signup" } => (s.mode === "signup" ? { mode: "signup" } : {}),
+  validateSearch: (s: Record<string, unknown>): { mode?: "signup" | "forgot" } => (s.mode === "signup" ? { mode: "signup" } : s.mode === "forgot" ? { mode: "forgot" } : {}),
   component: AuthPage,
 });
 
@@ -135,7 +136,7 @@ async function routeAfterSignUp(navigate: ReturnType<typeof useNavigate>) {
 function AuthPage() {
   const navigate = useNavigate();
   const search = Route.useSearch();
-  const [mode, setMode] = useState<"signin" | "signup">(search.mode ?? "signin");
+  const [mode, setMode] = useState<"signin" | "signup" | "forgot">(search.mode ?? "signin");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
@@ -172,14 +173,19 @@ function AuthPage() {
       <div className="flex flex-col justify-center p-8 md:p-16">
         <div className="max-w-md w-full mx-auto">
           <h1 className="font-serif text-4xl">
-            {mode === "signup" ? "Create your account" : "Welcome back"}
+            {mode === "signup" ? "Create your account" : mode === "forgot" ? "Reset your password" : "Welcome back"}
           </h1>
           <p className="mt-2 text-sm text-muted-foreground">
             {mode === "signup"
               ? "Sign up with your email. You'll choose your role next."
-              : "Sign in to continue where you left off."}
+              : mode === "forgot"
+                ? "Enter your email and we'll send you a link to choose a new one."
+                : "Sign in to continue where you left off."}
           </p>
 
+          {mode === "forgot" ? (
+            <div className="mt-8"><ForgotPasswordForm initialEmail={email} onBack={() => setMode("signin")} /></div>
+          ) : (<>
           <form onSubmit={onEmail} className="mt-8 space-y-4">
             <div>
               <label className="text-sm uppercase tracking-widest text-muted-foreground">Email</label>
@@ -191,6 +197,11 @@ function AuthPage() {
               <input required type="password" minLength={6} value={password} onChange={(e) => setPassword(e.target.value)}
                 className="mt-1 w-full rounded-2xl border border-line bg-pearl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-cherry" />
             </div>
+            {mode === "signin" && (
+              <div className="text-right -mt-1">
+                <button type="button" onClick={() => setMode("forgot")} className="text-sm text-cherry underline underline-offset-4">Forgot password?</button>
+              </div>
+            )}
             <button disabled={loading} className="w-full rounded-full bg-cherry text-pearl py-3 text-sm font-medium hover:bg-wine disabled:opacity-60 transition-colors">
               {loading ? "Please wait…" : mode === "signup" ? "Create account" : "Sign in"}
             </button>
@@ -202,6 +213,7 @@ function AuthPage() {
               {mode === "signup" ? "Sign in" : "Create an account"}
             </button>
           </p>
+          </>)}
         </div>
       </div>
     </div>

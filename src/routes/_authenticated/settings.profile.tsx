@@ -10,6 +10,7 @@ import { DeleteWorkspaceDialog } from "@/components/delete-workspace-dialog";
 import { AddPaymentMethodDialog } from "@/components/add-payment-method-dialog";
 import { UserPlus, X, CreditCard, Plus } from "lucide-react";
 import { IntegrationsSection } from "@/components/integrations-section";
+import { cn } from "@/lib/utils";
 
 export const Route = createFileRoute("/_authenticated/settings/profile")({ component: ProfileSettingsPage });
 
@@ -210,16 +211,26 @@ function CollaboratorsSection({ weddingId }: { weddingId: string }) {
   const [email, setEmail] = useState("");
   const [inviting, setInviting] = useState(false);
   const [toRemove, setToRemove] = useState<Collaborator | null>(null);
+  // Feedback shows inline under the form rather than as a popup.
+  const [notice, setNotice] = useState<{ kind: "ok" | "error"; text: string } | null>(null);
+  const [resending, setResending] = useState<string | null>(null);
 
   const invalidate = () => qc.invalidateQueries({ queryKey: ["collaborators", weddingId] });
 
+  // Emails the invitation. The collaborator row must already exist (the function checks that).
+  const sendInviteEmail = async (to: string): Promise<boolean> => {
+    const { data, error } = await supabase.functions.invoke<{ sent?: boolean; error?: string }>("send-collaborator-invite", { body: { wedding_id: weddingId, email: to } });
+    return !error && !!data?.sent;
+  };
+
   const invite = async (e: React.FormEvent) => {
     e.preventDefault();
+    setNotice(null);
     const trimmed = email.trim().toLowerCase();
     if (!trimmed) return;
     const { data: userData } = await supabase.auth.getUser();
     if (trimmed === userData.user?.email?.toLowerCase()) {
-      return toast.error("That's your own email — you already own this wedding.");
+      return setNotice({ kind: "error", text: "That's your own email. You already own this wedding." });
     }
     setInviting(true);
     const { error } = await supabase.from("wedding_collaborators").insert({
@@ -227,13 +238,25 @@ function CollaboratorsSection({ weddingId }: { weddingId: string }) {
       email: trimmed,
       invited_by: userData.user!.id,
     });
-    setInviting(false);
     if (error) {
-      return toast.error(error.code === "23505" ? "That email is already a collaborator." : error.message);
+      setInviting(false);
+      return setNotice({ kind: "error", text: error.code === "23505" ? "That email is already a collaborator." : error.message });
     }
+    const emailed = await sendInviteEmail(trimmed);
+    setInviting(false);
     setEmail("");
     invalidate();
-    toast.success("Invited. They'll get access as soon as they sign in with that email.");
+    setNotice(emailed
+      ? { kind: "ok", text: `Invitation sent to ${trimmed}. They get access as soon as they sign in with that email.` }
+      : { kind: "error", text: `${trimmed} has been added, but the invitation email couldn't be sent. Use Resend invite below to try again.` });
+  };
+
+  const resend = async (c: Collaborator) => {
+    setNotice(null);
+    setResending(c.id);
+    const emailed = await sendInviteEmail(c.email);
+    setResending(null);
+    setNotice(emailed ? { kind: "ok", text: `Invitation sent again to ${c.email}.` } : { kind: "error", text: `Couldn't send the email to ${c.email}. Try again in a moment.` });
   };
 
   const removeCollaborator = async () => {
@@ -265,9 +288,10 @@ function CollaboratorsSection({ weddingId }: { weddingId: string }) {
           className="flex-1 rounded-2xl border border-line px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-clay"
         />
         <button disabled={inviting} className="inline-flex items-center gap-2 rounded-full bg-ink text-paper px-5 py-2.5 text-sm hover:bg-clay disabled:opacity-60 cursor-pointer shrink-0">
-          <UserPlus className="h-4 w-4" /> Invite
+          <UserPlus className="h-4 w-4" /> {inviting ? "Inviting…" : "Invite"}
         </button>
       </form>
+      {notice && <p className={cn("text-sm", notice.kind === "error" ? "text-destructive" : "text-muted-foreground")}>{notice.text}</p>}
 
       {isLoading ? (
         <p className="text-sm text-muted-foreground">Loading…</p>
@@ -279,8 +303,14 @@ function CollaboratorsSection({ weddingId }: { weddingId: string }) {
             <li key={c.id} className="flex items-center justify-between gap-3 rounded-2xl border border-line/60 px-4 py-2.5">
               <div>
                 <p className="text-sm">{c.email}</p>
-                <p className="text-sm text-muted-foreground">{c.user_id ? "Active" : "Invited — hasn't signed in yet"}</p>
+                <p className="text-sm text-muted-foreground">{c.user_id ? "Active" : "Invited, hasn't signed in yet"}</p>
               </div>
+              {!c.user_id && (
+                <button type="button" disabled={resending === c.id} onClick={() => resend(c)}
+                  className="ml-auto text-sm text-cherry underline underline-offset-4 hover:text-ink disabled:opacity-60 cursor-pointer">
+                  {resending === c.id ? "Sending…" : "Resend invite"}
+                </button>
+              )}
               <button
                 type="button"
                 onClick={() => setToRemove(c)}

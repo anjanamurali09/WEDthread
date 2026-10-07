@@ -5,8 +5,9 @@ import { toast } from "sonner";
 import { useNavigate } from "@tanstack/react-router";
 import { ROLE_LANDING, type AppRole } from "@/hooks/use-active-role";
 import { resolveCoupleLanding } from "@/lib/wedding-hooks";
+import { ForgotPasswordForm } from "@/components/forgot-password-form";
 
-type Mode = "signin" | "signup";
+type Mode = "signin" | "signup" | "forgot";
 
 async function routeAfterSignIn(navigate: ReturnType<typeof useNavigate>) {
   const { data: u } = await supabase.auth.getUser();
@@ -86,20 +87,28 @@ export function LoginDialog({
         <div className="px-6 pt-6 pb-3 border-b border-line/60 flex items-center gap-3">
           <div>
             <DialogTitle className="font-serif text-xl">
-              {mode === "signup" ? "Create your account" : "Welcome back"}
+              {mode === "signup" ? "Create your account" : mode === "forgot" ? "Reset your password" : "Welcome back"}
             </DialogTitle>
             <DialogDescription className="text-sm text-muted-foreground">
-              {mode === "signup" ? "You'll pick your role next" : "Sign in to continue"}
+              {mode === "signup" ? "You'll pick your role next" : mode === "forgot" ? "We'll email you a link" : "Sign in to continue"}
             </DialogDescription>
           </div>
         </div>
 
         <div className="px-6 pt-4 pb-6">
+          {mode === "forgot" ? (
+            <ForgotPasswordForm compact initialEmail={email} onBack={() => setMode("signin")} />
+          ) : (<>
           <form onSubmit={submit} className="space-y-3">
             <input required type="email" placeholder="Email" value={email} onChange={(e) => setEmail(e.target.value)}
               className="w-full rounded-2xl border border-line bg-pearl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-cherry" />
             <input required type="password" minLength={6} placeholder="Password" value={password} onChange={(e) => setPassword(e.target.value)}
               className="w-full rounded-2xl border border-line bg-pearl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-cherry" />
+            {mode === "signin" && (
+              <div className="text-right">
+                <button type="button" onClick={() => setMode("forgot")} className="text-sm text-cherry underline underline-offset-4">Forgot password?</button>
+              </div>
+            )}
             <button disabled={loading}
               className="w-full rounded-full bg-cherry text-pearl py-2.5 text-sm font-medium hover:bg-wine disabled:opacity-60 transition-colors">
               {loading ? "Please wait…" : mode === "signup" ? "Create account" : "Sign in"}
@@ -117,6 +126,7 @@ export function LoginDialog({
               {mode === "signup" ? "Sign in" : "Create an account"}
             </button>
           </p>
+          </>)}
         </div>
       </DialogContent>
     </Dialog>

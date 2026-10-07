@@ -21,6 +21,7 @@ import { Route as VBusinessIdRouteImport } from './routes/v_.$businessId'
 import { Route as RsvpTokenRouteImport } from './routes/rsvp.$token'
 import { Route as FeaturesSlugRouteImport } from './routes/features.$slug'
 import { Route as AuthRoleRouteImport } from './routes/auth.role'
+import { Route as AuthResetRouteImport } from './routes/auth.reset'
 import { Route as AuthCallbackRouteImport } from './routes/auth.callback'
 import { Route as AuthenticatedWorkspaceSettingsRouteImport } from './routes/_authenticated/workspace-settings'
 import { Route as AuthenticatedWebsiteRouteImport } from './routes/_authenticated/website'
@@ -117,6 +118,11 @@ const FeaturesSlugRoute = FeaturesSlugRouteImport.update({
 const AuthRoleRoute = AuthRoleRouteImport.update({
   id: '/role',
   path: '/role',
+  getParentRoute: () => AuthRoute,
+} as any)
+const AuthResetRoute = AuthResetRouteImport.update({
+  id: '/reset',
+  path: '/reset',
   getParentRoute: () => AuthRoute,
 } as any)
 const AuthCallbackRoute = AuthCallbackRouteImport.update({
@@ -352,6 +358,7 @@ export interface FileRoutesByFullPath {
   '/website': typeof AuthenticatedWebsiteRoute
   '/workspace-settings': typeof AuthenticatedWorkspaceSettingsRoute
   '/auth/callback': typeof AuthCallbackRoute
+  '/auth/reset': typeof AuthResetRoute
   '/auth/role': typeof AuthRoleRoute
   '/features/$slug': typeof FeaturesSlugRoute
   '/rsvp/$token': typeof RsvpTokenRoute
@@ -402,6 +409,7 @@ export interface FileRoutesByTo {
   '/website': typeof AuthenticatedWebsiteRoute
   '/workspace-settings': typeof AuthenticatedWorkspaceSettingsRoute
   '/auth/callback': typeof AuthCallbackRoute
+  '/auth/reset': typeof AuthResetRoute
   '/auth/role': typeof AuthRoleRoute
   '/features/$slug': typeof FeaturesSlugRoute
   '/rsvp/$token': typeof RsvpTokenRoute
@@ -455,6 +463,7 @@ export interface FileRoutesById {
   '/_authenticated/website': typeof AuthenticatedWebsiteRoute
   '/_authenticated/workspace-settings': typeof AuthenticatedWorkspaceSettingsRoute
   '/auth/callback': typeof AuthCallbackRoute
+  '/auth/reset': typeof AuthResetRoute
   '/auth/role': typeof AuthRoleRoute
   '/features/$slug': typeof FeaturesSlugRoute
   '/rsvp/$token': typeof RsvpTokenRoute
@@ -508,6 +517,7 @@ export interface FileRouteTypes {
     | '/website'
     | '/workspace-settings'
     | '/auth/callback'
+    | '/auth/reset'
     | '/auth/role'
     | '/features/$slug'
     | '/rsvp/$token'
@@ -558,6 +568,7 @@ export interface FileRouteTypes {
     | '/website'
     | '/workspace-settings'
     | '/auth/callback'
+    | '/auth/reset'
     | '/auth/role'
     | '/features/$slug'
     | '/rsvp/$token'
@@ -610,6 +621,7 @@ export interface FileRouteTypes {
     | '/_authenticated/website'
     | '/_authenticated/workspace-settings'
     | '/auth/callback'
+    | '/auth/reset'
     | '/auth/role'
     | '/features/$slug'
     | '/rsvp/$token'
@@ -740,6 +752,13 @@ declare module '@tanstack/react-router' {
       path: '/role'
       fullPath: '/auth/role'
       preLoaderRoute: typeof AuthRoleRouteImport
+      parentRoute: typeof AuthRoute
+    }
+    '/auth/reset': {
+      id: '/auth/reset'
+      path: '/reset'
+      fullPath: '/auth/reset'
+      preLoaderRoute: typeof AuthResetRouteImport
       parentRoute: typeof AuthRoute
     }
     '/auth/callback': {
@@ -1097,12 +1116,14 @@ const AuthenticatedRouteRouteWithChildren =
 
 interface AuthRouteChildren {
   AuthCallbackRoute: typeof AuthCallbackRoute
+  AuthResetRoute: typeof AuthResetRoute
   AuthRoleRoute: typeof AuthRoleRoute
   AuthIndexRoute: typeof AuthIndexRoute
 }
 
 const AuthRouteChildren: AuthRouteChildren = {
   AuthCallbackRoute: AuthCallbackRoute,
+  AuthResetRoute: AuthResetRoute,
   AuthRoleRoute: AuthRoleRoute,
   AuthIndexRoute: AuthIndexRoute,
 }
