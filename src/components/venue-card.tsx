@@ -43,8 +43,9 @@ export function VenueCard({ venue, saved, onToggleSaved, compact }: {
       <div className="p-4">
         <p className="font-serif text-lg leading-snug">{v.legal_business_name}</p>
         {(v.city || v.country) && (
-          <p className="text-sm text-muted-foreground mt-1.5">
-            <span className="inline-flex items-center gap-1"><MapPin className="h-3 w-3 shrink-0" /> {[v.city, v.country].filter(Boolean).join(", ")}</span>
+          <p className="mt-1.5 flex items-center gap-1.5 text-xs text-muted-foreground">
+            <MapPin className="h-3 w-3 shrink-0" />
+            <span className="truncate">{v.city || v.country}</span>
           </p>
         )}
         {!compact && (v.capacity_min != null || v.capacity_max != null) && (

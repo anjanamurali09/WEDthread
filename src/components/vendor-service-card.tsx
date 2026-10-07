@@ -28,7 +28,8 @@ export function VendorServiceCard({ service, saved, onToggleSaved, compact }: {
   compact?: boolean;
 }) {
   const s = service;
-  const location = [s.city, s.country].filter(Boolean).join(", ");
+  // City only; the country is left out to keep the card light (falls back to the country if there is no city).
+  const location = s.city || s.country || "";
   const content = (
     <>
       <div className="relative">
@@ -47,8 +48,9 @@ export function VendorServiceCard({ service, saved, onToggleSaved, compact }: {
           </p>
         )}
         {location && (
-          <p className="text-sm text-muted-foreground mt-1.5">
-            <span className="inline-flex items-center gap-1"><MapPin className="h-3 w-3 shrink-0" /> {location}</span>
+          <p className="mt-1.5 flex items-center gap-1.5 text-xs text-muted-foreground">
+            <MapPin className="h-3 w-3 shrink-0" />
+            <span className="truncate">{location}</span>
           </p>
         )}
       </div>
