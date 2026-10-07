@@ -1,16 +1,16 @@
 import type { ReactNode } from "react";
 
-import decorMarigold from "@/assets/decor-marigold.jpg.asset.json";
-import gardenParty from "@/assets/garden-party.jpg.asset.json";
-import bridalParty from "@/assets/bridal-party.jpg.asset.json";
-import caneChair from "@/assets/cane-chair.jpg.asset.json";
+import decorMarigold from "@/assets/decor-marigold.jpg";
+import gardenParty from "@/assets/garden-party.jpg";
+import bridalParty from "@/assets/bridal-party.jpg";
+import caneChair from "@/assets/cane-chair.jpg";
 
 /* Curated photo library — carries the homepage oval-crop motif inside the app. */
 export const EMPTY_PHOTOS = {
-  marigold: { url: decorMarigold.url, alt: "Marigold garlands and greenery hanging from a wedding mandap ceiling", pos: "50% 60%" },
-  garden:   { url: gardenParty.url,   alt: "Guests in pastel outfits gathered on a garden lawn at a wedding cocktail hour", pos: "50% 45%" },
-  bridal:   { url: bridalParty.url,   alt: "Bride and groom laughing with the wedding party in embellished outfits", pos: "50% 35%" },
-  cane:     { url: caneChair.url,     alt: "Rattan wedding chair with a hand fan and a green ribbon place setting", pos: "50% 80%" },
+  marigold: { url: decorMarigold, alt: "Marigold garlands and greenery hanging from a wedding mandap ceiling", pos: "50% 60%" },
+  garden:   { url: gardenParty,   alt: "Guests in pastel outfits gathered on a garden lawn at a wedding cocktail hour", pos: "50% 45%" },
+  bridal:   { url: bridalParty,   alt: "Bride and groom laughing with the wedding party in embellished outfits", pos: "50% 35%" },
+  cane:     { url: caneChair,     alt: "Rattan wedding chair with a hand fan and a green ribbon place setting", pos: "50% 80%" },
 } as const;
 
 export type PhotoKey = keyof typeof EMPTY_PHOTOS;

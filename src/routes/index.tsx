@@ -10,8 +10,7 @@ import { VenueCard, type VenueCardData } from "@/components/venue-card";
 import { VendorServiceCard, type VendorServiceCardData } from "@/components/vendor-service-card";
 import { useSavedListings } from "@/hooks/use-saved-listings";
 
-import heroAsset from "@/assets/homepage-hero.png.asset.json";
-const heroImg = heroAsset.url;
+import heroImg from "@/assets/homepage-hero.png";
 
 import venueBaliImg from "@/assets/venue-bali-room.jpg";
 import websiteCoupleImg from "@/assets/website-couple-priya-kevin.jpg";
