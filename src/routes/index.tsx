@@ -492,8 +492,10 @@ function ScrollRow({ title, cardClass, children }: { title?: string; cardClass: 
   const arrow = "grid h-9 w-9 place-items-center rounded-full border border-line bg-paper text-[#243746] transition-colors hover:bg-[#FFE08A] disabled:opacity-30 disabled:hover:bg-paper";
 
   return (
-    <div data-reveal>
-      <div className="mb-3 flex items-center justify-between gap-4">
+    // The row breaks out of the page margins so cards run edge to edge; its own padding lines the first
+    // card up with the rest of the page, and the arrows and heading keep the page margins.
+    <div data-reveal className="-mx-6 md:-mx-12">
+      <div className="mb-3 flex items-center justify-between gap-4 px-6 md:px-12">
         <p className="text-sm uppercase tracking-widest text-[#7FA8D6]">{title}</p>
         {!(edge.start && edge.end) && (
           <div className="flex gap-2">
@@ -502,17 +504,18 @@ function ScrollRow({ title, cardClass, children }: { title?: string; cardClass: 
           </div>
         )}
       </div>
-      <div ref={ref} className="no-scrollbar flex gap-4 overflow-x-auto scroll-smooth snap-x snap-mandatory pb-2">
+      <div ref={ref} className="no-scrollbar flex gap-4 overflow-x-auto scroll-smooth snap-x snap-mandatory px-6 md:px-12 scroll-px-6 md:scroll-px-12 pb-2">
         {Array.isArray(children)
-          ? (children as React.ReactNode[]).map((c, i) => <div key={i} className={cn("shrink-0 snap-start", cardClass)}>{c}</div>)
-          : <div className={cn("shrink-0 snap-start", cardClass)}>{children}</div>}
+          ? (children as React.ReactNode[]).map((c, i) => <div key={i} className={cn("shrink-0 snap-start [&>*]:h-full", cardClass)}>{c}</div>)
+          : <div className={cn("shrink-0 snap-start [&>*]:h-full", cardClass)}>{children}</div>}
       </div>
     </div>
   );
 }
 
-// Card widths: four across on a wide screen (page width minus three 16px gaps), fewer on smaller ones.
-const FOUR_ACROSS = "w-[78%] sm:w-[calc((100%-16px)/2)] lg:w-[calc((100%-48px)/4)]";
+// Card widths: six across on a wide screen, fewer on smaller ones. Percentages are of the row's content
+// width (page width minus the side margins), less the 16px gaps between cards.
+const SIX_ACROSS = "w-[78%] sm:w-[calc((100%-16px)/2)] md:w-[calc((100%-32px)/3)] lg:w-[calc((100%-48px)/4)] xl:w-[calc((100%-80px)/6)]";
 
 const CTA_TONE_STYLES: Record<"cherry" | "sage" | "pearl", { wrap: string; eyebrow: string; button: string }> = {
   cherry: { wrap: "bg-[#FFE08A] text-[#243746]", eyebrow: "text-[#243746]/70", button: "bg-[#243746] text-[#FFF7D6] hover:bg-[#7FA8D6] hover:text-[#243746]" },
@@ -563,7 +566,7 @@ function RealListingsPreview() {
       const { data: venueBiz } = await supabase
         .from("businesses").select("id,legal_business_name,verification_status,city,country")
         .eq("business_type", "venue").eq("verification_status", "verified")
-        .order("created_at", { ascending: false }).limit(8);
+        .order("created_at", { ascending: false }).limit(12);
       if (venueBiz && venueBiz.length > 0) {
         const ids = venueBiz.map((b) => b.id);
         const [{ data: details }, { data: media }] = await Promise.all([
@@ -600,7 +603,7 @@ function RealListingsPreview() {
         ]);
         const bizById = new Map((biz ?? []).map((b) => [b.id, b]));
         const catName = new Map((cats ?? []).map((c) => [c.id, c.name]));
-        const eligible = svcRows.filter((s) => bizById.has(s.business_id)).slice(0, 8);
+        const eligible = svcRows.filter((s) => bizById.has(s.business_id)).slice(0, 12);
         const svcIds = eligible.map((s) => s.id);
         const [{ data: media }, { data: bizMedia }] = await Promise.all([
           svcIds.length > 0
@@ -649,7 +652,7 @@ function RealListingsPreview() {
 
       {venues.length > 0 && (
         <div className="mt-10">
-          <ScrollRow title="Venues" cardClass={FOUR_ACROSS}>
+          <ScrollRow title="Venues" cardClass={SIX_ACROSS}>
             {venues.map((v) => (
               <VenueCard key={v.id} venue={v} saved={saved.has(v.id)} onToggleSaved={handleToggleVenueSaved} compact />
             ))}
@@ -659,7 +662,7 @@ function RealListingsPreview() {
 
       {services.length > 0 && (
         <div className="mt-10">
-          <ScrollRow title="Vendors" cardClass={FOUR_ACROSS}>
+          <ScrollRow title="Vendors" cardClass={SIX_ACROSS}>
             {services.map((s) => (
               <VendorServiceCard key={s.id} service={s} saved={saved.has(s.id)} onToggleSaved={handleToggleServiceSaved} compact />
             ))}
