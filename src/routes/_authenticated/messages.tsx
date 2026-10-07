@@ -5,7 +5,7 @@ import { useCurrentWedding, useGuests, useInvites, useInvalidateWedding } from "
 import { guestInvites, isGuestResponded } from "@/lib/rsvp-stats";
 import { supabase } from "@/integrations/supabase/client";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { toast } from "sonner";
+import { toast } from "@/lib/toast";
 import { Mail, MessageCircle, Send, Plus, Trash2, X, ExternalLink, Check, SkipForward, Smile, Store } from "lucide-react";
 import { PhotoEmptyState } from "@/components/photo-empty-state";
 import { cn, formatNumber } from "@/lib/utils";

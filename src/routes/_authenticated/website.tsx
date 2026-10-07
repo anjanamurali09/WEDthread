@@ -3,7 +3,7 @@ import { useRef, useState } from "react";
 import { AppShell, SIDEBAR_COLLAPSED_KEY } from "@/components/app-shell";
 import { useCurrentWedding, useInvalidateWedding } from "@/lib/wedding-hooks";
 import { supabase } from "@/integrations/supabase/client";
-import { toast } from "sonner";
+import { toast } from "@/lib/toast";
 import { Copy, Check, ExternalLink, Pencil, Monitor, Smartphone, Heart } from "lucide-react";
 import { TEMPLATES, getTemplate } from "@/lib/website-templates";
 import { TemplateThumb } from "@/components/template-thumb";

@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { dedupeByLabel } from "@/lib/utils";
-import { toast } from "sonner";
+import { toast } from "@/lib/toast";
 import type { SelectOption } from "@/components/searchable-multi-select";
 
 // Shared by every category picker (admin add/edit, a vendor's own self-serve

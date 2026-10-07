@@ -1,7 +1,7 @@
 import { createFileRoute, useNavigate, useSearch, Link } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
-import { toast } from "sonner";
+import { toast } from "@/lib/toast";
 import { resolveCoupleLanding } from "@/lib/wedding-hooks";
 import { HeartHandshake, Building2, Store, ShoppingBag, ClipboardList } from "lucide-react";
 import { Logo } from "@/components/logo";

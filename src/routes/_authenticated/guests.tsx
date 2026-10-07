@@ -4,7 +4,7 @@ import Papa from "papaparse";
 import { AppShell } from "@/components/app-shell";
 import { useCurrentWedding, useEvents, useGuests, useGuestTags, useFoodTags, useInvites, useInvalidateWedding, useRsvpQuestions, useRsvpResponses, type Guest, type GuestTag, type FoodTag, type Invite, type Wedding } from "@/lib/wedding-hooks";
 import { supabase } from "@/integrations/supabase/client";
-import { toast } from "sonner";
+import { toast } from "@/lib/toast";
 import { Plus, Upload, Download, X, Trash2, Search, MessageCircle, Copy, FileText, Columns3, Check, ChevronDown, GripVertical } from "lucide-react";
 import { cn, formatNumber } from "@/lib/utils";
 import { Popover, PopoverTrigger, PopoverContent } from "@/components/ui/popover";

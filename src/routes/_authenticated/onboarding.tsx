@@ -4,7 +4,7 @@ import { useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useCurrentWedding } from "@/lib/wedding-hooks";
 import { useOnboardingDraft } from "@/hooks/use-onboarding-draft";
-import { toast } from "sonner";
+import { toast } from "@/lib/toast";
 import { ArrowRight, Check, Loader2 } from "lucide-react";
 import { Logo } from "@/components/logo";
 

@@ -3,7 +3,7 @@ import { Link } from "@tanstack/react-router";
 import { supabase } from "@/integrations/supabase/client";
 import { Dropdown } from "@/components/dropdown";
 import { DatePicker } from "@/components/ui/datepicker";
-import { toast } from "sonner";
+import { toast } from "@/lib/toast";
 import { Loader2, CheckCircle2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 

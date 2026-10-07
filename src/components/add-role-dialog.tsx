@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { Dialog, DialogContent, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { HeartHandshake, Building2, Store, ShoppingBag, ClipboardList } from "lucide-react";
-import { toast } from "sonner";
+import { toast } from "@/lib/toast";
 import { useRouter } from "@tanstack/react-router";
 import { addRoleForCurrentUser, useActiveRole, type AppRole } from "@/hooks/use-active-role";
 

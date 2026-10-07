@@ -4,7 +4,7 @@ import { AppShell } from "@/components/app-shell";
 import { useCurrentWedding, useEvents, useGuests, useInvites, useInvalidateWedding, type Event } from "@/lib/wedding-hooks";
 import { supabase } from "@/integrations/supabase/client";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { toast } from "sonner";
+import { toast } from "@/lib/toast";
 import {
   Plus, Trash2, X, CalendarDays, Users, Armchair, MapPin, Gift, Globe2, Handshake, ChevronRight, GripVertical, Check, Gauge, Utensils, Shirt, ImagePlus, Loader2,
 } from "lucide-react";

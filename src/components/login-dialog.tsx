@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { Dialog, DialogContent, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { supabase } from "@/integrations/supabase/client";
-import { toast } from "sonner";
+import { toast } from "@/lib/toast";
 import { useNavigate } from "@tanstack/react-router";
 import { ROLE_LANDING, type AppRole } from "@/hooks/use-active-role";
 import { resolveCoupleLanding } from "@/lib/wedding-hooks";

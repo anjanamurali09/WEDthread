@@ -4,7 +4,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { AppShell } from "@/components/app-shell";
 import { formatMoney } from "@/lib/currency";
 import { Clock, CheckCircle2, XCircle, Plus, Pencil, ExternalLink, Inbox, Building2 } from "lucide-react";
-import { toast } from "sonner";
+import { toast } from "@/lib/toast";
 import { useActiveRole } from "@/hooks/use-active-role";
 
 export const Route = createFileRoute("/_authenticated/business/dashboard")({ component: BusinessDashboardPage });

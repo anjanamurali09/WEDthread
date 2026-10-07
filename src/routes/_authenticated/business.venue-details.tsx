@@ -9,7 +9,7 @@ import { AmountCurrencyField } from "@/components/amount-currency-field";
 import { HeaderBodyListEditor, type HeaderBodyItem } from "@/components/header-body-list-editor";
 import { VendorLeadFormBuilder } from "@/components/vendor-lead-form-builder";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
-import { toast } from "sonner";
+import { toast } from "@/lib/toast";
 import { useSavedFeedback } from "@/hooks/use-saved-feedback";
 import { formatAmountInput, parseAmountInput } from "@/lib/currency";
 import { Loader2 } from "lucide-react";

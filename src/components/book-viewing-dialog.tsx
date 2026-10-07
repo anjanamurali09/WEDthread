@@ -3,7 +3,7 @@ import { Link } from "@tanstack/react-router";
 import { supabase } from "@/integrations/supabase/client";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { DatePicker } from "@/components/ui/datepicker";
-import { toast } from "sonner";
+import { toast } from "@/lib/toast";
 import { CalendarCheck, Loader2, CheckCircle2 } from "lucide-react";
 
 const TIME_SLOTS = ["Morning", "Afternoon", "Evening"] as const;

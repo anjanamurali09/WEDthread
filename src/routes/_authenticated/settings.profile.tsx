@@ -4,7 +4,7 @@ import { AppShell } from "@/components/app-shell";
 import { useCurrentWedding, useInvalidateWedding, useCollaborators, type Collaborator } from "@/lib/wedding-hooks";
 import { supabase } from "@/integrations/supabase/client";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { toast } from "sonner";
+import { toast } from "@/lib/toast";
 import { ConfirmDialog } from "@/components/confirm-dialog";
 import { DeleteWorkspaceDialog } from "@/components/delete-workspace-dialog";
 import { AddPaymentMethodDialog } from "@/components/add-payment-method-dialog";

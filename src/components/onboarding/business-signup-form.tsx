@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { useNavigate } from "@tanstack/react-router";
 import { supabase } from "@/integrations/supabase/client";
 import { addRoleForCurrentUser } from "@/hooks/use-active-role";
-import { toast } from "sonner";
+import { toast } from "@/lib/toast";
 import { Loader2, FileText, X, Video, ArrowRight, ArrowLeft } from "lucide-react";
 import { ChipToggleGroup } from "@/components/chip-toggle-group";
 import { TagListInput } from "@/components/tag-list-input";

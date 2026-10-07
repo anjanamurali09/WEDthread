@@ -3,7 +3,7 @@ import { AppShell } from "@/components/app-shell";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useState } from "react";
-import { toast } from "sonner";
+import { toast } from "@/lib/toast";
 import { Inbox, Mail, Phone, Calendar, Users } from "lucide-react";
 import { formatNumber } from "@/lib/utils";
 

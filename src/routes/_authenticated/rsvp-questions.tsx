@@ -7,7 +7,7 @@ import { summarizeGuestRsvps, guestInvites, isGuestAttending, isGuestResponded }
 import { ShareRsvpDialog } from "@/components/share-rsvp-dialog";
 import { supabase } from "@/integrations/supabase/client";
 import { useQueryClient } from "@tanstack/react-query";
-import { toast } from "sonner";
+import { toast } from "@/lib/toast";
 import {
   Plus, Trash2, X, GripVertical, CheckCircle2, ListFilter, Type as TypeIcon, ChevronDown, Check, Lock, Eye, Share2, Table2, Columns3,
   XCircle, Clock, Search, ChevronRight, Download, Users, Send,

@@ -1,7 +1,7 @@
 import { useRef, useState } from "react";
 import { Link } from "@tanstack/react-router";
 import { X, Copy, Check, Search, ArrowRight } from "lucide-react";
-import { toast } from "sonner";
+import { toast } from "@/lib/toast";
 import type { Wedding, Guest } from "@/lib/wedding-hooks";
 
 // Shared by the RSVP Questions page ("Share RSVP" button) and the Messages page (the

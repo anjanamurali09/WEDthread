@@ -10,7 +10,7 @@ import { AppShell } from "@/components/app-shell";
 import { useCurrentWedding, useEvents, useGuests, useInvites } from "@/lib/wedding-hooks";
 import { supabase } from "@/integrations/supabase/client";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { toast } from "sonner";
+import { toast } from "@/lib/toast";
 import { Plus, X, Trash2, Circle, Square, RectangleHorizontal, Music, GlassWater, Mic, DoorOpen, Palette, Users, Armchair, Check, CalendarDays, Download, Settings, ZoomIn, ZoomOut, ArrowRight, ArrowDown, ArrowUp, ArrowLeft, Maximize2, Minimize2, SlidersHorizontal, Search, BoxSelect } from "lucide-react";
 import { OvalPhotoOrnament } from "@/components/photo-empty-state";
 import { ConfirmDialog } from "@/components/confirm-dialog";

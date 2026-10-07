@@ -1,7 +1,7 @@
 import { createFileRoute, useNavigate, Link } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
-import { toast } from "sonner";
+import { toast } from "@/lib/toast";
 import { Logo } from "@/components/logo";
 import { ROLE_LANDING, type AppRole } from "@/hooks/use-active-role";
 import { resolveCoupleLanding } from "@/lib/wedding-hooks";

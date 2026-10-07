@@ -4,7 +4,7 @@ import { AppShell } from "@/components/app-shell";
 import { useCurrentWedding, useEvents, useMenuSections, useMenuItems, useFoodTags, type MenuItem, type FoodTag } from "@/lib/wedding-hooks";
 import { supabase } from "@/integrations/supabase/client";
 import { useQueryClient } from "@tanstack/react-query";
-import { toast } from "sonner";
+import { toast } from "@/lib/toast";
 import { Plus, Trash2, X, Utensils, Pencil, Check, Download } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { dishCodes, foodLookup, legendFor, type FoodKind } from "@/lib/dietary-tags";

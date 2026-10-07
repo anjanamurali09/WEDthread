@@ -3,7 +3,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { LeaveReviewButton } from "@/components/leave-review-button";
-import { toast } from "sonner";
+import { toast } from "@/lib/toast";
 import { Loader2, Send } from "lucide-react";
 import { cn } from "@/lib/utils";
 

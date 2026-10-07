@@ -2,7 +2,7 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { AppShell } from "@/components/app-shell";
-import { toast } from "sonner";
+import { toast } from "@/lib/toast";
 import { CheckCircle2, XCircle, ShieldAlert, ExternalLink } from "lucide-react";
 
 export const Route = createFileRoute("/_authenticated/admin/claims")({ component: AdminClaimsPage });

@@ -7,7 +7,7 @@ import {
 } from "@/lib/wedding-hooks";
 import { supabase } from "@/integrations/supabase/client";
 import { useQueryClient } from "@tanstack/react-query";
-import { toast } from "sonner";
+import { toast } from "@/lib/toast";
 import { Plus, Trash2, Pencil, Check, X, Wallet, ChevronDown, Settings, SlidersHorizontal, Download, PieChart as PieChartIcon, BarChart3, Columns3, DollarSign } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { CustomColorButton } from "@/components/custom-color";

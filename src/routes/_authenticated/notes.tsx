@@ -4,7 +4,7 @@ import { AppShell } from "@/components/app-shell";
 import { useCurrentWedding, useNotes, type Note } from "@/lib/wedding-hooks";
 import { supabase } from "@/integrations/supabase/client";
 import { useQueryClient } from "@tanstack/react-query";
-import { toast } from "sonner";
+import { toast } from "@/lib/toast";
 import { Plus, Trash2, Check, Loader2, Bold, Strikethrough, List, ListOrdered, SquareCheckBig, ListIndentIncrease, ListIndentDecrease } from "lucide-react";
 import { cn } from "@/lib/utils";
 

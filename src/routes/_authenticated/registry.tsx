@@ -4,7 +4,7 @@ import { AppShell } from "@/components/app-shell";
 import { useCurrentWedding, useInvalidateWedding } from "@/lib/wedding-hooks";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import { toast } from "sonner";
+import { toast } from "@/lib/toast";
 import { ExternalLink, Plus, Trash2, Globe2, Share2, Copy, Check, MessageCircle, X, Star, Eye, Loader2, ChevronDown, ImagePlus, Pencil } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Dropdown } from "@/components/dropdown";

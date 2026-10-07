@@ -5,7 +5,7 @@ import { AppShell } from "@/components/app-shell";
 import { supabase } from "@/integrations/supabase/client";
 import { useActiveRole, removeRoleForCurrentUser } from "@/hooks/use-active-role";
 import { DeleteWorkspaceDialog } from "@/components/delete-workspace-dialog";
-import { toast } from "sonner";
+import { toast } from "@/lib/toast";
 import { ShieldCheck, CheckCircle2, Clock, XCircle } from "lucide-react";
 
 export const Route = createFileRoute("/_authenticated/workspace-settings")({ component: WorkspaceSettingsPage });

@@ -12,7 +12,7 @@ import { SocialLinksFields, EMPTY_SOCIAL_LINKS, type SocialLinkValues } from "@/
 import { HeaderBodyListEditor, type HeaderBodyItem } from "@/components/header-body-list-editor";
 import { COUNTRIES } from "@/lib/countries";
 import { formatAmountInput, parseAmountInput } from "@/lib/currency";
-import { toast } from "sonner";
+import { toast } from "@/lib/toast";
 import { useSavedFeedback } from "@/hooks/use-saved-feedback";
 import { Loader2, FileText, X, Video, ShieldAlert, Star } from "lucide-react";
 import { cn } from "@/lib/utils";
