@@ -82,9 +82,8 @@ export function IntegrationsSection({ weddingId }: { weddingId: string }) {
   const linkFor = (kind: LinkKind) => data?.links.find((l) => l.kind === kind);
 
   return (
-    <section className="max-w-xl paper-card p-8 mt-6">
-      <h3 className="font-serif text-xl">Integrations</h3>
-      <p className="mt-1 text-sm text-muted-foreground">
+    <section className="px-8 py-6">
+      <p className="text-sm text-muted-foreground">
         Keep your guest list and budget in a Google Sheet that stays in sync with WEDthread. Edit in either place — changes flow both ways, and everything is saved in WEDthread.
       </p>
 

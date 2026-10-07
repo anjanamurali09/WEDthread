@@ -8,7 +8,7 @@ import { toast } from "@/lib/toast";
 import { ConfirmDialog } from "@/components/confirm-dialog";
 import { DeleteWorkspaceDialog } from "@/components/delete-workspace-dialog";
 import { AddPaymentMethodDialog } from "@/components/add-payment-method-dialog";
-import { UserPlus, X, CreditCard, Plus } from "lucide-react";
+import { UserPlus, X, CreditCard, Plus, ChevronDown } from "lucide-react";
 import { IntegrationsSection } from "@/components/integrations-section";
 import { cn } from "@/lib/utils";
 import { useActiveRole } from "@/hooks/use-active-role";
@@ -68,10 +68,11 @@ function ProfileSettingsPage() {
 
   return (
     <AppShell title="Profile" subtitle="The core details of your wedding — who's getting married, where, and roughly how many guests.">
-      {isLoading ? (
-        <p className="text-sm text-muted-foreground">Loading…</p>
-      ) : (
-        <form onSubmit={submit} className="max-w-xl paper-card p-8 space-y-4">
+      <SettingsRow title="Profile">
+        {isLoading ? (
+          <p className="px-8 py-6 text-sm text-muted-foreground">Loading…</p>
+        ) : (
+        <form onSubmit={submit} className="px-8 py-6 space-y-4">
           <div className="grid md:grid-cols-2 gap-4">
             <F label="Partner A" required value={form.partner_a} onChange={(v) => setField("partner_a", v)} />
             <F label="Partner B" required value={form.partner_b} onChange={(v) => setField("partner_b", v)} />
@@ -88,13 +89,35 @@ function ProfileSettingsPage() {
             </button>
           </div>
         </form>
-      )}
+        )}
+      </SettingsRow>
 
-      {wedding && userId && wedding.owner_id === userId && active === "couple" && <CollaboratorsSection weddingId={wedding.id} />}
-      {wedding && userId && wedding.owner_id === userId && <IntegrationsSection weddingId={wedding.id} />}
-      <PaymentMethodsSection />
-      {wedding && userId && wedding.owner_id === userId && <DangerZoneSection wedding={wedding} />}
+      {wedding && userId && wedding.owner_id === userId && active === "couple" && (
+        <SettingsRow title="Collaborators"><CollaboratorsSection weddingId={wedding.id} /></SettingsRow>
+      )}
+      <SettingsRow title="Payment methods"><PaymentMethodsSection /></SettingsRow>
+      {wedding && userId && wedding.owner_id === userId && (
+        <SettingsRow title="Integrations"><IntegrationsSection weddingId={wedding.id} /></SettingsRow>
+      )}
+      {wedding && userId && wedding.owner_id === userId && (
+        <SettingsRow title="Danger zone" danger><DangerZoneSection wedding={wedding} /></SettingsRow>
+      )}
     </AppShell>
+  );
+}
+
+// One collapsed line per settings area; clicking it opens the area underneath.
+function SettingsRow({ title, danger = false, children }: { title: string; danger?: boolean; children: React.ReactNode }) {
+  const [open, setOpen] = useState(false);
+  return (
+    <section className="max-w-xl paper-card mt-3 overflow-hidden">
+      <button type="button" data-static aria-expanded={open} onClick={() => setOpen((v) => !v)}
+        className="flex w-full cursor-pointer items-center justify-between px-8 py-5 text-left">
+        <span className={cn("font-serif text-xl", danger && "text-cherry")}>{title}</span>
+        <ChevronDown className={cn("h-5 w-5 text-muted-foreground transition-transform", open && "rotate-180")} />
+      </button>
+      {open && <div className="border-t border-line/60">{children}</div>}
+    </section>
   );
 }
 
@@ -112,9 +135,8 @@ function DangerZoneSection({ wedding }: { wedding: { id: string; partner_a: stri
   };
 
   return (
-    <div className="max-w-xl paper-card p-8 mt-6 border-cherry/30">
-      <h3 className="font-serif text-xl text-cherry">Danger zone</h3>
-      <p className="mt-2 text-sm text-muted-foreground">
+    <div className="px-8 py-6">
+      <p className="text-sm text-muted-foreground">
         Permanently deletes this wedding — every event, guest, RSVP, seating chart, budget entry, message, and your wedding website. This can't be undone.
         Your couple workspace itself stays on your account, so you can start planning a new wedding anytime.
       </p>
@@ -156,10 +178,9 @@ function PaymentMethodsSection() {
   };
 
   return (
-    <div className="max-w-xl paper-card p-8 mt-6 space-y-5">
+    <div className="px-8 py-6 space-y-5">
       <div>
-        <h3 className="font-serif text-xl">Payment methods</h3>
-        <p className="mt-1 text-sm text-muted-foreground">
+        <p className="text-sm text-muted-foreground">
           Entirely optional — save a card ahead of time so future vendor enquiries go faster.
           Nothing here is required to send an enquiry today.
         </p>
@@ -277,10 +298,9 @@ function CollaboratorsSection({ weddingId }: { weddingId: string }) {
   };
 
   return (
-    <div className="max-w-xl paper-card p-8 mt-6 space-y-5">
+    <div className="px-8 py-6 space-y-5">
       <div>
-        <h3 className="font-serif text-xl">Collaborators</h3>
-        <p className="mt-1 text-sm text-muted-foreground">
+        <p className="text-sm text-muted-foreground">
           Give someone else full edit access to this wedding — everything except deleting
           the wedding itself or managing collaborators. They need a WedThread account with a
           matching email; access starts as soon as they sign in.
