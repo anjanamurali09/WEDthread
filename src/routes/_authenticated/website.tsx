@@ -1,5 +1,5 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { AppShell, SIDEBAR_COLLAPSED_KEY } from "@/components/app-shell";
 import { useCurrentWedding, useInvalidateWedding } from "@/lib/wedding-hooks";
 import { supabase } from "@/integrations/supabase/client";
@@ -18,6 +18,13 @@ function WebsitePage() {
   const invalidate = useInvalidateWedding();
   const [saving, setSaving] = useState(false);
   const [copied, setCopied] = useState(false);
+  const [userId, setUserId] = useState<string | null>(null);
+  useEffect(() => { supabase.auth.getUser().then(({ data }) => setUserId(data.user?.id ?? null)); }, []);
+  // Choosing the web address (slug) of the site: editable by the wedding's owner.
+  const [editingSlug, setEditingSlug] = useState(false);
+  const [slugDraft, setSlugDraft] = useState("");
+  const [slugSaving, setSlugSaving] = useState(false);
+  const [slugError, setSlugError] = useState<string | null>(null);
   const { status: publishStatus, markSaved: markPublishOk, markError: markPublishError } = useSavedFeedback();
   // The design highlighted on the left and shown on the right (not yet applied).
   const [previewId, setPreviewId] = useState<string | null>(null);
@@ -45,6 +52,20 @@ function WebsitePage() {
   };
 
   const url = typeof window !== "undefined" ? `${window.location.origin}/w/${wedding.slug ?? ""}` : `/w/${wedding.slug ?? ""}`;
+  const cleanSlug = (v: string) => v.toLowerCase().replace(/[^a-z0-9-]+/g, "-").replace(/-+/g, "-");
+  const startEditSlug = () => { setSlugDraft(wedding.slug ?? ""); setSlugError(null); setEditingSlug(true); };
+  const saveSlug = async () => {
+    const next = cleanSlug(slugDraft).replace(/^-|-$/g, "");
+    if (next.length < 3) return setSlugError("Use at least 3 letters or numbers.");
+    if (next.length > 40) return setSlugError("Keep it to 40 characters or fewer.");
+    if (next === wedding.slug) { setEditingSlug(false); return; }
+    setSlugSaving(true); setSlugError(null);
+    const { error } = await supabase.from("weddings").update({ slug: next }).eq("id", wedding.id);
+    setSlugSaving(false);
+    if (error) return setSlugError(error.code === "23505" ? "That link is already taken. Try another." : error.message);
+    invalidate(wedding.id);
+    setEditingSlug(false);
+  };
   const copy = async () => { await navigator.clipboard.writeText(url); setCopied(true); setTimeout(() => setCopied(false), 1500); };
   const template = getTemplate(wedding.site_template_id);
   const shown = getTemplate(previewId ?? wedding.site_template_id);
@@ -75,7 +96,28 @@ function WebsitePage() {
             <span className={`h-2.5 w-2.5 rounded-full ${wedding.site_published ? "bg-emerald-500" : "bg-line"}`} />
             <div>
               <p className="text-sm">{wedding.site_published ? "Live" : "Draft, not yet published"}</p>
-              <a href={url} target="_blank" rel="noreferrer" className="text-sm text-muted-foreground hover:text-wine inline-flex items-center gap-1">{url} <ExternalLink className="h-3 w-3" /></a>
+              {editingSlug ? (
+                <div className="mt-1">
+                  <div className="flex flex-wrap items-center gap-2">
+                    <span className="text-sm text-muted-foreground">{typeof window !== "undefined" ? `${window.location.host}/w/` : "/w/"}</span>
+                    <input autoFocus value={slugDraft} onChange={(e) => { setSlugDraft(cleanSlug(e.target.value)); setSlugError(null); }}
+                      onKeyDown={(e) => { if (e.key === "Enter") saveSlug(); if (e.key === "Escape") setEditingSlug(false); }}
+                      className="w-56 rounded-full border border-line bg-paper px-4 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-clay" />
+                    <button onClick={saveSlug} disabled={slugSaving} className="rounded-full bg-ink px-4 py-1.5 text-sm text-pearl hover:bg-wine disabled:opacity-60">{slugSaving ? "Saving…" : "Save"}</button>
+                    <button onClick={() => setEditingSlug(false)} className="text-sm text-muted-foreground hover:text-ink">Cancel</button>
+                  </div>
+                  {slugError
+                    ? <p className="mt-1.5 text-sm text-destructive">{slugError}</p>
+                    : <p className="mt-1.5 text-xs text-muted-foreground">Letters, numbers and hyphens. Anyone with your old link will need the new one.</p>}
+                </div>
+              ) : (
+                <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
+                  <a href={url} target="_blank" rel="noreferrer" className="text-sm text-muted-foreground hover:text-wine inline-flex items-center gap-1">{url} <ExternalLink className="h-3 w-3" /></a>
+                  {userId && wedding.owner_id === userId && (
+                    <button onClick={startEditSlug} className="text-sm text-cherry underline underline-offset-4 hover:text-ink">Change link</button>
+                  )}
+                </div>
+              )}
             </div>
           </div>
           <div className="flex gap-2 flex-wrap">

@@ -158,7 +158,7 @@ export function CoupleDashboard() {
             </div>
             {events.length === 0 ? (
               <div className="mt-6 rounded-2xl border border-dashed border-line p-8 text-center">
-                <p className="text-sm text-muted-foreground">No events yet. Add mehendi, sangeet, nikah, ceremony, reception, whatever your wedding has.</p>
+                <p className="text-sm text-muted-foreground">No events yet.</p>
                 <Link to="/events" className="mt-4 inline-flex rounded-full bg-ink text-paper px-5 py-2 text-sm hover:bg-clay">Add your first event</Link>
               </div>
             ) : (
