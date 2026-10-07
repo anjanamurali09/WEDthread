@@ -2,6 +2,7 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { PublicMarketingHeader } from "@/components/public-marketing-header";
+import { SiteFooter } from "@/components/site-footer";
 import { AppShell } from "@/components/app-shell";
 import { VendorEnquireDialog } from "@/components/vendor-enquire-dialog";
 import { ReviewsSection } from "@/components/reviews-section";
@@ -374,6 +375,7 @@ function VendorProfilePage() {
       </div>
 
       <LoginDialog open={authOpen} onOpenChange={setAuthOpen} initialMode="signup" />
+      {!signedIn && <SiteFooter />}
     </div>
   );
 

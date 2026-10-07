@@ -11,6 +11,7 @@
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as VenueRouteImport } from './routes/venue'
 import { Route as VRouteImport } from './routes/v'
+import { Route as PrivacyRouteImport } from './routes/privacy'
 import { Route as AuthRouteImport } from './routes/auth'
 import { Route as AuthenticatedRouteRouteImport } from './routes/_authenticated/route'
 import { Route as IndexRouteImport } from './routes/index'
@@ -69,6 +70,11 @@ const VenueRoute = VenueRouteImport.update({
 const VRoute = VRouteImport.update({
   id: '/v',
   path: '/v',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const PrivacyRoute = PrivacyRouteImport.update({
+  id: '/privacy',
+  path: '/privacy',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AuthRoute = AuthRouteImport.update({
@@ -339,6 +345,7 @@ const AuthenticatedAdminAddVendorBusinessIdRoute =
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/auth': typeof AuthRouteWithChildren
+  '/privacy': typeof PrivacyRoute
   '/v': typeof VRoute
   '/venue': typeof VenueRoute
   '/budget': typeof AuthenticatedBudgetRoute
@@ -390,6 +397,7 @@ export interface FileRoutesByFullPath {
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/privacy': typeof PrivacyRoute
   '/v': typeof VRoute
   '/venue': typeof VenueRoute
   '/budget': typeof AuthenticatedBudgetRoute
@@ -444,6 +452,7 @@ export interface FileRoutesById {
   '/': typeof IndexRoute
   '/_authenticated': typeof AuthenticatedRouteRouteWithChildren
   '/auth': typeof AuthRouteWithChildren
+  '/privacy': typeof PrivacyRoute
   '/v': typeof VRoute
   '/venue': typeof VenueRoute
   '/_authenticated/budget': typeof AuthenticatedBudgetRoute
@@ -498,6 +507,7 @@ export interface FileRouteTypes {
   fullPaths:
     | '/'
     | '/auth'
+    | '/privacy'
     | '/v'
     | '/venue'
     | '/budget'
@@ -549,6 +559,7 @@ export interface FileRouteTypes {
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
+    | '/privacy'
     | '/v'
     | '/venue'
     | '/budget'
@@ -602,6 +613,7 @@ export interface FileRouteTypes {
     | '/'
     | '/_authenticated'
     | '/auth'
+    | '/privacy'
     | '/v'
     | '/venue'
     | '/_authenticated/budget'
@@ -656,6 +668,7 @@ export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AuthenticatedRouteRoute: typeof AuthenticatedRouteRouteWithChildren
   AuthRoute: typeof AuthRouteWithChildren
+  PrivacyRoute: typeof PrivacyRoute
   VRoute: typeof VRoute
   VenueRoute: typeof VenueRoute
   FeaturesSlugRoute: typeof FeaturesSlugRoute
@@ -682,6 +695,13 @@ declare module '@tanstack/react-router' {
       path: '/v'
       fullPath: '/v'
       preLoaderRoute: typeof VRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/privacy': {
+      id: '/privacy'
+      path: '/privacy'
+      fullPath: '/privacy'
+      preLoaderRoute: typeof PrivacyRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/auth': {
@@ -1134,6 +1154,7 @@ const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AuthenticatedRouteRoute: AuthenticatedRouteRouteWithChildren,
   AuthRoute: AuthRouteWithChildren,
+  PrivacyRoute: PrivacyRoute,
   VRoute: VRoute,
   VenueRoute: VenueRoute,
   FeaturesSlugRoute: FeaturesSlugRoute,

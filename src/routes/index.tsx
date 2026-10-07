@@ -1,7 +1,8 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useEffect, useRef, useState } from "react";
-import { Sparkles, ArrowRight, Globe2, MessageCircle, Star, CookingPot, BedDouble, Coffee, Luggage, Check, ChefHat, Wine, Flame, Droplet, MousePointer2, Bell } from "lucide-react";
+import { Sparkles, ArrowRight, Globe2, MessageCircle, Star, CookingPot, BedDouble, Coffee, Luggage, Check, ChefHat, Wine, Flame, Droplet, MousePointer2, Bell, ChevronLeft, ChevronRight } from "lucide-react";
 import { LoginDialog } from "@/components/login-dialog";
+import { SiteFooter } from "@/components/site-footer";
 import { Logo } from "@/components/logo";
 import { Accordion, AccordionItem, AccordionTrigger, AccordionContent } from "@/components/ui/accordion";
 import { cn } from "@/lib/utils";
@@ -469,6 +470,50 @@ function FeatureCard({ feature, index }: { feature: (typeof SHOWCASE_FEATURES)[n
   );
 }
 
+// One line of cards that scrolls sideways, with arrows. Used for venues, vendors and reviews so every
+// section spans the same full width as the call-to-action bars. Each child is one card; `cardClass`
+// sets its width (about four across on a wide screen, fewer on smaller ones).
+function ScrollRow({ title, cardClass, children }: { title?: string; cardClass: string; children: React.ReactNode }) {
+  const ref = useRef<HTMLDivElement>(null);
+  const [edge, setEdge] = useState({ start: true, end: true });
+
+  useEffect(() => {
+    const el = ref.current;
+    if (!el) return;
+    const update = () => setEdge({ start: el.scrollLeft <= 2, end: el.scrollLeft + el.clientWidth >= el.scrollWidth - 2 });
+    update();
+    el.addEventListener("scroll", update, { passive: true });
+    window.addEventListener("resize", update);
+    const t = setTimeout(update, 600); // cards and photos finish loading after first paint
+    return () => { el.removeEventListener("scroll", update); window.removeEventListener("resize", update); clearTimeout(t); };
+  }, [children]);
+
+  const scrollBy = (dir: 1 | -1) => { const el = ref.current; if (el) el.scrollBy({ left: dir * el.clientWidth * 0.85, behavior: "smooth" }); };
+  const arrow = "grid h-9 w-9 place-items-center rounded-full border border-line bg-paper text-[#243746] transition-colors hover:bg-[#FFE08A] disabled:opacity-30 disabled:hover:bg-paper";
+
+  return (
+    <div data-reveal>
+      <div className="mb-3 flex items-center justify-between gap-4">
+        <p className="text-sm uppercase tracking-widest text-[#7FA8D6]">{title}</p>
+        {!(edge.start && edge.end) && (
+          <div className="flex gap-2">
+            <button type="button" aria-label="Scroll left" disabled={edge.start} onClick={() => scrollBy(-1)} data-static className={arrow}><ChevronLeft className="h-4 w-4" /></button>
+            <button type="button" aria-label="Scroll right" disabled={edge.end} onClick={() => scrollBy(1)} data-static className={arrow}><ChevronRight className="h-4 w-4" /></button>
+          </div>
+        )}
+      </div>
+      <div ref={ref} className="no-scrollbar flex gap-4 overflow-x-auto scroll-smooth snap-x snap-mandatory pb-2">
+        {Array.isArray(children)
+          ? (children as React.ReactNode[]).map((c, i) => <div key={i} className={cn("shrink-0 snap-start", cardClass)}>{c}</div>)
+          : <div className={cn("shrink-0 snap-start", cardClass)}>{children}</div>}
+      </div>
+    </div>
+  );
+}
+
+// Card widths: four across on a wide screen (page width minus three 16px gaps), fewer on smaller ones.
+const FOUR_ACROSS = "w-[78%] sm:w-[calc((100%-16px)/2)] lg:w-[calc((100%-48px)/4)]";
+
 const CTA_TONE_STYLES: Record<"cherry" | "sage" | "pearl", { wrap: string; eyebrow: string; button: string }> = {
   cherry: { wrap: "bg-[#FFE08A] text-[#243746]", eyebrow: "text-[#243746]/70", button: "bg-[#243746] text-[#FFF7D6] hover:bg-[#7FA8D6] hover:text-[#243746]" },
   sage: { wrap: "bg-[#7FA8D6] text-[#FFF7D6]", eyebrow: "text-[#FFF2B2]", button: "bg-[#FFF7D6] text-[#243746] hover:bg-[#FFE08A] hover:text-[#243746]" },
@@ -518,7 +563,7 @@ function RealListingsPreview() {
       const { data: venueBiz } = await supabase
         .from("businesses").select("id,legal_business_name,verification_status,city,country")
         .eq("business_type", "venue").eq("verification_status", "verified")
-        .order("created_at", { ascending: false }).limit(3);
+        .order("created_at", { ascending: false }).limit(8);
       if (venueBiz && venueBiz.length > 0) {
         const ids = venueBiz.map((b) => b.id);
         const [{ data: details }, { data: media }] = await Promise.all([
@@ -546,7 +591,7 @@ function RealListingsPreview() {
 
       const { data: svcRows } = await supabase
         .from("vendor_services").select("id,business_id,category_ids")
-        .eq("status", "active").order("created_at", { ascending: false }).limit(10);
+        .eq("status", "active").order("created_at", { ascending: false }).limit(24);
       if (svcRows && svcRows.length > 0) {
         const bizIds = Array.from(new Set(svcRows.map((s) => s.business_id)));
         const [{ data: biz }, { data: cats }] = await Promise.all([
@@ -555,7 +600,7 @@ function RealListingsPreview() {
         ]);
         const bizById = new Map((biz ?? []).map((b) => [b.id, b]));
         const catName = new Map((cats ?? []).map((c) => [c.id, c.name]));
-        const eligible = svcRows.filter((s) => bizById.has(s.business_id)).slice(0, 3);
+        const eligible = svcRows.filter((s) => bizById.has(s.business_id)).slice(0, 8);
         const svcIds = eligible.map((s) => s.id);
         const [{ data: media }, { data: bizMedia }] = await Promise.all([
           svcIds.length > 0
@@ -603,24 +648,22 @@ function RealListingsPreview() {
       </div>
 
       {venues.length > 0 && (
-        <div className="mt-10 max-w-6xl mx-auto" data-reveal>
-          <p className="text-sm uppercase tracking-widest text-[#7FA8D6] mb-3">Venues</p>
-          <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
+        <div className="mt-10">
+          <ScrollRow title="Venues" cardClass={FOUR_ACROSS}>
             {venues.map((v) => (
               <VenueCard key={v.id} venue={v} saved={saved.has(v.id)} onToggleSaved={handleToggleVenueSaved} compact />
             ))}
-          </div>
+          </ScrollRow>
         </div>
       )}
 
       {services.length > 0 && (
-        <div className="mt-10 max-w-6xl mx-auto" data-reveal>
-          <p className="text-sm uppercase tracking-widest text-[#7FA8D6] mb-3">Vendors</p>
-          <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
+        <div className="mt-10">
+          <ScrollRow title="Vendors" cardClass={FOUR_ACROSS}>
             {services.map((s) => (
               <VendorServiceCard key={s.id} service={s} saved={saved.has(s.id)} onToggleSaved={handleToggleServiceSaved} compact />
             ))}
-          </div>
+          </ScrollRow>
         </div>
       )}
 
@@ -761,8 +804,12 @@ function Landing() {
           <h2 className="mt-2 font-serif text-3xl md:text-4xl leading-[0.95]">Built for the way you actually celebrate.</h2>
         </div>
 
-        <div className="grid sm:grid-cols-2 lg:grid-cols-4 border-t border-l border-line/60 w-full">
-          {SHOWCASE_FEATURES.map((f, i) => <FeatureCard key={f.eyebrow} feature={f} index={i} />)}
+        <div className="px-6 md:px-12">
+          <div className="overflow-hidden rounded-3xl border border-line/60">
+            <div className="-mb-px -mr-px grid sm:grid-cols-2 lg:grid-cols-4">
+              {SHOWCASE_FEATURES.map((f, i) => <FeatureCard key={f.eyebrow} feature={f} index={i} />)}
+            </div>
+          </div>
         </div>
 
         <div className="px-6 md:px-12 pt-4">
@@ -778,23 +825,25 @@ function Landing() {
           <p className="text-sm uppercase tracking-[0.2em] text-[#7FA8D6]">What couples say</p>
           <h2 className="mt-3 font-serif text-5xl md:text-6xl leading-[0.95]">Real weddings, real relief.</h2>
         </div>
-        <div className="mt-14 grid sm:grid-cols-2 lg:grid-cols-3 gap-5 max-w-6xl mx-auto items-stretch">
-          {TESTIMONIALS.map((t, i) => (
-            <div key={t.name} data-reveal style={{ transitionDelay: `${(i % 3) * 80}ms` }}
-              className="rounded-3xl bg-paper p-6 shadow-sm border border-line/60 flex flex-col h-full">
-              <div className="flex gap-0.5 text-[#7FA8D6]">
-                {Array.from({ length: 5 }).map((_, si) => <Star key={si} className="h-3.5 w-3.5 fill-current" />)}
-              </div>
-              <p className="mt-4 text-sm text-[#243746] leading-relaxed flex-1">"{t.quote}"</p>
-              <div className="mt-5 flex items-center gap-3">
-                <img src={t.photo} alt={t.name} className="h-16 w-16 shrink-0 rounded-full object-cover" />
-                <div className="min-w-0">
-                  <p className="text-sm font-medium truncate">{t.name}</p>
-                  <p className="text-sm text-muted-foreground truncate">{t.loc}</p>
+        <div className="mt-14">
+          <ScrollRow cardClass="w-[85%] sm:w-[380px]">
+            {TESTIMONIALS.map((t) => (
+              <div key={t.name}
+                className="rounded-3xl bg-paper p-6 shadow-sm border border-line/60 flex flex-col h-full">
+                <div className="flex gap-0.5 text-[#7FA8D6]">
+                  {Array.from({ length: 5 }).map((_, si) => <Star key={si} className="h-3.5 w-3.5 fill-current" />)}
+                </div>
+                <p className="mt-4 text-sm text-[#243746] leading-relaxed flex-1">"{t.quote}"</p>
+                <div className="mt-5 flex items-center gap-3">
+                  <img src={t.photo} alt={t.name} className="h-16 w-16 shrink-0 rounded-full object-cover" />
+                  <div className="min-w-0">
+                    <p className="text-sm font-medium truncate">{t.name}</p>
+                    <p className="text-sm text-muted-foreground truncate">{t.loc}</p>
+                  </div>
                 </div>
               </div>
-            </div>
-          ))}
+            ))}
+          </ScrollRow>
         </div>
       </section>
 
@@ -804,12 +853,12 @@ function Landing() {
       </section>
 
       {/* FAQ */}
-      <section className="relative z-10 px-6 md:px-12 pt-12 pb-24">
+      <section id="faq" className="relative z-10 px-6 md:px-12 pt-12 pb-24 scroll-mt-24">
         <div className="text-center max-w-2xl mx-auto" data-reveal>
           <p className="text-sm uppercase tracking-[0.2em] text-[#7FA8D6]">Questions</p>
           <h2 className="mt-3 font-serif text-5xl md:text-6xl leading-[0.95]">Everything you're wondering about.</h2>
         </div>
-        <Accordion type="single" collapsible className="mt-12 max-w-3xl mx-auto space-y-3">
+        <Accordion type="single" collapsible className="mt-12 grid items-start gap-3 lg:grid-cols-2">
           {FAQS.map((f, i) => (
             <AccordionItem key={f.q} value={`item-${i}`} data-reveal style={{ transitionDelay: `${i * 60}ms` }}
               className="rounded-3xl bg-paper border border-line/60 px-6 border-b-0">
@@ -830,10 +879,7 @@ function Landing() {
         </button>
       </section>
 
-      <footer className="relative z-10 border-t border-line py-8 px-6 md:px-12 flex flex-wrap items-center justify-between text-sm text-muted-foreground gap-3">
-        <span>© {new Date().getFullYear()} WedThread</span>
-        <span>Designed for weddings, everywhere.</span>
-      </footer>
+      <SiteFooter />
 
       <LoginDialog
         open={!!authOpen}

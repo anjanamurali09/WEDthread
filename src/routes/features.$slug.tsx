@@ -6,6 +6,7 @@ import {
   Wallet, PieChart, Palette, MapPin, Star,
 } from "lucide-react";
 import { LoginDialog } from "@/components/login-dialog";
+import { SiteFooter } from "@/components/site-footer";
 import { Logo } from "@/components/logo";
 import { SHOWCASE_FEATURES, FeatureVisual, useReveal } from "@/routes/index";
 
@@ -169,10 +170,7 @@ function FeaturePage() {
         </button>
       </section>
 
-      <footer className="border-t border-line py-8 px-6 md:px-12 flex flex-wrap items-center justify-between text-sm text-muted-foreground gap-3">
-        <span>© {new Date().getFullYear()} WedThread</span>
-        <span>Designed for weddings, everywhere.</span>
-      </footer>
+      <SiteFooter />
 
       <LoginDialog
         open={!!authOpen}
