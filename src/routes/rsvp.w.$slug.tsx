@@ -1,4 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
+import { track } from "@/lib/analytics";
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Loader2 } from "lucide-react";
@@ -88,6 +89,7 @@ function RsvpOpenPage() {
     }
     const { error: submitErr } = await supabase.rpc("set_rsvp_submitted", { _token: token, _submitted: true });
     if (submitErr) { setSubmitError(submitErr.message); setSubmitting(false); return false; }
+    track("rsvp_submitted");
     setResolvedToken(token);
     setSubmitting(false);
     setSubmitted(true);

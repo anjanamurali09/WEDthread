@@ -1,4 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
+import { track } from "@/lib/analytics";
 import { useEffect, useState } from "react";
 import { AppShell } from "@/components/app-shell";
 import { useCurrentWedding, useInvalidateWedding } from "@/lib/wedding-hooks";
@@ -255,6 +256,7 @@ function RegistryPage() {
       if (error) throw error;
     },
     onSuccess: () => {
+      if (!editingId) track("registry_item_added", { item_type: fund ? "fund" : "gift" });
       qc.invalidateQueries({ queryKey: ["registry-items", registry?.id] });
       setForm(BLANK_FORM);
       setFund(null);

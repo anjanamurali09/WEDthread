@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { track } from "@/lib/analytics";
 import { useQueryClient } from "@tanstack/react-query";
 import { ArrowRight } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
@@ -39,6 +40,7 @@ export function CreateWeddingDialog() {
       });
       // 23505: a wedding already exists for this person (another tab, or a moment ago). Just load it.
       if (err && err.code !== "23505") throw err;
+      if (!err) track("wedding_created", { has_destination: !!form.destination_city.trim() || !!form.destination_country.trim(), guest_count_estimate: form.est_guest_count.trim() ? Number(form.est_guest_count) : undefined });
       await qc.invalidateQueries({ queryKey: ["current-wedding"] });
     } catch (err: any) {
       setError(err.message ?? "Something went wrong. Please try again.");

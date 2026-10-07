@@ -1,4 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
+import { track } from "@/lib/analytics";
 import { useEffect, useRef, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { RsvpPageBody, rsvpAnswerKey, DEFAULT_ATTENDANCE_TEXT, type RsvpEventRow, type RsvpQuestionRow, type RsvpSaveStatus, type RsvpMode } from "@/components/rsvp-form";
@@ -51,6 +52,7 @@ function RsvpPage() {
     const { error } = await supabase.rpc("submit_rsvp", { _token: token, _event_id: event_id, _status: status as any, _plus_ones: plus_ones });
     if (error) { setRsvpSaveStatus((prev) => ({ ...prev, [event_id]: "error" })); return; }
     setRsvpSaveStatus((prev) => ({ ...prev, [event_id]: "saved" }));
+    track("rsvp_response", { response: status });
     setRows((prev) => prev && prev.map((r) => (r.event_id === event_id ? { ...r, current_status: status, current_plus_ones: plus_ones } : r)));
   };
 

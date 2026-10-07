@@ -1,4 +1,5 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
+import { track } from "@/lib/analytics";
 import { useEffect, useState } from "react";
 import { AppShell } from "@/components/app-shell";
 import { useCurrentWedding, useInvalidateWedding, useCollaborators, type Collaborator } from "@/lib/wedding-hooks";
@@ -272,6 +273,7 @@ function CollaboratorsSection({ weddingId }: { weddingId: string }) {
       setInviting(false);
       return setNotice({ kind: "error", text: error.code === "23505" ? "That email is already a collaborator." : error.message });
     }
+    track("collaborator_invited");
     const sent = await sendInviteEmail(trimmed);
     setInviting(false);
     setEmail("");

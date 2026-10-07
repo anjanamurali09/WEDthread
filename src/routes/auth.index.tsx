@@ -1,4 +1,5 @@
 import { createFileRoute, useNavigate, Link } from "@tanstack/react-router";
+import { track } from "@/lib/analytics";
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/lib/toast";
@@ -176,11 +177,13 @@ function AuthPage() {
           },
         });
         if (error) throw error;
+        track("sign_up", { method: "email", account_type: role });
         if (!data.session) { setSentTo(email.trim()); setResendNote(null); return; }
         await routeAfterSignIn(navigate);
       } else {
         const { error } = await supabase.auth.signInWithPassword({ email, password });
         if (error) throw error;
+        track("login", { method: "email" });
         await routeAfterSignIn(navigate);
       }
     } catch (err: any) {

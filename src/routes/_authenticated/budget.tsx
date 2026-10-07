@@ -1,4 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
+import { track } from "@/lib/analytics";
 import { useEffect, useMemo, useState } from "react";
 import { AppShell } from "@/components/app-shell";
 import {
@@ -611,6 +612,7 @@ function BudgetPage() {
     if (!wedding) return;
     const { error } = await supabase.from("expenses").insert({ wedding_id: wedding.id, ...normalizeExpenseForm(form) });
     if (error) return toast.error(error.message);
+    track("expense_added");
     invalidateExpenses();
   };
 

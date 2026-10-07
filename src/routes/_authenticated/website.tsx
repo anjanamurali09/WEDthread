@@ -1,4 +1,5 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
+import { track } from "@/lib/analytics";
 import { useEffect, useRef, useState } from "react";
 import { AppShell, SIDEBAR_COLLAPSED_KEY } from "@/components/app-shell";
 import { useCurrentWedding, useInvalidateWedding } from "@/lib/wedding-hooks";
@@ -49,6 +50,7 @@ function WebsitePage() {
     if (error) return markPublishError(error.message);
     invalidate(wedding.id);
     markPublishOk();
+    if (!wedding.site_published) track("website_published");
   };
 
   const url = typeof window !== "undefined" ? `${window.location.origin}/w/${wedding.slug ?? ""}` : `/w/${wedding.slug ?? ""}`;

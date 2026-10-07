@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { track } from "@/lib/analytics";
 import { Link } from "@tanstack/react-router";
 import { supabase } from "@/integrations/supabase/client";
 import { Dropdown } from "@/components/dropdown";
@@ -164,6 +165,7 @@ export function EnquireForm({ vendorServiceId, businessId, businessName, onSubmi
         preferred_dates: values["Preferred dates or months"]?.trim() || null,
       });
     }
+    track("enquiry_sent");
     setSubmitted(true);
     onSubmitted?.();
   };

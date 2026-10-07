@@ -1,4 +1,5 @@
 import { Link } from "@tanstack/react-router";
+import { track } from "@/lib/analytics";
 import { ArrowRight } from "lucide-react";
 import { Logo } from "@/components/logo";
 import { openCookieSettings } from "@/lib/cookie-consent";
@@ -17,7 +18,7 @@ export function SiteFooter() {
         <div>
           <h4 className="text-base font-medium text-[#243746]">About</h4>
           <ul className="mt-5 space-y-3">
-            <li><Link to="/auth" search={{ mode: "signup" } as any} data-static className={linkClass}>Become a partner</Link></li>
+            <li><Link to="/auth" search={{ mode: "signup" } as any} data-static className={linkClass} onClick={() => track("partner_cta_click", { location: "footer" })}>Become a partner</Link></li>
             <li><Link to="/venue" data-static className={linkClass}>Browse venues</Link></li>
             <li><Link to="/v" data-static className={linkClass}>Browse vendors</Link></li>
           </ul>

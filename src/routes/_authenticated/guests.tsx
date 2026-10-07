@@ -1,4 +1,5 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
+import { track } from "@/lib/analytics";
 import { useEffect, useMemo, useRef, useState } from "react";
 import Papa from "papaparse";
 import { AppShell } from "@/components/app-shell";
@@ -248,6 +249,7 @@ function GuestsPage() {
         const { error } = await supabase.from("guests").insert(inserts);
         if (error) return toast.error(error.message);
         toast.success(`Imported ${formatNumber(inserts.length)} guests`);
+        track("guests_imported", { guest_count: inserts.length });
         invalidate(wedding.id);
       },
     });
@@ -316,6 +318,7 @@ function GuestsPage() {
         const { data, error } = await supabase.from("guests").insert(payload).select().single();
         if (error) throw error;
         guestId = data.id;
+        track("guest_added");
       }
       if (guestId && g.invitedEventIds) {
         // Remove invites not selected, add missing

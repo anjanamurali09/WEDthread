@@ -1,4 +1,5 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
+import { track } from "@/lib/analytics";
 import { Children, useEffect, useRef, useState } from "react";
 import { Sparkles, ArrowRight, Globe2, MessageCircle, Star, CookingPot, BedDouble, Coffee, Luggage, Check, ChefHat, Wine, Flame, Droplet, MousePointer2, Bell, ChevronLeft, ChevronRight } from "lucide-react";
 import { LoginDialog } from "@/components/login-dialog";
@@ -514,7 +515,7 @@ function ScrollRow({ title, cardClass, children }: { title?: string; cardClass: 
 // The last card in the vendors row: invites businesses to list themselves.
 function BecomePartnerCard() {
   return (
-    <Link to="/auth" search={{ mode: "signup" } as any} data-static
+    <Link to="/auth" search={{ mode: "signup" } as any} data-static onClick={() => track("partner_cta_click", { location: "homepage_vendors_row" })}
       className="group flex min-h-[320px] flex-col justify-between rounded-2xl border border-[#FFE08A] bg-[#FFF7D6] p-6 text-[#243746] transition-colors hover:bg-[#FFE08A]">
       <div>
         <p className="text-xs uppercase tracking-[0.2em] text-[#4A7CAD]">For venues and vendors</p>

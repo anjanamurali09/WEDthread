@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { track } from "@/lib/analytics";
 import { Link } from "@tanstack/react-router";
 import { supabase } from "@/integrations/supabase/client";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
@@ -71,6 +72,7 @@ export function BookViewingDialog({ businessId, businessName, bookingLinkUrl }: 
       body: { business_id: businessId, wedding_id: weddingId, preferred_date: date, preferred_time: timeSlot, message: message.trim(), origin: window.location.origin },
     }).catch((err) => console.error("notify-viewing-request failed", err));
 
+    track("viewing_requested");
     setSubmitted(true);
   };
 

@@ -1,4 +1,5 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
+import { track } from "@/lib/analytics";
 import { useRef, useState } from "react";
 import { AppShell } from "@/components/app-shell";
 import { useCurrentWedding, useEvents, useGuests, useInvites, useInvalidateWedding, type Event } from "@/lib/wedding-hooks";
@@ -154,6 +155,7 @@ function EventsPage() {
       } else {
         const { error } = await supabase.from("events").insert(payload);
         if (error) throw error;
+        track("event_created");
       }
       setEditing(null);
       invalidate(wedding.id);
