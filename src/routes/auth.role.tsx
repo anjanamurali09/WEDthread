@@ -3,7 +3,7 @@ import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/lib/toast";
 import { resolveCoupleLanding } from "@/lib/wedding-hooks";
-import { HeartHandshake, Building2, Store, ShoppingBag, ClipboardList } from "lucide-react";
+import { ROLE_OPTIONS } from "@/lib/role-options";
 import { Logo } from "@/components/logo";
 import { z } from "zod";
 import { addRoleForCurrentUser, ROLE_LANDING, type AppRole } from "@/hooks/use-active-role";
@@ -23,13 +23,7 @@ export const Route = createFileRoute("/auth/role")({
   component: RolePicker,
 });
 
-const OPTIONS: { role: AppRole; label: string; desc: string; icon: any }[] = [
-  { role: "couple",  label: "Getting married", desc: "Plan ceremonies, guests, seating, and your website.", icon: HeartHandshake },
-  { role: "planner", label: "Planner",         desc: "Coordinate every couple you work with, side by side.", icon: ClipboardList },
-  { role: "venue",   label: "List a venue",    desc: "Reach couples planning a destination wedding.",       icon: Building2 },
-  { role: "vendor",  label: "List services",   desc: "Photographers, planners, mehendi artists, florists.", icon: Store },
-  { role: "seller",  label: "Sell items",      desc: "Resell décor, dresses, tableware after your day.",    icon: ShoppingBag },
-];
+const OPTIONS = ROLE_OPTIONS;
 
 function RolePicker() {
   const navigate = useNavigate();

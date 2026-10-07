@@ -5,6 +5,7 @@ import { toast } from "@/lib/toast";
 import { Logo } from "@/components/logo";
 import { ROLE_LANDING, type AppRole } from "@/hooks/use-active-role";
 import { resolveCoupleLanding } from "@/lib/wedding-hooks";
+import { ROLE_OPTIONS } from "@/lib/role-options";
 import { cn } from "@/lib/utils";
 import { ForgotPasswordForm } from "@/components/forgot-password-form";
 
@@ -81,7 +82,7 @@ function AuthHeroPanel() {
             {HERO_SLIDES[index % HERO_SLIDES.length]}
           </h2>
           <p className="mt-4 text-sm text-[#4A7CAD] max-w-sm">
-            Couples, planners, venues, vendors, and sellers all live under one login. You'll pick how you'll use WedThread after signing up.
+            Couples, planners, venues, vendors, and sellers all live under one login. You'll choose how you'll use WedThread when you sign up.
           </p>
         </div>
       </div>
@@ -96,7 +97,10 @@ export const Route = createFileRoute("/auth/")({
       { name: "description", content: "Sign in or create your WedThread account." },
     ],
   }),
-  validateSearch: (s: Record<string, unknown>): { mode?: "signup" | "forgot" } => (s.mode === "signup" ? { mode: "signup" } : s.mode === "forgot" ? { mode: "forgot" } : {}),
+  validateSearch: (s: Record<string, unknown>): { mode?: "signup" | "forgot"; verified?: boolean } => ({
+    ...(s.mode === "signup" ? { mode: "signup" as const } : s.mode === "forgot" ? { mode: "forgot" as const } : {}),
+    ...(s.verified === 1 || s.verified === "1" || s.verified === true ? { verified: true } : {}),
+  }),
   component: AuthPage,
 });
 
@@ -121,13 +125,6 @@ async function routeAfterSignIn(navigate: ReturnType<typeof useNavigate>) {
   navigate({ to: ROLE_LANDING[active] as any, replace: true });
 }
 
-// After sign-up we always send the user to pick a role.
-async function routeAfterSignUp(navigate: ReturnType<typeof useNavigate>) {
-  const { data: u } = await supabase.auth.getUser();
-  if (!u.user) return;
-  navigate({ to: "/auth/role" as any, replace: true });
-}
-
 function AuthPage() {
   const navigate = useNavigate();
   const search = Route.useSearch();
@@ -136,14 +133,30 @@ function AuthPage() {
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
   // Set once the sign-up went through but the email still has to be verified.
+  const [role, setRole] = useState<AppRole | null>(null);
   const [sentTo, setSentTo] = useState<string | null>(null);
   const [resendNote, setResendNote] = useState<string | null>(null);
 
 
+  // Arriving from the verification email: the link signs the browser in, but the person should land on
+  // the sign-in page, so clear that session and say the email is verified.
+  useEffect(() => {
+    if (!search.verified) return;
+    setMode("signin");
+    (async () => {
+      for (let i = 0; i < 10; i++) {
+        const { data } = await supabase.auth.getSession();
+        if (data.session) break;
+        await new Promise((r) => setTimeout(r, 150));
+      }
+      await supabase.auth.signOut({ scope: "local" });
+    })();
+  }, [search.verified]);
+
   const resendVerification = async () => {
     if (!sentTo) return;
     setResendNote(null);
-    const { error } = await supabase.auth.resend({ type: "signup", email: sentTo, options: { emailRedirectTo: `${window.location.origin}/auth/callback` } });
+    const { error } = await supabase.auth.resend({ type: "signup", email: sentTo, options: { emailRedirectTo: `${window.location.origin}/auth?verified=1` } });
     setResendNote(error ? error.message : "Sent again. It can take a minute to arrive.");
   };
 
@@ -152,14 +165,19 @@ function AuthPage() {
     setLoading(true);
     try {
       if (mode === "signup") {
+        if (!role) throw new Error("Choose how you'll use WedThread first.");
         const { data, error } = await supabase.auth.signUp({
           email: email.trim(), password,
-          // The link in the email lands here, which signs the person in and sends them to pick their role.
-          options: { emailRedirectTo: `${window.location.origin}/auth/callback` },
+          options: {
+            // The role chosen above is saved with the account as it is created.
+            data: { signup_role: role },
+            // The link in the email brings the person back to the sign-in page.
+            emailRedirectTo: `${window.location.origin}/auth?verified=1`,
+          },
         });
         if (error) throw error;
         if (!data.session) { setSentTo(email.trim()); setResendNote(null); return; }
-        await routeAfterSignUp(navigate);
+        await routeAfterSignIn(navigate);
       } else {
         const { error } = await supabase.auth.signInWithPassword({ email, password });
         if (error) throw error;
@@ -183,7 +201,7 @@ function AuthPage() {
           </h1>
           <p className="mt-2 text-sm text-muted-foreground">
             {mode === "signup"
-              ? "Sign up with your email. You'll choose your role next."
+              ? "Choose how you'll use WedThread, then sign up with your email."
               : mode === "forgot"
                 ? "Enter your email and we'll send you a link to choose a new one."
                 : "Sign in to continue where you left off."}
@@ -192,7 +210,29 @@ function AuthPage() {
           {mode === "forgot" ? (
             <div className="mt-8"><ForgotPasswordForm initialEmail={email} onBack={() => setMode("signin")} /></div>
           ) : (<>
+          {search.verified && mode === "signin" && (
+            <p className="mt-6 rounded-2xl bg-[#FFF7D6] px-4 py-3 text-sm text-[#243746]">Your email is verified. Sign in to continue.</p>
+          )}
+
           <form onSubmit={onEmail} className="mt-8 space-y-4">
+            {mode === "signup" && (
+              <div>
+                <label className="text-sm uppercase tracking-widest text-muted-foreground">I'm signing up as</label>
+                <div className="mt-2 space-y-2" role="radiogroup" aria-label="Account type">
+                  {ROLE_OPTIONS.map(({ role: r, label, desc, icon: Icon }) => (
+                    <button key={r} type="button" role="radio" aria-checked={role === r} disabled={!!sentTo} onClick={() => setRole(r)} data-static
+                      className={cn("flex w-full items-center gap-3 rounded-2xl border px-4 py-3 text-left transition-colors",
+                        role === r ? "border-[#243746] bg-[#FFF7D6]" : "border-line bg-pearl hover:border-cherry")}>
+                      <span className="grid h-9 w-9 shrink-0 place-items-center rounded-xl bg-wine-soft text-wine"><Icon className="h-4 w-4" /></span>
+                      <span className="min-w-0">
+                        <span className="block text-sm font-medium">{label}</span>
+                        <span className="block text-xs text-muted-foreground">{desc}</span>
+                      </span>
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
             <div>
               <label className="text-sm uppercase tracking-widest text-muted-foreground">Email</label>
               <input required type="email" value={email} onChange={(e) => setEmail(e.target.value)} readOnly={!!sentTo}
@@ -208,7 +248,7 @@ function AuthPage() {
                 <button type="button" onClick={() => setMode("forgot")} className="text-sm text-cherry underline underline-offset-4">Forgot password?</button>
               </div>
             )}
-            <button disabled={loading || !!sentTo} className="w-full rounded-full bg-cherry text-pearl py-3 text-sm font-medium hover:bg-wine disabled:opacity-60 transition-colors">
+            <button disabled={loading || !!sentTo || (mode === "signup" && !role)} className="w-full rounded-full bg-cherry text-pearl py-3 text-sm font-medium hover:bg-wine disabled:opacity-60 transition-colors">
               {loading ? "Please wait…" : sentTo ? "Verify your email" : mode === "signup" ? "Create account" : "Sign in"}
             </button>
             {mode === "signup" && sentTo && (

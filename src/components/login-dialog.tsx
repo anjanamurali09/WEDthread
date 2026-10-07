@@ -48,6 +48,10 @@ export function LoginDialog({
   const navigate = useNavigate();
   const [mode, setMode] = useState<Mode>(initialMode);
   useEffect(() => { if (open) setMode(initialMode); }, [open, initialMode]);
+  // Creating an account (and choosing the account type) happens on the full sign-up page.
+  useEffect(() => {
+    if (open && initialMode === "signup") { onOpenChange(false); navigate({ to: "/auth", search: { mode: "signup" } as any }); }
+  }, [open, initialMode]);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
