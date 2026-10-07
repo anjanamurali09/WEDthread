@@ -34,7 +34,7 @@ function rsvpStatusOptions(wedding?: Wedding | null) {
 
 export const Route = createFileRoute("/_authenticated/guests")({
   component: GuestsPage,
-  validateSearch: (s: Record<string, unknown>) => ({ event: typeof s.event === "string" ? s.event : undefined }),
+  validateSearch: (s: Record<string, unknown>): { event?: string } => ({ event: typeof s.event === "string" ? s.event : undefined }),
 });
 
 type ColKey = "name" | "household" | "email" | "phone" | "dietary" | "tags" | "events" | "rsvp" | "actions";
