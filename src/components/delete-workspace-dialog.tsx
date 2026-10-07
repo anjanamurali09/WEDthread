@@ -19,6 +19,10 @@ export function DeleteWorkspaceDialog({ open, onOpenChange, title, description, 
   const [deleting, setDeleting] = useState(false);
 
   const close = (v: boolean) => { if (!v) setTyped(""); onOpenChange(v); };
+  // Ignores capital letters and extra spaces: the name is shown in capitals by the label's styling, so people
+  // naturally type it that way.
+  const normalise = (v: string) => v.trim().replace(/\s+/g, " ").toLowerCase();
+  const matches = normalise(typed) === normalise(confirmWith);
 
   const confirm = async () => {
     setDeleting(true);
@@ -42,7 +46,7 @@ export function DeleteWorkspaceDialog({ open, onOpenChange, title, description, 
 
         <label className="block mt-2">
           <span className="text-sm uppercase tracking-widest text-muted-foreground">
-            Type <span className="font-medium text-ink">{confirmWith}</span> to confirm
+            Type <span className="font-medium normal-case text-ink">{confirmWith}</span> to confirm
           </span>
           <input value={typed} onChange={(e) => setTyped(e.target.value)} autoFocus
             className="mt-1 w-full rounded-2xl border border-line bg-paper px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-cherry" />
@@ -53,7 +57,7 @@ export function DeleteWorkspaceDialog({ open, onOpenChange, title, description, 
             className="rounded-full px-5 py-2.5 text-sm border border-line hover:bg-stone cursor-pointer">
             Cancel
           </button>
-          <button type="button" onClick={confirm} disabled={typed.trim() !== confirmWith || deleting}
+          <button type="button" onClick={confirm} disabled={!matches || deleting}
             className="inline-flex items-center gap-2 rounded-full bg-cherry text-pearl px-6 py-2.5 text-sm font-medium hover:bg-wine disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer">
             {deleting && <Loader2 className="h-4 w-4 animate-spin" />}
             {deleting ? "Deleting…" : "Delete permanently"}
