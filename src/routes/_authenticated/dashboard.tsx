@@ -35,7 +35,8 @@ function Dashboard() {
       </AppShell>
     );
   }
-  // couple
+  // couple: until a wedding exists the setup popup (in AppShell) is all that shows
+  if (!wedding) return <AppShell title="Welcome"><div /></AppShell>;
   return (
     <AppShell
       title={wedding ? `${wedding.partner_a} & ${wedding.partner_b}` : "Your wedding"}

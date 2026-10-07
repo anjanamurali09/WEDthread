@@ -6,6 +6,7 @@ import type { ReactNode } from "react";
 import { useEffect, useState } from "react";
 import { useActiveRole, type AppRole } from "@/hooks/use-active-role";
 import { AddRoleDialog } from "@/components/add-role-dialog";
+import { CreateWeddingDialog } from "@/components/create-wedding-dialog";
 import { FeedbackDialog } from "@/components/feedback-dialog";
 import { cn } from "@/lib/utils";
 import { Logo, LogoMark } from "@/components/logo";
@@ -143,7 +144,7 @@ export function AppShell({ children, title, subtitle, actions, decor }: { childr
   const { active } = useActiveRole();
   const nav = NAV_BY_ROLE[active ?? "couple"] ?? NAV_BY_ROLE.couple;
   const showDiscover = !active || active === "couple" || active === "planner";
-  const { data: wedding } = useCurrentWedding();
+  const { data: wedding, isLoading: weddingLoading, isError: weddingError } = useCurrentWedding();
   useIntegrationAutoSync(wedding?.id);
   const [feedbackOpen, setFeedbackOpen] = useState(false);
 
@@ -253,6 +254,8 @@ export function AppShell({ children, title, subtitle, actions, decor }: { childr
           </button>
         </div>
       </aside>
+
+      {active === "couple" && !weddingLoading && !weddingError && !wedding && <CreateWeddingDialog />}
 
       {feedbackOpen && <FeedbackDialog weddingId={wedding?.id} onClose={() => setFeedbackOpen(false)} />}
 

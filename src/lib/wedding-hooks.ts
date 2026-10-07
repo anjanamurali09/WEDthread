@@ -36,15 +36,10 @@ async function getUserId() {
 // which is exactly how duplicate blank wedding rows got created. On any error here we
 // deliberately do NOT assume "no wedding" — we send the user to /dashboard, which is
 // read-only and re-checks via useCurrentWedding() rather than ever creating a row.
-export async function resolveCoupleLanding(_userId: string): Promise<"/dashboard" | "/onboarding"> {
-  // A wedding the person owns OR is invited to as a collaborator (matched by email) counts: someone
-  // invited to an existing wedding goes straight to it, never to "create your own wedding".
-  const { data, error } = await supabase.rpc("get_my_current_wedding");
-  if (error) {
-    console.error("wedding lookup failed after sign-in; defaulting to /dashboard, not onboarding", error);
-    return "/dashboard";
-  }
-  return (data as { id?: string } | null)?.id ? "/dashboard" : "/onboarding";
+// Couples always land on the dashboard. If they have no wedding yet, the dashboard (via AppShell) shows
+// the "Tell us about your wedding" popup, so there is no separate setup page to route to.
+export async function resolveCoupleLanding(_userId: string): Promise<"/dashboard"> {
+  return "/dashboard";
 }
 
 export function useCurrentWedding() {
@@ -65,7 +60,8 @@ export function useCurrentWedding() {
       if (data && (data as { owner_id?: string }).owner_id !== uid) {
         void (supabase as any).rpc("accept_collaborator_invites").then(() => undefined, () => undefined);
       }
-      return data ?? null;
+      // With no wedding the function hands back an empty record, not null; treat that as "no wedding".
+      return (data as { id?: string | null } | null)?.id ? data : null;
     },
   });
 }
