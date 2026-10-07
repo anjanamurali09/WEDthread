@@ -2032,7 +2032,7 @@ function SectionContent({ section, palette, template, wedding, events = [], supp
                   {e.event_date && <span className="inline-flex items-center gap-1"><CalendarDays className="h-3 w-3" /> {new Date(e.event_date).toLocaleDateString(undefined, { weekday: "long", month: "long", day: "numeric" })}{e.event_time ? ` · ${e.event_time.slice(0, 5)}` : ""}</span>}
                   {(e.venue_name || e.city) && <span className="inline-flex items-center gap-1"><MapPin className="h-3 w-3" /> {[e.venue_name, e.city].filter(Boolean).join(", ")}</span>}
                 </div>
-                {e.description && <p className="mt-4 text-sm opacity-75">{e.description}</p>}
+                {e.description && <p className="mt-4 text-sm opacity-75 whitespace-pre-line">{e.description}</p>}
               </div>
             ))}
             {shownEvents.length === 0 && <p className="text-center text-sm opacity-60">Details coming soon.</p>}

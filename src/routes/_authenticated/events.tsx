@@ -512,7 +512,7 @@ function AgendaPreview({ events }: { events: Event[] }) {
                       </p>
                     )}
                     {e.description && (
-                      <p className="text-sm text-muted-foreground mt-2 leading-relaxed">{truncateWords(e.description, 60)}</p>
+                      <p className="text-sm text-muted-foreground mt-2 leading-relaxed whitespace-pre-line">{truncateWords(e.description, 60)}</p>
                     )}
                     {e.dress_code && (
                       <p className="mt-2 text-xs text-cherry inline-flex items-center gap-1.5">
@@ -613,7 +613,7 @@ function EventDialog({ event, onClose, onSave }: { event: Partial<Event>; onClos
             <F label="Country" value={form.country ?? ""} onChange={(v) => setField("country", v)} />
           </div>
           <div>
-            <label className="text-sm uppercase tracking-widest text-muted-foreground">Description / notes for guests</label>
+            <label className="text-sm uppercase tracking-widest text-muted-foreground">Description</label>
             <textarea rows={3} value={form.description ?? ""} onChange={(e) => setField("description", e.target.value)}
               className="mt-1 w-full rounded-2xl border border-line px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-clay bg-paper" />
           </div>

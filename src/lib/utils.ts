@@ -20,10 +20,19 @@ export function truncateText(text: string, maxLength: number): string {
 }
 
 // Same idea as truncateText, but measured in words rather than characters.
+// Keeps the original spacing and line breaks up to the cut, so a description with blank lines
+// between paragraphs still reads as paragraphs when it is shortened.
 export function truncateWords(text: string, maxWords: number): string {
-  const words = text.trim().split(/\s+/);
-  if (words.length <= maxWords) return text;
-  return words.slice(0, maxWords).join(" ") + "…";
+  const trimmed = text.trim();
+  let count = 0;
+  for (const m of trimmed.matchAll(/\S+/g)) {
+    count++;
+    if (count === maxWords) {
+      const end = (m.index ?? 0) + m[0].length;
+      return end >= trimmed.length ? text : trimmed.slice(0, end) + "…";
+    }
+  }
+  return text;
 }
 
 // Collapses case-insensitive duplicate labels, keeping the first occurrence
