@@ -9,6 +9,7 @@ import {
 } from "@tanstack/react-router";
 import { useEffect, type ReactNode } from "react";
 import { ErrorBar } from "@/components/error-bar";
+import { CookieBanner } from "@/components/cookie-banner";
 
 import appCss from "../styles.css?url";
 import { supabase } from "@/integrations/supabase/client";
@@ -89,44 +90,40 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
   errorComponent: ErrorComponent,
 });
 
-// Google Tag Manager (Google Analytics is configured inside Tag Manager). RootShell wraps every page, so
-// these two snippets, pasted exactly as Google provides them, are on every page of the site.
-const GTM_HEAD_SNIPPET = `<!-- Google Tag Manager -->
-<script>(function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start':
-new Date().getTime(),event:'gtm.js'});var f=d.getElementsByTagName(s)[0],
-j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
-'https://www.googletagmanager.com/gtm.js?id='+i+dl;f.parentNode.insertBefore(j,f);
-})(window,document,'script','dataLayer','GTM-M6N7QG3S');</script>
-<!-- End Google Tag Manager -->`;
-
-const GTM_BODY_SNIPPET = `<!-- Google Tag Manager (noscript) -->
-<noscript><iframe src="https://www.googletagmanager.com/ns.html?id=GTM-M6N7QG3S"
-height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
-<!-- End Google Tag Manager (noscript) -->`;
+// Google Tag Manager carries Google Analytics. It must not run before the visitor has agreed, so this inline
+// script (first thing in <head>) sets Google Consent Mode to "denied", and only if the visitor accepted on an
+// earlier visit does it grant analytics and run Google's snippet. Everyone else is asked by the cookie banner,
+// which loads Tag Manager the moment they accept (see lib/cookie-consent.ts). No Tag Manager noscript fallback
+// is included: it would load Google for visitors who had no chance to say no.
+const CONSENT_AND_TAG_MANAGER = `
+(function(){
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){ dataLayer.push(arguments); }
+  gtag('consent','default',{ad_storage:'denied',ad_user_data:'denied',ad_personalization:'denied',analytics_storage:'denied'});
+  var granted = false;
+  try { var c = JSON.parse(localStorage.getItem('wedthread.cookie-consent') || 'null'); granted = !!(c && c.analytics); } catch (e) {}
+  if (!granted) return;
+  gtag('consent','update',{analytics_storage:'granted'});
+  window.__gtmLoaded = true;
+  (function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start':
+  new Date().getTime(),event:'gtm.js'});var f=d.getElementsByTagName(s)[0],
+  j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
+  'https://www.googletagmanager.com/gtm.js?id='+i+dl;f.parentNode.insertBefore(j,f);
+  })(window,document,'script','dataLayer','GTM-M6N7QG3S');
+})();`;
 
 function RootShell({ children }: { children: ReactNode }) {
   return (
     <html lang="en">
       <head>
-        {/* Tag Manager goes as high in <head> as possible: before everything else. */}
-        <GoogleTagManagerHead />
+        <script dangerouslySetInnerHTML={{ __html: CONSENT_AND_TAG_MANAGER }} />
         <HeadContent />
       </head>
       <body>
-        {/* ...and its noscript fallback immediately after the opening <body> tag. */}
-        <GoogleTagManagerBody />
         {children}<Scripts />
       </body>
     </html>
   );
-}
-
-// The snippets are raw HTML (comments and all), so they are inserted as-is rather than rebuilt in JSX.
-function GoogleTagManagerHead() {
-  return <script dangerouslySetInnerHTML={{ __html: GTM_HEAD_SNIPPET.replace(/^<!--.*-->\n<script>/, "").replace(/<\/script>\n<!--.*-->$/, "") }} />;
-}
-function GoogleTagManagerBody() {
-  return <noscript dangerouslySetInnerHTML={{ __html: GTM_BODY_SNIPPET.replace(/^<!--.*-->\n<noscript>/, "").replace(/<\/noscript>\n<!--.*-->$/, "") }} />;
 }
 
 function RootComponent() {
@@ -146,6 +143,7 @@ function RootComponent() {
     <QueryClientProvider client={queryClient}>
       <Outlet />
       <ErrorBar />
+      <CookieBanner />
     </QueryClientProvider>
   );
 }

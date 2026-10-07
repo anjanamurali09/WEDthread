@@ -1,6 +1,7 @@
 import { Link } from "@tanstack/react-router";
 import { ArrowRight } from "lucide-react";
 import { Logo } from "@/components/logo";
+import { openCookieSettings } from "@/lib/cookie-consent";
 
 // Where "Contact" goes. Change this one line to switch the public contact address.
 export const CONTACT_EMAIL = "owen@wedthread.co";
@@ -58,6 +59,7 @@ export function SiteFooter() {
         <div className="flex flex-wrap items-center gap-x-6 gap-y-2">
           <Link to="/privacy" data-static className="hover:text-[#243746] transition-colors">Privacy</Link>
           <a href={`mailto:${CONTACT_EMAIL}`} data-static className="hover:text-[#243746] transition-colors">Contact</a>
+          <button type="button" data-static onClick={openCookieSettings} className="hover:text-[#243746] transition-colors">Cookie settings</button>
         </div>
         <span>© {new Date().getFullYear()} WedThread. All rights reserved.</span>
       </div>

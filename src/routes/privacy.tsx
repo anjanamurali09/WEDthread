@@ -44,7 +44,7 @@ function PrivacyPage() {
             <p><strong>Guest information.</strong> If you add guests, you give us their names and any contact, dietary or allergy details you enter. Please make sure you are allowed to share it. Guests who respond to an RSVP link give us their answers directly.</p>
             <p><strong>Business listings.</strong> Venues and vendors give us business details, contact information, photos and verification documents (such as a licence or tax number). Tax numbers and documents are visible only to the owner and our team.</p>
             <p><strong>Payments.</strong> Card details are handled by our payment provider, Stripe. We never see or store your full card number.</p>
-            <p><strong>Technical and usage data.</strong> Basic information such as device type, browser, IP address and error logs, which we use to keep the service running and secure. We also use Google Analytics, through Google Tag Manager, to see how the site is used (for example which pages are visited and roughly where visitors are from) so we can improve it.</p>
+            <p><strong>Technical and usage data.</strong> Basic information such as device type, browser, IP address and error logs, which we use to keep the service running and secure. If you accept analytics cookies, we also use Google Analytics, through Google Tag Manager, to see how the site is used (for example which pages are visited and roughly where visitors are from) so we can improve it.</p>
           </Section>
 
           <Section title="How we use it">
@@ -60,7 +60,8 @@ function PrivacyPage() {
           </Section>
 
           <Section title="Cookies and similar storage">
-            <p>We use your browser's storage to keep you signed in and to remember simple preferences, such as a collapsed sidebar. These are needed for the site to work. Google Analytics also sets cookies to tell visits apart and measure how the site is used. You can block or delete these cookies in your browser settings, and the site will still work.</p>
+            <p>We use your browser's storage to keep you signed in and to remember simple preferences, such as a collapsed sidebar. These are needed for the site to work, so they are always on.</p>
+            <p>Analytics cookies are different: Google Analytics, loaded through Google Tag Manager, uses them to tell visits apart and measure how the site is used. We only turn them on if you choose <strong>Accept analytics</strong> in the cookie banner. Until then nothing from Google is loaded. You can change your mind at any time with <strong>Cookie settings</strong> at the bottom of any page, and you can also block or delete cookies in your browser.</p>
           </Section>
 
           <Section title="How long we keep it">
