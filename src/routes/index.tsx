@@ -1,5 +1,5 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
-import { useEffect, useRef, useState } from "react";
+import { Children, useEffect, useRef, useState } from "react";
 import { Sparkles, ArrowRight, Globe2, MessageCircle, Star, CookingPot, BedDouble, Coffee, Luggage, Check, ChefHat, Wine, Flame, Droplet, MousePointer2, Bell, ChevronLeft, ChevronRight } from "lucide-react";
 import { LoginDialog } from "@/components/login-dialog";
 import { SiteFooter } from "@/components/site-footer";
@@ -505,11 +505,26 @@ function ScrollRow({ title, cardClass, children }: { title?: string; cardClass: 
         )}
       </div>
       <div ref={ref} className="no-scrollbar flex gap-4 overflow-x-auto scroll-smooth snap-x snap-mandatory px-6 md:px-12 scroll-px-6 md:scroll-px-12 pb-2">
-        {Array.isArray(children)
-          ? (children as React.ReactNode[]).map((c, i) => <div key={i} className={cn("shrink-0 snap-start [&>*]:h-full", cardClass)}>{c}</div>)
-          : <div className={cn("shrink-0 snap-start [&>*]:h-full", cardClass)}>{children}</div>}
+        {Children.toArray(children).map((c, i) => <div key={i} className={cn("shrink-0 snap-start [&>*]:h-full", cardClass)}>{c}</div>)}
       </div>
     </div>
+  );
+}
+
+// The last card in the vendors row: invites businesses to list themselves.
+function BecomePartnerCard() {
+  return (
+    <Link to="/auth" search={{ mode: "signup" } as any} data-static
+      className="group flex min-h-[320px] flex-col justify-between rounded-2xl border border-[#FFE08A] bg-[#FFF7D6] p-6 text-[#243746] transition-colors hover:bg-[#FFE08A]">
+      <div>
+        <p className="text-xs uppercase tracking-[0.2em] text-[#4A7CAD]">For venues and vendors</p>
+        <h3 className="mt-3 font-serif text-3xl leading-tight">Become a partner</h3>
+        <p className="mt-3 text-sm leading-relaxed">List your venue or services and meet couples planning weddings around the world.</p>
+      </div>
+      <span className="mt-6 inline-flex items-center gap-2 text-sm font-medium">
+        List your business <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-1" />
+      </span>
+    </Link>
   );
 }
 
@@ -666,6 +681,7 @@ function RealListingsPreview() {
             {services.map((s) => (
               <VendorServiceCard key={s.id} service={s} saved={saved.has(s.id)} onToggleSaved={handleToggleServiceSaved} compact />
             ))}
+            <BecomePartnerCard key="become-a-partner" />
           </ScrollRow>
         </div>
       )}
