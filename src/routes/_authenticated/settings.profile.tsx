@@ -332,9 +332,9 @@ function CollaboratorsSection({ weddingId }: { weddingId: string }) {
             <li key={c.id} className="flex items-center justify-between gap-3 rounded-2xl border border-line/60 px-4 py-2.5">
               <div>
                 <p className="text-sm">{c.email}</p>
-                <p className="text-sm text-muted-foreground">{c.user_id ? "Active" : "Invited, hasn't signed in yet"}</p>
+                <p className="text-sm text-muted-foreground">{c.accepted_at ? "Active" : "Invited, hasn't accepted yet"}</p>
               </div>
-              {!c.user_id && (
+              {!c.accepted_at && (
                 <button type="button" disabled={resending === c.id} onClick={() => resend(c)}
                   className="ml-auto text-sm text-cherry underline underline-offset-4 hover:text-ink disabled:opacity-60 cursor-pointer">
                   {resending === c.id ? "Sending…" : "Resend invite"}

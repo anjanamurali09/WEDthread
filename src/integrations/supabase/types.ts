@@ -2202,6 +2202,7 @@ export type Database = {
       }
       wedding_collaborators: {
         Row: {
+          accepted_at: string | null
           created_at: string
           email: string
           id: string
@@ -2210,6 +2211,7 @@ export type Database = {
           wedding_id: string
         }
         Insert: {
+          accepted_at?: string | null
           created_at?: string
           email: string
           id?: string
@@ -2218,6 +2220,7 @@ export type Database = {
           wedding_id: string
         }
         Update: {
+          accepted_at?: string | null
           created_at?: string
           email?: string
           id?: string

@@ -60,6 +60,11 @@ export function useCurrentWedding() {
       // rendering, so this needs the RPC's explicit owner-or-collaborator scoping.
       const { data, error } = await supabase.rpc("get_my_current_wedding");
       if (error) throw error;
+      // A signed-in collaborator opening the wedding is what "accepting" the invitation means.
+      // Best effort: a failure here must never stop the wedding from loading.
+      if (data && (data as { owner_id?: string }).owner_id !== uid) {
+        void (supabase as any).rpc("accept_collaborator_invites").then(() => undefined, () => undefined);
+      }
       return data ?? null;
     },
   });
