@@ -78,10 +78,10 @@ function ProfileSettingsPage() {
             <F label="Partner B" required value={form.partner_b} onChange={(v) => setField("partner_b", v)} />
           </div>
           <div className="grid md:grid-cols-2 gap-4">
-            <F label="Destination city" value={form.destination_city} onChange={(v) => setField("destination_city", v)} placeholder="e.g. Udaipur, Lisbon, Cancún" />
-            <F label="Destination country" value={form.destination_country} onChange={(v) => setField("destination_country", v)} placeholder="e.g. India, Portugal, Mexico" />
+            <F label="Destination city" value={form.destination_city} onChange={(v) => setField("destination_city", v)} />
+            <F label="Destination country" value={form.destination_country} onChange={(v) => setField("destination_country", v)} />
           </div>
-          <F label="Estimated guest count" type="number" value={form.est_guest_count} onChange={(v) => setField("est_guest_count", v)} placeholder="e.g. 120" />
+          <F label="Estimated guest count" type="number" value={form.est_guest_count} onChange={(v) => setField("est_guest_count", v)} />
 
           <div className="flex justify-end pt-2">
             <button disabled={saving} className="rounded-full bg-ink text-paper px-6 py-2.5 text-sm hover:bg-clay disabled:opacity-60 cursor-pointer">

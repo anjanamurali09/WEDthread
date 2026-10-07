@@ -57,18 +57,18 @@ export function CreateWeddingDialog() {
         <form onSubmit={submit} className="mt-6 space-y-4">
           <div className="grid gap-4 sm:grid-cols-2">
             <label className="block"><span className={LABEL}>Partner A <span className="text-cherry">*</span></span>
-              <input required autoFocus value={form.partner_a} onChange={(e) => set("partner_a", e.target.value)} placeholder="e.g. Ananya" className={FIELD} /></label>
+              <input required autoFocus value={form.partner_a} onChange={(e) => set("partner_a", e.target.value)} className={FIELD} /></label>
             <label className="block"><span className={LABEL}>Partner B <span className="text-cherry">*</span></span>
-              <input required value={form.partner_b} onChange={(e) => set("partner_b", e.target.value)} placeholder="e.g. James" className={FIELD} /></label>
+              <input required value={form.partner_b} onChange={(e) => set("partner_b", e.target.value)} className={FIELD} /></label>
           </div>
           <div className="grid gap-4 sm:grid-cols-2">
             <label className="block"><span className={LABEL}>Destination city</span>
-              <input value={form.destination_city} onChange={(e) => set("destination_city", e.target.value)} placeholder="e.g. Udaipur, Lisbon" className={FIELD} /></label>
+              <input value={form.destination_city} onChange={(e) => set("destination_city", e.target.value)} className={FIELD} /></label>
             <label className="block"><span className={LABEL}>Destination country</span>
-              <input value={form.destination_country} onChange={(e) => set("destination_country", e.target.value)} placeholder="e.g. India, Portugal" className={FIELD} /></label>
+              <input value={form.destination_country} onChange={(e) => set("destination_country", e.target.value)} className={FIELD} /></label>
           </div>
           <label className="block"><span className={LABEL}>Estimated guest count</span>
-            <input type="number" min={0} inputMode="numeric" value={form.est_guest_count} onChange={(e) => set("est_guest_count", e.target.value)} placeholder="e.g. 120" className={FIELD} /></label>
+            <input type="number" min={0} inputMode="numeric" value={form.est_guest_count} onChange={(e) => set("est_guest_count", e.target.value)} className={FIELD} /></label>
 
           {error && <p className="text-sm text-destructive">{error}</p>}
           <button disabled={saving || !form.partner_a.trim() || !form.partner_b.trim()}
