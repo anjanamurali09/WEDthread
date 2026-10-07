@@ -2,6 +2,7 @@ import { createFileRoute, useNavigate, useSearch, Link } from "@tanstack/react-r
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
+import { resolveCoupleLanding } from "@/lib/wedding-hooks";
 import { HeartHandshake, Building2, Store, ShoppingBag, ClipboardList } from "lucide-react";
 import { Logo } from "@/components/logo";
 import { z } from "zod";
@@ -68,13 +69,7 @@ function RolePicker() {
       toast.success(`You're set up as ${role === "couple" ? "a couple" : `a ${role}`}.`);
       if (role === "couple") {
         const { data: u } = await supabase.auth.getUser();
-        const { data: w } = await supabase
-          .from("weddings")
-          .select("id")
-          .eq("owner_id", u.user!.id)
-          .limit(1)
-          .maybeSingle();
-        navigate({ to: (w ? "/dashboard" : "/onboarding") as any, replace: true });
+        navigate({ to: (await resolveCoupleLanding(u.user!.id)) as any, replace: true });
         return;
       }
       // Send new roles straight to their onboarding surface (dashboards

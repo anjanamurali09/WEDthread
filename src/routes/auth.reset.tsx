@@ -10,6 +10,7 @@ export const Route = createFileRoute("/auth/reset")({
       { name: "robots", content: "noindex" },
     ],
   }),
+  validateSearch: (s: Record<string, unknown>): { invited?: boolean } => (s.invited === 1 || s.invited === "1" || s.invited === true ? { invited: true } : {}),
   component: ResetPasswordPage,
 });
 
@@ -19,6 +20,7 @@ const MIN_LENGTH = 8;
 // can choose a new password. A link that has expired or was already used leaves no session behind.
 function ResetPasswordPage() {
   const navigate = useNavigate();
+  const invited = !!Route.useSearch().invited;
   const [state, setState] = useState<"checking" | "ready" | "expired" | "done">("checking");
   const [password, setPassword] = useState("");
   const [confirm, setConfirm] = useState("");
@@ -74,8 +76,8 @@ function ResetPasswordPage() {
 
         {state === "ready" && (
           <>
-            <h1 className="font-serif text-4xl">Choose a new password</h1>
-            <p className="mt-2 text-sm text-muted-foreground">Pick something you haven't used elsewhere. At least {MIN_LENGTH} characters.</p>
+            <h1 className="font-serif text-4xl">{invited ? "Welcome to WEDthread" : "Choose a new password"}</h1>
+            <p className="mt-2 text-sm text-muted-foreground">{invited ? "Create a password to join the wedding you were invited to." : "Pick something you haven't used elsewhere."} At least {MIN_LENGTH} characters.</p>
             <form onSubmit={submit} className="mt-8 space-y-4">
               <div>
                 <label className="text-sm uppercase tracking-widest text-muted-foreground">New password</label>
@@ -87,7 +89,7 @@ function ResetPasswordPage() {
               </div>
               {error && <p className="text-sm text-destructive">{error}</p>}
               <button disabled={saving} className="w-full rounded-full bg-cherry text-pearl py-3 text-sm font-medium hover:bg-wine disabled:opacity-60 transition-colors">
-                {saving ? "Saving…" : "Update password"}
+                {saving ? "Saving…" : invited ? "Create password and continue" : "Update password"}
               </button>
             </form>
           </>
@@ -95,8 +97,8 @@ function ResetPasswordPage() {
 
         {state === "done" && (
           <div className="text-center">
-            <h1 className="font-serif text-3xl">Password updated</h1>
-            <p className="mt-2 text-sm text-muted-foreground">Taking you to your workspace…</p>
+            <h1 className="font-serif text-3xl">{invited ? "You're in" : "Password updated"}</h1>
+            <p className="mt-2 text-sm text-muted-foreground">{invited ? "Opening the wedding…" : "Taking you to your workspace…"}</p>
           </div>
         )}
       </div>

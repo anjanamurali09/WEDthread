@@ -1,4 +1,8 @@
-// Emails someone an invitation to help plan a wedding as a collaborator.
+// Invites someone to help plan a wedding as a collaborator.
+//
+// New people: Supabase's own invitation (the "Invite user" email template). The link confirms their
+// email, lets them choose a password, and lands them straight in this wedding with the couple role.
+// People who already have an account: a plain branded email asking them to sign in.
 //
 // The collaborator row itself is created by the app (row-level security lets only the wedding's owner
 // insert it). This function then sends the email. It only sends when the caller is signed in, owns the
@@ -61,6 +65,16 @@ Deno.serve(async (req: Request) => {
     const signIn = `${APP_URL}/auth`;
     const signUp = `${APP_URL}/auth?mode=signup`;
 
+    // New to WedThread: send Supabase's invitation. An existing account makes this fail, and we fall
+    // through to the sign-in email below.
+    const { error: inviteError } = await service.auth.admin.inviteUserByEmail(to, {
+      redirectTo: `${APP_URL}/auth/reset?invited=1`,
+      data: { signup_role: "couple", inviter, couple },
+    });
+    if (!inviteError) return respond(200, { sent: true, kind: "new_account" });
+    const alreadyHasAccount = /already|registered|exists/i.test(`${inviteError.message} ${(inviteError as { code?: string }).code ?? ""}`);
+    if (!alreadyHasAccount) return respond(502, { error: `Invite error: ${inviteError.message}` });
+
     const html = `<!DOCTYPE html>
 <html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><meta name="color-scheme" content="light"><title>You're invited to help plan a wedding</title></head>
 <body style="margin:0;padding:0;background-color:#FDFCF7;">
@@ -84,7 +98,7 @@ Deno.serve(async (req: Request) => {
     });
     if (!res.ok) return respond(502, { error: `Resend error: ${await res.text()}` });
 
-    return respond(200, { sent: true });
+    return respond(200, { sent: true, kind: "existing_account" });
   } catch (err) {
     return respond(500, { error: err instanceof Error ? err.message : "Unexpected error" });
   }

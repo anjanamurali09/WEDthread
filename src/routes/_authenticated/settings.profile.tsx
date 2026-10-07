@@ -11,6 +11,7 @@ import { AddPaymentMethodDialog } from "@/components/add-payment-method-dialog";
 import { UserPlus, X, CreditCard, Plus } from "lucide-react";
 import { IntegrationsSection } from "@/components/integrations-section";
 import { cn } from "@/lib/utils";
+import { useActiveRole } from "@/hooks/use-active-role";
 
 export const Route = createFileRoute("/_authenticated/settings/profile")({ component: ProfileSettingsPage });
 
@@ -26,6 +27,7 @@ const EMPTY_FORM: ProfileForm = { partner_a: "", partner_b: "", destination_city
 
 function ProfileSettingsPage() {
   const { data: wedding, isLoading } = useCurrentWedding();
+  const { active } = useActiveRole();
   const invalidate = useInvalidateWedding();
   const [form, setForm] = useState<ProfileForm>(EMPTY_FORM);
   const [saving, setSaving] = useState(false);
@@ -88,7 +90,7 @@ function ProfileSettingsPage() {
         </form>
       )}
 
-      {wedding && <CollaboratorsSection weddingId={wedding.id} />}
+      {wedding && userId && wedding.owner_id === userId && active === "couple" && <CollaboratorsSection weddingId={wedding.id} />}
       {wedding && userId && wedding.owner_id === userId && <IntegrationsSection weddingId={wedding.id} />}
       <PaymentMethodsSection />
       {wedding && userId && wedding.owner_id === userId && <DangerZoneSection wedding={wedding} />}

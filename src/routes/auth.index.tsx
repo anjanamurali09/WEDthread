@@ -4,6 +4,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { Logo } from "@/components/logo";
 import { ROLE_LANDING, type AppRole } from "@/hooks/use-active-role";
+import { resolveCoupleLanding } from "@/lib/wedding-hooks";
 import { cn } from "@/lib/utils";
 import { ForgotPasswordForm } from "@/components/forgot-password-form";
 
@@ -114,13 +115,7 @@ async function routeAfterSignIn(navigate: ReturnType<typeof useNavigate>) {
   }
   window.localStorage.setItem("wedthread.activeRole", active);
   if (active === "couple") {
-    const { data: w } = await supabase
-      .from("weddings")
-      .select("id")
-      .eq("owner_id", u.user.id)
-      .limit(1)
-      .maybeSingle();
-    navigate({ to: (w ? "/dashboard" : "/onboarding") as any, replace: true });
+    navigate({ to: (await resolveCoupleLanding(u.user.id)) as any, replace: true });
     return;
   }
   navigate({ to: ROLE_LANDING[active] as any, replace: true });
