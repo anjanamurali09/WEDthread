@@ -146,7 +146,7 @@ export function BusinessSignupForm({ businessType = "vendor" as const }: { busin
       if (privError) throw privError;
       setStep(2);
     } catch (err: any) {
-      toast.error(err.message ?? "Could not save — try again");
+      toast.error(err.message ?? "Could not save. Try again");
     } finally {
       setSaving(false);
     }
@@ -266,7 +266,7 @@ export function BusinessSignupForm({ businessType = "vendor" as const }: { busin
             );
           })}
         </div>
-        <p className="text-sm uppercase tracking-[0.2em] text-clay">Step {step} of {STEPS.length} — {STEPS[step - 1]}</p>
+        <p className="text-sm uppercase tracking-[0.2em] text-clay">Step {step} of {STEPS.length}: {STEPS[step - 1]}</p>
 
         {step === 1 && (
           <>
@@ -297,7 +297,7 @@ export function BusinessSignupForm({ businessType = "vendor" as const }: { busin
               )}
               <SocialLinksFields values={social} onChange={(key, value) => setSocial((prev) => ({ ...prev, [key]: value }))} />
               <Field label="Booking link" optional>
-                <p className="text-sm text-muted-foreground -mt-0.5 mb-1">A Calendly (or similar) link — when set, "Book a viewing" sends couples straight there instead of the in-app request form.</p>
+                <p className="text-sm text-muted-foreground -mt-0.5 mb-1">A Calendly (or similar) link. When set, "Book a viewing" sends couples straight there instead of the in-app request form.</p>
                 <input value={bookingLinkUrl} onChange={(e) => setBookingLinkUrl(e.target.value)} placeholder="https://calendly.com/…"
                   className="w-full rounded-2xl border border-line bg-paper px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-clay" />
               </Field>
@@ -319,7 +319,7 @@ export function BusinessSignupForm({ businessType = "vendor" as const }: { busin
         {step === 2 && (
           <>
             <h1 className="mt-3 font-serif text-4xl md:text-5xl">Verify your business.</h1>
-            <p className="mt-3 text-muted-foreground">Upload at least one document — a trade license, tax certificate, or similar.</p>
+            <p className="mt-3 text-muted-foreground">Upload at least one document. A trade license, tax certificate, or similar.</p>
             <div className="mt-10 grid gap-4">
               <label className="rounded-2xl border border-dashed border-line p-6 text-center cursor-pointer hover:border-cherry transition-colors block">
                 <input type="file" multiple hidden onChange={(e) => uploadDocuments(e.target.files)} />
@@ -356,7 +356,7 @@ export function BusinessSignupForm({ businessType = "vendor" as const }: { busin
         {step === 3 && (
           <>
             <h1 className="mt-3 font-serif text-4xl md:text-5xl">Show your work.</h1>
-            <p className="mt-3 text-muted-foreground">Add photos and video — you can always add more later.</p>
+            <p className="mt-3 text-muted-foreground">Add photos and video. You can always add more later.</p>
             <div className="mt-10 grid gap-6">
               <div>
                 <p className="text-sm uppercase tracking-widest text-muted-foreground mb-2">Photos</p>
@@ -418,14 +418,14 @@ export function BusinessSignupForm({ businessType = "vendor" as const }: { busin
         {step === 4 && isVenue && (
           <>
             <h1 className="mt-3 font-serif text-4xl md:text-5xl">Tell us about the space.</h1>
-            <p className="mt-3 text-muted-foreground">Capacity, type of space, and what's included — this is what couples filter by.</p>
+            <p className="mt-3 text-muted-foreground">Capacity, type of space, and what's included. This is what couples filter by.</p>
             <div className="mt-10 grid gap-5">
               <div className="grid grid-cols-2 gap-4">
-                <Field label="Capacity — min guests" optional>
+                <Field label="Capacity (min guests)" optional>
                   <input type="number" value={capacityMin} onChange={(e) => setCapacityMin(e.target.value)}
                     className="mt-1 w-full rounded-2xl border border-line bg-paper px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-clay" />
                 </Field>
-                <Field label="Capacity — max guests" optional>
+                <Field label="Capacity (max guests)" optional>
                   <input type="number" value={capacityMax} onChange={(e) => setCapacityMax(e.target.value)}
                     className="mt-1 w-full rounded-2xl border border-line bg-paper px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-clay" />
                 </Field>

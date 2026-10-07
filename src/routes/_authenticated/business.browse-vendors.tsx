@@ -11,7 +11,7 @@ export const Route = createFileRoute("/_authenticated/business/browse-vendors")(
 // for venues — no separate inline detail view.
 function BrowseVendorsPage() {
   return (
-    <AppShell title="Browse vendors" subtitle="The same marketplace couples search — see how your own listing shows up alongside everyone else's.">
+    <AppShell title="Browse vendors" subtitle="The same marketplace couples search. See how your own listing shows up alongside everyone else's.">
       <VendorDirectoryContent embedded />
     </AppShell>
   );

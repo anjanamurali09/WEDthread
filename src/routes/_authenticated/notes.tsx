@@ -125,7 +125,7 @@ function NotesPage() {
   return (
     <AppShell
       title="Notes"
-      subtitle="A freeform space for anything that doesn't fit anywhere else — vendor calls, ideas, reminders to yourself."
+      subtitle="A freeform space for anything that doesn't fit anywhere else. Vendor calls, ideas, reminders to yourself."
       actions={
         <button onClick={newNote} disabled={!wedding} className="inline-flex items-center gap-2 rounded-full bg-ink text-paper px-5 py-2 text-sm hover:bg-clay disabled:opacity-60 cursor-pointer">
           <Plus className="h-4 w-4" /> New note
@@ -138,7 +138,7 @@ function NotesPage() {
         <section className="warm-wash rounded-[40px] border border-line/60 px-6 md:px-12 py-10 text-center max-w-2xl mx-auto">
           <p className="text-sm uppercase tracking-[0.3em] text-cherry">Your notes</p>
           <h3 className="mt-2 font-serif text-3xl md:text-4xl leading-tight">Jot down anything</h3>
-          <p className="mt-3 text-sm text-ink leading-relaxed">Vendor call notes, ideas for the reception, things to remember — nothing here needs a category.</p>
+          <p className="mt-3 text-sm text-ink leading-relaxed">Vendor call notes, ideas for the reception, things to remember. Nothing here needs a category.</p>
           <button onClick={newNote} className="mt-6 inline-flex items-center gap-2 rounded-full bg-ink text-paper px-5 py-2.5 text-sm hover:bg-clay cursor-pointer">
             <Plus className="h-4 w-4" /> Write your first note
           </button>

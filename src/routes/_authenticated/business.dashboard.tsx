@@ -122,7 +122,7 @@ function BusinessDashboardPage() {
               {business.verification_status === "verified" ? <CheckCircle2 className="h-4 w-4" />
                 : business.verification_status === "rejected" ? <XCircle className="h-4 w-4" /> : <Clock className="h-4 w-4" />}
               {business.verification_status === "verified" ? "Verified"
-                : business.verification_status === "rejected" ? "Not approved — contact us to resubmit" : "Submitted — a WedThread admin is reviewing your documents"}
+                : business.verification_status === "rejected" ? "Not approved. Contact us to resubmit" : "Submitted. A WedThread admin is reviewing your documents"}
             </div>
             <h2 className="font-serif text-2xl mt-6">{business.legal_business_name}</h2>
             <p className="text-sm text-muted-foreground mt-2">{business.business_description}</p>
@@ -146,7 +146,7 @@ function BusinessDashboardPage() {
             <div className="mt-10 max-w-2xl">
               <h2 className="font-serif text-2xl mb-4 inline-flex items-center gap-2"><Building2 className="h-5 w-5" /> Venue details</h2>
               {!venueDetails ? (
-                <p className="text-sm text-muted-foreground">Nothing on file yet — edit venue details to add capacity, space type, and facilities.</p>
+                <p className="text-sm text-muted-foreground">Nothing on file yet. Edit venue details to add capacity, space type, and facilities.</p>
               ) : (
                 <div className="paper-card p-6 grid gap-4">
                   {(venueDetails.capacity_min != null || venueDetails.capacity_max != null) && (
@@ -178,7 +178,7 @@ function BusinessDashboardPage() {
               <h2 className="font-serif text-2xl mb-4 inline-flex items-center gap-2"><Building2 className="h-5 w-5" /> Your listing</h2>
               {!service ? (
                 <div className="rounded-3xl border border-dashed border-line p-8 text-center">
-                  <p className="text-sm text-muted-foreground">Nothing on file yet — add your categories, pricing, and photos.</p>
+                  <p className="text-sm text-muted-foreground">Nothing on file yet. Add your categories, pricing, and photos.</p>
                   <Link to={"/business/services/new" as any}
                     className="mt-4 inline-flex items-center gap-2 rounded-full bg-ink text-paper px-5 py-2.5 text-sm hover:bg-clay">
                     <Plus className="h-4 w-4" /> Add your listing

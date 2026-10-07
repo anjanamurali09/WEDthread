@@ -393,7 +393,7 @@ function VenueProfilePage() {
               ))}
             </Accordion>
           ) : (
-            <p className="text-sm text-pearl/70">No FAQs yet — check back soon.</p>
+            <p className="text-sm text-pearl/70">No FAQs yet. Check back soon.</p>
           )}
         </div>
       </section>

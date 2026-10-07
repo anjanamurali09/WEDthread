@@ -112,7 +112,7 @@ export function AdminAddBusinessForm({ businessType, editBusinessId }: { busines
     (async () => {
       const { data: biz, error } = await supabase.from("businesses").select("*").eq("id", editBusinessId!).maybeSingle();
       if (error || !biz) { setBlockedReason("Business not found."); setLoadingExisting(false); return; }
-      if (biz.user_id) { setBlockedReason("This business has already been claimed — it's managed by its owner now, not admin."); setLoadingExisting(false); return; }
+      if (biz.user_id) { setBlockedReason("This business has already been claimed. It's managed by its owner now, not admin."); setLoadingExisting(false); return; }
 
       setBusinessId(biz.id);
       setLegalName(biz.legal_business_name);
@@ -380,7 +380,7 @@ export function AdminAddBusinessForm({ businessType, editBusinessId }: { busines
   return (
     <div className="max-w-2xl grid gap-6">
       <div className="grid gap-4">
-        <p className="text-sm text-muted-foreground -mb-1">Only fields marked * are required — everything else here is optional.</p>
+        <p className="text-sm text-muted-foreground -mb-1">Only fields marked * are required. Everything else here is optional.</p>
         <Field label="Legal business name" required>
           <input value={legalName} onChange={(e) => setLegalName(e.target.value)} placeholder="e.g. Sunset Weddings LLC"
             className="mt-1 w-full rounded-2xl border border-line bg-paper px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-clay" />
@@ -420,11 +420,11 @@ export function AdminAddBusinessForm({ businessType, editBusinessId }: { busines
       {isVenue ? (
         <div className="grid gap-4">
           <div className="grid grid-cols-2 gap-4">
-            <Field label="Capacity — min guests">
+            <Field label="Capacity (min guests)">
               <input type="number" value={capacityMin} onChange={(e) => setCapacityMin(e.target.value)}
                 className="mt-1 w-full rounded-2xl border border-line bg-paper px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-clay" />
             </Field>
-            <Field label="Capacity — max guests">
+            <Field label="Capacity (max guests)">
               <input type="number" value={capacityMax} onChange={(e) => setCapacityMax(e.target.value)}
                 className="mt-1 w-full rounded-2xl border border-line bg-paper px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-clay" />
             </Field>
@@ -473,7 +473,7 @@ export function AdminAddBusinessForm({ businessType, editBusinessId }: { busines
           </div>
           <Field label="About sections">
             <p className="text-sm text-muted-foreground -mt-0.5 mb-2">
-              Each one gets its own heading on the venue page — e.g. "Getting there" with directions. Leave empty and the plain description above is shown instead.
+              Each one gets its own heading on the venue page, e.g. "Getting there" with directions. Leave empty and the plain description above is shown instead.
             </p>
             <HeaderBodyListEditor items={aboutSections} onChange={setAboutSections}
               headerLabel="Heading" bodyLabel="Details" headerPlaceholder="e.g. Getting there" bodyPlaceholder="e.g. 10 minutes from Dubai International Airport…"
@@ -489,7 +489,7 @@ export function AdminAddBusinessForm({ businessType, editBusinessId }: { busines
         </div>
       ) : (
         <div className="grid gap-4">
-          {!isEdit && <p className="text-sm text-muted-foreground -mb-1">This is what makes the vendor appear in the directory — the claimed owner can edit it later.</p>}
+          {!isEdit && <p className="text-sm text-muted-foreground -mb-1">This is what makes the vendor appear in the directory. The claimed owner can edit it later.</p>}
           <Field label="Categories">
             <p className="text-sm text-muted-foreground -mt-0.5 mb-2">Search to find one, or add it if it's not in the list yet. Pick as many as apply.</p>
             <SearchableMultiSelect selected={categoryIds} onChange={setCategoryIds} placeholder="Pick categories…"
@@ -518,7 +518,7 @@ export function AdminAddBusinessForm({ businessType, editBusinessId }: { busines
           </div>
           <Field label="About sections">
             <p className="text-sm text-muted-foreground -mt-0.5 mb-2">
-              Each one gets its own heading on the vendor page — e.g. "Our approach" with more detail. Leave empty and the plain description above is shown instead.
+              Each one gets its own heading on the vendor page, e.g. "Our approach" with more detail. Leave empty and the plain description above is shown instead.
             </p>
             <HeaderBodyListEditor items={aboutSections} onChange={setAboutSections}
               headerLabel="Heading" bodyLabel="Details" headerPlaceholder="e.g. Our approach" bodyPlaceholder="e.g. We start with a call to understand your vision…"
@@ -562,7 +562,7 @@ export function AdminAddBusinessForm({ businessType, editBusinessId }: { busines
           </label>
           {photos.length > 0 && (
             <>
-              <p className="mt-2 text-sm text-muted-foreground">The starred photo is the thumbnail shown on cards — hover another and click its star to switch.</p>
+              <p className="mt-2 text-sm text-muted-foreground">The starred photo is the thumbnail shown on cards. Hover another and click its star to switch.</p>
               <div className="mt-2 flex flex-wrap gap-1.5">
               {photos.map((m, i) => (
                 <div key={m.id} className="relative h-20 w-20 rounded-lg overflow-hidden border border-line group bg-stone">
@@ -617,7 +617,7 @@ export function AdminAddBusinessForm({ businessType, editBusinessId }: { busines
       </div>
 
       <Field label="Booking link" optional>
-        <p className="text-sm text-muted-foreground -mt-0.5 mb-1">A Calendly (or similar) link — when set, "Book a viewing" sends couples straight there instead of the in-app request form.</p>
+        <p className="text-sm text-muted-foreground -mt-0.5 mb-1">A Calendly (or similar) link. When set, "Book a viewing" sends couples straight there instead of the in-app request form.</p>
         <input value={bookingLinkUrl} onChange={(e) => setBookingLinkUrl(e.target.value)} placeholder="https://calendly.com/…"
           className="w-full rounded-2xl border border-line bg-paper px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-clay" />
       </Field>
@@ -633,7 +633,7 @@ export function AdminAddBusinessForm({ businessType, editBusinessId }: { busines
           {saving && <Loader2 className="h-4 w-4 animate-spin" />}
           {saving ? "Saving…"
             : isEdit ? (saveStatus === "saved" ? "Saved" : saveStatus === "error" ? "Couldn't save" : "Save changes")
-            : `Add ${isVenue ? "venue" : "vendor"} — unclaimed`}
+            : `Add ${isVenue ? "venue" : "vendor"} (unclaimed)`}
         </button>
         {saveStatus === "error" && saveError && <p className="mt-2 text-sm text-cherry">{saveError}</p>}
       </div>

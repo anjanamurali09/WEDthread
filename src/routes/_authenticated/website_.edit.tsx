@@ -66,7 +66,7 @@ const FONT_SCALES = [
 // sticky anchor-nav bar and a sticky photo panel, not a true separate-pages rebuild.
 export type PageLayout = "scroll" | "split" | "nav";
 const PAGE_LAYOUT_OPTIONS: { value: PageLayout; label: string; desc: string }[] = [
-  { value: "scroll", label: "Single Page Scroll", desc: "Everything stacked in one continuous scroll — today's default." },
+  { value: "scroll", label: "Single Page Scroll", desc: "Everything stacked in one continuous scroll. Today's default." },
   { value: "split", label: "Split View", desc: "Your Hero photo stays fixed on one side while the rest scrolls beside it." },
   { value: "nav", label: "Classic Navigation", desc: "A floating MENU button opens links to each section." },
 ];
@@ -372,7 +372,7 @@ function EditorPage() {
               <p className="font-medium">Site Artwork</p>
               <div className="mt-3">
                 <SwatchGroup onChange={setPalette} items={[
-                  { key: "artBg", label: "Background Behind Art", help: "The colour behind your photos — what shows while they load and around them.", value: palette.artBg ?? palette.soft },
+                  { key: "artBg", label: "Background Behind Art", help: "The colour behind your photos. What shows while they load and around them.", value: palette.artBg ?? palette.soft },
                   { key: "artInk", label: "Text on Art", help: "The colour of text placed over artwork, like your monogram.", value: palette.artInk ?? palette.ink },
                 ]} />
               </div>
@@ -719,7 +719,7 @@ function SectionEditor({ section, weddingId, events, pageLayout, onChange }: {
               </PopoverTrigger>
               <PopoverContent align="start" className="w-72 rounded-2xl border-line bg-paper p-3">
                 {library.length === 0 ? (
-                  <p className="text-sm text-muted-foreground text-center py-4">No photos yet — upload one first and it'll show up here.</p>
+                  <p className="text-sm text-muted-foreground text-center py-4">No photos yet. Upload one first and it'll show up here.</p>
                 ) : (
                   <div className="grid grid-cols-6 gap-1 max-h-48 overflow-y-auto">
                     {library.map((p) => (

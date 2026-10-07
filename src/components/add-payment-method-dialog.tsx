@@ -53,7 +53,7 @@ export function AddPaymentMethodDialog({ open, onOpenChange, onSaved }: {
       <DialogContent className="max-w-md">
         <DialogHeader>
           <DialogTitle className="inline-flex items-center gap-2"><CreditCard className="h-5 w-5" /> Add a payment method</DialogTitle>
-          <p className="text-sm text-muted-foreground">Optional — saving a card just makes future enquiries faster.</p>
+          <p className="text-sm text-muted-foreground">Optional. Saving a card just makes future enquiries faster.</p>
         </DialogHeader>
 
         {!stripe ? (
@@ -87,7 +87,7 @@ function SetupForm({ onDone }: { onDone: () => void }) {
       toast.success("Card saved.");
       onDone();
     } else {
-      toast.info("Finishing setup — this may take a moment.");
+      toast.info("Finishing setup. This may take a moment.");
       onDone();
     }
   };

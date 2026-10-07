@@ -249,13 +249,13 @@ export async function exportSeatingPdf(input: SeatingExportInput) {
       .filter((s) => s.table_id === t.id)
       .sort((a, b) => (a.seat_index ?? 999) - (b.seat_index ?? 999))
       .map((s) => guestById.get(s.guest_id)?.full_name ?? "Unknown guest");
-    return [`${abbreviateTableLabel(t.label)}  ${t.label}`, `${names.length}/${t.seats}`, names.join(", ") || "—"];
+    return [`${abbreviateTableLabel(t.label)}  ${t.label}`, `${names.length}/${t.seats}`, names.join(", ") || "-"];
   });
   doc.addPage();
   doc.setFont(PDF_FONT, "bold");
   doc.setFontSize(16);
   textColor(INK);
-  doc.text(`${eventName} — guest list`, margin, 16);
+  doc.text(`${eventName} guest list`, margin, 16);
   autoTable(doc, {
     startY: 22,
     head: [["Table", "Seated", "Guests"]],

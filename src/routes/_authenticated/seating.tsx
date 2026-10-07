@@ -356,7 +356,7 @@ function SeatingPage() {
     qc.setQueryData(["seating-layout", eventId], { ...layout, canvas_width: w, canvas_height: h });
     const { error } = await supabase.from("seating_layouts").update({ canvas_width: w, canvas_height: h }).eq("id", layout.id);
     if (error) {
-      toast.error("Couldn't save the canvas size — " + error.message);
+      toast.error("Couldn't save the canvas size: " + error.message);
       qc.invalidateQueries({ queryKey: ["seating-layout", eventId] });
     }
   };
@@ -502,7 +502,7 @@ function SeatingPage() {
           <div className="paper-card p-8 max-w-xl mx-auto text-center">
             <span className="grid h-12 w-12 mx-auto place-items-center rounded-full bg-ink text-paper"><CalendarDays className="h-5 w-5" /></span>
             <h2 className="mt-4 font-serif text-2xl">Add an event first</h2>
-            <p className="mt-2 text-sm text-muted-foreground">Seating plans live under an event — add your ceremony or reception, then come back to design the floor plan.</p>
+            <p className="mt-2 text-sm text-muted-foreground">Seating plans live under an event. Add your ceremony or reception, then come back to design the floor plan.</p>
             <Link to="/events" className="mt-5 inline-flex items-center gap-2 rounded-full bg-ink text-paper px-5 py-2.5 text-sm hover:bg-clay">Go to Events</Link>
           </div>
         </div>
@@ -730,7 +730,7 @@ function SeatingSetupCard({ onStart, onSkip }: { onStart: (keys: string[]) => Pr
     <div className="paper-card p-8 max-w-xl mx-auto">
       <span className="grid h-12 w-12 place-items-center rounded-full bg-ink text-paper"><Armchair className="h-5 w-5" /></span>
       <h2 className="mt-4 font-serif text-2xl">Let's set up your floor plan</h2>
-      <p className="mt-1 text-sm text-muted-foreground">Pick what you need — we'll drop them onto your canvas as a starting point. Add or remove anything later.</p>
+      <p className="mt-1 text-sm text-muted-foreground">Pick what you need. We'll drop them onto your canvas as a starting point. Add or remove anything later.</p>
 
       <div className="mt-6 flex flex-wrap gap-2">
         {SETUP_FIXTURES.map((f) => {
@@ -812,7 +812,7 @@ function SeatingSettingsDialog({ areas, shapeDefaults, onAddArea, onUpdateArea, 
           <div className="mt-6 space-y-5">
             <div>
               <p className="text-sm uppercase tracking-widest text-muted-foreground mb-2">On this event's floor plan</p>
-              {areas.length === 0 && <p className="text-sm text-muted-foreground italic">No areas yet — add one below.</p>}
+              {areas.length === 0 && <p className="text-sm text-muted-foreground italic">No areas yet. Add one below.</p>}
               <div className="space-y-1.5">
                 {areas.map((a: any) => (
                   <div key={a.id} className="flex items-center gap-2 rounded-xl border border-line/60 px-3 py-2">
@@ -942,7 +942,7 @@ function Toolbar({ floorColor, onFloor, onAddTable, onAddFixture, onOpenSettings
         className="inline-flex items-center gap-1.5 rounded-full border border-neutral-300 px-2 py-1.5 text-xs hover:bg-stone cursor-pointer whitespace-nowrap shrink-0">
         <Settings className="h-3.5 w-3.5" /> Settings
       </button>
-      <button onClick={onToggleSelect} title="Pick any tables or items — click them or drag a box — then move them together (Ctrl/Cmd+A selects everything)"
+      <button onClick={onToggleSelect} title="Pick any tables or items. Click them or drag a box. Then move them together (Ctrl/Cmd+A selects everything)"
         className={cn("inline-flex items-center gap-1.5 rounded-full border px-2 py-1.5 text-xs cursor-pointer whitespace-nowrap shrink-0",
           selectMode ? "border-[#FFE08A] bg-[#FFF2B2] text-ink" : "border-neutral-300 hover:bg-stone")}>
         <BoxSelect className="h-3.5 w-3.5" /> Select
@@ -960,7 +960,7 @@ function Toolbar({ floorColor, onFloor, onAddTable, onAddFixture, onOpenSettings
             <ZoomIn className="h-3.5 w-3.5" />
           </button>
         </div>
-        <button onClick={onToggleFullView} title={fullView ? "Exit full view" : "Full view — fit the whole floor plan on screen"}
+        <button onClick={onToggleFullView} title={fullView ? "Exit full view" : "Full view. Fit the whole floor plan on screen"}
           className="inline-flex items-center gap-1.5 rounded-full border border-neutral-300 px-2 py-1.5 text-xs hover:bg-stone cursor-pointer whitespace-nowrap">
           {fullView ? <Minimize2 className="h-3.5 w-3.5" /> : <Maximize2 className="h-3.5 w-3.5" />}
           {fullView ? "Close" : "Full view"}
@@ -1710,7 +1710,7 @@ function ChairChip({ x, y, tier, name, initials, guestId, slotId, hasDiet, dieta
           {...listeners}
           {...attributes}
           onClick={onUnseat}
-          title={`${name} — drag to reposition, click to unseat`}
+          title={`${name}. Drag to reposition, click to unseat`}
           style={{ fontSize: tier.fontSize }}
           className="w-full h-full rounded-full bg-paper border border-ink/30 shadow flex items-center justify-center font-semibold text-ink hover:bg-blush-soft hover:border-ink transition-colors cursor-grab active:cursor-grabbing"
         >
@@ -1771,7 +1771,7 @@ function EmptySlot({ x, y, size, tableId, index, onDragPosition }: any) {
       data-nodrag
       onPointerDown={startDrag}
       onClick={(e) => e.stopPropagation()}
-      title="Empty seat — drag a guest here, or drag this dot to rearrange the layout"
+      title="Empty seat. Drag a guest here, or drag this dot to rearrange the layout"
       style={{ position: "absolute", left: pos.x - size / 2, top: pos.y - size / 2, width: size, height: size }}
       className={cn(
         "rounded-full border-2 border-dashed bg-transparent cursor-grab active:cursor-grabbing transition-colors z-10",

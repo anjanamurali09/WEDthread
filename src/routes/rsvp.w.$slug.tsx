@@ -198,7 +198,7 @@ function RsvpOpenPage() {
           <div className="flex items-center gap-2 justify-center mb-8">
             <Logo sizeClassName="text-xl" />
           </div>
-          <p className="text-center text-muted-foreground">A few guests share that name — which one is you?</p>
+          <p className="text-center text-muted-foreground">A few guests share that name. Which one is you?</p>
           <div className="mt-6 space-y-2">
             {matches.map((m) => (
               <button key={m.guest_id} onClick={() => pickMatch(m.guest_id)} disabled={submitting}
@@ -212,7 +212,7 @@ function RsvpOpenPage() {
             ))}
             <button onClick={createInstead} disabled={submitting}
               className="w-full rounded-2xl border border-dashed border-line px-4 py-3 text-center text-sm text-muted-foreground hover:border-clay hover:text-ink transition-colors disabled:opacity-60 cursor-pointer">
-              None of these — I'm someone else
+              None of these. I'm someone else
             </button>
           </div>
           {submitError && <p className="mt-3 text-sm text-cherry text-center">{submitError}</p>}

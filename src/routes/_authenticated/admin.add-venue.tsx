@@ -6,7 +6,7 @@ export const Route = createFileRoute("/_authenticated/admin/add-venue")({ compon
 
 function AdminAddVenuePage() {
   return (
-    <AppShell title="Add a venue" subtitle="Creates an unclaimed, already-verified listing — the real owner can request to claim it later.">
+    <AppShell title="Add a venue" subtitle="Creates an unclaimed, already-verified listing. The real owner can request to claim it later.">
       <AdminAddBusinessForm businessType="venue" />
     </AppShell>
   );

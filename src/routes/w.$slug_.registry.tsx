@@ -181,7 +181,7 @@ function PublicRegistry() {
                       <button type="button" onClick={() => openContribute(it)}
                         className="mt-2.5 w-full rounded-full px-3 py-1.5 text-xs hover:opacity-85" style={{ background: palette.accent, color: palette.bg }}>Contribute</button>
                     ) : bought ? (
-                      <p className="mt-2.5 text-center text-xs opacity-70">Already bought — thank you!</p>
+                      <p className="mt-2.5 text-center text-xs opacity-70">Already bought. Thank you!</p>
                     ) : (
                       <button type="button" onClick={() => openBuy(it)}
                         className="mt-2.5 w-full rounded-full border px-3 py-1.5 text-xs hover:opacity-70" style={{ borderColor: palette.accent, color: palette.accent }}>Mark as bought</button>

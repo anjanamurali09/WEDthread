@@ -113,7 +113,7 @@ function ServiceFormPage() {
       if (isNew) {
         const { data, error } = await supabase.from("vendor_services").insert(payload).select("id").single();
         if (error) throw error;
-        toast.success("Listing created — now add some photos.");
+        toast.success("Listing created. Now add some photos.");
         navigate({ to: `/business/services/${data.id}` as any, replace: true });
       } else {
         const { error } = await supabase.from("vendor_services").update(payload).eq("id", serviceId);
@@ -187,7 +187,7 @@ function ServiceFormPage() {
       </div>
       <Field label="About sections">
         <p className="text-sm text-muted-foreground -mt-0.5 mb-2">
-          Each one gets its own heading on your vendor page — e.g. "Our approach" with more detail. Leave empty and your plain description above is shown instead.
+          Each one gets its own heading on your vendor page, e.g. "Our approach" with more detail. Leave empty and your plain description above is shown instead.
         </p>
         <HeaderBodyListEditor items={aboutSections} onChange={setAboutSections}
           headerLabel="Heading" bodyLabel="Details" headerPlaceholder="e.g. Our approach" bodyPlaceholder="e.g. We start with a call to understand your vision…"
@@ -261,7 +261,7 @@ function ServiceFormPage() {
   );
 
   return (
-    <AppShell title={isNew ? "Add your listing" : "Edit your listing"} subtitle="Categories, pricing, photos, and lead form — your business name and documents stay shared.">
+    <AppShell title={isNew ? "Add your listing" : "Edit your listing"} subtitle="Categories, pricing, photos, and lead form. Your business name and documents stay shared.">
       {isNew ? (
         <div className="max-w-2xl">{detailsForm}</div>
       ) : (

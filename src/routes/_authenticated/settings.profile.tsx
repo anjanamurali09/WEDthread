@@ -67,7 +67,7 @@ function ProfileSettingsPage() {
   };
 
   return (
-    <AppShell title="Profile" subtitle="The core details of your wedding — who's getting married, where, and roughly how many guests.">
+    <AppShell title="Profile" subtitle="The core details of your wedding. Who's getting married, where, and roughly how many guests.">
       <SettingsRow title="Profile">
         {isLoading ? (
           <p className="px-8 py-6 text-sm text-muted-foreground">Loading…</p>
@@ -137,7 +137,7 @@ function DangerZoneSection({ wedding }: { wedding: { id: string; partner_a: stri
   return (
     <div className="px-8 py-6">
       <p className="text-sm text-muted-foreground">
-        Permanently deletes this wedding — every event, guest, RSVP, seating chart, budget entry, message, and your wedding website. This can't be undone.
+        Permanently deletes this wedding. Every event, guest, RSVP, seating chart, budget entry, message, and your wedding website. This can't be undone.
         Your couple workspace itself stays on your account, so you can start planning a new wedding anytime.
       </p>
       <button type="button" onClick={() => setConfirmOpen(true)}
@@ -181,7 +181,7 @@ function PaymentMethodsSection() {
     <div className="px-8 py-6 space-y-5">
       <div>
         <p className="text-sm text-muted-foreground">
-          Entirely optional — save a card ahead of time so future vendor enquiries go faster.
+          Entirely optional. Save a card ahead of time so future vendor enquiries go faster.
           Nothing here is required to send an enquiry today.
         </p>
       </div>
@@ -301,7 +301,7 @@ function CollaboratorsSection({ weddingId }: { weddingId: string }) {
     <div className="px-8 py-6 space-y-5">
       <div>
         <p className="text-sm text-muted-foreground">
-          Give someone else full edit access to this wedding — everything except deleting
+          Give someone else full edit access to this wedding. Everything except deleting
           the wedding itself or managing collaborators. They need a WedThread account with a
           matching email; access starts as soon as they sign in.
         </p>

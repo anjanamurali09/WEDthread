@@ -166,7 +166,7 @@ Deno.serve(async (req: Request) => {
         conversation_id: conversationId,
         sender_role: "couple",
         sender_user_id: user.id,
-        body: `New enquiry — ${listingName}\n\n${messageBody}`,
+        body: `New enquiry: ${listingName}\n\n${messageBody}`,
       });
 
       return { enquiryId: enquiry.id, conversationId };

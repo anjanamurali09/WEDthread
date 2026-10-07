@@ -603,7 +603,7 @@ function SendDialog({ template, guests, wedding, channel, initialSelected, audie
               <button type="button" onClick={() => setQueueGuests(selectedGuests)}
                 className="w-full rounded-2xl border border-line px-4 py-3 text-left hover:bg-stone cursor-pointer">
                 <p className="text-sm font-medium">Personalize each message</p>
-                <p className="text-sm text-muted-foreground mt-0.5">WhatsApp has no bulk-send option — this opens it once per guest, one at a time, each with that guest's name and RSVP link.</p>
+                <p className="text-sm text-muted-foreground mt-0.5">WhatsApp has no bulk-send option. This opens it once per guest, one at a time, each with that guest's name and RSVP link.</p>
               </button>
             ) : (
               <div className="flex flex-col sm:flex-row gap-2">
@@ -620,7 +620,7 @@ function SendDialog({ template, guests, wedding, channel, initialSelected, audie
               </div>
             )}
             {!isWa && usesPersonalTags && (
-              <p className="text-sm text-clay">This template uses {"{{name}}"} or {"{{rsvp_link}}"} — those can't be personalized in one bulk email. "Same message" will send a generic greeting with no RSVP link.</p>
+              <p className="text-sm text-clay">This template uses {"{{name}}"} or {"{{rsvp_link}}"}. Those can't be personalized in one bulk email. "Same message" will send a generic greeting with no RSVP link.</p>
             )}
           </div>
         )}

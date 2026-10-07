@@ -399,7 +399,7 @@ function RsvpGuestPreview({ wedding, events, questions, onClose }: {
     <div className="fixed inset-0 z-50 bg-ink/60 overflow-y-auto">
       <div className="sticky top-0 z-10 bg-ink text-pearl px-6 py-3 flex items-center justify-between gap-4">
         <p className="text-sm uppercase tracking-widest">
-          <Eye className="inline h-3.5 w-3.5 mr-2 -mt-0.5" /> Preview — this is what your guests see
+          <Eye className="inline h-3.5 w-3.5 mr-2 -mt-0.5" /> Preview. This is what your guests see
         </p>
         <button onClick={onClose} className="inline-flex items-center gap-1.5 rounded-full border border-pearl/30 px-4 py-1.5 text-sm hover:bg-pearl/10 cursor-pointer">
           <X className="h-3.5 w-3.5" /> Close preview
@@ -657,14 +657,14 @@ function RsvpResponsesView({ wedding, events, guests, invites, questions, onClos
   // answer — the same information the By-guest cards show, flattened for
   // a spreadsheet.
   const exportResponsesCsv = () => {
-    const eventHeaders = events.map((e) => `RSVP — ${e.name}`);
+    const eventHeaders = events.map((e) => `RSVP: ${e.name}`);
     const questionHeaders = columns.map((c) => `${c.label} (${c.sub})`);
     const fields = ["Guest", "Email", ...eventHeaders, ...questionHeaders];
     const rows = guests.map((g) => {
       const row: Record<string, string> = { Guest: g.full_name, Email: g.email ?? "" };
       events.forEach((e) => {
         const inv = invites.find((i) => i.guest_id === g.id && i.event_id === e.id);
-        row[`RSVP — ${e.name}`] = inv ? inv.rsvp_status : "";
+        row[`RSVP: ${e.name}`] = inv ? inv.rsvp_status : "";
       });
       columns.forEach((c) => {
         row[`${c.label} (${c.sub})`] = answerMap.get(`${g.id}:${c.questionId}:${c.eventId ?? "global"}`) ?? "";
@@ -781,7 +781,7 @@ function RsvpResponsesView({ wedding, events, guests, invites, questions, onClos
 
               {tab === "question" ? (
                 columns.length === 0 ? (
-                  <p className="mt-4 text-sm text-muted-foreground">No questions yet — add one to start collecting responses.</p>
+                  <p className="mt-4 text-sm text-muted-foreground">No questions yet. Add one to start collecting responses.</p>
                 ) : (
                   <>
                     <div className="relative mt-3">
@@ -916,7 +916,7 @@ function RsvpResponsesView({ wedding, events, guests, invites, questions, onClos
                                         return (
                                           <div key={inv.id} className="flex items-center gap-2.5 text-sm">
                                             <span className="grid h-6 w-6 shrink-0 place-items-center rounded-full bg-stone"><Users className="h-3 w-3 text-muted-foreground" /></span>
-                                            <span className="text-muted-foreground flex-1 min-w-0 truncate">RSVP — {ev?.name ?? "?"}</span>
+                                            <span className="text-muted-foreground flex-1 min-w-0 truncate">RSVP: {ev?.name ?? "?"}</span>
                                             <span className="shrink-0 rounded-full px-2.5 py-0.5 text-xs font-medium" style={{ backgroundColor: `${ivColor}1a`, color: ivColor }}>
                                               {rsvpStatusLabel(inv.rsvp_status, wedding)}
                                             </span>

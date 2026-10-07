@@ -115,7 +115,7 @@ async function googleToken(refreshToken: string): Promise<string> {
     }),
   });
   const json = await res.json();
-  if (!res.ok || !json.access_token) throw new Error("Google access was revoked — reconnect Google in Settings.");
+  if (!res.ok || !json.access_token) throw new Error("Google access was revoked. Reconnect Google in Settings.");
   return json.access_token;
 }
 

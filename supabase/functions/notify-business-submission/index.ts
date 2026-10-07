@@ -60,7 +60,7 @@ Deno.serve(async (req: Request) => {
 
     const html = `
       <p>A new ${noun} has submitted their profile for review on WedThread:</p>
-      <p><strong>${escapeHtml(business.legal_business_name)}</strong>${business.country ? ` — ${escapeHtml(business.country)}` : ""}</p>
+      <p><strong>${escapeHtml(business.legal_business_name)}</strong>${business.country ? ` - ${escapeHtml(business.country)}` : ""}</p>
       <p>${escapeHtml(business.business_description)}</p>
       <p><a href="${reviewUrl}">Review it →</a></p>
     `;

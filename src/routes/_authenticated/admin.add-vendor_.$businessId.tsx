@@ -11,7 +11,7 @@ function AdminEditVendorPage() {
   const { businessId } = Route.useParams();
   const router = useRouter();
   return (
-    <AppShell title="Edit vendor" subtitle="Only available for unclaimed listings — once claimed, the owner manages their own info."
+    <AppShell title="Edit vendor" subtitle="Only available for unclaimed listings. Once claimed, the owner manages their own info."
       actions={
         <button type="button" onClick={() => router.history.back()}
           className="inline-flex items-center gap-1.5 text-sm text-clay hover:text-wine cursor-pointer">

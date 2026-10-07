@@ -115,11 +115,11 @@ function VenueDetailsPage() {
   const detailsForm = (
     <div className="grid gap-5 max-w-2xl">
       <div className="grid grid-cols-2 gap-4">
-        <Field label="Capacity — min guests">
+        <Field label="Capacity (min guests)">
           <input type="number" value={capacityMin} onChange={(e) => setCapacityMin(e.target.value)}
             className="mt-1 w-full rounded-2xl border border-line bg-paper px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-clay" />
         </Field>
-        <Field label="Capacity — max guests">
+        <Field label="Capacity (max guests)">
           <input type="number" value={capacityMax} onChange={(e) => setCapacityMax(e.target.value)}
             className="mt-1 w-full rounded-2xl border border-line bg-paper px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-clay" />
         </Field>
@@ -168,7 +168,7 @@ function VenueDetailsPage() {
       </div>
       <Field label="About sections">
         <p className="text-sm text-muted-foreground -mt-0.5 mb-2">
-          Each one gets its own heading on your venue page — e.g. "Getting there" with directions. Leave empty and your plain description is shown instead.
+          Each one gets its own heading on your venue page, e.g. "Getting there" with directions. Leave empty and your plain description is shown instead.
         </p>
         <HeaderBodyListEditor items={aboutSections} onChange={setAboutSections}
           headerLabel="Heading" bodyLabel="Details" headerPlaceholder="e.g. Getting there" bodyPlaceholder="e.g. 10 minutes from Dubai International Airport…"

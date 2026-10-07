@@ -51,7 +51,7 @@ export function VenueDashboard() {
         </div>
         <div className="paper-card p-5">
           <p className="text-[10px] uppercase tracking-widest text-muted-foreground">Capacity</p>
-          <p className="font-serif text-4xl mt-2">{capacity != null ? formatNumber(capacity) : "—"}</p>
+          <p className="font-serif text-4xl mt-2">{capacity != null ? formatNumber(capacity) : "Not set"}</p>
           <p className="text-sm text-muted-foreground mt-1">seated</p>
         </div>
         <div className="paper-card p-5">

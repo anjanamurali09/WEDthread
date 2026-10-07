@@ -80,7 +80,7 @@ Deno.serve(async (req: Request) => {
       body: JSON.stringify({
         from: fromEmail,
         to: [ownerEmail],
-        subject: `New viewing request — ${business.legal_business_name}`,
+        subject: `New viewing request: ${business.legal_business_name}`,
         html,
       }),
     });

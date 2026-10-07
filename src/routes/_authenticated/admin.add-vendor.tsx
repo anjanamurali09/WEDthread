@@ -6,7 +6,7 @@ export const Route = createFileRoute("/_authenticated/admin/add-vendor")({ compo
 
 function AdminAddVendorPage() {
   return (
-    <AppShell title="Add a vendor" subtitle="Creates an unclaimed, already-verified listing — the real owner can request to claim it later.">
+    <AppShell title="Add a vendor" subtitle="Creates an unclaimed, already-verified listing. The real owner can request to claim it later.">
       <AdminAddBusinessForm businessType="vendor" />
     </AppShell>
   );

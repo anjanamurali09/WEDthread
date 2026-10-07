@@ -83,7 +83,7 @@ function AdminSuggestionsPage() {
   }
 
   return (
-    <AppShell title="Suggested changes" subtitle="Corrections couples have flagged on a vendor/venue listing — approve or reject.">
+    <AppShell title="Suggested changes" subtitle="Corrections couples have flagged on a vendor/venue listing. Approve or reject.">
       {loading ? (
         <p className="text-sm text-muted-foreground">Loading…</p>
       ) : suggestions.length === 0 ? (

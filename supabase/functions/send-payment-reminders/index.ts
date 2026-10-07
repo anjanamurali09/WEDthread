@@ -69,7 +69,7 @@ Deno.serve(async (req: Request) => {
 
     const html = `
       <p>A friendly reminder from WedThread:</p>
-      <p><strong>${escapeHtml(exp.name)}</strong> — ${escapeHtml(amount)}${dueText ? ` is due on <strong>${escapeHtml(dueText)}</strong>` : " is waiting to be paid"}.</p>
+      <p><strong>${escapeHtml(exp.name)}</strong>: ${escapeHtml(amount)}${dueText ? ` is due on <strong>${escapeHtml(dueText)}</strong>` : " is waiting to be paid"}.</p>
       ${appUrl ? `<p><a href="${appUrl}/budget">Open your budget →</a></p>` : ""}
       <p style="color:#6b7a88;font-size:12px">You're getting this because you set a payment reminder on this expense. Mark it as paid in your budget and nothing more will be sent.</p>
     `;
@@ -77,7 +77,7 @@ Deno.serve(async (req: Request) => {
     const res = await fetch("https://api.resend.com/emails", {
       method: "POST",
       headers: { Authorization: `Bearer ${resendKey}`, "content-type": "application/json" },
-      body: JSON.stringify({ from: fromEmail, to: [to], subject: `Payment reminder — ${exp.name}`, html }),
+      body: JSON.stringify({ from: fromEmail, to: [to], subject: `Payment reminder: ${exp.name}`, html }),
     });
     if (!res.ok) {
       failed++;

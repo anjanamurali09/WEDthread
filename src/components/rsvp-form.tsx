@@ -118,7 +118,7 @@ export function RsvpPageBody({
       </p>
       {hasRequiredQuestion && (
         <p className="mt-3 text-center text-sm text-muted-foreground">
-          <span className="text-cherry">*</span> Required — everything else is optional
+          <span className="text-cherry">*</span> Required. Everything else is optional
         </p>
       )}
 

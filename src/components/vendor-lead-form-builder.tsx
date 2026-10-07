@@ -131,7 +131,7 @@ export function VendorLeadFormBuilder({ businessId, vendorServiceId, categoryId 
         This is what a couple fills in when they enquire about this service. Drag to reorder.
       </p>
       {fields.length === 0 ? (
-        <p className="text-sm text-muted-foreground mb-4">No fields yet — add your first one below.</p>
+        <p className="text-sm text-muted-foreground mb-4">No fields yet. Add your first one below.</p>
       ) : (
         <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={onDragEnd}>
           <SortableContext items={fields.map((f) => f.id)} strategy={verticalListSortingStrategy}>

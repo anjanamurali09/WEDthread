@@ -101,7 +101,7 @@ function AdminClaimsPage() {
   }
 
   return (
-    <AppShell title="Business claims" subtitle="Requests to take ownership of an unclaimed listing — approve or reject.">
+    <AppShell title="Business claims" subtitle="Requests to take ownership of an unclaimed listing. Approve or reject.">
       {loading ? (
         <p className="text-sm text-muted-foreground">Loading…</p>
       ) : claims.length === 0 ? (

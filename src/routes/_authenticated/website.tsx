@@ -68,7 +68,7 @@ function WebsitePage() {
   };
 
   return (
-    <AppShell title="Wedding website" subtitle="Customize every section: text, photos, and order — then publish.">
+    <AppShell title="Wedding website" subtitle="Customize every section: text, photos, and order. Then publish.">
       <div className="paper-card p-6 md:p-8">
         <div className="flex flex-wrap items-center justify-between gap-4">
           <div className="flex items-center gap-3">

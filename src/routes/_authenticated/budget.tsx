@@ -1547,7 +1547,7 @@ function BudgetSettingsDialog({ wedding, categories, customColumns, events, onCl
 
         <div className="mt-6">
           <span className="text-sm uppercase tracking-widest text-muted-foreground">Budget planning</span>
-          <p className="mt-1 text-sm text-muted-foreground">Split your budget limit by category, or by event — whichever matches how you think about spending.</p>
+          <p className="mt-1 text-sm text-muted-foreground">Split your budget limit by category, or by event. Whichever matches how you think about spending.</p>
           <div className="mt-2 inline-flex rounded-full border border-line p-1">
             <button type="button" onClick={() => saveAllocationMode("category")}
               className={cn("rounded-full px-4 py-1.5 text-sm transition-colors cursor-pointer", mode === "category" ? "bg-ink text-paper" : "text-muted-foreground hover:text-ink")}>
@@ -1625,7 +1625,7 @@ function BudgetSettingsDialog({ wedding, categories, customColumns, events, onCl
                   )}
                 </div>
               ))}
-              {events.length === 0 && <p className="text-sm text-muted-foreground italic">No events yet — add one from the Events page.</p>}
+              {events.length === 0 && <p className="text-sm text-muted-foreground italic">No events yet. Add one from the Events page.</p>}
             </div>
           </div>
         )}

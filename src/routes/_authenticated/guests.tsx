@@ -374,25 +374,25 @@ function GuestsPage() {
   const renderCell = (key: ColKey, g: Guest, gi: Invite[]) => {
     switch (key) {
       case "name": return g.full_name;
-      case "household": return g.household_group || "—";
-      case "email": return g.email || "—";
-      case "phone": return g.phone || "—";
+      case "household": return g.household_group || "-";
+      case "email": return g.email || "-";
+      case "phone": return g.phone || "-";
       case "dietary": return (
         <div className="flex flex-wrap gap-1">
           {g.dietary_tags?.map((t) => <TagChip key={t} tag={foodTags.find((f) => f.name === t) ?? { name: t, color: "#6E9B72" }} className="text-[11px] px-2 py-0.5 shadow-none" />)}
           {g.food_allergies?.map((t) => <TagChip key={t} tag={foodTags.find((f) => f.name === t) ?? { name: t, color: "#E0805F" }} className="text-[11px] px-2 py-0.5 shadow-none" />)}
-          {!g.dietary_tags?.length && !g.food_allergies?.length && <span className="text-xs text-muted-foreground">—</span>}
+          {!g.dietary_tags?.length && !g.food_allergies?.length && <span className="text-xs text-muted-foreground">-</span>}
         </div>
       );
       case "tags": return (
         <div className="flex flex-wrap gap-1">
           {g.tags?.map((t) => <TagChip key={t} tag={tagByName.get(t) ?? { name: t, color: "#6B7A8F" }} />)}
-          {!g.tags?.length && <span className="text-xs text-muted-foreground">—</span>}
+          {!g.tags?.length && <span className="text-xs text-muted-foreground">-</span>}
         </div>
       );
       case "events": return (
         <div className="flex flex-col gap-1">
-          {gi.length === 0 && <span className="text-xs text-muted-foreground">—</span>}
+          {gi.length === 0 && <span className="text-xs text-muted-foreground">-</span>}
           {gi.map((i) => {
             const ev = events.find((e) => e.id === i.event_id);
             return (
@@ -408,7 +408,7 @@ function GuestsPage() {
       );
       case "rsvp": return (
         <div className="flex flex-col gap-1">
-          {gi.length === 0 && <span className="text-xs text-muted-foreground">—</span>}
+          {gi.length === 0 && <span className="text-xs text-muted-foreground">-</span>}
           {gi.map((i) => (
             <RsvpStatusPicker
               key={i.id}
@@ -572,7 +572,7 @@ function GuestsPage() {
                       const answer = columnAnswerFor(g.id, cq.id);
                       return (
                         <td key={cq.id} className="px-4 py-3 text-xs whitespace-nowrap">
-                          {answer || <span className="text-muted-foreground">—</span>}
+                          {answer || <span className="text-muted-foreground">-</span>}
                         </td>
                       );
                     })}

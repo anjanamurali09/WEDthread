@@ -67,7 +67,7 @@ export function SuggestEditButton({ businessId, businessName, compact }: { busin
           ) : submitted ? (
             <div className="py-6 text-center">
               <CheckCircle2 className="h-8 w-8 mx-auto text-sage-deep" />
-              <p className="mt-3 text-sm font-medium">Thanks — sent to the WedThread team.</p>
+              <p className="mt-3 text-sm font-medium">Thanks. Sent to the WedThread team.</p>
             </div>
           ) : (
             <>

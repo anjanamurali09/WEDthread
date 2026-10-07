@@ -149,7 +149,7 @@ export function CoupleDashboard() {
                   <ResizeHandle
                     cursor="cursor-pointer"
                     onClick={cycleEventsPerRow}
-                    title={`${eventsPerRow} per row — click to change`}
+                    title={`${eventsPerRow} per row. Click to change`}
                     className="opacity-0 group-hover:opacity-100"
                   />
                 )}

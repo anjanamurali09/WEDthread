@@ -63,7 +63,7 @@ export function IntegrationsSection({ weddingId }: { weddingId: string }) {
     refresh();
     if (r?.error) throw new Error(r.error);
     const changed = (r?.fromSheet ?? 0) + (r?.created ?? 0);
-    setMessage({ tone: "ok", text: changed ? `Synced — ${changed} change${changed === 1 ? "" : "s"} from the sheet saved to WEDthread.` : "Synced — everything is up to date." });
+    setMessage({ tone: "ok", text: changed ? `Synced: ${changed} change${changed === 1 ? "" : "s"} from the sheet saved to WEDthread.` : "Synced. Everything is up to date." });
   });
   const setAuto = async (id: string, on: boolean) => {
     await supabase.from("integration_links").update({ auto_sync: on }).eq("id", id);
@@ -84,7 +84,7 @@ export function IntegrationsSection({ weddingId }: { weddingId: string }) {
   return (
     <section className="px-8 py-6">
       <p className="text-sm text-muted-foreground">
-        Keep your guest list and budget in a Google Sheet that stays in sync with WEDthread. Edit in either place — changes flow both ways, and everything is saved in WEDthread.
+        Keep your guest list and budget in a Google Sheet that stays in sync with WEDthread. Edit in either place. Changes flow both ways, and everything is saved in WEDthread.
       </p>
 
       <div className="mt-5 flex items-center justify-between gap-3 rounded-2xl border border-line px-4 py-3">
@@ -154,7 +154,7 @@ export function IntegrationsSection({ weddingId }: { weddingId: string }) {
           })}
           <p className="text-xs text-muted-foreground leading-relaxed">
             New rows you add to a sheet become guests / expenses in WEDthread. If the same row is changed in both places, WEDthread's version wins.
-            To remove someone, delete them in WEDthread — a row deleted in the sheet comes back on the next sync. Don't reorder the columns or edit the ID column.
+            To remove someone, delete them in WEDthread. A row deleted in the sheet comes back on the next sync. Don't reorder the columns or edit the ID column.
           </p>
         </div>
       )}

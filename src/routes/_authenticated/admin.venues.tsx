@@ -14,7 +14,7 @@ export const Route = createFileRoute("/_authenticated/admin/venues")({
 function AdminVenuesPage() {
   const { tab } = Route.useSearch();
   return (
-    <AppShell title="Review venues" subtitle="Venue profiles waiting on verification — approve or reject.">
+    <AppShell title="Review venues" subtitle="Venue profiles waiting on verification. Approve or reject.">
       <AdminBusinessReview businessType="venue" defaultTab={tab} />
     </AppShell>
   );

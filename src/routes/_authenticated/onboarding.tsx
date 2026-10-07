@@ -64,7 +64,7 @@ function Onboarding() {
         // as an error — just take them to it.
         if (error.code === "23505") {
           await qc.invalidateQueries({ queryKey: ["current-wedding"] });
-          toast.message("You already have a wedding set up — taking you there.");
+          toast.message("You already have a wedding set up. Taking you there.");
           navigate({ to: "/dashboard", replace: true });
           return;
         }

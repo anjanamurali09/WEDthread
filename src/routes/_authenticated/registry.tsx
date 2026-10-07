@@ -261,7 +261,7 @@ function RegistryPage() {
       setEditingId(null);
     },
     onError: (e: any) => toast.error(/schema cache|kind/i.test(e.message ?? "")
-      ? "Funds need one database update first — run the registry funds migration in Supabase, then try again."
+      ? "Funds need one database update first. Run the registry funds migration in Supabase, then try again."
       : e.message),
   });
 
@@ -309,7 +309,7 @@ function RegistryPage() {
   const shareUrl = typeof window !== "undefined" ? `${window.location.origin}/w/${wedding.slug}/registry` : "";
   const countryOptions = COUNTRIES.map(([code, name]) => ({ value: code, label: name }));
   const currencyOrder = CURRENCY_ORDER_BY_COUNTRY[registry.country_code ?? "US"] ?? CURRENCY_ORDER_BY_COUNTRY.US;
-  const currencyOptions = currencyOrder.map((code) => ({ value: code, label: `${code} — ${CURRENCIES[code].label}` }));
+  const currencyOptions = currencyOrder.map((code) => ({ value: code, label: `${code} (${CURRENCIES[code].label})` }));
   const currencyCode: CurrencyCode = (registry.currency_code as CurrencyCode) || currencyOrder[0];
 
   return (
@@ -361,7 +361,7 @@ function RegistryPage() {
             <section className="warm-wash rounded-[40px] border border-line/60 px-6 md:px-12 py-10 text-center max-w-2xl mx-auto">
               <p className="text-sm uppercase tracking-[0.3em] text-cherry">Your registry</p>
               <h3 className="mt-2 font-serif text-3xl md:text-4xl leading-tight">A few things you've been dreaming of</h3>
-              <p className="mt-3 text-sm text-ink leading-relaxed">Add a product link, name, and price on the right — whatever you're hoping for.</p>
+              <p className="mt-3 text-sm text-ink leading-relaxed">Add a product link, name, and price on the right. Whatever you're hoping for.</p>
             </section>
           ) : (
             <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">

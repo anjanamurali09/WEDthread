@@ -73,7 +73,7 @@ function BusinessWorkspaceSettings({ businessType }: { businessType: "vendor" | 
       {loading ? (
         <p className="text-sm text-muted-foreground">Loading…</p>
       ) : !business ? (
-        <p className="text-sm text-muted-foreground">No business profile found yet — nothing to configure until you've set one up.</p>
+        <p className="text-sm text-muted-foreground">No business profile found yet. Nothing to configure until you've set one up.</p>
       ) : (
         <div className="max-w-xl grid gap-6">
           <div className="paper-card p-8">
@@ -93,7 +93,7 @@ function BusinessWorkspaceSettings({ businessType }: { businessType: "vendor" | 
           <div className="paper-card p-8 border-cherry/30">
             <h3 className="font-serif text-xl text-cherry">Danger zone</h3>
             <p className="mt-2 text-sm text-muted-foreground">
-              Permanently deletes this {label} listing — every service, photo, document, enquiry, message, and review under it. This can't be undone.
+              Permanently deletes this {label} listing. Every service, photo, document, enquiry, message, and review under it. This can't be undone.
               Your {label} role itself stays on your account, so you can set up a new listing later if you want to.
             </p>
             <button type="button" onClick={() => setConfirmOpen(true)}
@@ -142,7 +142,7 @@ function AdminWorkspaceSettings({ roleCount }: { roleCount: number }) {
           <p className="text-sm uppercase tracking-widest text-muted-foreground">Access</p>
           <h2 className="font-serif text-2xl mt-1 inline-flex items-center gap-2"><ShieldCheck className="h-5 w-5 text-cherry" /> Admin</h2>
           <p className="mt-2 text-sm text-muted-foreground">
-            Admin has no profile of its own to edit — it's just the ability to review and manage vendor/venue listings platform-wide.
+            Admin has no profile of its own to edit. It's just the ability to review and manage vendor/venue listings platform-wide.
           </p>
         </div>
 
@@ -150,8 +150,8 @@ function AdminWorkspaceSettings({ roleCount }: { roleCount: number }) {
           <h3 className="font-serif text-xl text-cherry">Danger zone</h3>
           <p className="mt-2 text-sm text-muted-foreground">
             {canLeave
-              ? "Removes admin access from your account. Nothing else about your account is affected — a workspace admin can grant it back later."
-              : "This is your only workspace, so it can't be removed — add another role first, or ask another admin to grant one back later if needed."}
+              ? "Removes admin access from your account. Nothing else about your account is affected. A workspace admin can grant it back later."
+              : "This is your only workspace, so it can't be removed. Add another role first, or ask another admin to grant one back later if needed."}
           </p>
           <button type="button" onClick={() => setConfirmOpen(true)} disabled={!canLeave}
             className="mt-4 rounded-full border border-cherry text-cherry px-5 py-2.5 text-sm font-medium hover:bg-cherry hover:text-pearl disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-transparent disabled:hover:text-cherry cursor-pointer">
@@ -164,7 +164,7 @@ function AdminWorkspaceSettings({ roleCount }: { roleCount: number }) {
         open={confirmOpen}
         onOpenChange={setConfirmOpen}
         title="Remove admin access?"
-        description="You'll lose access to vendor/venue review tools immediately. This can't be undone by yourself — another admin would need to grant it back."
+        description="You'll lose access to vendor/venue review tools immediately. This can't be undone by yourself. Another admin would need to grant it back."
         confirmWith="REMOVE ADMIN"
         onConfirm={leaveAdmin}
       />

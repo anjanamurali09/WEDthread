@@ -662,7 +662,6 @@ function RealListingsPreview() {
       <div className="text-center max-w-2xl mx-auto" data-reveal>
         <p className="text-sm uppercase tracking-[0.2em] text-[#7FA8D6]">Take a look around</p>
         <h2 className="mt-2 font-serif text-3xl md:text-4xl leading-[0.95]">Real venues, real vendors, right now.</h2>
-        <p className="mt-3 text-[#243746]">Browse freely — click into a few, then sign up free to keep exploring.</p>
       </div>
 
       {venues.length > 0 && (
