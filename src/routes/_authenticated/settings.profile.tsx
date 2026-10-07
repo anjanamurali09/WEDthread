@@ -220,9 +220,16 @@ function CollaboratorsSection({ weddingId }: { weddingId: string }) {
   const invalidate = () => qc.invalidateQueries({ queryKey: ["collaborators", weddingId] });
 
   // Emails the invitation. The collaborator row must already exist (the function checks that).
-  const sendInviteEmail = async (to: string): Promise<boolean> => {
+  // Returns the reason when it fails, so the message can say what actually went wrong.
+  const sendInviteEmail = async (to: string): Promise<{ ok: boolean; reason?: string }> => {
     const { data, error } = await supabase.functions.invoke<{ sent?: boolean; error?: string }>("send-collaborator-invite", { body: { wedding_id: weddingId, email: to } });
-    return !error && !!data?.sent;
+    if (!error && data?.sent) return { ok: true };
+    let reason = data?.error ?? error?.message ?? "Unknown error";
+    try {
+      const body = await (error as { context?: Response } | null)?.context?.json?.();
+      if (body?.error) reason = body.error;
+    } catch { /* keep the generic reason */ }
+    return { ok: false, reason };
   };
 
   const invite = async (e: React.FormEvent) => {
@@ -244,21 +251,21 @@ function CollaboratorsSection({ weddingId }: { weddingId: string }) {
       setInviting(false);
       return setNotice({ kind: "error", text: error.code === "23505" ? "That email is already a collaborator." : error.message });
     }
-    const emailed = await sendInviteEmail(trimmed);
+    const sent = await sendInviteEmail(trimmed);
     setInviting(false);
     setEmail("");
     invalidate();
-    setNotice(emailed
+    setNotice(sent.ok
       ? { kind: "ok", text: `Invitation sent to ${trimmed}. They get access as soon as they sign in with that email.` }
-      : { kind: "error", text: `${trimmed} has been added, but the invitation email couldn't be sent. Use Resend invite below to try again.` });
+      : { kind: "error", text: `${trimmed} has been added, but the invitation email couldn't be sent: ${sent.reason}. Use Resend invite below to try again.` });
   };
 
   const resend = async (c: Collaborator) => {
     setNotice(null);
     setResending(c.id);
-    const emailed = await sendInviteEmail(c.email);
+    const sent = await sendInviteEmail(c.email);
     setResending(null);
-    setNotice(emailed ? { kind: "ok", text: `Invitation sent again to ${c.email}.` } : { kind: "error", text: `Couldn't send the email to ${c.email}. Try again in a moment.` });
+    setNotice(sent.ok ? { kind: "ok", text: `Invitation sent again to ${c.email}.` } : { kind: "error", text: `Couldn't send the email to ${c.email}: ${sent.reason}` });
   };
 
   const removeCollaborator = async () => {
