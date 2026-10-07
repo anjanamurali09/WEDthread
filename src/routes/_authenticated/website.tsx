@@ -9,6 +9,7 @@ import { TEMPLATES, getTemplate } from "@/lib/website-templates";
 import { TemplateThumb } from "@/components/template-thumb";
 import { TemplateSitePreview } from "@/components/template-site-preview";
 import { cn } from "@/lib/utils";
+import { useSavedFeedback } from "@/hooks/use-saved-feedback";
 
 export const Route = createFileRoute("/_authenticated/website")({ component: WebsitePage });
 
@@ -17,6 +18,7 @@ function WebsitePage() {
   const invalidate = useInvalidateWedding();
   const [saving, setSaving] = useState(false);
   const [copied, setCopied] = useState(false);
+  const { status: publishStatus, markSaved: markPublishOk, markError: markPublishError } = useSavedFeedback();
   // The design highlighted on the left and shown on the right (not yet applied).
   const [previewId, setPreviewId] = useState<string | null>(null);
   const [device, setDevice] = useState<"desktop" | "mobile">("desktop");
@@ -37,9 +39,9 @@ function WebsitePage() {
     setSaving(true);
     const { error } = await supabase.from("weddings").update({ site_published: !wedding.site_published }).eq("id", wedding.id);
     setSaving(false);
-    if (error) return toast.error(error.message);
+    if (error) return markPublishError(error.message);
     invalidate(wedding.id);
-    toast.success(wedding.site_published ? "Unpublished" : "Published");
+    markPublishOk();
   };
 
   const url = typeof window !== "undefined" ? `${window.location.origin}/w/${wedding.slug ?? ""}` : `/w/${wedding.slug ?? ""}`;
@@ -70,7 +72,7 @@ function WebsitePage() {
       <div className="paper-card p-6 md:p-8">
         <div className="flex flex-wrap items-center justify-between gap-4">
           <div className="flex items-center gap-3">
-            <span className={`h-2.5 w-2.5 rounded-full ${wedding.site_published ? "bg-cherry" : "bg-line"}`} />
+            <span className={`h-2.5 w-2.5 rounded-full ${wedding.site_published ? "bg-emerald-500" : "bg-line"}`} />
             <div>
               <p className="text-sm">{wedding.site_published ? "Live" : "Draft, not yet published"}</p>
               <a href={url} target="_blank" rel="noreferrer" className="text-sm text-muted-foreground hover:text-wine inline-flex items-center gap-1">{url} <ExternalLink className="h-3 w-3" /></a>
@@ -81,9 +83,17 @@ function WebsitePage() {
             <button onClick={copy} className="inline-flex items-center gap-2 rounded-full border border-line px-4 py-2 text-sm hover:bg-stone">
               {copied ? <Check className="h-4 w-4" /> : <Copy className="h-4 w-4" />} {copied ? "Copied" : "Copy link"}
             </button>
-            <button disabled={saving} onClick={togglePublish} className="rounded-full bg-ink text-pearl px-5 py-2 text-sm hover:bg-wine disabled:opacity-60">
-              {wedding.site_published ? "Unpublish" : "Publish site"}
-            </button>
+            {wedding.site_published ? (
+              // Live: shown as a status; clicking it takes the site back offline.
+              <button disabled={saving} onClick={togglePublish} title="Your site is live. Click to take it offline."
+                className="inline-flex items-center gap-2 rounded-full border border-emerald-600/40 bg-emerald-50 text-emerald-800 px-5 py-2 text-sm hover:bg-emerald-100 disabled:opacity-60">
+                <span className="h-2 w-2 rounded-full bg-emerald-500" /> {publishStatus === "error" ? "Couldn't update. Try again" : "Live site"}
+              </button>
+            ) : (
+              <button disabled={saving} onClick={togglePublish} className="rounded-full bg-ink text-pearl px-5 py-2 text-sm hover:bg-wine disabled:opacity-60">
+                {publishStatus === "error" ? "Couldn't publish. Try again" : "Publish site"}
+              </button>
+            )}
           </div>
         </div>
       </div>
