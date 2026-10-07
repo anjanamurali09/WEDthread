@@ -243,7 +243,6 @@ export type Database = {
           legal_business_name: string
           updated_at: string
           user_id: string | null
-          vat_tax_number: string | null
           verification_status: Database["public"]["Enums"]["business_verification_status"]
         }
         Insert: {
@@ -266,7 +265,6 @@ export type Database = {
           legal_business_name: string
           updated_at?: string
           user_id?: string | null
-          vat_tax_number?: string | null
           verification_status?: Database["public"]["Enums"]["business_verification_status"]
         }
         Update: {
@@ -289,7 +287,6 @@ export type Database = {
           legal_business_name?: string
           updated_at?: string
           user_id?: string | null
-          vat_tax_number?: string | null
           verification_status?: Database["public"]["Enums"]["business_verification_status"]
         }
         Relationships: []
