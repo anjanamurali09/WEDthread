@@ -135,19 +135,30 @@ function AuthPage() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
+  // Set once the sign-up went through but the email still has to be verified.
+  const [sentTo, setSentTo] = useState<string | null>(null);
+  const [resendNote, setResendNote] = useState<string | null>(null);
 
+
+  const resendVerification = async () => {
+    if (!sentTo) return;
+    setResendNote(null);
+    const { error } = await supabase.auth.resend({ type: "signup", email: sentTo, options: { emailRedirectTo: `${window.location.origin}/auth/callback` } });
+    setResendNote(error ? error.message : "Sent again. It can take a minute to arrive.");
+  };
 
   const onEmail = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
     try {
       if (mode === "signup") {
-        const { error } = await supabase.auth.signUp({
-          email, password,
-          options: { emailRedirectTo: window.location.origin },
+        const { data, error } = await supabase.auth.signUp({
+          email: email.trim(), password,
+          // The link in the email lands here, which signs the person in and sends them to pick their role.
+          options: { emailRedirectTo: `${window.location.origin}/auth/callback` },
         });
         if (error) throw error;
-        toast.success("Account created.");
+        if (!data.session) { setSentTo(email.trim()); setResendNote(null); return; }
         await routeAfterSignUp(navigate);
       } else {
         const { error } = await supabase.auth.signInWithPassword({ email, password });
@@ -184,7 +195,7 @@ function AuthPage() {
           <form onSubmit={onEmail} className="mt-8 space-y-4">
             <div>
               <label className="text-sm uppercase tracking-widest text-muted-foreground">Email</label>
-              <input required type="email" value={email} onChange={(e) => setEmail(e.target.value)}
+              <input required type="email" value={email} onChange={(e) => setEmail(e.target.value)} readOnly={!!sentTo}
                 className="mt-1 w-full rounded-2xl border border-line bg-pearl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-cherry" />
             </div>
             <div>
@@ -197,9 +208,20 @@ function AuthPage() {
                 <button type="button" onClick={() => setMode("forgot")} className="text-sm text-cherry underline underline-offset-4">Forgot password?</button>
               </div>
             )}
-            <button disabled={loading} className="w-full rounded-full bg-cherry text-pearl py-3 text-sm font-medium hover:bg-wine disabled:opacity-60 transition-colors">
-              {loading ? "Please wait…" : mode === "signup" ? "Create account" : "Sign in"}
+            <button disabled={loading || !!sentTo} className="w-full rounded-full bg-cherry text-pearl py-3 text-sm font-medium hover:bg-wine disabled:opacity-60 transition-colors">
+              {loading ? "Please wait…" : sentTo ? "Verify your email" : mode === "signup" ? "Create account" : "Sign in"}
             </button>
+            {mode === "signup" && sentTo && (
+              <div className="rounded-2xl bg-[#FFF7D6] px-4 py-3 text-sm text-[#243746]">
+                <p>Please check your email. We sent a verification link to <span className="font-medium">{sentTo}</span>. Click it to finish creating your account.</p>
+                <p className="mt-2 text-muted-foreground">Can't find it? Check your spam folder, or{" "}
+                  <button type="button" onClick={resendVerification} className="text-cherry underline underline-offset-4">send it again</button>
+                  {" "}or{" "}
+                  <button type="button" onClick={() => { setSentTo(null); setResendNote(null); }} className="text-cherry underline underline-offset-4">use a different email</button>.
+                </p>
+                {resendNote && <p className="mt-2">{resendNote}</p>}
+              </div>
+            )}
           </form>
 
           <p className="mt-6 text-sm text-center text-muted-foreground">

@@ -51,8 +51,9 @@ export function LoginDialog({
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
+  const [sentTo, setSentTo] = useState<string | null>(null);
 
-  const reset = () => { setEmail(""); setPassword(""); setLoading(false); };
+  const reset = () => { setEmail(""); setPassword(""); setLoading(false); setSentTo(null); };
   const close = (v: boolean) => { if (!v) reset(); onOpenChange(v); };
 
   const submit = async (e: React.FormEvent) => {
@@ -60,12 +61,12 @@ export function LoginDialog({
     setLoading(true);
     try {
       if (mode === "signup") {
-        const { error } = await supabase.auth.signUp({
-          email, password,
-          options: { emailRedirectTo: window.location.origin },
+        const { data, error } = await supabase.auth.signUp({
+          email: email.trim(), password,
+          options: { emailRedirectTo: `${window.location.origin}/auth/callback` },
         });
         if (error) throw error;
-        toast.success("Account created.");
+        if (!data.session) { setSentTo(email.trim()); return; }
         close(false);
         await routeAfterSignUp(navigate);
       } else {
@@ -109,10 +110,15 @@ export function LoginDialog({
                 <button type="button" onClick={() => setMode("forgot")} className="text-sm text-cherry underline underline-offset-4">Forgot password?</button>
               </div>
             )}
-            <button disabled={loading}
+            <button disabled={loading || !!sentTo}
               className="w-full rounded-full bg-cherry text-pearl py-2.5 text-sm font-medium hover:bg-wine disabled:opacity-60 transition-colors">
-              {loading ? "Please wait…" : mode === "signup" ? "Create account" : "Sign in"}
+              {loading ? "Please wait…" : sentTo ? "Verify your email" : mode === "signup" ? "Create account" : "Sign in"}
             </button>
+            {mode === "signup" && sentTo && (
+              <p className="rounded-2xl bg-[#FFF7D6] px-4 py-3 text-sm text-[#243746]">
+                Please check your email. We sent a verification link to <span className="font-medium">{sentTo}</span>. Click it to finish creating your account.
+              </p>
+            )}
           </form>
           <p className="mt-4 text-sm text-center text-muted-foreground">
             {mode === "signup" ? "Already have an account?" : "New here?"}{" "}
