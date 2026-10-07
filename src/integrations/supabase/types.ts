@@ -196,6 +196,32 @@ export type Database = {
           },
         ]
       }
+      business_private: {
+        Row: {
+          business_id: string
+          updated_at: string
+          vat_tax_number: string | null
+        }
+        Insert: {
+          business_id: string
+          updated_at?: string
+          vat_tax_number?: string | null
+        }
+        Update: {
+          business_id?: string
+          updated_at?: string
+          vat_tax_number?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "business_private_business_id_fkey"
+            columns: ["business_id"]
+            isOneToOne: true
+            referencedRelation: "businesses"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       businesses: {
         Row: {
           business_description: string

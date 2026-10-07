@@ -45,10 +45,15 @@ export function AdminBusinessReview({ businessType, defaultTab = "approved" }: {
 
     setLoading(true);
     const { data: rows, error: rowsError } = await supabase
-      .from("businesses").select("id,legal_business_name,business_description,vat_tax_number,country,verification_status,user_id,created_at,updated_at")
+      .from("businesses").select("id,legal_business_name,business_description,country,verification_status,user_id,created_at,updated_at")
       .eq("business_type", businessType).order("created_at", { ascending: false });
     if (rowsError) toast.error(rowsError.message);
-    const list = rows ?? [];
+    // The VAT / tax number lives in a private table (admins and the owner only).
+    const { data: priv } = rows && rows.length
+      ? await supabase.from("business_private").select("business_id,vat_tax_number").in("business_id", rows.map((r) => r.id))
+      : { data: [] as { business_id: string; vat_tax_number: string | null }[] };
+    const vatById = new Map((priv ?? []).map((p) => [p.business_id, p.vat_tax_number]));
+    const list = (rows ?? []).map((r) => ({ ...r, vat_tax_number: vatById.get(r.id) ?? null }));
     setBusinesses(list);
 
     if (list.length > 0) {

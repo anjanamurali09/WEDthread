@@ -116,7 +116,8 @@ export function AdminAddBusinessForm({ businessType, editBusinessId }: { busines
 
       setBusinessId(biz.id);
       setLegalName(biz.legal_business_name);
-      setVatNumber(biz.vat_tax_number ?? "");
+      const { data: priv } = await supabase.from("business_private").select("vat_tax_number").eq("business_id", biz.id).maybeSingle();
+      setVatNumber(priv?.vat_tax_number ?? "");
       setCountry(biz.country ?? "");
       setCity(biz.city ?? "");
       setAddress(biz.address ?? "");
@@ -195,7 +196,6 @@ export function AdminAddBusinessForm({ businessType, editBusinessId }: { busines
     const basics = {
       business_type: businessType,
       legal_business_name: legalName.trim(),
-      vat_tax_number: vatNumber.trim() || null,
       country: country.trim() || null,
       city: city.trim() || null,
       address: isVenue ? address.trim() || null : null,
@@ -209,15 +209,22 @@ export function AdminAddBusinessForm({ businessType, editBusinessId }: { busines
       contact_phone: contactPhone.trim() || null,
       business_description: description.trim(),
     };
+    // The VAT / tax number is kept in a private table, readable only by the owner and admins.
+    const savePrivate = async (id: string) => {
+      const { error: privError } = await supabase.from("business_private")
+        .upsert({ business_id: id, vat_tax_number: vatNumber.trim() || null, updated_at: new Date().toISOString() });
+      if (privError) { toast.error(privError.message); return false; }
+      return true;
+    };
     if (businessId) {
       const { error } = await supabase.from("businesses").update(basics).eq("id", businessId);
       if (error) { toast.error(error.message); return null; }
-      return businessId;
+      return (await savePrivate(businessId)) ? businessId : null;
     }
     const { data, error } = await supabase.from("businesses").insert({ ...basics, user_id: null, verification_status: "verified" }).select("id").single();
     if (error || !data) { toast.error(error?.message ?? "Could not create business"); return null; }
     setBusinessId(data.id);
-    return data.id;
+    return (await savePrivate(data.id)) ? data.id : null;
   };
 
   const uploadDocuments = async (files: FileList | null) => {

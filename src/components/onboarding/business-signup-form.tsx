@@ -69,7 +69,8 @@ export function BusinessSignupForm({ businessType = "vendor" as const }: { busin
       if (existing) {
         setBusinessId(existing.id);
         setLegalName(existing.legal_business_name);
-        setVatNumber(existing.vat_tax_number ?? "");
+        const { data: priv } = await supabase.from("business_private").select("vat_tax_number").eq("business_id", existing.id).maybeSingle();
+        setVatNumber(priv?.vat_tax_number ?? "");
         setDescription(existing.business_description);
         setCountry(existing.country ?? "");
         setCity(existing.city ?? "");
@@ -118,7 +119,6 @@ export function BusinessSignupForm({ businessType = "vendor" as const }: { busin
         user_id: u.user.id,
         business_type: businessType,
         legal_business_name: legalName.trim(),
-        vat_tax_number: vatNumber.trim() || null,
         business_description: description.trim(),
         country: country.trim() || null,
         city: city.trim() || null,
@@ -130,14 +130,20 @@ export function BusinessSignupForm({ businessType = "vendor" as const }: { busin
         website_url: social.website_url.trim() || null,
         booking_link_url: bookingLinkUrl.trim() || null,
       };
+      let savedId = businessId;
       if (businessId) {
         const { error } = await supabase.from("businesses").update(payload).eq("id", businessId);
         if (error) throw error;
       } else {
         const { data, error } = await supabase.from("businesses").insert(payload).select("id").single();
         if (error) throw error;
+        savedId = data.id;
         setBusinessId(data.id);
       }
+      // The VAT / tax number is kept in a private table, readable only by you and admins.
+      const { error: privError } = await supabase.from("business_private")
+        .upsert({ business_id: savedId!, vat_tax_number: vatNumber.trim() || null, updated_at: new Date().toISOString() });
+      if (privError) throw privError;
       setStep(2);
     } catch (err: any) {
       toast.error(err.message ?? "Could not save — try again");
