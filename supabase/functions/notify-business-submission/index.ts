@@ -15,6 +15,8 @@
 import { createClient } from "npm:@supabase/supabase-js@2";
 
 const NOTIFY_EMAIL = "owen@wedthread.co";
+// Links in the email always point at our own site; never at an address the caller supplies.
+const APP_URL = (Deno.env.get("APP_URL") ?? "https://www.wedthread.co").replace(/\/$/, "");
 
 const CORS_HEADERS = {
   "Access-Control-Allow-Origin": "*",
@@ -35,17 +37,25 @@ Deno.serve(async (req: Request) => {
   const service = createClient(Deno.env.get("SUPABASE_URL")!, Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!);
 
   try {
-    const { business_id, origin } = await req.json();
+    // Only the signed-in owner of the business may trigger this email.
+    const authed = createClient(Deno.env.get("SUPABASE_URL")!, Deno.env.get("SUPABASE_ANON_KEY")!, {
+      global: { headers: { Authorization: req.headers.get("Authorization") ?? "" } },
+    });
+    const { data: userData } = await authed.auth.getUser();
+    if (!userData?.user) return respond(401, { error: "Sign in required" });
+
+    const { business_id } = await req.json();
     if (typeof business_id !== "string" || !business_id) return respond(400, { error: "business_id is required" });
 
     const { data: business, error: bizError } = await service
       .from("businesses")
-      .select("id,legal_business_name,business_type,business_description,country,created_at")
+      .select("id,user_id,legal_business_name,business_type,business_description,country,created_at")
       .eq("id", business_id).single();
     if (bizError || !business) return respond(404, { error: "Business not found" });
+    if (business.user_id !== userData.user.id) return respond(403, { error: "Not your business" });
 
     const reviewPath = business.business_type === "venue" ? "/admin/venues" : "/admin/vendors";
-    const reviewUrl = typeof origin === "string" && origin ? `${origin}${reviewPath}` : reviewPath;
+    const reviewUrl = `${APP_URL}${reviewPath}`;
     const noun = business.business_type === "venue" ? "venue" : "vendor";
 
     const html = `

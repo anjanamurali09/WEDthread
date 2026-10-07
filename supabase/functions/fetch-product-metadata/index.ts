@@ -8,6 +8,8 @@
 // gets past that. Failures on Amazon links are expected, not a bug to chase;
 // those links fall back to manual entry by design.
 
+import { createClient } from "npm:@supabase/supabase-js@2";
+
 const CORS_HEADERS = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
@@ -135,15 +137,60 @@ function scanPriceNearTop(html: string): number | null {
   return Number.isFinite(num) ? num : null;
 }
 
+// This function fetches whatever URL it is given, so it must never be pointed at the
+// server's own network. Only public http(s) hosts are allowed — localhost, private and
+// link-local addresses are refused, and the hostname is resolved first so a name that
+// points at a private address is refused too. Redirects are followed by hand so every
+// hop is checked, not just the first.
+function isPrivateIp(ip: string): boolean {
+  if (ip.includes(":")) {
+    const l = ip.toLowerCase();
+    return l === "::1" || l === "::" || l.startsWith("fc") || l.startsWith("fd") || l.startsWith("fe80") || l.startsWith("::ffff:127.") || l.startsWith("::ffff:10.") || l.startsWith("::ffff:192.168.");
+  }
+  const [a, b] = ip.split(".").map(Number);
+  return a === 0 || a === 10 || a === 127 || (a === 169 && b === 254) || (a === 172 && b >= 16 && b <= 31) || (a === 192 && b === 168) || a >= 224;
+}
+
+async function isPublicUrl(u: URL): Promise<boolean> {
+  if (u.protocol !== "http:" && u.protocol !== "https:") return false;
+  if (u.username || u.password) return false;
+  const host = u.hostname.replace(/^\[|\]$/g, "").toLowerCase();
+  if (host === "localhost" || host.endsWith(".localhost") || host.endsWith(".internal") || host.endsWith(".local")) return false;
+  if (/^[\d.]+$/.test(host) || host.includes(":")) return !isPrivateIp(host);
+  try {
+    const ips = [
+      ...(await Deno.resolveDns(host, "A").catch(() => [] as string[])),
+      ...(await Deno.resolveDns(host, "AAAA").catch(() => [] as string[])),
+    ];
+    return ips.length > 0 && ips.every((ip) => !isPrivateIp(ip));
+  } catch {
+    return false;
+  }
+}
+
+async function fetchPublicPage(startUrl: string, init: RequestInit): Promise<Response | null> {
+  let current = new URL(startUrl);
+  for (let hop = 0; hop < 4; hop++) {
+    if (!(await isPublicUrl(current))) return null;
+    const res = await fetch(current.toString(), { ...init, redirect: "manual" });
+    if (res.status >= 300 && res.status < 400) {
+      const loc = res.headers.get("location");
+      if (!loc) return null;
+      current = new URL(loc, current);
+      continue;
+    }
+    return res;
+  }
+  return null;
+}
+
 async function fetchMetadata(rawUrl: string): Promise<SuccessResult | FailureResult> {
   const u = new URL(rawUrl);
-  if (u.protocol !== "http:" && u.protocol !== "https:") return { success: false };
   const url = u.toString();
 
   let html = "";
   try {
-    const res = await fetch(url, {
-      redirect: "follow",
+    const res = await fetchPublicPage(url, {
       headers: {
         "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36",
         "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
@@ -151,7 +198,7 @@ async function fetchMetadata(rawUrl: string): Promise<SuccessResult | FailureRes
       },
       signal: AbortSignal.timeout(FETCH_TIMEOUT_MS),
     });
-    if (!res.ok) return { success: false };
+    if (!res || !res.ok) return { success: false };
     const ct = res.headers.get("content-type") || "";
     if (!ct.includes("text/html") && !ct.includes("xhtml")) return { success: false };
     html = (await res.text()).slice(0, 500_000); // cap 500KB
@@ -197,6 +244,13 @@ Deno.serve(async (req: Request) => {
     new Response(JSON.stringify(body), { headers: { ...CORS_HEADERS, "content-type": "application/json" } });
 
   try {
+    // Only signed-in users may use this (the anon key alone is not enough).
+    const authed = createClient(Deno.env.get("SUPABASE_URL")!, Deno.env.get("SUPABASE_ANON_KEY")!, {
+      global: { headers: { Authorization: req.headers.get("Authorization") ?? "" } },
+    });
+    const { data: userData } = await authed.auth.getUser();
+    if (!userData?.user) return new Response(JSON.stringify({ success: false, error: "Sign in required" }), { status: 401, headers: { ...CORS_HEADERS, "content-type": "application/json" } });
+
     const { url } = await req.json();
     if (typeof url !== "string" || !url) return respond({ success: false });
     const result = await fetchMetadata(url);

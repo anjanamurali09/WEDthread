@@ -20,6 +20,9 @@ const CORS_HEADERS = {
   "Access-Control-Allow-Methods": "POST, OPTIONS",
 };
 
+// Links in the email always point at our own site; never at an address the caller supplies.
+const APP_URL = (Deno.env.get("APP_URL") ?? "https://www.wedthread.co").replace(/\/$/, "");
+
 function escapeHtml(s: string): string {
   return s.replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]!));
 }
@@ -37,15 +40,23 @@ Deno.serve(async (req: Request) => {
   const service = createClient(Deno.env.get("SUPABASE_URL")!, Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!);
 
   try {
-    const { business_id, wedding_id, preferred_date, preferred_time, message, origin } = await req.json();
+    // Only a signed-in user may send this, and only for a wedding they own.
+    const authed = createClient(Deno.env.get("SUPABASE_URL")!, Deno.env.get("SUPABASE_ANON_KEY")!, {
+      global: { headers: { Authorization: req.headers.get("Authorization") ?? "" } },
+    });
+    const { data: userData } = await authed.auth.getUser();
+    if (!userData?.user) return respond(401, { error: "Sign in required" });
+
+    const { business_id, wedding_id, preferred_date, preferred_time, message } = await req.json();
     if (typeof business_id !== "string" || !business_id) return respond(400, { error: "business_id is required" });
     if (typeof wedding_id !== "string" || !wedding_id) return respond(400, { error: "wedding_id is required" });
 
     const [{ data: business, error: bizError }, { data: wedding }] = await Promise.all([
       service.from("businesses").select("id,legal_business_name,user_id").eq("id", business_id).single(),
-      service.from("weddings").select("partner_a,partner_b").eq("id", wedding_id).maybeSingle(),
+      service.from("weddings").select("partner_a,partner_b,owner_id").eq("id", wedding_id).maybeSingle(),
     ]);
     if (bizError || !business) return respond(404, { error: "Business not found" });
+    if (!wedding || wedding.owner_id !== userData.user.id) return respond(403, { error: "Not your wedding" });
     if (!business.user_id) return respond(200, { sent: false, reason: "unclaimed" });
 
     const { data: ownerData, error: ownerError } = await service.auth.admin.getUserById(business.user_id);
@@ -53,7 +64,7 @@ Deno.serve(async (req: Request) => {
     if (ownerError || !ownerEmail) return respond(200, { sent: false, reason: "no_owner_email" });
 
     const coupleName = wedding ? `${wedding.partner_a} & ${wedding.partner_b}` : "A couple";
-    const messagesUrl = typeof origin === "string" && origin ? `${origin}/business/messages` : "/business/messages";
+    const messagesUrl = `${APP_URL}/business/messages`;
 
     const html = `
       <p><strong>${escapeHtml(coupleName)}</strong> would like to book a viewing at <strong>${escapeHtml(business.legal_business_name)}</strong>.</p>
