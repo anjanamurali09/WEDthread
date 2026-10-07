@@ -199,7 +199,18 @@
 
 @layer base {
   * { border-color: var(--color-border); }
-  html { font-family: var(--font-sans); -webkit-font-smoothing: antialiased; font-feature-settings: "ss01"; }
+  /* Fluid root size: Tailwind's spacing/typography scale is rem-based, so
+     scaling the root font-size with viewport width scales text, padding,
+     gaps, and rem-sized icons everywhere at once, continuously, instead of
+     everything staying desktop-sized until a breakpoint snaps it to a
+     different fixed layout. 100% (16px) from ~1600px wide and up (today's
+     look, unchanged); scales down smoothly to 87.5% (14px) at ~640px and
+     below, where the existing md: breakpoints already take over for
+     structural (not just size) changes. */
+  html {
+    font-family: var(--font-sans); -webkit-font-smoothing: antialiased; font-feature-settings: "ss01";
+    font-size: clamp(14px, 12.67px + 0.208vw, 16px);
+  }
   body {
     background-color: var(--color-background);
     color: var(--color-foreground);
@@ -213,6 +224,17 @@
   }
   h1 { font-weight: 400; }
   em, i, .italic { font-style: italic; }
+
+  /* No native spin-button arrows on any number input, site-wide — every
+     numeric field here (guests, capacity, prices…) is short enough that
+     typing is always faster than clicking a tiny arrow, and the arrows
+     read as visual clutter. */
+  input[type="number"] { -moz-appearance: textfield; }
+  input[type="number"]::-webkit-outer-spin-button,
+  input[type="number"]::-webkit-inner-spin-button {
+    -webkit-appearance: none;
+    margin: 0;
+  }
 }
 
 @utility hairline {
@@ -223,6 +245,16 @@
 @utility scroll-fade-b {
   mask-image: linear-gradient(to bottom, black calc(100% - 28px), transparent 100%);
   -webkit-mask-image: linear-gradient(to bottom, black calc(100% - 28px), transparent 100%);
+}
+/* Keeps a container scrollable (wheel, trackpad, drag) without ever
+   painting a scrollbar track/thumb — for panels like the Events list where
+   the scrollbar itself reads as visual clutter. */
+@utility no-scrollbar {
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+  &::-webkit-scrollbar {
+    display: none;
+  }
 }
 @utility paper-card {
   background: var(--color-pearl);
@@ -382,20 +414,11 @@
   94%, 100% { opacity: 0; scale: 0.85; }
 }
 
-/* Vendor Marketplace: 10 pills cycling through 5 fixed slots as two groups
-   of 5, each item popping in on its own turn, holding, then the whole group
-   fades out together before the next group's turn. One rule per item since
-   each needs its own absolute appear/hold/hide offsets in the shared 10s cycle. */
-@keyframes vendor-0 { 0% { opacity:0; scale:0.7; } 2% { opacity:1; scale:1; } 40% { opacity:1; scale:1; } 45%,100% { opacity:0; scale:0.8; } }
-@keyframes vendor-1 { 0%,4% { opacity:0; scale:0.7; } 6% { opacity:1; scale:1; } 40% { opacity:1; scale:1; } 45%,100% { opacity:0; scale:0.8; } }
-@keyframes vendor-2 { 0%,8% { opacity:0; scale:0.7; } 10% { opacity:1; scale:1; } 40% { opacity:1; scale:1; } 45%,100% { opacity:0; scale:0.8; } }
-@keyframes vendor-3 { 0%,12% { opacity:0; scale:0.7; } 14% { opacity:1; scale:1; } 40% { opacity:1; scale:1; } 45%,100% { opacity:0; scale:0.8; } }
-@keyframes vendor-4 { 0%,16% { opacity:0; scale:0.7; } 18% { opacity:1; scale:1; } 40% { opacity:1; scale:1; } 45%,100% { opacity:0; scale:0.8; } }
-@keyframes vendor-5 { 0%,50% { opacity:0; scale:0.7; } 52% { opacity:1; scale:1; } 90% { opacity:1; scale:1; } 95%,100% { opacity:0; scale:0.8; } }
-@keyframes vendor-6 { 0%,54% { opacity:0; scale:0.7; } 56% { opacity:1; scale:1; } 90% { opacity:1; scale:1; } 95%,100% { opacity:0; scale:0.8; } }
-@keyframes vendor-7 { 0%,58% { opacity:0; scale:0.7; } 60% { opacity:1; scale:1; } 90% { opacity:1; scale:1; } 95%,100% { opacity:0; scale:0.8; } }
-@keyframes vendor-8 { 0%,62% { opacity:0; scale:0.7; } 64% { opacity:1; scale:1; } 90% { opacity:1; scale:1; } 95%,100% { opacity:0; scale:0.8; } }
-@keyframes vendor-9 { 0%,66% { opacity:0; scale:0.7; } 68% { opacity:1; scale:1; } 90% { opacity:1; scale:1; } 95%,100% { opacity:0; scale:0.8; } }
+/* Vendors card: VendorPills in routes/index.tsx drives this with React state
+   (setTimeout-staggered pop-ins, a simultaneous fade-out, then the next
+   round) rather than CSS keyframes, since the fade-out needs to happen at
+   the same instant for all 6 slots regardless of their staggered pop-in
+   delay — not expressible with a single shared keyframe + per-slot delay. */
 
 /* Seating card: one table (with its seats) and a cursor icon share the same
    duration/keyframe percentages so they move in lockstep, reading as a click-drag of
@@ -442,10 +465,32 @@
    comes after it (the label, or anything typed) onto its own line below the checkbox
    instead of flowing next to it on the same line. */
 input.note-check {
+  appearance: none;
+  -webkit-appearance: none;
+  position: relative;
+  display: inline-block;
+  width: 1rem;
+  height: 1rem;
   vertical-align: middle;
-  margin: 0 0.5rem 0.15rem 0;
-  accent-color: var(--color-cherry);
+  margin: 0 0.6rem 0.15rem 0;
+  border: 1.5px solid #8a949c;
+  border-radius: 3px;
+  background: transparent;
   cursor: pointer;
+}
+/* Checked = just a tick (no fill), drawn a little larger than the box so it pokes out of
+   its top-right corner, like Google Docs. */
+input.note-check:checked::after {
+  content: "";
+  position: absolute;
+  left: 0.2rem;
+  top: -0.3rem;
+  width: 0.4rem;
+  height: 0.8rem;
+  border: solid var(--color-ink);
+  border-width: 0 2.5px 2.5px 0;
+  transform: rotate(40deg);
+  transform-origin: center;
 }
 .note-check-label.is-checked {
   color: var(--color-muted-foreground);

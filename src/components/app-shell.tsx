@@ -1,8 +1,9 @@
 import { Link, useRouter, useLocation } from "@tanstack/react-router";
 import { useCurrentWedding, useSignOut } from "@/lib/wedding-hooks";
-import { CalendarDays, LayoutDashboard, Users, Armchair, MessageCircle, Globe, LogOut, Store, MapPin, Gift, ChevronDown, Plus, Inbox, ListChecks, Utensils, Wallet, PanelLeftClose, PanelLeftOpen, Settings, NotebookPen, Star } from "lucide-react";
+import { useIntegrationAutoSync } from "@/lib/integrations";
+import { CalendarDays, LayoutDashboard, Users, Armchair, MessageCircle, Globe, LogOut, Store, MapPin, Gift, ChevronDown, Plus, Inbox, ListChecks, Utensils, Wallet, PanelLeftClose, PanelLeftOpen, Settings, NotebookPen, Star, Search, ShieldCheck } from "lucide-react";
 import type { ReactNode } from "react";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useActiveRole, type AppRole } from "@/hooks/use-active-role";
 import { AddRoleDialog } from "@/components/add-role-dialog";
 import { FeedbackDialog } from "@/components/feedback-dialog";
@@ -16,7 +17,12 @@ const ROLE_LABEL: Record<AppRole, string> = {
 };
 
 const ROLE_LANDING_MAP: Record<AppRole, string> = {
-  couple: "/dashboard", planner: "/dashboard", venue: "/vendors", vendor: "/vendors", seller: "/vendors", admin: "/dashboard",
+  couple: "/dashboard", planner: "/dashboard", venue: "/business/dashboard", vendor: "/business/dashboard", seller: "/vendors", admin: "/dashboard",
+};
+
+const SETTINGS_PATH: Record<AppRole, string> = {
+  couple: "/settings/profile", planner: "/settings/profile",
+  venue: "/workspace-settings", vendor: "/workspace-settings", seller: "/workspace-settings", admin: "/workspace-settings",
 };
 
 function WorkspaceSwitcher() {
@@ -98,24 +104,36 @@ const NAV_BY_ROLE: Record<AppRole, ReadonlyArray<{ to: string; label: string; ic
     { to: "/notes", label: "Notes", icon: NotebookPen },
   ],
   vendor: [
-    { to: "/dashboard", label: "My listing", icon: Store },
-    { to: "/leads", label: "Leads", icon: Inbox },
+    { to: "/business/browse-vendors", label: "Browse vendors", icon: Search },
+    { to: "/business/dashboard", label: "My listing", icon: Store },
+    { to: "/business/messages", label: "Enquiries", icon: Inbox },
   ],
   venue: [
-    { to: "/dashboard", label: "My venue", icon: MapPin },
-    { to: "/leads", label: "Leads", icon: Inbox },
+    { to: "/business/browse-venues", label: "Browse venues", icon: Search },
+    { to: "/business/dashboard", label: "My venue", icon: MapPin },
+    { to: "/business/messages", label: "Enquiries", icon: Inbox },
   ],
   seller: [
     { to: "/dashboard", label: "Overview", icon: LayoutDashboard },
   ],
   admin: [
     { to: "/dashboard", label: "Overview", icon: LayoutDashboard },
+    { to: "/admin/vendors", label: "Review vendors", icon: ShieldCheck },
+    { to: "/admin/venues", label: "Review venues", icon: ShieldCheck },
+    { to: "/admin/claims", label: "Business claims", icon: ShieldCheck },
+    { to: "/admin/suggestions", label: "Suggested changes", icon: ShieldCheck },
+    { to: "/admin/add-vendor", label: "Add a vendor", icon: Plus },
+    { to: "/admin/add-venue", label: "Add a venue", icon: Plus },
   ],
 };
 
+// Points at the new businesses/vendor_services/venue_details marketplace
+// (the same one vendors/venues themselves manage), not the older, separate
+// vendors/venues tables — a couple browsing here needs to actually see
+// what's been added through the current onboarding/admin-add flow.
 const discover = [
-  { to: "/venues", label: "Venues", icon: MapPin },
-  { to: "/vendors", label: "Vendors", icon: Store },
+  { to: "/business/browse-venues", label: "Venues", icon: MapPin },
+  { to: "/business/browse-vendors", label: "Vendors", icon: Store },
 ] as const;
 
 export function AppShell({ children, title, subtitle, actions, decor }: { children: ReactNode; title?: string; subtitle?: string; actions?: ReactNode; decor?: ReactNode }) {
@@ -126,11 +144,22 @@ export function AppShell({ children, title, subtitle, actions, decor }: { childr
   const nav = NAV_BY_ROLE[active ?? "couple"] ?? NAV_BY_ROLE.couple;
   const showDiscover = !active || active === "couple" || active === "planner";
   const { data: wedding } = useCurrentWedding();
+  useIntegrationAutoSync(wedding?.id);
   const [feedbackOpen, setFeedbackOpen] = useState(false);
 
-  const [collapsed, setCollapsed] = useState(() => {
+  const [prefCollapsed, setCollapsed] = useState(() => {
     try { return localStorage.getItem(SIDEBAR_COLLAPSED_KEY) === "1"; } catch { return false; }
   });
+  // On narrow screens the sidebar stays on screen as the icon rail, whatever the saved preference.
+  const [narrow, setNarrow] = useState(() => typeof window !== "undefined" && window.matchMedia("(max-width: 767px)").matches);
+  useEffect(() => {
+    const mq = window.matchMedia("(max-width: 767px)");
+    const on = () => setNarrow(mq.matches);
+    on();
+    mq.addEventListener("change", on);
+    return () => mq.removeEventListener("change", on);
+  }, []);
+  const collapsed = prefCollapsed || narrow;
   const toggleCollapsed = () => setCollapsed((prev) => {
     const next = !prev;
     try { localStorage.setItem(SIDEBAR_COLLAPSED_KEY, next ? "1" : "0"); } catch {}
@@ -150,13 +179,13 @@ export function AppShell({ children, title, subtitle, actions, decor }: { childr
 
       {/* Sidebar */}
       <aside className={cn(
-        "relative z-10 hidden md:flex shrink-0 flex-col border-r border-line/60 bg-pearl/70 backdrop-blur-sm sticky top-0 h-screen transition-[width] duration-300 ease-in-out",
-        collapsed ? "md:w-[72px]" : "md:w-64 lg:w-72",
+        "relative z-10 flex shrink-0 flex-col border-r border-line/60 bg-pearl/70 backdrop-blur-sm sticky top-0 h-screen transition-[width] duration-300 ease-in-out",
+        collapsed ? "w-[72px]" : "w-64 lg:w-72",
       )}>
         <button
           onClick={toggleCollapsed}
           title={collapsed ? "Expand sidebar" : "Collapse sidebar"}
-          className="absolute -right-3 top-9 z-20 grid h-6 w-6 place-items-center rounded-full border border-line bg-paper text-muted-foreground shadow-sm hover:text-cherry hover:border-cherry cursor-pointer"
+          className="hidden md:grid absolute -right-3 top-9 z-20 grid h-6 w-6 place-items-center rounded-full border border-line bg-paper text-muted-foreground shadow-sm hover:text-cherry hover:border-cherry cursor-pointer"
         >
           {collapsed ? <PanelLeftOpen className="h-3.5 w-3.5" /> : <PanelLeftClose className="h-3.5 w-3.5" />}
         </button>
@@ -174,11 +203,11 @@ export function AppShell({ children, title, subtitle, actions, decor }: { childr
           {nav.map(({ to, label, icon: Icon }) => {
             const isActive = pathname === to || pathname.startsWith(to + "/");
             return (
-              <Link key={to} to={to as any} title={collapsed ? label : undefined}
+              <Link key={to} to={to as any} data-static title={collapsed ? label : undefined}
                 className={`flex items-center gap-3 rounded-full px-4 py-2.5 text-sm transition-all ${collapsed ? "justify-center px-0" : ""} ${
                   isActive
                     ? "bg-wine text-cream font-medium shadow-md"
-                    : "text-ink hover:bg-blush-soft/70 hover:text-cherry hover:translate-x-1"
+                    : "text-ink hover:bg-blush-soft/70 hover:text-cherry"
                 }`}>
                 <Icon className="h-4 w-4 shrink-0" /> {!collapsed && label}
               </Link>
@@ -189,11 +218,11 @@ export function AppShell({ children, title, subtitle, actions, decor }: { childr
           {discover.map(({ to, label, icon: Icon }) => {
             const isActive = pathname === to || pathname.startsWith(to + "/");
             return (
-              <Link key={to} to={to as any} title={collapsed ? label : undefined}
+              <Link key={to} to={to as any} data-static title={collapsed ? label : undefined}
                 className={`flex items-center gap-3 rounded-full px-4 py-2.5 text-sm transition-all ${collapsed ? "justify-center px-0" : ""} ${
                   isActive
                     ? "bg-wine text-cream font-medium shadow-md"
-                    : "text-ink hover:bg-blush-soft/70 hover:text-cherry hover:translate-x-1"
+                    : "text-ink hover:bg-blush-soft/70 hover:text-cherry"
                 }`}>
                 <Icon className="h-4 w-4 shrink-0" /> {!collapsed && label}
               </Link>
@@ -202,23 +231,23 @@ export function AppShell({ children, title, subtitle, actions, decor }: { childr
           </>)}
         </nav>
         <div className="p-3 border-t border-line/60">
-          {(active === "couple" || active === "planner") && (
-            <Link to="/settings/profile" title={collapsed ? "Settings" : undefined}
+          {active && (
+            <Link to={SETTINGS_PATH[active] as any} data-static title={collapsed ? "Settings" : undefined}
               className={`flex items-center gap-3 rounded-full px-4 py-2.5 text-sm transition-all mb-1 ${collapsed ? "justify-center px-0" : ""} ${
-                pathname === "/settings/profile" || pathname.startsWith("/settings/profile/")
+                pathname === SETTINGS_PATH[active] || pathname.startsWith(SETTINGS_PATH[active] + "/")
                   ? "bg-cherry text-pearl font-medium shadow-md"
-                  : "text-ink hover:bg-blush-soft/70 hover:text-cherry hover:translate-x-1"
+                  : "text-ink hover:bg-blush-soft/70 hover:text-cherry"
               }`}>
               <Settings className="h-4 w-4 shrink-0" /> {!collapsed && "Settings"}
             </Link>
           )}
           {(active === "couple" || active === "planner") && (
-            <button onClick={() => setFeedbackOpen(true)} title={collapsed ? "Feedback" : undefined}
-              className={`flex w-full items-center gap-3 rounded-full px-4 py-2.5 text-sm mb-1 transition-all cursor-pointer ${collapsed ? "justify-center px-0" : ""} text-ink hover:bg-blush-soft/70 hover:text-cherry hover:translate-x-1`}>
+            <button data-static onClick={() => setFeedbackOpen(true)} title={collapsed ? "Feedback" : undefined}
+              className={`flex w-full items-center gap-3 rounded-full px-4 py-2.5 text-sm mb-1 transition-all cursor-pointer ${collapsed ? "justify-center px-0" : ""} text-ink hover:bg-blush-soft/70 hover:text-cherry`}>
               <Star className="h-4 w-4 shrink-0" /> {!collapsed && "Feedback"}
             </button>
           )}
-          <button onClick={onSignOut} title={collapsed ? "Sign out" : undefined}
+          <button data-static onClick={onSignOut} title={collapsed ? "Sign out" : undefined}
             className={`flex w-full items-center gap-3 rounded-full px-4 py-2.5 text-sm text-ink hover:bg-wine-soft hover:text-wine transition-all ${collapsed ? "justify-center px-0" : ""}`}>
             <LogOut className="h-4 w-4 shrink-0" /> {!collapsed && "Sign out"}
           </button>
@@ -227,39 +256,23 @@ export function AppShell({ children, title, subtitle, actions, decor }: { childr
 
       {feedbackOpen && <FeedbackDialog weddingId={wedding?.id} onClose={() => setFeedbackOpen(false)} />}
 
-      <main className="relative z-10 flex-1 min-w-0">
-        {/* Top mobile bar */}
-        <div className="md:hidden flex items-center justify-between px-4 py-3 border-b border-line/60 bg-pearl/70 backdrop-blur-sm">
-          <Link to="/dashboard" className="flex items-center gap-2">
-            <Logo sizeClassName="text-xl" />
-          </Link>
-          <button onClick={onSignOut} className="text-sm text-cherry">Sign out</button>
-        </div>
-
+      <main className="relative z-10 flex-1 min-w-0 self-start">
+        {/* self-start: without it, flexbox's default align-items:stretch forces this to
+            always match the sidebar's h-screen height, no matter how little content a
+            given page actually has — a short page (few events, an empty state) was always
+            rendering with a tall empty gap below its real content, not because of anything
+            that page itself did. The sidebar sets its own h-screen directly, so it doesn't
+            depend on stretch from here and is unaffected by this change. */}
         {(title || actions) && (
           <header className="px-4 md:px-10 pt-8 md:pt-12 pb-6 flex flex-wrap items-end justify-between gap-4">
             <div>
               {title && <h1 className="font-serif text-3xl md:text-5xl text-ink leading-[0.95]">{title}</h1>}
-              {subtitle && <p className="mt-3 text-sm text-ink max-w-2xl">{subtitle}</p>}
             </div>
             {actions}
           </header>
         )}
 
         <div className="px-4 md:px-10 pb-16">{children}</div>
-
-        {/* Mobile bottom nav */}
-        <nav className="md:hidden fixed bottom-0 inset-x-0 border-t border-line/60 bg-pearl/95 backdrop-blur-sm flex justify-around py-2 z-20">
-          {nav.slice(0, 5).map(({ to, label, icon: Icon }) => {
-            const active = pathname === to;
-            return (
-              <Link key={to} to={to as any} className={`flex flex-col items-center gap-0.5 px-3 py-1 text-[10px] transition-colors ${active ? "text-cherry" : "text-ink hover:text-cherry"}`}>
-                <Icon className="h-4 w-4" />{label}
-              </Link>
-            );
-          })}
-        </nav>
-        <div className="md:hidden h-16" />
       </main>
     </div>
   );

@@ -1,9 +1,9 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
-import { Sparkles, Loader2 } from "lucide-react";
+import { Loader2 } from "lucide-react";
 import { Logo } from "@/components/logo";
-import { RsvpPageBody, DEFAULT_ATTENDANCE_TEXT, type RsvpEventRow, type RsvpQuestionRow } from "@/components/rsvp-form";
+import { RsvpPageBody, DEFAULT_ATTENDANCE_TEXT, type RsvpEventRow, type RsvpQuestionRow, type RsvpMode } from "@/components/rsvp-form";
 
 // The general, wedding-wide RSVP link (as opposed to /rsvp/$token, which goes straight to
 // one guest's pre-filled invite). Anyone who opens this sees every event in the wedding —
@@ -17,6 +17,7 @@ type ContextRow = {
   wedding_id: string; partner_a: string; partner_b: string;
   attendance_question_text: string; attendance_allow_maybe: boolean;
   attendance_accept_label: string; attendance_decline_label: string; attendance_maybe_label: string;
+  rsvp_mode: string;
   event_id: string | null; event_name: string | null; event_date: string | null; event_time: string | null;
   venue_name: string | null; city: string | null;
 };
@@ -171,7 +172,6 @@ function RsvpOpenPage() {
       <div className="min-h-screen bg-paper py-14 px-6">
         <div className="max-w-md mx-auto">
           <div className="flex items-center gap-2 justify-center mb-8">
-            <span className="grid h-8 w-8 place-items-center rounded-full bg-clay text-paper"><Sparkles className="h-3.5 w-3.5" /></span>
             <Logo sizeClassName="text-xl" />
           </div>
           <p className="text-center text-sm uppercase tracking-[0.25em] text-clay">You are invited to celebrate</p>
@@ -196,7 +196,6 @@ function RsvpOpenPage() {
       <div className="min-h-screen bg-paper py-14 px-6">
         <div className="max-w-md mx-auto">
           <div className="flex items-center gap-2 justify-center mb-8">
-            <span className="grid h-8 w-8 place-items-center rounded-full bg-clay text-paper"><Sparkles className="h-3.5 w-3.5" /></span>
             <Logo sizeClassName="text-xl" />
           </div>
           <p className="text-center text-muted-foreground">A few guests share that name — which one is you?</p>
@@ -229,6 +228,7 @@ function RsvpOpenPage() {
         attendanceQuestionText={first.attendance_question_text ?? DEFAULT_ATTENDANCE_TEXT}
         allowMaybe={first.attendance_allow_maybe ?? false}
         acceptLabel={first.attendance_accept_label} declineLabel={first.attendance_decline_label} maybeLabel={first.attendance_maybe_label}
+        rsvpMode={(first.rsvp_mode as RsvpMode) ?? "per_event"}
         eventRows={eventRows} questions={questions}
         answers={answers} saveStatus={{}} rsvpSaveStatus={{}}
         submitted={submitted} submitting={submitting} submitError={submitError}

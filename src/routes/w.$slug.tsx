@@ -1,9 +1,9 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
-import { Sparkles } from "lucide-react";
 import { getTemplate } from "@/lib/website-templates";
-import { SiteShell, type PageLayout } from "./_authenticated/website_.edit";
+import { SiteShell, SiteFooter, SiteBackdrop, decorFor, heroCoverOf, type PageLayout } from "./_authenticated/website_.edit";
+import { SiteDecor } from "@/components/botanical-art";
 import { useGoogleFonts } from "@/lib/google-fonts";
 
 export const Route = createFileRoute("/w/$slug")({ component: WeddingSite });
@@ -38,7 +38,7 @@ function WeddingSite() {
   const palette = { ...template.palette, ...(custom.palette ?? {}) };
   const effectiveTemplate = { ...template, fonts: { ...template.fonts, ...(custom.fonts ?? {}) } };
   const fontScale = custom.fontScale ?? 1;
-  const pageLayout: PageLayout = custom.pageLayout ?? "scroll";
+  const pageLayout: PageLayout = custom.pageLayout ?? template.pageLayout ?? "scroll";
 
   // Only load fonts this wedding's site actually uses — the sitewide pair plus any
   // per-section overrides — not the whole curated font list.
@@ -58,7 +58,9 @@ function WeddingSite() {
   const hasSections = sections.length > 0;
 
   return (
-    <div className="min-h-screen" style={{ background: palette.bg, color: palette.ink, fontFamily: `"${effectiveTemplate.fonts.body}", sans-serif`, ["--site-scale" as any]: fontScale }}>
+    <div className="@container min-h-screen relative isolate" style={{ ["--screen" as any]: "100svh", background: palette.bg, color: palette.ink, fontFamily: `"${effectiveTemplate.fonts.body}", sans-serif`, ["--site-scale" as any]: fontScale }}>
+      <SiteBackdrop bg={custom.background} />
+      <SiteDecor kind={decorFor(template, custom.decoration)} color={palette.accent} heroLayout={heroCoverOf(sections)} />
       {hasSections ? (
         <SiteShell wedding={wedding} sections={sections} palette={palette} template={effectiveTemplate} events={events} layoutMode={pageLayout} />
       ) : (
@@ -70,11 +72,7 @@ function WeddingSite() {
         </section>
       )}
 
-      <footer className="border-t py-6 text-center" style={{ borderColor: palette.soft }}>
-        <div className="inline-flex items-center gap-2 text-sm opacity-60">
-          <Sparkles className="h-3 w-3" style={{ color: palette.accent }} /> Made with WedThread
-        </div>
-      </footer>
+      <SiteFooter palette={palette} />
     </div>
   );
 }

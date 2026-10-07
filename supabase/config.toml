@@ -1,1 +1,6 @@
 project_id = "pthcamxqautjjsppbfaj"
+
+# Google redirects the browser here after consent, so it can't carry a Supabase JWT.
+# The function verifies the signed state itself (and the JWT manually for its other actions).
+[functions.google-oauth]
+verify_jwt = false

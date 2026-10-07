@@ -453,10 +453,56 @@ function NoteEditor({ note, onSaved }: { note: Note; onSaved: () => void }) {
   // no idea a checkbox belongs on the next line, so without this, Enter would just
   // start an ordinary line with nothing on it.
   const handleKeyDown = (e: React.KeyboardEvent<HTMLDivElement>) => {
-    if (e.key !== "Enter" || e.shiftKey) return;
     const sel = window.getSelection();
     if (!sel || sel.rangeCount === 0) return;
     const range = sel.getRangeAt(0);
+
+    // Backspace at the start of a checklist item (or Delete / Backspace on an empty one)
+    // removes its checkbox: an empty item disappears and its line joins the previous one,
+    // an item with text keeps the text as a plain line. A checkbox is a non-editable
+    // element, so the browser's own Backspace never takes it out.
+    if ((e.key === "Backspace" || e.key === "Delete") && range.collapsed) {
+      const anchor = range.startContainer instanceof Element ? range.startContainer : range.startContainer.parentElement;
+      const item = anchor?.closest(".note-check-label") as HTMLElement | null;
+      if (item) {
+        const isEmpty = !item.textContent;
+        const before = document.createRange();
+        before.selectNodeContents(item);
+        before.setEnd(range.startContainer, range.startOffset);
+        const atStart = before.toString().length === 0;
+        if ((e.key === "Backspace" && atStart) || (e.key === "Delete" && isEmpty)) {
+          e.preventDefault();
+          const checkbox = item.previousElementSibling;
+          const parent = item.parentNode!;
+          const caret = document.createRange();
+          if (isEmpty) {
+            const marker = document.createTextNode("");
+            checkbox?.before(marker);
+            const prev = (checkbox ?? item).previousSibling;
+            const next = item.nextSibling;
+            checkbox?.remove();
+            item.remove();
+            if (prev instanceof HTMLBRElement) prev.remove();
+            else if (next instanceof HTMLBRElement) next.remove();
+            const idx = Array.prototype.indexOf.call(parent.childNodes, marker);
+            marker.remove();
+            caret.setStart(parent, Math.max(0, idx));
+          } else {
+            const first = item.firstChild!;
+            checkbox?.remove();
+            item.replaceWith(...Array.from(item.childNodes));
+            caret.setStart(first, 0);
+          }
+          caret.collapse(true);
+          sel.removeAllRanges();
+          sel.addRange(caret);
+          readAndSave();
+          return;
+        }
+      }
+    }
+
+    if (e.key !== "Enter" || e.shiftKey) return;
     const label = (range.startContainer instanceof Element ? range.startContainer : range.startContainer.parentElement)
       ?.closest(".note-check-label");
     if (!label) return; // not inside a checklist item — let the browser handle Enter normally

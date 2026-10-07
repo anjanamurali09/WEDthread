@@ -2,7 +2,7 @@ import { createFileRoute, useNavigate, useSearch, Link } from "@tanstack/react-r
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-import { Sparkles, HeartHandshake, Building2, Store, ShoppingBag, ClipboardList } from "lucide-react";
+import { HeartHandshake, Building2, Store, ShoppingBag, ClipboardList } from "lucide-react";
 import { Logo } from "@/components/logo";
 import { z } from "zod";
 import { addRoleForCurrentUser, ROLE_LANDING, type AppRole } from "@/hooks/use-active-role";
@@ -93,8 +93,7 @@ function RolePicker() {
   return (
     <div className="min-h-screen bg-pearl text-ink">
       <div className="max-w-2xl mx-auto px-6 py-14">
-        <Link to="/" className="inline-flex items-center gap-2">
-          <span className="grid h-9 w-9 place-items-center rounded-full bg-cherry text-pearl"><Sparkles className="h-4 w-4" /></span>
+        <Link to="/" data-static className="inline-flex items-center gap-2">
           <Logo />
         </Link>
 

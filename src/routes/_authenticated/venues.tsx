@@ -78,7 +78,7 @@ function VenuesPage() {
       <div className="flex flex-wrap gap-2 mb-6">
         <div className="relative flex-1 min-w-[220px]">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-          <input value={q} onChange={(e) => setQ(e.target.value)} placeholder="Search by name…" className="w-full rounded-full border border-line pl-10 pr-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-cherry bg-pearl" />
+          <input value={q} onChange={(e) => setQ(e.target.value)} placeholder="Search by name" className="w-full rounded-full border border-line pl-10 pr-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-cherry bg-pearl" />
         </div>
         <div className="relative flex-1 min-w-[220px]">
           <MapPin className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />

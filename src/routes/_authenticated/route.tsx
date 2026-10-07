@@ -7,8 +7,8 @@ export const Route = createFileRoute("/_authenticated")({
     const { data, error } = await supabase.auth.getUser();
     if (error || !data.user) throw redirect({ to: "/auth" });
 
-    // If the user has no role yet (e.g. just signed up with email+google),
-    // send them to the role picker — except when they're already there.
+    // If the user has no role yet (e.g. just signed up), send them to the
+    // role picker — except when they're already there.
     if (!location.pathname.startsWith("/auth")) {
       const { data: roles } = await supabase
         .from("user_roles")

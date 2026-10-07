@@ -5,7 +5,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useCurrentWedding } from "@/lib/wedding-hooks";
 import { useOnboardingDraft } from "@/hooks/use-onboarding-draft";
 import { toast } from "sonner";
-import { Sparkles, ArrowRight, Check, Loader2 } from "lucide-react";
+import { ArrowRight, Check, Loader2 } from "lucide-react";
 import { Logo } from "@/components/logo";
 
 export const Route = createFileRoute("/_authenticated/onboarding")({ component: Onboarding });
@@ -104,7 +104,6 @@ function Onboarding() {
     <div className="min-h-screen bg-paper flex items-center justify-center px-6 py-16">
       <div className="max-w-2xl w-full">
         <div className="flex items-center gap-2 mb-8">
-          <span className="grid h-9 w-9 place-items-center rounded-full bg-clay text-paper"><Sparkles className="h-4 w-4" /></span>
           <Logo />
         </div>
         <p className="text-sm uppercase tracking-[0.2em] text-clay">Start your wedding</p>

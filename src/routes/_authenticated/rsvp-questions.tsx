@@ -1,20 +1,35 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
+import Papa from "papaparse";
 import { AppShell } from "@/components/app-shell";
-import { useCurrentWedding, useEvents, useGuests, useRsvpQuestions, useRsvpResponses, type RsvpQuestion, type Event, type Guest, type Wedding } from "@/lib/wedding-hooks";
+import { useCurrentWedding, useEvents, useGuests, useInvites, useRsvpQuestions, useRsvpResponses, type RsvpQuestion, type Event, type Guest, type Wedding, type Invite } from "@/lib/wedding-hooks";
+import { summarizeGuestRsvps, guestInvites, isGuestAttending, isGuestResponded } from "@/lib/rsvp-stats";
 import { ShareRsvpDialog } from "@/components/share-rsvp-dialog";
 import { supabase } from "@/integrations/supabase/client";
 import { useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
-import { Plus, Trash2, X, GripVertical, CheckCircle2, ListFilter, Type as TypeIcon, Sparkles, ChevronDown, Check, Lock, Eye, Share2, Table2, Columns3 } from "lucide-react";
+import {
+  Plus, Trash2, X, GripVertical, CheckCircle2, ListFilter, Type as TypeIcon, ChevronDown, Check, Lock, Eye, Share2, Table2, Columns3,
+  XCircle, Clock, Search, ChevronRight, Download, Users, Send,
+} from "lucide-react";
 import { DndContext, closestCenter, PointerSensor, useSensor, useSensors, type DragEndEvent } from "@dnd-kit/core";
 import { SortableContext, arrayMove, useSortable, verticalListSortingStrategy } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
 import { cn, formatNumber } from "@/lib/utils";
 import { ConfirmDialog } from "@/components/confirm-dialog";
-import { RsvpPageBody, rsvpAnswerKey, DEFAULT_ATTENDANCE_TEXT, DEFAULT_ACCEPT_LABEL, DEFAULT_DECLINE_LABEL, DEFAULT_MAYBE_LABEL, type RsvpEventRow, type RsvpQuestionRow, type RsvpSaveStatus } from "@/components/rsvp-form";
+import { RsvpPageBody, rsvpAnswerKey, DEFAULT_ATTENDANCE_TEXT, DEFAULT_ACCEPT_LABEL, DEFAULT_DECLINE_LABEL, DEFAULT_MAYBE_LABEL, type RsvpEventRow, type RsvpQuestionRow, type RsvpSaveStatus, type RsvpMode } from "@/components/rsvp-form";
+import { Sheet, SheetContent } from "@/components/ui/sheet";
+import { CustomColorButton } from "@/components/custom-color";
 
 export const Route = createFileRoute("/_authenticated/rsvp-questions")({ component: RsvpQuestionsPage });
+
+// Mirrors the wording the couple set on the RSVP builder, same as guests.tsx's own copy of this.
+function rsvpStatusLabel(status: string, wedding?: Wedding | null): string {
+  if (status === "attending") return wedding?.attendance_accept_label || DEFAULT_ACCEPT_LABEL;
+  if (status === "declined") return wedding?.attendance_decline_label || DEFAULT_DECLINE_LABEL;
+  if (status === "maybe") return wedding?.attendance_maybe_label || DEFAULT_MAYBE_LABEL;
+  return "Pending";
+}
 
 type QuestionType = RsvpQuestion["question_type"];
 
@@ -77,6 +92,7 @@ function RsvpQuestionsPage() {
   const { data: wedding } = useCurrentWedding();
   const { data: events = [] } = useEvents(wedding?.id);
   const { data: guests = [] } = useGuests(wedding?.id);
+  const { data: invites = [] } = useInvites(wedding?.id);
   const { data: questions = [], isLoading } = useRsvpQuestions(wedding?.id);
   const qc = useQueryClient();
   const [editing, setEditing] = useState<Partial<RsvpQuestion> | null>(null);
@@ -142,7 +158,7 @@ function RsvpQuestionsPage() {
     setConfirmDeleteId(null);
   };
 
-  const updateAttendanceSettings = async (patch: Partial<Pick<Wedding, "attendance_question_text" | "attendance_allow_maybe" | "attendance_accept_label" | "attendance_decline_label" | "attendance_maybe_label">>) => {
+  const updateAttendanceSettings = async (patch: Partial<Pick<Wedding, "attendance_question_text" | "attendance_allow_maybe" | "attendance_accept_label" | "attendance_decline_label" | "attendance_maybe_label" | "rsvp_mode">>) => {
     if (!wedding) return;
     const { error } = await supabase.from("weddings").update(patch).eq("id", wedding.id);
     if (error) return toast.error(error.message);
@@ -158,7 +174,7 @@ function RsvpQuestionsPage() {
       actions={
         <div className="flex items-center gap-2">
           <button onClick={() => setResponsesOpen(true)} className="inline-flex items-center gap-2 rounded-full border border-line/70 bg-paper px-5 py-2.5 text-sm hover:bg-stone cursor-pointer">
-            <Table2 className="h-4 w-4" /> See responses
+            <Table2 className="h-4 w-4" /> Track responses
           </button>
           <button onClick={() => setPreviewOpen(true)} className="inline-flex items-center gap-2 rounded-full border border-line/70 bg-paper px-5 py-2.5 text-sm hover:bg-stone cursor-pointer">
             <Eye className="h-4 w-4" /> Preview
@@ -211,7 +227,7 @@ function RsvpQuestionsPage() {
         <ShareRsvpDialog wedding={wedding} guests={guests} onClose={() => setShareOpen(false)} />
       )}
       {responsesOpen && wedding && (
-        <RsvpResponsesView wedding={wedding} events={events} guests={guests} questions={questions} onClose={() => setResponsesOpen(false)} />
+        <RsvpResponsesView wedding={wedding} events={events} guests={guests} invites={invites} questions={questions} onClose={() => setResponsesOpen(false)} />
       )}
       {confirmDeleteId && (() => {
         const q = questions.find((qq) => qq.id === confirmDeleteId);
@@ -230,7 +246,7 @@ function RsvpQuestionsPage() {
 }
 
 function AttendanceSettingsCard({ wedding, onUpdate }: {
-  wedding: Wedding; onUpdate: (patch: Partial<Pick<Wedding, "attendance_question_text" | "attendance_allow_maybe" | "attendance_accept_label" | "attendance_decline_label" | "attendance_maybe_label">>) => void;
+  wedding: Wedding; onUpdate: (patch: Partial<Pick<Wedding, "attendance_question_text" | "attendance_allow_maybe" | "attendance_accept_label" | "attendance_decline_label" | "attendance_maybe_label" | "rsvp_mode">>) => void;
 }) {
   const [text, setText] = useState(wedding.attendance_question_text || DEFAULT_ATTENDANCE_TEXT);
   const [acceptLabel, setAcceptLabel] = useState(wedding.attendance_accept_label || DEFAULT_ACCEPT_LABEL);
@@ -283,6 +299,24 @@ function AttendanceSettingsCard({ wedding, onUpdate }: {
             className="h-3.5 w-3.5 accent-sage-deep cursor-pointer" />
           Also show a "Maybe" option (Accept / Decline only by default)
         </label>
+
+        <div className="mt-4 pt-4 border-t border-line/60">
+          <p className="text-sm uppercase tracking-widest text-muted-foreground">How guests RSVP</p>
+          <div className="mt-2 grid grid-cols-2 gap-2">
+            <button type="button" onClick={() => onUpdate({ rsvp_mode: "per_event" })}
+              className={cn("text-left rounded-lg border px-3 py-2.5 text-sm transition-colors cursor-pointer",
+                (wedding.rsvp_mode ?? "per_event") === "per_event" ? "border-sage-deep bg-sage-soft/40" : "border-line/70 hover:bg-stone")}>
+              <span className="font-medium">Per event</span>
+              <span className="block text-sm text-muted-foreground mt-0.5">Guests respond separately to each event they're invited to.</span>
+            </button>
+            <button type="button" onClick={() => onUpdate({ rsvp_mode: "single" })}
+              className={cn("text-left rounded-lg border px-3 py-2.5 text-sm transition-colors cursor-pointer",
+                wedding.rsvp_mode === "single" ? "border-sage-deep bg-sage-soft/40" : "border-line/70 hover:bg-stone")}>
+              <span className="font-medium">One RSVP</span>
+              <span className="block text-sm text-muted-foreground mt-0.5">One overall response covers every event they're invited to.</span>
+            </button>
+          </div>
+        </div>
 
         <div className="mt-4 pt-4 border-t border-line/60">
           <p className="text-sm uppercase tracking-widest text-muted-foreground">Button labels</p>
@@ -377,6 +411,7 @@ function RsvpGuestPreview({ wedding, events, questions, onClose }: {
           attendanceQuestionText={wedding.attendance_question_text || DEFAULT_ATTENDANCE_TEXT}
           allowMaybe={wedding.attendance_allow_maybe ?? false}
           acceptLabel={wedding.attendance_accept_label} declineLabel={wedding.attendance_decline_label} maybeLabel={wedding.attendance_maybe_label}
+          rsvpMode={(wedding.rsvp_mode as RsvpMode) ?? "per_event"}
           eventRows={eventRows} questions={questionRows}
           answers={answers} saveStatus={saveStatus} rsvpSaveStatus={rsvpSaveStatus}
           submitted={submitted} submitting={false} submitError={null}
@@ -388,14 +423,114 @@ function RsvpGuestPreview({ wedding, events, questions, onClose }: {
   );
 }
 
+type ResponsesTab = "question" | "guest";
+
+// Bright, saturated pairs for the attending/declined bars and stats — kept
+// independent of the app's own muted brand palette (cherry/sage-deep here
+// both actually render as blue, which is why the very first version of
+// this view read as flat and monochrome despite the icon colors looking
+// "set"). A couple can pick whichever pair reads clearest against their
+// own wedding colors.
+type ResponsesTheme = { name: string; positive: string; negative: string };
+const RESPONSES_THEMES: ResponsesTheme[] = [
+  { name: "Classic", positive: "#22c55e", negative: "#ef4444" },
+  { name: "Ocean", positive: "#3b82f6", negative: "#f97316" },
+  { name: "Berry", positive: "#a855f7", negative: "#ec4899" },
+  { name: "Meadow", positive: "#10b981", negative: "#f43f5e" },
+  { name: "Sunset", positive: "#f59e0b", negative: "#8b5cf6" },
+  { name: "Blossom", positive: "#f9a8d4", negative: "#93c5fd" },
+  { name: "Mint", positive: "#5eead4", negative: "#fda4af" },
+  { name: "Lilac", positive: "#c4b5fd", negative: "#fdba74" },
+  { name: "Coral", positive: "#fb923c", negative: "#38bdf8" },
+  { name: "Forest", positive: "#16a34a", negative: "#b91c1c" },
+];
+const RESPONSES_THEME_KEY = "wedthread_rsvp_theme";
+
+function ColorThemePicker({ theme, onChange, custom, onCustomChange }: { theme: ResponsesTheme; onChange: (t: ResponsesTheme) => void; custom: ResponsesTheme; onCustomChange: (t: ResponsesTheme) => void }) {
+  const [open, setOpen] = useState(false);
+  return (
+    <div className="relative">
+      <button type="button" onClick={() => setOpen((v) => !v)}
+        className="inline-flex items-center gap-2 rounded-full border border-line px-3 py-1.5 text-sm hover:bg-stone cursor-pointer">
+        <span className="inline-flex -space-x-1">
+          <span className="h-3 w-3 rounded-full border border-white" style={{ backgroundColor: theme.positive }} />
+          <span className="h-3 w-3 rounded-full border border-white" style={{ backgroundColor: theme.negative }} />
+        </span>
+        <ChevronDown className={cn("h-3.5 w-3.5 text-muted-foreground transition-transform", open && "rotate-180")} />
+      </button>
+      {open && (
+        <>
+          <div className="fixed inset-0 z-10" onClick={() => setOpen(false)} />
+          <div className="absolute right-0 mt-2 z-20 w-44 max-h-72 overflow-y-auto rounded-2xl border border-line bg-white shadow-lg p-1.5">
+            {RESPONSES_THEMES.map((t) => (
+              <button key={t.name} type="button" onClick={() => { onChange(t); setOpen(false); }}
+                className="w-full flex items-center gap-2 px-3 py-2 text-sm rounded-xl hover:bg-stone cursor-pointer">
+                <span className="inline-flex -space-x-1 shrink-0">
+                  <span className="h-3 w-3 rounded-full border border-white" style={{ backgroundColor: t.positive }} />
+                  <span className="h-3 w-3 rounded-full border border-white" style={{ backgroundColor: t.negative }} />
+                </span>
+                <span className="flex-1 text-left">{t.name}</span>
+                {t.name === theme.name && <Check className="h-3.5 w-3.5 text-ink shrink-0" />}
+              </button>
+            ))}
+            {/* Custom: pick any two colours (attending / declined) by hex code or colour wheel. */}
+            <div className="px-3 py-2 border-t border-line/60 mt-1">
+              <p className="flex items-center justify-between text-sm">Custom {theme.name === "Custom" && <Check className="h-3.5 w-3.5 text-ink" />}</p>
+              <div className="mt-1.5 flex items-center gap-1.5">
+                <CustomColorButton className="h-4 w-4" value={custom.positive} active title="Attending colour"
+                  onChange={(hex) => onCustomChange({ ...custom, positive: hex })} />
+                <CustomColorButton className="h-4 w-4" value={custom.negative} active title="Declined colour"
+                  onChange={(hex) => onCustomChange({ ...custom, negative: hex })} />
+              </div>
+            </div>
+          </div>
+        </>
+      )}
+    </div>
+  );
+}
+
 // One column per (question, event) pair — same granularity rsvp_responses actually
 // keys answers by (see rsvpAnswerKey: question_id + event_id), so a question scoped
 // to three events genuinely has up to three independent answers per guest, and this
 // shows exactly that rather than collapsing them into one ambiguous cell.
-function RsvpResponsesView({ wedding, events, guests, questions, onClose }: {
-  wedding: Wedding; events: Event[]; guests: Guest[]; questions: RsvpQuestion[]; onClose: () => void;
+function RsvpResponsesView({ wedding, events, guests, invites, questions, onClose }: {
+  wedding: Wedding; events: Event[]; guests: Guest[]; invites: Invite[]; questions: RsvpQuestion[]; onClose: () => void;
 }) {
   const { data: responses = [], isLoading } = useRsvpResponses(wedding.id);
+  const [tab, setTab] = useState<ResponsesTab>("question");
+  const [search, setSearch] = useState("");
+  const [expanded, setExpanded] = useState<string | null>(null);
+  const [customTheme, setCustomTheme] = useState<ResponsesTheme>(() => {
+    try {
+      const raw = JSON.parse(localStorage.getItem(`${RESPONSES_THEME_KEY}_custom`) ?? "null");
+      if (raw?.positive && raw?.negative) return { name: "Custom", positive: raw.positive, negative: raw.negative };
+    } catch {}
+    return { ...RESPONSES_THEMES[0], name: "Custom" };
+  });
+  const [theme, setTheme] = useState<ResponsesTheme>(() => {
+    try {
+      const saved = localStorage.getItem(RESPONSES_THEME_KEY);
+      if (saved === "Custom") return customTheme;
+      return RESPONSES_THEMES.find((t) => t.name === saved) ?? RESPONSES_THEMES[0];
+    } catch { return RESPONSES_THEMES[0]; }
+  });
+  const setThemeAndSave = (t: ResponsesTheme) => {
+    setTheme(t);
+    try { localStorage.setItem(RESPONSES_THEME_KEY, t.name); } catch {}
+  };
+  const setCustomAndSave = (t: ResponsesTheme) => {
+    setCustomTheme(t);
+    try { localStorage.setItem(`${RESPONSES_THEME_KEY}_custom`, JSON.stringify({ positive: t.positive, negative: t.negative })); } catch {}
+    setThemeAndSave(t);
+  };
+  const [expandedGroups, setExpandedGroups] = useState<Set<string>>(new Set());
+  const toggleGroup = (key: string) => setExpandedGroups((prev) => {
+    const next = new Set(prev);
+    if (next.has(key)) next.delete(key); else next.add(key);
+    return next;
+  });
+  const [guestStatusFilter, setGuestStatusFilter] = useState<"attending" | "declined" | "pending" | null>(null);
 
   const columns = useMemo(() => {
     const cols: { key: string; questionId: string; eventId: string | null; label: string; sub: string }[] = [];
@@ -417,55 +552,465 @@ function RsvpResponsesView({ wedding, events, guests, questions, onClose }: {
     return m;
   }, [responses]);
 
+  // Whole-wedding attendance: a guest counts once, same rule guests.tsx and
+  // the Events cards already use (accepting even one event → attending;
+  // "responded" only once every event they're invited to has a firm
+  // answer). Declined computed directly rather than as responded-minus-
+  // attending, since a guest who accepted one event but hasn't answered
+  // another yet is "attending" without being "responded" — subtraction
+  // would silently go wrong there.
+  const overall = useMemo(() => summarizeGuestRsvps(guests.map((g) => g.id), invites), [guests, invites]);
+  const overallDeclined = useMemo(() => {
+    let n = 0;
+    for (const g of guests) {
+      const relevant = guestInvites(g.id, invites);
+      if (relevant.length && isGuestResponded(relevant) && !isGuestAttending(relevant)) n++;
+    }
+    return n;
+  }, [guests, invites]);
+  const pctResponded = overall.invited ? Math.round((overall.responded / overall.invited) * 100) : 0;
+
+  // One card per event's own attendance question — this app asks
+  // attendance per ceremony (not one single wedding-wide RSVP), so that's
+  // the natural unit here rather than forcing a single combined number.
+  const perEvent = useMemo(() => events.map((e) => {
+    const s = summarizeGuestRsvps(guests.map((g) => g.id), invites, e.id);
+    let declined = 0;
+    for (const g of guests) {
+      const relevant = guestInvites(g.id, invites, e.id);
+      if (relevant.length && isGuestResponded(relevant) && !isGuestAttending(relevant)) declined++;
+    }
+    return { event: e, ...s, declined };
+  }), [events, guests, invites]);
+
+  // Per-question breakdown — the guest "pool" a question is measured against
+  // is whoever's invited to its event (or every guest, for a wedding-wide
+  // question), since asking "how many answered" only makes sense relative to
+  // who could have been asked at all.
+  const questionStats = useMemo(() => {
+    return columns.map((col) => {
+      const question = questions.find((q) => q.id === col.questionId)!;
+      const pool = col.eventId
+        ? guests.filter((g) => invites.some((i) => i.guest_id === g.id && i.event_id === col.eventId))
+        : guests;
+      const withAnswers = pool
+        .map((g) => ({ guest: g, answer: answerMap.get(`${g.id}:${col.questionId}:${col.eventId ?? "global"}`) ?? "" }))
+        .filter((x) => x.answer.trim() !== "");
+      const hasOptions = (question.question_type === "multiple_choice" || question.question_type === "yes_no") && (question.options?.length ?? 0) > 0;
+      const optionCounts = hasOptions
+        ? question.options!.map((o) => ({ label: o, count: withAnswers.filter((x) => x.answer === o).length }))
+        : null;
+      return { col, question, total: pool.length, answered: withAnswers.length, optionCounts, withAnswers };
+    });
+  }, [columns, questions, guests, invites, answerMap]);
+
+  const filteredQuestionStats = useMemo(() => {
+    const q = search.trim().toLowerCase();
+    if (!q) return questionStats;
+    return questionStats.filter((s) => s.col.label.toLowerCase().includes(q));
+  }, [questionStats, search]);
+
+  // One overall status per guest, same rule as everywhere else in this
+  // file: any accepted event → attending; every invited event answered but
+  // none accepted → declined; anything else → pending.
+  const guestStatus = (guestId: string): "attending" | "declined" | "pending" => {
+    const relevant = guestInvites(guestId, invites);
+    if (!relevant.length) return "pending";
+    if (isGuestAttending(relevant)) return "attending";
+    if (isGuestResponded(relevant)) return "declined";
+    return "pending";
+  };
+
+  // Guests grouped by household — a solo guest is its own singleton group —
+  // so a family/couple renders as one expandable card, matching how the
+  // couple already thinks about their household groups on the Guests page.
+  const guestGroups = useMemo(() => {
+    const groups = new Map<string, Guest[]>();
+    const order: string[] = [];
+    for (const g of guests) {
+      const key = g.household_group ? `h:${g.household_group}` : `g:${g.id}`;
+      if (!groups.has(key)) { groups.set(key, []); order.push(key); }
+      groups.get(key)!.push(g);
+    }
+    return order.map((key) => ({ key, label: guests.find((g) => g.household_group && `h:${g.household_group}` === key)?.household_group, members: groups.get(key)! }));
+  }, [guests]);
+
+  const filteredGuestGroups = useMemo(() => {
+    if (!guestStatusFilter) return guestGroups;
+    return guestGroups
+      .map((g) => ({ ...g, members: g.members.filter((m) => guestStatus(m.id) === guestStatusFilter) }))
+      .filter((g) => g.members.length > 0);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [guestGroups, guestStatusFilter, invites]);
+
+  const questionIcon = (type: RsvpQuestion["question_type"]) => QUESTION_TYPES.find((t) => t.value === type)?.icon ?? TypeIcon;
+
+  const AVATAR_COLORS = ["#fbcfe8", "#bfdbfe", "#fde68a", "#bbf7d0", "#ddd6fe", "#fecaca"];
+  const avatarColor = (name: string) => {
+    let h = 0;
+    for (let i = 0; i < name.length; i++) h = (h * 31 + name.charCodeAt(i)) % AVATAR_COLORS.length;
+    return AVATAR_COLORS[h];
+  };
+  const initials = (name: string) => name.trim().split(/\s+/).slice(0, 2).map((p) => p[0]?.toUpperCase() ?? "").join("");
+
+  // One row per guest — RSVP status per event, then every question's
+  // answer — the same information the By-guest cards show, flattened for
+  // a spreadsheet.
+  const exportResponsesCsv = () => {
+    const eventHeaders = events.map((e) => `RSVP — ${e.name}`);
+    const questionHeaders = columns.map((c) => `${c.label} (${c.sub})`);
+    const fields = ["Guest", "Email", ...eventHeaders, ...questionHeaders];
+    const rows = guests.map((g) => {
+      const row: Record<string, string> = { Guest: g.full_name, Email: g.email ?? "" };
+      events.forEach((e) => {
+        const inv = invites.find((i) => i.guest_id === g.id && i.event_id === e.id);
+        row[`RSVP — ${e.name}`] = inv ? inv.rsvp_status : "";
+      });
+      columns.forEach((c) => {
+        row[`${c.label} (${c.sub})`] = answerMap.get(`${g.id}:${c.questionId}:${c.eventId ?? "global"}`) ?? "";
+      });
+      return row;
+    });
+    const csv = Papa.unparse({ fields, data: rows.map((r) => fields.map((f) => r[f] ?? "")) });
+    const blob = new Blob([csv], { type: "text/csv" });
+    const a = document.createElement("a");
+    a.href = URL.createObjectURL(blob); a.download = "rsvp-responses.csv"; a.click();
+  };
+
   return (
-    <div className="fixed inset-0 z-50 bg-ink/60 flex items-center justify-center p-4" onClick={onClose}>
-      <div className="bg-paper rounded-[32px] w-full max-w-6xl max-h-[85vh] flex flex-col shadow-2xl border border-line/70" onClick={(e) => e.stopPropagation()}>
+    <Sheet open onOpenChange={(v) => { if (!v) onClose(); }}>
+      <SheetContent side="right" className="w-full sm:max-w-2xl bg-white p-0 flex flex-col gap-0">
         <div className="flex items-center justify-between px-6 py-4 border-b border-line/60 shrink-0">
           <div>
-            <h3 className="font-serif text-2xl">Responses</h3>
-            <p className="text-sm text-muted-foreground mt-0.5">Exactly what each guest submitted, one column per question.</p>
+            <h3 className="font-serif text-2xl">Track responses</h3>
+            <p className="text-sm text-muted-foreground mt-0.5">How RSVPs and questions are coming along.</p>
           </div>
-          <button onClick={onClose} className="text-muted-foreground hover:text-ink cursor-pointer"><X className="h-4 w-4" /></button>
         </div>
-        <div className="flex-1 overflow-auto">
-          {isLoading ? (
-            <p className="p-6 text-sm text-muted-foreground">Loading…</p>
-          ) : guests.length === 0 ? (
-            <p className="p-6 text-sm text-muted-foreground">No guests yet.</p>
-          ) : columns.length === 0 ? (
-            <p className="p-6 text-sm text-muted-foreground">No questions yet — add one to start collecting responses.</p>
-          ) : (
-            <table className="w-full text-xs">
-              <thead className="bg-sage-soft text-left text-muted-foreground sticky top-0">
-                <tr>
-                  <th className="px-4 py-3 whitespace-nowrap uppercase tracking-widest">Guest</th>
-                  {columns.map((c) => (
-                    <th key={c.key} className="px-4 py-3 whitespace-nowrap align-top">
-                      <p className="font-sans text-ink normal-case">{c.label}</p>
-                      <p className="mt-0.5 uppercase tracking-widest">{c.sub}</p>
-                    </th>
+
+        {isLoading ? (
+          <p className="p-6 text-sm text-muted-foreground">Loading…</p>
+        ) : guests.length === 0 ? (
+          <p className="p-6 text-sm text-muted-foreground">No guests yet.</p>
+        ) : (
+          <>
+            <div className="flex-1 overflow-y-auto p-6">
+              <div className="flex items-center justify-between gap-3">
+                <p className="text-sm uppercase tracking-widest text-muted-foreground">At a glance</p>
+                <ColorThemePicker theme={theme} onChange={setThemeAndSave} custom={customTheme} onCustomChange={setCustomAndSave} />
+              </div>
+              <div className="mt-3 rounded-2xl border border-line p-4">
+                <GlancePieChart attending={overall.attending} declined={overallDeclined} pending={overall.pending} theme={theme} />
+              </div>
+
+              {(() => {
+                const pendingGuests = guests.filter((g) => guestStatus(g.id) === "pending");
+                if (pendingGuests.length === 0) return null;
+                const names = pendingGuests.slice(0, 4).map((g) => g.full_name);
+                return (
+                  <div className="mt-3 rounded-2xl border border-line p-5 text-center">
+                    <div className="flex justify-center -space-x-2">
+                      {pendingGuests.slice(0, 4).map((g) => (
+                        <span key={g.id} className="h-9 w-9 rounded-full border-2 border-white grid place-items-center text-xs font-semibold text-ink" style={{ backgroundColor: avatarColor(g.full_name) }}>
+                          {initials(g.full_name)}
+                        </span>
+                      ))}
+                      {pendingGuests.length > 4 && (
+                        <span className="h-9 w-9 rounded-full border-2 border-white bg-stone grid place-items-center text-xs font-semibold text-muted-foreground">+{pendingGuests.length - 4}</span>
+                      )}
+                    </div>
+                    <p className="mt-3 text-sm font-medium">
+                      {names[0]}{pendingGuests.length > 1 ? ` and ${formatNumber(pendingGuests.length - 1)} other${pendingGuests.length - 1 === 1 ? "" : "s"}` : ""} {pendingGuests.length === 1 ? "hasn't" : "haven't"} RSVP'd yet.
+                    </p>
+                    <Link to="/messages" search={{ remind: true }}
+                      className="mt-4 inline-flex items-center gap-2 rounded-full bg-ink text-paper px-5 py-2.5 text-sm font-medium hover:bg-clay cursor-pointer">
+                      <Send className="h-3.5 w-3.5" /> Remind them
+                    </Link>
+                  </div>
+                );
+              })()}
+              <div className="mt-4">
+                <div className="h-2 rounded-full bg-stone overflow-hidden">
+                  <div className="h-full rounded-full" style={{ width: `${pctResponded}%`, backgroundColor: theme.positive }} />
+                </div>
+                <p className="mt-1.5 text-sm text-muted-foreground">{pctResponded}% responded</p>
+              </div>
+
+              {perEvent.length > 0 && (
+                <div className="mt-6 grid gap-3">
+                  {perEvent.map(({ event, invited, attending, declined, pending }) => (
+                    <div key={event.id} className="rounded-2xl border border-line p-4">
+                      <div className="flex items-center justify-between gap-3">
+                        <p className="font-sans font-semibold">{event.name}</p>
+                        <span className="text-xs text-muted-foreground">{formatNumber(invited)} invited</span>
+                      </div>
+                      {invited > 0 && (
+                        <div className="mt-2 h-2 rounded-full bg-stone overflow-hidden flex">
+                          <div className="h-full" style={{ width: `${(attending / invited) * 100}%`, backgroundColor: theme.positive }} />
+                          <div className="h-full" style={{ width: `${(declined / invited) * 100}%`, backgroundColor: theme.negative }} />
+                        </div>
+                      )}
+                      <div className="mt-2 flex items-center gap-4 text-xs text-muted-foreground">
+                        <span className="inline-flex items-center gap-1" style={{ color: theme.positive }}><CheckCircle2 className="h-3 w-3" /> {formatNumber(attending)}</span>
+                        <span className="inline-flex items-center gap-1" style={{ color: theme.negative }}><XCircle className="h-3 w-3" /> {formatNumber(declined)}</span>
+                        <span className="inline-flex items-center gap-1"><Clock className="h-3 w-3" /> {formatNumber(pending)}</span>
+                      </div>
+                    </div>
                   ))}
-                </tr>
-              </thead>
-              <tbody>
-                {guests.map((g) => (
-                  <tr key={g.id} className="border-t border-line">
-                    <td className="px-4 py-3 font-medium whitespace-nowrap">{g.full_name}</td>
-                    {columns.map((c) => {
-                      const answer = answerMap.get(`${g.id}:${c.questionId}:${c.eventId ?? "global"}`);
+                </div>
+              )}
+
+              <div className="mt-8 flex items-center justify-between gap-3 flex-wrap">
+                <p className="text-sm uppercase tracking-widest text-muted-foreground">Browse responses</p>
+                <div className="flex items-center gap-2">
+                  <button type="button" onClick={exportResponsesCsv}
+                    className="inline-flex items-center gap-1.5 rounded-full border border-line px-3 py-1.5 text-sm hover:bg-stone cursor-pointer">
+                    <Download className="h-3.5 w-3.5" /> Export
+                  </button>
+                  <div className="inline-flex rounded-full border border-line p-0.5">
+                    <button type="button" onClick={() => setTab("question")}
+                      className={cn("rounded-full px-4 py-1.5 text-sm cursor-pointer transition-colors", tab === "question" ? "bg-ink text-paper" : "text-muted-foreground hover:text-ink")}>
+                      By question
+                    </button>
+                    <button type="button" onClick={() => setTab("guest")}
+                      className={cn("rounded-full px-4 py-1.5 text-sm cursor-pointer transition-colors", tab === "guest" ? "bg-ink text-paper" : "text-muted-foreground hover:text-ink")}>
+                      By guest
+                    </button>
+                  </div>
+                </div>
+              </div>
+
+              {tab === "question" ? (
+                columns.length === 0 ? (
+                  <p className="mt-4 text-sm text-muted-foreground">No questions yet — add one to start collecting responses.</p>
+                ) : (
+                  <>
+                    <div className="relative mt-3">
+                      <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
+                      <input value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Search questions"
+                        className="w-full rounded-full border border-line bg-paper pl-9 pr-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-clay" />
+                    </div>
+                    <div className="mt-3 grid gap-3">
+                      {filteredQuestionStats.map(({ col, total, answered, optionCounts, withAnswers }) => (
+                        <div key={col.key} className="rounded-2xl border border-line p-4">
+                          <div className="flex items-start justify-between gap-3">
+                            <div className="min-w-0">
+                              <p className="font-sans font-semibold">{col.label}</p>
+                              <p className="text-xs text-muted-foreground mt-0.5">{col.sub}</p>
+                            </div>
+                            <span className="shrink-0 text-xs rounded-full bg-stone px-2.5 py-1 whitespace-nowrap">{formatNumber(answered)}/{formatNumber(total)} responded</span>
+                          </div>
+
+                          {optionCounts ? (
+                            <div className="mt-3 grid gap-2">
+                              {optionCounts.map((o) => (
+                                <div key={o.label}>
+                                  <div className="flex items-center justify-between text-sm">
+                                    <span>{o.label}</span>
+                                    <span className="text-muted-foreground">{formatNumber(o.count)}</span>
+                                  </div>
+                                  <div className="mt-1 h-1.5 rounded-full bg-stone overflow-hidden">
+                                    <div className="h-full rounded-full" style={{ width: `${answered ? (o.count / answered) * 100 : 0}%`, backgroundColor: theme.positive }} />
+                                  </div>
+                                </div>
+                              ))}
+                            </div>
+                          ) : (
+                            <div className="mt-3">
+                              <div className="h-1.5 rounded-full bg-stone overflow-hidden">
+                                <div className="h-full rounded-full" style={{ width: `${total ? (answered / total) * 100 : 0}%`, backgroundColor: theme.positive }} />
+                              </div>
+                            </div>
+                          )}
+
+                          {withAnswers.length > 0 && (
+                            <button type="button" onClick={() => setExpanded(expanded === col.key ? null : col.key)}
+                              className="mt-3 inline-flex items-center gap-1 text-sm text-clay hover:underline cursor-pointer">
+                              {expanded === col.key ? "Hide" : "View"} {formatNumber(withAnswers.length)} response{withAnswers.length === 1 ? "" : "s"}
+                              <ChevronRight className={cn("h-3.5 w-3.5 transition-transform", expanded === col.key && "rotate-90")} />
+                            </button>
+                          )}
+                          {expanded === col.key && (
+                            <div className="mt-2 grid gap-1.5 max-h-48 overflow-y-auto pr-1">
+                              {withAnswers.map(({ guest, answer }) => (
+                                <div key={guest.id} className="flex items-start justify-between gap-3 text-sm rounded-xl bg-stone/50 px-3 py-2">
+                                  <span className="font-medium shrink-0">{guest.full_name}</span>
+                                  <span className="text-muted-foreground text-right">{answer}</span>
+                                </div>
+                              ))}
+                            </div>
+                          )}
+                        </div>
+                      ))}
+                    </div>
+                  </>
+                )
+              ) : (
+                <>
+                  <div className="mt-3 flex items-center gap-2 flex-wrap">
+                    {(["attending", "declined", "pending"] as const).map((s) => {
+                      const count = guests.filter((g) => guestStatus(g.id) === s).length;
+                      const active = guestStatusFilter === s;
+                      const color = s === "attending" ? theme.positive : s === "declined" ? theme.negative : "#6b7280";
+                      const Icon = s === "attending" ? CheckCircle2 : s === "declined" ? XCircle : Clock;
                       return (
-                        <td key={c.key} className="px-4 py-3 whitespace-nowrap">
-                          {answer ? answer : <span className="text-muted-foreground">—</span>}
-                        </td>
+                        <button key={s} type="button" onClick={() => setGuestStatusFilter(active ? null : s)}
+                          className="inline-flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-sm cursor-pointer transition-colors"
+                          style={active ? { backgroundColor: color, borderColor: color, color: "#fff" } : { borderColor: "var(--line)" }}>
+                          <Icon className="h-3.5 w-3.5" style={active ? undefined : { color }} />
+                          {s === "attending" ? "Attending" : s === "declined" ? "Declined" : "Awaiting"} ({formatNumber(count)})
+                        </button>
                       );
                     })}
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          )}
+                    <span className="text-xs text-muted-foreground ml-auto">
+                      {formatNumber(filteredGuestGroups.length)} group{filteredGuestGroups.length === 1 ? "" : "s"} · {formatNumber(filteredGuestGroups.reduce((n, g) => n + g.members.length, 0))} guests
+                    </span>
+                  </div>
+
+                  <div className="mt-3 grid gap-3">
+                    {filteredGuestGroups.map((group) => {
+                      const groupOpen = expandedGroups.has(group.key);
+                      const groupStatuses = group.members.map((m) => guestStatus(m.id));
+                      const groupOverall: "attending" | "declined" | "pending" = groupStatuses.includes("attending") ? "attending" : groupStatuses.every((s) => s === "declined") ? "declined" : "pending";
+                      const groupColor = groupOverall === "attending" ? theme.positive : groupOverall === "declined" ? theme.negative : "#6b7280";
+                      const GroupIcon = groupOverall === "attending" ? CheckCircle2 : groupOverall === "declined" ? XCircle : Clock;
+                      const groupLabel = group.label || group.members.map((m) => m.full_name.split(" ")[0]).join(" & ");
+                      return (
+                        <div key={group.key} className="rounded-2xl border border-line overflow-hidden">
+                          <button type="button" onClick={() => toggleGroup(group.key)}
+                            className="w-full flex items-center gap-3 px-4 py-3 hover:bg-stone/40 transition-colors cursor-pointer">
+                            <span className="flex -space-x-2 shrink-0">
+                              {group.members.slice(0, 4).map((m) => (
+                                <span key={m.id} className="h-7 w-7 rounded-full border-2 border-white grid place-items-center text-[10px] font-semibold text-ink" style={{ backgroundColor: avatarColor(m.full_name) }}>
+                                  {initials(m.full_name)}
+                                </span>
+                              ))}
+                            </span>
+                            <span className="font-semibold text-left flex-1 min-w-0 truncate">{groupLabel}</span>
+                            <span className="shrink-0 grid h-7 w-7 place-items-center rounded-full" style={{ backgroundColor: `${groupColor}26` }}>
+                              <GroupIcon className="h-4 w-4" style={{ color: groupColor }} />
+                            </span>
+                            <ChevronDown className={cn("h-4 w-4 text-muted-foreground shrink-0 transition-transform", groupOpen && "rotate-180")} />
+                          </button>
+
+                          {groupOpen && (
+                            <div className="border-t border-line divide-y divide-line">
+                              {group.members.map((m) => {
+                                const status = guestStatus(m.id);
+                                const color = status === "attending" ? theme.positive : status === "declined" ? theme.negative : "#6b7280";
+                                const StatusIcon = status === "attending" ? CheckCircle2 : status === "declined" ? XCircle : Clock;
+                                const memberInvites = invites.filter((i) => i.guest_id === m.id);
+                                return (
+                                  <div key={m.id} className="px-4 py-3">
+                                    <div className="flex items-center gap-2.5">
+                                      <span className="h-7 w-7 shrink-0 rounded-full grid place-items-center text-[10px] font-semibold text-ink" style={{ backgroundColor: avatarColor(m.full_name) }}>
+                                        {initials(m.full_name)}
+                                      </span>
+                                      <span className="font-medium flex-1 min-w-0 truncate">{m.full_name}</span>
+                                      <StatusIcon className="h-4 w-4 shrink-0" style={{ color }} />
+                                    </div>
+
+                                    <div className="mt-2.5 grid gap-2">
+                                      {memberInvites.map((inv) => {
+                                        const ev = events.find((e) => e.id === inv.event_id);
+                                        const ivColor = inv.rsvp_status === "attending" ? theme.positive : inv.rsvp_status === "declined" ? theme.negative : "#6b7280";
+                                        return (
+                                          <div key={inv.id} className="flex items-center gap-2.5 text-sm">
+                                            <span className="grid h-6 w-6 shrink-0 place-items-center rounded-full bg-stone"><Users className="h-3 w-3 text-muted-foreground" /></span>
+                                            <span className="text-muted-foreground flex-1 min-w-0 truncate">RSVP — {ev?.name ?? "?"}</span>
+                                            <span className="shrink-0 rounded-full px-2.5 py-0.5 text-xs font-medium" style={{ backgroundColor: `${ivColor}1a`, color: ivColor }}>
+                                              {rsvpStatusLabel(inv.rsvp_status, wedding)}
+                                            </span>
+                                          </div>
+                                        );
+                                      })}
+
+                                      {columns
+                                        .filter((c) => !c.eventId || memberInvites.some((i) => i.event_id === c.eventId))
+                                        .map((c) => {
+                                          const question = questions.find((q) => q.id === c.questionId)!;
+                                          const QIcon = questionIcon(question.question_type);
+                                          const answer = answerMap.get(`${m.id}:${c.questionId}:${c.eventId ?? "global"}`);
+                                          return (
+                                            <div key={c.key} className="flex items-start gap-2.5 text-sm">
+                                              <span className="grid h-6 w-6 shrink-0 place-items-center rounded-full bg-stone"><QIcon className="h-3 w-3 text-muted-foreground" /></span>
+                                              <div className="min-w-0 flex-1">
+                                                <p className="text-muted-foreground">Custom: {c.label}</p>
+                                                <p className={cn(answer ? "text-ink" : "text-muted-foreground italic")}>{answer || "No response"}</p>
+                                              </div>
+                                            </div>
+                                          );
+                                        })}
+                                    </div>
+                                  </div>
+                                );
+                              })}
+                            </div>
+                          )}
+                        </div>
+                      );
+                    })}
+                  </div>
+                </>
+              )}
+            </div>
+          </>
+        )}
+      </SheetContent>
+    </Sheet>
+  );
+}
+
+function GlancePieChart({ attending, declined, pending, theme }: {
+  attending: number; declined: number; pending: number; theme: ResponsesTheme;
+}) {
+  const total = attending + declined + pending;
+  const r = 52, cx = 70, cy = 70, circumference = 2 * Math.PI * r;
+  const segments = [
+    { value: attending, color: theme.positive },
+    { value: declined, color: theme.negative },
+    { value: pending, color: "#d1d5db" },
+  ];
+  let cumulative = 0;
+
+  return (
+    <div className="flex items-center gap-6 flex-wrap">
+      <div className="relative h-[140px] w-[140px] shrink-0">
+        <svg viewBox="0 0 140 140" className="h-full w-full -rotate-90">
+          {total === 0 ? (
+            <circle cx={cx} cy={cy} r={r} fill="none" stroke="#e5e7eb" strokeWidth="20" />
+          ) : segments.map((s, i) => {
+            if (s.value === 0) return null;
+            const dash = (s.value / total) * circumference;
+            const el = (
+              <circle key={i} cx={cx} cy={cy} r={r} fill="none" stroke={s.color} strokeWidth="20"
+                strokeDasharray={`${dash} ${circumference - dash}`} strokeDashoffset={-cumulative} />
+            );
+            cumulative += dash;
+            return el;
+          })}
+        </svg>
+        <div className="absolute inset-0 grid place-items-center">
+          <div className="text-center">
+            <p className="font-serif text-2xl">{formatNumber(total)}</p>
+            <p className="text-xs text-muted-foreground">Guests</p>
+          </div>
         </div>
       </div>
+      <div className="grid gap-2.5 flex-1 min-w-[160px]">
+        <LegendRow color={theme.positive} label="Attending" value={attending} />
+        <LegendRow color={theme.negative} label="Declined" value={declined} />
+        <LegendRow color="#9ca3af" label="Awaiting response" value={pending} />
+      </div>
+    </div>
+  );
+}
+
+function LegendRow({ color, label, value }: { color: string; label: string; value: number }) {
+  return (
+    <div className="flex items-center gap-2 text-sm">
+      <span className="h-2.5 w-2.5 rounded-full shrink-0" style={{ backgroundColor: color }} />
+      <span className="flex-1 text-muted-foreground">{label}</span>
+      <span className="font-medium">{formatNumber(value)}</span>
     </div>
   );
 }
@@ -483,7 +1028,7 @@ function QuestionRow({ question, events, onEdit, onDelete }: {
       <button {...attributes} {...listeners} className="cursor-grab active:cursor-grabbing p-1 text-muted-foreground hover:text-ink shrink-0">
         <GripVertical className="h-4 w-4" />
       </button>
-      <span className="grid h-9 w-9 shrink-0 place-items-center rounded-full bg-clay-soft text-clay">
+      <span className="grid h-9 w-9 shrink-0 place-items-center rounded-full bg-ink text-paper">
         <Icon className="h-4 w-4" />
       </span>
       <div className="min-w-0 flex-1">
@@ -494,7 +1039,7 @@ function QuestionRow({ question, events, onEdit, onDelete }: {
           {question.is_required && <span className="text-[10px] uppercase tracking-widest rounded-full bg-cherry/15 px-2 py-0.5 text-cherry">Required</span>}
           {question.depends_on_question_id && <span className="text-[10px] uppercase tracking-widest rounded-full bg-blush-soft px-2 py-0.5 text-ink">Conditional</span>}
           {question.guest_column_label && (
-            <span className="inline-flex items-center gap-1 text-xs uppercase tracking-widest rounded-full bg-clay-soft px-2 py-0.5 text-clay">
+            <span className="inline-flex items-center gap-1 text-xs uppercase tracking-widest rounded-full bg-ink px-2 py-0.5 text-paper">
               <Columns3 className="h-2.5 w-2.5" /> Column: {question.guest_column_label}
             </span>
           )}
@@ -600,7 +1145,6 @@ function QuestionDialog({ question, events, questions, onClose, onSave }: {
       <div className="warm-wash rounded-[32px] max-w-lg w-full p-8 max-h-[90vh] overflow-y-auto shadow-2xl border border-line/70" onClick={(e) => e.stopPropagation()}>
         <div className="flex items-start justify-between">
           <div className="flex items-center gap-2">
-            <span className="grid h-8 w-8 place-items-center rounded-full bg-sage-soft text-sage-deep"><Sparkles className="h-3.5 w-3.5" /></span>
             <h3 className="font-serif text-xl">{question.id ? "Edit question" : "Add question"}</h3>
           </div>
           <button onClick={onClose} className="text-muted-foreground hover:text-ink cursor-pointer"><X className="h-4 w-4" /></button>

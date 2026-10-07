@@ -1,5 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { AppShell } from "@/components/app-shell";
 import {
   useCurrentWedding, useEvents, useExpenses, useBudgetCategories, useBudgetCustomColumns,
@@ -10,7 +10,9 @@ import { useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { Plus, Trash2, Pencil, Check, X, Wallet, ChevronDown, Settings, SlidersHorizontal, Download, PieChart as PieChartIcon, BarChart3, Columns3, DollarSign } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { CustomColorButton } from "@/components/custom-color";
 import { DatePicker } from "@/components/ui/datepicker";
+import { TimePicker } from "@/components/ui/timepicker";
 import { Calendar } from "@/components/ui/calendar";
 import { format } from "date-fns";
 import { CURRENCIES, formatMoney, formatAmountInput, parseAmountInput, formatAmountDisplay, type CurrencyCode } from "@/lib/currency";
@@ -41,11 +43,98 @@ const PAYMENT_METHOD_OPTIONS: { value: string; label: string }[] = [
   { value: "UPI", label: "UPI" }, { value: "Cheque", label: "Cheque" }, { value: "Other", label: "Other" },
 ];
 
-// Pie-slice palette, alternating the app's navy/blue and gold/yellow accents so it
-// reads as part of the same theme rather than a generic rainbow.
-const PIE_COLORS = [
-  "var(--sage-deep)", "var(--rose-deep)", "var(--wine)", "var(--gold-deep)", "var(--cherry)", "var(--periwinkle-deep)",
+// Named chart color themes, same idea as the RSVP tracker's ColorThemePicker
+// — a couple picks one per chart, remembered independently for each of the
+// two breakdown widgets (By category / By paid by) rather than every bar
+// defaulting to a fixed single hue.
+type ChartTheme = { name: string; colors: string[] };
+const CHART_THEMES: ChartTheme[] = [
+  // The app's own palette (ink navy, cherry/sage blues, gold, a neutral
+  // slate) rather than a generic web-safe color — the default, so charts
+  // read as WedThread's own by default.
+  { name: "Brand", colors: ["#243746", "#7FA8D6", "#D9A03D", "#6B7A8F", "#4A7CAD", "#F5DBAE"] },
+  { name: "Classic", colors: ["#22c55e", "#ef4444", "#3b82f6", "#f59e0b", "#a855f7", "#14b8a6"] },
+  { name: "Ocean", colors: ["#3b82f6", "#0ea5e9", "#06b6d4", "#0284c7", "#38bdf8", "#075985"] },
+  { name: "Berry", colors: ["#a855f7", "#ec4899", "#d946ef", "#c026d3", "#f472b6", "#9333ea"] },
+  { name: "Sunset", colors: ["#f59e0b", "#fb923c", "#ef4444", "#f97316", "#facc15", "#dc2626"] },
+  { name: "Meadow", colors: ["#10b981", "#84cc16", "#22c55e", "#65a30d", "#4ade80", "#16a34a"] },
+  { name: "Slate", colors: ["#64748b", "#475569", "#94a3b8", "#334155", "#cbd5e1", "#1e293b"] },
+  { name: "Coral", colors: ["#fb923c", "#38bdf8", "#fbbf24", "#0ea5e9", "#f97316", "#0284c7"] },
+  { name: "Lilac", colors: ["#c4b5fd", "#fdba74", "#a78bfa", "#fb923c", "#8b5cf6", "#f97316"] },
 ];
+const CHART_THEME_KEY = "wedthread_budget_chart_theme";
+
+function ChartColorThemePicker({ theme, onChange, customColors, onCustomChange }: { theme: ChartTheme; onChange: (t: ChartTheme) => void; customColors: string[]; onCustomChange: (colors: string[]) => void }) {
+  const [open, setOpen] = useState(false);
+  return (
+    <div className="relative">
+      <button type="button" onClick={() => setOpen((v) => !v)}
+        className="inline-flex items-center gap-2 rounded-full border border-line px-3 py-1.5 text-sm hover:bg-stone cursor-pointer">
+        <span className="inline-flex -space-x-1">
+          {theme.colors.slice(0, 3).map((c, i) => <span key={i} className="h-3 w-3 rounded-full border border-white" style={{ backgroundColor: c }} />)}
+        </span>
+        <ChevronDown className={cn("h-3.5 w-3.5 text-muted-foreground transition-transform", open && "rotate-180")} />
+      </button>
+      {open && (
+        <>
+          <div className="fixed inset-0 z-10" onClick={() => setOpen(false)} />
+          <div className="absolute right-0 mt-2 z-20 w-44 max-h-72 overflow-y-auto rounded-2xl border border-line bg-white shadow-lg p-1.5">
+            {CHART_THEMES.map((t) => (
+              <button key={t.name} type="button" onClick={() => { onChange(t); setOpen(false); }}
+                className="w-full flex items-center gap-2 px-3 py-2 text-sm rounded-xl hover:bg-stone cursor-pointer">
+                <span className="inline-flex -space-x-1 shrink-0">
+                  {t.colors.slice(0, 3).map((c, i) => <span key={i} className="h-3 w-3 rounded-full border border-white" style={{ backgroundColor: c }} />)}
+                </span>
+                <span className="flex-1 text-left">{t.name}</span>
+                {t.name === theme.name && <Check className="h-3.5 w-3.5 text-ink shrink-0" />}
+              </button>
+            ))}
+            {/* Custom: six slots, each its own hex/colour-wheel picker; editing any slot
+                switches the chart to this custom palette. */}
+            <div className="px-3 py-2 border-t border-line/60 mt-1">
+              <p className="flex items-center justify-between text-sm">Custom {theme.name === "Custom" && <Check className="h-3.5 w-3.5 text-ink" />}</p>
+              <div className="mt-1.5 flex items-center gap-1">
+                {customColors.map((c, i) => (
+                  <CustomColorButton key={i} className="h-4 w-4" value={c} active
+                    onChange={(hex) => onCustomChange(customColors.map((x, j) => (j === i ? hex : x)))} />
+                ))}
+              </div>
+            </div>
+          </div>
+        </>
+      )}
+    </div>
+  );
+}
+
+// Shared by both the insert (addExpense) and the update (edit dialog) paths
+// so a blank field always becomes a real null rather than "" — Postgres
+// rejects "" for date/uuid columns (paid_date/due_date/event_id), which is
+// exactly the "invalid input syntax for type date" error a naive pass-through
+// of the form's empty strings used to produce on save.
+function normalizeExpenseForm(form: {
+  name: string; amount: number; description: string; category: string; status: "pending" | "paid";
+  event_id: string; paid_by: string; payment_method: string; paid_date: string; due_date: string; custom_fields: Record<string, unknown>;
+  reminder_at?: string | null;
+}) {
+  return {
+    name: form.name.trim(),
+    amount: Math.max(0, Math.round(form.amount)),
+    description: form.description.trim() || null,
+    category: form.category || null,
+    status: form.status,
+    event_id: form.event_id || null,
+    paid_by: form.paid_by.trim() || null,
+    payment_method: form.payment_method.trim() || null,
+    paid_date: form.paid_date || null,
+    due_date: form.due_date || null,
+    custom_fields: form.custom_fields as any,
+    // Only touches the reminder columns when a reminder was set or cleared, so saving an expense
+    // that has no reminder never depends on them.
+    ...(form.reminder_at ? { reminder_at: form.reminder_at, reminder_sent_at: null }
+      : form.reminder_at === null ? { reminder_at: null, reminder_sent_at: null } : {}),
+  };
+}
 
 const capitalize = (s: string) => s.replace(/\b\w/g, (c) => c.toUpperCase());
 
@@ -274,6 +363,33 @@ function ExpenseBreakdownWidget({ expenses, events, categories, money, defaultDi
   const [dimension, setDimension] = useState<BreakdownDimension>(defaultDimension);
   const [chartType, setChartType] = useState<"bar" | "pie">("bar");
   const [showBudget, setShowBudget] = useState(false);
+  // Keyed by this widget's own starting dimension (its identity — "By category"
+  // vs "By paid by") so each card remembers its own color choice independently
+  // instead of the two cards sharing one theme.
+  const themeKey = `${CHART_THEME_KEY}_${defaultDimension}`;
+  const [customColors, setCustomColors] = useState<string[]>(() => {
+    try {
+      const raw = JSON.parse(localStorage.getItem(`${themeKey}_custom`) ?? "null");
+      if (Array.isArray(raw) && raw.length === 6) return raw;
+    } catch {}
+    return CHART_THEMES[0].colors;
+  });
+  const [theme, setTheme] = useState<ChartTheme>(() => {
+    try {
+      const saved = localStorage.getItem(themeKey);
+      if (saved === "Custom") return { name: "Custom", colors: customColors };
+      return CHART_THEMES.find((t) => t.name === saved) ?? CHART_THEMES[0];
+    } catch { return CHART_THEMES[0]; }
+  });
+  const setCustomAndSave = (colors: string[]) => {
+    setCustomColors(colors);
+    try { localStorage.setItem(`${themeKey}_custom`, JSON.stringify(colors)); } catch {}
+    setThemeAndSave({ name: "Custom", colors });
+  };
+  const setThemeAndSave = (t: ChartTheme) => {
+    setTheme(t);
+    try { localStorage.setItem(themeKey, t.name); } catch {}
+  };
 
   // Only category and event have an allocated budget to compare against — paid_by and
   // status don't. A pie can't show "spent" and "budget" as two values per slice, so
@@ -317,6 +433,7 @@ function ExpenseBreakdownWidget({ expenses, events, categories, money, defaultDi
               <PieChartIcon className="h-3.5 w-3.5" />
             </button>
           </div>
+          <ChartColorThemePicker theme={theme} onChange={setThemeAndSave} customColors={customColors} onCustomChange={setCustomAndSave} />
         </div>
       </div>
 
@@ -343,15 +460,20 @@ function ExpenseBreakdownWidget({ expenses, events, categories, money, defaultDi
                 <YAxis hide />
                 <Tooltip formatter={(v: number) => money(v)} contentStyle={{ fontSize: 12, borderRadius: 12 }} />
                 {comparingBudget && <Legend wrapperStyle={{ fontSize: 12 }} />}
-                <Bar dataKey="spent" name="Spent" fill="var(--sage-deep)" radius={[6, 6, 0, 0]} />
-                {comparingBudget && <Bar dataKey="budget" name="Budget" fill="var(--cherry)" radius={[6, 6, 0, 0]} />}
+                <Bar dataKey="spent" name="Spent" fill={theme.colors[0]} radius={[6, 6, 0, 0]}>
+                  {/* Comparing against budget: "Spent" is one series next to "Budget", so it stays
+                      one color to match the legend. Otherwise each bar is its own category/person —
+                      cycle the theme so they're visually distinct, same as the pie chart's slices. */}
+                  {!comparingBudget && data.map((_, i) => <Cell key={i} fill={theme.colors[i % theme.colors.length]} />)}
+                </Bar>
+                {comparingBudget && <Bar dataKey="budget" name="Budget" fill={theme.colors[1]} radius={[6, 6, 0, 0]} />}
               </BarChart>
             ) : (
               <PieChart>
                 <Tooltip formatter={(v: number) => money(v)} contentStyle={{ fontSize: 12, borderRadius: 12 }} />
                 <Legend wrapperStyle={{ fontSize: 12 }} />
                 <Pie data={data} dataKey="spent" nameKey="name" outerRadius={62}>
-                  {data.map((_, i) => <Cell key={i} fill={PIE_COLORS[i % PIE_COLORS.length]} />)}
+                  {data.map((_, i) => <Cell key={i} fill={theme.colors[i % theme.colors.length]} />)}
                 </Pie>
               </PieChart>
             )}
@@ -380,6 +502,7 @@ function BudgetPage() {
   const [filterStatus, setFilterStatus] = useState("");
   const [customFilters, setCustomFilters] = useState<Record<string, string>>({});
   const [visibleCols, setVisibleCols] = useState<VisibleCols>({ category: true, description: true, event: true, paidBy: true, status: true });
+  const [editingExpense, setEditingExpense] = useState<Expense | null>(null);
 
   const currency = wedding?.budget_currency ?? "USD";
   const money = (n: number) => formatMoney(n, currency);
@@ -484,25 +607,9 @@ function BudgetPage() {
     qc.invalidateQueries({ queryKey: ["budget-categories", wedding.id] });
   };
 
-  const addExpense = async (form: {
-    name: string; amount: number; description: string; category: string; status: "pending" | "paid";
-    event_id: string; paid_by: string; payment_method: string; paid_date: string; due_date: string; custom_fields: Record<string, unknown>;
-  }) => {
+  const addExpense = async (form: ExpenseFormValues) => {
     if (!wedding) return;
-    const { error } = await supabase.from("expenses").insert({
-      wedding_id: wedding.id,
-      name: form.name.trim(),
-      amount: Math.max(0, Math.round(form.amount)),
-      description: form.description.trim() || null,
-      category: form.category || null,
-      status: form.status,
-      event_id: form.event_id || null,
-      paid_by: form.paid_by.trim() || null,
-      payment_method: form.payment_method.trim() || null,
-      paid_date: form.paid_date || null,
-      due_date: form.due_date || null,
-      custom_fields: form.custom_fields as any,
-    });
+    const { error } = await supabase.from("expenses").insert({ wedding_id: wedding.id, ...normalizeExpenseForm(form) });
     if (error) return toast.error(error.message);
     invalidateExpenses();
   };
@@ -511,7 +618,7 @@ function BudgetPage() {
   // refetch round-trip — that round-trip is what made toggling Paid/Pending (and any
   // other inline edit) visibly lag; only falls back to a real refetch if the write
   // itself fails, to pull the row back in sync with the server.
-  const updateExpenseField = async (id: string, patch: Partial<Pick<Expense, "status" | "amount" | "event_id" | "paid_by" | "payment_method" | "paid_date" | "due_date">>) => {
+  const updateExpenseField = async (id: string, patch: Partial<Pick<Expense, "name" | "description" | "category" | "status" | "amount" | "event_id" | "paid_by" | "payment_method" | "paid_date" | "due_date" | "custom_fields">>) => {
     qc.setQueryData<Expense[]>(["expenses", wedding?.id], (old) => old?.map((e) => (e.id === id ? { ...e, ...patch } : e)));
     const { error } = await supabase.from("expenses").update(patch).eq("id", id);
     if (error) { toast.error(error.message); invalidateExpenses(); }
@@ -713,6 +820,7 @@ function BudgetPage() {
                 <ExpenseRow key={exp.id} expense={exp} events={events} visibleCols={visibleCols}
                   customColumns={customColumns} currency={currency} money={money}
                   onToggleStatus={() => toggleStatus(exp)} onDelete={() => deleteExpense(exp.id)}
+                  onEdit={() => setEditingExpense(exp)}
                   onUpdateField={(patch) => updateExpenseField(exp.id, patch)} />
               ))}
             </div>
@@ -733,6 +841,13 @@ function BudgetPage() {
 
       {settingsOpen && (
         <BudgetSettingsDialog wedding={wedding} categories={categories} customColumns={customColumns} events={events} onClose={() => setSettingsOpen(false)} />
+      )}
+
+      {editingExpense && (
+        <EditExpenseDialog expense={editingExpense} events={events} categories={categories} customColumns={customColumns} currency={currency}
+          onCreateCategory={createCategory}
+          onSave={(patch) => { updateExpenseField(editingExpense.id, normalizeExpenseForm(patch) as any); setEditingExpense(null); }}
+          onClose={() => setEditingExpense(null)} />
       )}
     </AppShell>
   );
@@ -888,10 +1003,10 @@ function EditableAmountBadge({ amount, currency, money, onSave }: {
   );
 }
 
-function ExpenseRow({ expense, events, customColumns, currency, money, visibleCols, onToggleStatus, onDelete, onUpdateField }: {
+function ExpenseRow({ expense, events, customColumns, currency, money, visibleCols, onToggleStatus, onDelete, onEdit, onUpdateField }: {
   expense: Expense; events: { id: string; name: string }[]; customColumns: BudgetCustomColumn[]; currency: string; money: (n: number) => string;
   visibleCols: VisibleCols;
-  onToggleStatus: () => void; onDelete: () => void;
+  onToggleStatus: () => void; onDelete: () => void; onEdit: () => void;
   onUpdateField: (patch: Partial<Pick<Expense, "amount" | "event_id" | "paid_by" | "payment_method" | "paid_date" | "due_date">>) => void;
 }) {
   const paid = expense.status === "paid";
@@ -925,36 +1040,80 @@ function ExpenseRow({ expense, events, customColumns, currency, money, visibleCo
             {paid ? "Paid" : "Pending"}
           </button>
         )}
+        <button onClick={onEdit} className="text-muted-foreground hover:text-ink p-1 cursor-pointer"><Pencil className="h-3.5 w-3.5" /></button>
         <button onClick={onDelete} className="text-muted-foreground hover:text-cherry p-1 cursor-pointer"><Trash2 className="h-3.5 w-3.5" /></button>
       </div>
     </div>
   );
 }
 
-function AddExpenseForm({ events, categories, customColumns, currency, onCreateCategory, onAdd }: {
+type ExpenseFormValues = {
+  name: string; amount: number; description: string; category: string; status: "pending" | "paid";
+  event_id: string; paid_by: string; payment_method: string; paid_date: string; due_date: string; custom_fields: Record<string, unknown>;
+  // undefined = leave the reminder as it is, a timestamp = (re)schedule it, null = remove it.
+  reminder_at?: string | null;
+};
+
+// Date helpers for the reminder's default send date (the day before the due date, but never in the past).
+const toYmd = (d: Date) => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+function defaultReminderDate(due: string): string {
+  const d = new Date(`${due}T00:00:00`);
+  d.setDate(d.getDate() - 1);
+  const today = toYmd(new Date());
+  const ymd = toYmd(d);
+  return ymd < today ? today : ymd;
+}
+const DEFAULT_REMINDER_TIME = "08:30";
+
+// Shared by the "Add expense" sidebar card and the "Edit expense" modal —
+// same fields either way, just seeded from an existing expense (and with a
+// different submit label/icon) when editing instead of creating.
+function ExpenseForm({ events, categories, customColumns, currency, onCreateCategory, initial, title = "Add expense", submitLabel = "Add expense", submitIcon: SubmitIcon = Plus, onSubmit }: {
   events: { id: string; name: string }[];
   categories: BudgetCategory[];
   customColumns: BudgetCustomColumn[];
   currency: string;
   onCreateCategory: (name: string) => Promise<void>;
-  onAdd: (form: {
-    name: string; amount: number; description: string; category: string; status: "pending" | "paid";
-    event_id: string; paid_by: string; payment_method: string; paid_date: string; due_date: string; custom_fields: Record<string, unknown>;
-  }) => void;
+  initial?: Partial<Expense>;
+  title?: string;
+  submitLabel?: string;
+  submitIcon?: typeof Plus;
+  onSubmit: (form: ExpenseFormValues) => void;
 }) {
-  const [name, setName] = useState("");
-  const [amount, setAmount] = useState("");
-  const [description, setDescription] = useState("");
-  const [category, setCategory] = useState("");
-  const [status, setStatus] = useState<"pending" | "paid">("pending");
-  const [eventId, setEventId] = useState("");
-  const [paidBy, setPaidBy] = useState("");
-  const [paymentMethod, setPaymentMethod] = useState("Card");
+  const [name, setName] = useState(initial?.name ?? "");
+  const [amount, setAmount] = useState(initial?.amount != null ? formatAmountInput(String(initial.amount), currency) : "");
+  const [description, setDescription] = useState(initial?.description ?? "");
+  const [category, setCategory] = useState(initial?.category ?? "");
+  const [status, setStatus] = useState<"pending" | "paid">(initial?.status === "paid" ? "paid" : "pending");
+  const [eventId, setEventId] = useState(initial?.event_id ?? "");
+  const [paidBy, setPaidBy] = useState(initial?.paid_by ?? "");
+  const [paymentMethod, setPaymentMethod] = useState(initial?.payment_method ?? "Card");
   // One field, meaning "when it's due" or "when it was paid" depending on status —
   // an expense is either owed or settled, never both, so there's never a reason to
   // fill in the other one too.
-  const [dateValue, setDateValue] = useState("");
-  const [customValues, setCustomValues] = useState<Record<string, string>>({});
+  const [dateValue, setDateValue] = useState((initial?.status === "paid" ? initial?.paid_date : initial?.due_date) ?? "");
+  const [customValues, setCustomValues] = useState<Record<string, string>>(() => {
+    const seeded: Record<string, string> = {};
+    const cf = (initial?.custom_fields as Record<string, unknown>) ?? {};
+    customColumns.forEach((col) => { if (cf[col.id] != null && cf[col.id] !== "") seeded[col.id] = String(cf[col.id]); });
+    return seeded;
+  });
+
+  // Payment reminder: an email to the account's address at a chosen date and time. Offered whenever a
+  // pending expense has a "due by" date; on by default for a new expense.
+  const initialReminder = initial?.reminder_at ? new Date(initial.reminder_at) : null;
+  const [reminderOn, setReminderOn] = useState(initial ? !!initialReminder : true);
+  const [reminderDate, setReminderDate] = useState(initialReminder ? toYmd(initialReminder) : "");
+  const [reminderTime, setReminderTime] = useState(initialReminder ? `${String(initialReminder.getHours()).padStart(2, "0")}:${String(initialReminder.getMinutes()).padStart(2, "0")}` : DEFAULT_REMINDER_TIME);
+  const [reminderTouched, setReminderTouched] = useState(!!initialReminder);
+  const [accountEmail, setAccountEmail] = useState("");
+  useEffect(() => { supabase.auth.getUser().then(({ data }) => setAccountEmail(data.user?.email ?? "")); }, []);
+  const reminderAvailable = status === "pending" && !!dateValue;
+  const onDueChange = (v: string) => {
+    setDateValue(v);
+    if (v && !reminderTouched) setReminderDate(defaultReminderDate(v));
+  };
+  const effectiveReminderDate = reminderDate || (dateValue ? defaultReminderDate(dateValue) : "");
 
   const evaluated = evalMathExpr(amount);
 
@@ -980,17 +1139,27 @@ function AddExpenseForm({ events, categories, customColumns, currency, onCreateC
       if (raw === undefined || raw === "") return;
       custom_fields[col.id] = col.type === "number" ? Number(raw) : col.type === "boolean" ? raw === "true" : raw;
     });
-    onAdd({
+    let reminder_at: string | null | undefined;
+    if (reminderAvailable && reminderOn && effectiveReminderDate) {
+      const iso = new Date(`${effectiveReminderDate}T${reminderTime}:00`).toISOString();
+      reminder_at = iso === initial?.reminder_at ? undefined : iso;
+    } else if (initial?.reminder_at) {
+      reminder_at = null;
+    }
+    onSubmit({
       name, amount: evaluated, description, category, status, event_id: eventId, paid_by: paidBy, payment_method: paymentMethod,
-      paid_date: status === "paid" ? dateValue : "", due_date: status === "pending" ? dateValue : "", custom_fields,
+      paid_date: status === "paid" ? dateValue : "", due_date: status === "pending" ? dateValue : "", custom_fields, reminder_at,
     });
-    setName(""); setAmount(""); setDescription(""); setCategory(""); setStatus("pending");
-    setEventId(""); setPaidBy(""); setPaymentMethod("Card"); setDateValue(""); setCustomValues({});
+    if (!initial) {
+      setName(""); setAmount(""); setDescription(""); setCategory(""); setStatus("pending");
+      setEventId(""); setPaidBy(""); setPaymentMethod("Card"); setDateValue(""); setCustomValues({});
+      setReminderOn(true); setReminderDate(""); setReminderTime(DEFAULT_REMINDER_TIME); setReminderTouched(false);
+    }
   };
 
   return (
     <div>
-      <h3 className="font-sans text-sm font-semibold">Add expense</h3>
+      {title && <h3 className="font-sans text-sm font-semibold">{title}</h3>}
       <div className="mt-3 space-y-2">
         <input placeholder="Expense name" value={name} onChange={(e) => setName(e.target.value)}
           className="w-full rounded-xl border border-line bg-pearl px-3 py-2 text-xs focus:outline-none focus:ring-2 focus:ring-clay" />
@@ -1024,9 +1193,40 @@ function AddExpenseForm({ events, categories, customColumns, currency, onCreateC
 
         <div className="grid grid-cols-2 gap-1.5">
           <Dropdown size="sm" value={paymentMethod} onChange={setPaymentMethod} placeholder="Payment method" options={PAYMENT_METHOD_OPTIONS} />
-          <DatePicker value={dateValue} onChange={setDateValue} placeholder={status === "pending" ? "Due by" : "Paid date"} displayFormat="MMM d"
+          <DatePicker value={dateValue} onChange={onDueChange} placeholder={status === "pending" ? "Due by" : "Paid date"} displayFormat="MMM d"
             className="px-3 py-2 text-xs [&_svg]:h-3.5 [&_svg]:w-3.5" />
         </div>
+
+        {reminderAvailable && (
+          <div className="rounded-xl border border-line bg-pearl px-3 py-2.5">
+            <div className="flex items-center justify-between gap-2">
+              <button type="button" role="switch" aria-checked={reminderOn} onClick={() => setReminderOn((v) => !v)} className="flex items-center gap-2 text-xs text-left">
+                <span className={cn("relative h-4 w-7 shrink-0 rounded-full transition-colors", reminderOn ? "bg-cherry" : "bg-line")}>
+                  <span className={cn("absolute top-0.5 h-3 w-3 rounded-full bg-paper transition-all", reminderOn ? "left-3.5" : "left-0.5")} />
+                </span>
+                Set a payment reminder
+              </button>
+              <span className="rounded-md bg-ink px-1.5 py-0.5 text-[9px] text-paper">Recommended</span>
+            </div>
+            <p className="mt-1.5 text-[11px] text-muted-foreground">
+              Never miss a beat. We'll email {accountEmail ? <span className="text-ink">{accountEmail}</span> : "you"} when it's time to pay.
+            </p>
+            {reminderOn && (
+              <div className="mt-2 grid grid-cols-2 gap-1.5">
+                <div>
+                  <span className="text-[10px] uppercase tracking-widest text-muted-foreground">Send date</span>
+                  <DatePicker value={effectiveReminderDate} onChange={(v) => { setReminderDate(v); setReminderTouched(true); }} placeholder="Send date" displayFormat="MMM d"
+                    className="mt-1 px-3 py-2 text-xs [&_svg]:h-3.5 [&_svg]:w-3.5" />
+                </div>
+                <div>
+                  <span className="text-[10px] uppercase tracking-widest text-muted-foreground">Send time</span>
+                  <TimePicker value={reminderTime} onChange={(v) => { setReminderTime(v); setReminderTouched(true); }}
+                    className="mt-1 rounded-xl bg-pearl px-3 py-2 text-xs [&_svg]:h-3.5 [&_svg]:w-3.5" />
+                </div>
+              </div>
+            )}
+          </div>
+        )}
 
         {customColumns.map((col) => (
           <div key={col.id}>
@@ -1060,8 +1260,44 @@ function AddExpenseForm({ events, categories, customColumns, currency, onCreateC
 
         <button onClick={submit} disabled={!name.trim() || evaluated == null}
           className="w-full inline-flex items-center justify-center gap-2 rounded-full bg-cherry text-paper py-2 text-xs hover:bg-ink disabled:opacity-60 cursor-pointer">
-          <Plus className="h-4 w-4" /> Add expense
+          <SubmitIcon className="h-4 w-4" /> {submitLabel}
         </button>
+      </div>
+    </div>
+  );
+}
+
+function AddExpenseForm({ onAdd, ...props }: {
+  events: { id: string; name: string }[];
+  categories: BudgetCategory[];
+  customColumns: BudgetCustomColumn[];
+  currency: string;
+  onCreateCategory: (name: string) => Promise<void>;
+  onAdd: (form: ExpenseFormValues) => void;
+}) {
+  return <ExpenseForm {...props} onSubmit={onAdd} />;
+}
+
+function EditExpenseDialog({ expense, events, categories, customColumns, currency, onCreateCategory, onSave, onClose }: {
+  expense: Expense;
+  events: { id: string; name: string }[];
+  categories: BudgetCategory[];
+  customColumns: BudgetCustomColumn[];
+  currency: string;
+  onCreateCategory: (name: string) => Promise<void>;
+  onSave: (form: ExpenseFormValues) => void;
+  onClose: () => void;
+}) {
+  return (
+    <div className="fixed inset-0 z-50 bg-ink/40 flex items-center justify-center p-4" onClick={onClose}>
+      <div className="bg-paper rounded-3xl max-w-md w-full p-6 max-h-[92vh] overflow-y-auto" onClick={(e) => e.stopPropagation()}>
+        <div className="flex items-start justify-between mb-2">
+          <h3 className="font-serif text-xl">Edit expense</h3>
+          <button onClick={onClose} className="text-muted-foreground hover:text-ink cursor-pointer"><X className="h-4 w-4" /></button>
+        </div>
+        <ExpenseForm events={events} categories={categories} customColumns={customColumns} currency={currency}
+          onCreateCategory={onCreateCategory} initial={expense} title="" submitLabel="Save changes" submitIcon={Check}
+          onSubmit={onSave} />
       </div>
     </div>
   );
@@ -1096,7 +1332,7 @@ function BudgetOnboarding({ onComplete }: {
 
   return (
     <div className="paper-card p-8 max-w-xl mx-auto">
-      <span className="grid h-12 w-12 place-items-center rounded-full bg-clay-soft text-clay"><Wallet className="h-5 w-5" /></span>
+      <span className="grid h-12 w-12 place-items-center rounded-full bg-ink text-paper"><Wallet className="h-5 w-5" /></span>
       <h2 className="mt-4 font-serif text-2xl">Let's set up your budget</h2>
       <p className="mt-1 text-sm text-muted-foreground">Takes under a minute. Everything here can be changed later from Settings.</p>
 

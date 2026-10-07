@@ -1,20 +1,33 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { useEffect, useState } from "react";
+import { createContext, useContext, useEffect, useMemo, useState } from "react";
 import { AppShell } from "@/components/app-shell";
-import { useCurrentWedding, useEvents, useMenuSections, useMenuItems, type MenuItem } from "@/lib/wedding-hooks";
+import { useCurrentWedding, useEvents, useMenuSections, useMenuItems, useFoodTags, type MenuItem, type FoodTag } from "@/lib/wedding-hooks";
 import { supabase } from "@/integrations/supabase/client";
 import { useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
-import { Plus, Trash2, X, Utensils, Pencil, Check } from "lucide-react";
+import { Plus, Trash2, X, Utensils, Pencil, Check, Download } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { DIETARY, ALLERGIES } from "@/lib/dietary-tags";
+import { dishCodes, foodLookup, legendFor, type FoodKind } from "@/lib/dietary-tags";
+import { useFoodTagActions } from "@/lib/food-tags";
+import { TagPicker, TagChip } from "@/components/tag-picker";
 import { ConfirmDialog } from "@/components/confirm-dialog";
 import { Dropdown } from "@/components/dropdown";
+import { exportMenuExcel, exportMenuPdf } from "@/lib/menu-export";
 
 export const Route = createFileRoute("/_authenticated/menu")({
   component: MenuPage,
   validateSearch: (s: Record<string, unknown>) => ({ event: typeof s.event === "string" ? s.event : undefined }),
 });
+
+// The dietary/allergen library plus its create/edit/delete handlers, shared by the dish
+// form, the preview and the exports without threading props through every card.
+type FoodTagsCtx = {
+  tags: FoodTag[];
+  create: (kind: FoodKind, input: { name: string; color: string; emoji: string | null }) => Promise<void>;
+  update: (id: string, oldName: string, input: { name: string; color: string; emoji: string | null }) => Promise<void>;
+  remove: (id: string, name: string) => Promise<void>;
+};
+const FoodTagsContext = createContext<FoodTagsCtx>({ tags: [], create: async () => {}, update: async () => {}, remove: async () => {} });
 
 function MenuPage() {
   const { data: wedding, isLoading: weddingLoading } = useCurrentWedding();
@@ -37,6 +50,9 @@ function MenuPage() {
   // eventId yet (or the event-scoped queries are still in flight), avoid flashing an
   // empty menu.
   const loading = weddingLoading || eventsLoading || (events.length > 0 && !eventId) || sectionsLoading || itemsLoading;
+  const { data: foodTags = [] } = useFoodTags(wedding?.id);
+  const foodActions = useFoodTagActions(wedding?.id, foodTags);
+  const foodCtx = useMemo<FoodTagsCtx>(() => ({ tags: foodTags, ...foodActions }), [foodTags, wedding?.id]); // eslint-disable-line
   const [newSectionName, setNewSectionName] = useState("");
   const [confirmDeleteSectionId, setConfirmDeleteSectionId] = useState<string | null>(null);
 
@@ -84,6 +100,14 @@ function MenuPage() {
     invalidate();
   };
 
+  const updateItem = async (id: string, item: { name: string; description: string; dietary_tags: string[] }) => {
+    const { error } = await supabase.from("menu_items").update({
+      name: item.name.trim(), description: item.description.trim() || null, dietary_tags: item.dietary_tags,
+    }).eq("id", id);
+    if (error) return toast.error(error.message);
+    invalidate();
+  };
+
   const deleteItem = async (id: string) => {
     const { error } = await supabase.from("menu_items").delete().eq("id", id);
     if (error) return toast.error(error.message);
@@ -99,12 +123,21 @@ function MenuPage() {
   }
 
   return (
+    <FoodTagsContext.Provider value={foodCtx}>
     <AppShell
       title="Menu"
       subtitle="Build out the food and drink for each event, organized however makes sense to you."
       actions={
-        <Dropdown className="w-56" value={eventId} onChange={setEventId} placeholder="Choose an event"
-          options={events.map((e) => ({ value: e.id, label: e.name }))} />
+        <div className="flex items-center gap-2">
+          <Dropdown className="w-56" value={eventId} onChange={setEventId} placeholder="Choose an event"
+            options={events.map((e) => ({ value: e.id, label: e.name }))} />
+          {event && sections.length > 0 && (
+            <ExportMenu
+              onExportExcel={() => exportMenuExcel({ weddingLabel: wedding!.slug || wedding!.id, eventName: event.name, sections, items, foodTags })}
+              onExportPdf={() => exportMenuPdf({ weddingLabel: wedding!.slug || wedding!.id, eventName: event.name, sections, items, foodTags })}
+            />
+          )}
+        </div>
       }
     >
       {loading ? <p className="text-muted-foreground text-sm">Loading…</p> :
@@ -136,19 +169,29 @@ function MenuPage() {
             />
           </div>
         ) : (
-          <div className="max-w-6xl space-y-5">
-            <div className="columns-1 sm:columns-2 xl:columns-3 gap-5">
-              {sections.map((s) => (
-                <div key={s.id} className="break-inside-avoid mb-5">
-                  <MenuSectionCard section={s} items={items.filter((i) => i.section_id === s.id)}
+          <div className="lg:grid lg:grid-cols-[2fr_3fr] lg:gap-8 lg:items-start">
+            {/* The actual menu leads (left), editing is the wider companion
+                pane on the right — same split-pane pattern as Events/Agenda,
+                minus the photo panel. Both are plain grid items (no sticky,
+                no capped height) — the page scrolls as one, which keeps
+                their top edges reliably aligned instead of depending on
+                position:sticky's interaction with grid row sizing, and
+                means there's never a second, nested scrollbar to fight
+                with. */}
+            <MenuPreviewPanel eventName={event?.name} sections={sections} items={items} />
+
+            <div className="mt-8 lg:mt-0">
+              <div className="grid gap-4">
+                {sections.map((s) => (
+                  <MenuSectionCard key={s.id} section={s} items={items.filter((i) => i.section_id === s.id)}
                     onRename={(name) => renameSection(s.id, name)} onDelete={() => setConfirmDeleteSectionId(s.id)}
-                    onAddItem={(item) => addItem(s.id, item)} onDeleteItem={deleteItem} />
-                </div>
-              ))}
+                    onAddItem={(item) => addItem(s.id, item)} onUpdateItem={updateItem} onDeleteItem={deleteItem} />
+                ))}
+              </div>
+              <AddSectionRow className="mt-4 flex items-center gap-2"
+                value={newSectionName} onChange={setNewSectionName} onSubmit={addSection}
+              />
             </div>
-            <AddSectionRow className="max-w-3xl flex items-center gap-2"
-              value={newSectionName} onChange={setNewSectionName} onSubmit={addSection}
-            />
           </div>
         )
       )}
@@ -168,6 +211,34 @@ function MenuPage() {
         );
       })()}
     </AppShell>
+    </FoodTagsContext.Provider>
+  );
+}
+
+function ExportMenu({ onExportExcel, onExportPdf }: { onExportExcel: () => void; onExportPdf: () => void }) {
+  const [open, setOpen] = useState(false);
+  return (
+    <div className="relative">
+      <button type="button" onClick={() => setOpen((v) => !v)}
+        className="inline-flex items-center gap-2 rounded-full border border-line/70 bg-paper px-5 py-2.5 text-sm hover:bg-stone cursor-pointer focus:outline-none">
+        <Download className="h-4 w-4" /> Export
+      </button>
+      {open && (
+        <>
+          <div className="fixed inset-0 z-10" onClick={() => setOpen(false)} />
+          <div className="absolute right-0 top-full mt-2 z-20 min-w-[180px] rounded-2xl border border-line bg-pearl shadow-lg p-1.5">
+            <button type="button" onClick={() => { onExportExcel(); setOpen(false); }}
+              className="w-full text-left px-3 py-2 text-sm rounded-xl hover:bg-blush-soft cursor-pointer focus:outline-none">
+              Export as Excel
+            </button>
+            <button type="button" onClick={() => { onExportPdf(); setOpen(false); }}
+              className="w-full text-left px-3 py-2 text-sm rounded-xl hover:bg-blush-soft cursor-pointer focus:outline-none">
+              Export as PDF
+            </button>
+          </div>
+        </>
+      )}
+    </div>
   );
 }
 
@@ -181,7 +252,7 @@ function AddSectionRow({ className, buttonClassName, value, onChange, onSubmit }
     <div className={className}>
       <input value={value} onChange={(e) => onChange(e.target.value)}
         onKeyDown={(e) => e.key === "Enter" && onSubmit()}
-        placeholder="E.g. Cocktail hour, Mains, Dessert bar"
+        placeholder="E.g. Starters, Mains, Dessert bar"
         className="flex-1 rounded-2xl border border-line bg-paper px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-clay" />
       <button onClick={onSubmit} disabled={!value.trim()}
         className={cn("inline-flex items-center justify-center gap-2 rounded-full bg-ink text-paper px-5 py-2.5 text-sm hover:bg-clay disabled:opacity-60 cursor-pointer shrink-0", buttonClassName)}>
@@ -191,17 +262,78 @@ function AddSectionRow({ className, buttonClassName, value, onChange, onSubmit }
   );
 }
 
-function MenuSectionCard({ section, items, onRename, onDelete, onAddItem, onDeleteItem }: {
+// Read-only, guest-facing-style rendering of the whole menu — same idea as
+// the Events page's Agenda preview, grouped by section instead of by date,
+// so the couple can see how the printed/shared menu actually reads instead
+// of just the editing form.
+function MenuPreviewPanel({ eventName, sections, items }: {
+  eventName?: string; sections: { id: string; name: string }[]; items: MenuItem[];
+}) {
+  const { tags: foodTags } = useContext(FoodTagsContext);
+  const lookup = foodLookup(foodTags);
+  const legend = legendFor(items.flatMap((it) => it.dietary_tags), foodTags);
+
+  return (
+    <div className="rounded-3xl bg-ink text-paper p-8">
+      <h2 className="font-serif text-3xl">{eventName ? `${eventName} Menu` : "Menu"}</h2>
+
+      <div className="mt-6 grid gap-6">
+        {sections.length === 0 ? (
+          <p className="text-sm text-paper/70">Add a section to see it here.</p>
+        ) : (
+          sections.map((s) => {
+            const sectionItems = items.filter((i) => i.section_id === s.id);
+            return (
+              <div key={s.id}>
+                <p className="text-xs uppercase tracking-widest text-paper/60 border-b border-paper/20 pb-2 mb-4">{s.name}</p>
+                {sectionItems.length === 0 ? (
+                  <p className="text-sm text-paper/60 italic">Nothing added yet.</p>
+                ) : (
+                  <div className="grid gap-4">
+                    {sectionItems.map((it) => {
+                      const { diet, allergens } = dishCodes(it.dietary_tags, lookup);
+                      return (
+                        <div key={it.id}>
+                          <p className="font-serif text-lg">
+                            {it.name}
+                            {diet.length > 0 && <span className="ml-1.5 font-sans text-sm text-paper/60 align-middle">({diet.join(", ")})</span>}
+                            {allergens.length > 0 && <span className="ml-1.5 font-sans text-sm text-red-300 align-middle">({allergens.join(", ")})</span>}
+                          </p>
+                          {it.description && <p className="text-sm text-paper/70 mt-0.5 leading-relaxed">{it.description}</p>}
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
+              </div>
+            );
+          })
+        )}
+      </div>
+
+      {legend.length > 0 && (
+        <p className="mt-4 pt-4 border-t border-paper/20 text-xs text-paper/60">
+          {legend}
+        </p>
+      )}
+    </div>
+  );
+}
+
+function MenuSectionCard({ section, items, onRename, onDelete, onAddItem, onUpdateItem, onDeleteItem }: {
   section: { id: string; name: string };
   items: MenuItem[];
   onRename: (name: string) => void;
   onDelete: () => void;
   onAddItem: (item: { name: string; description: string; dietary_tags: string[] }) => void;
+  onUpdateItem: (id: string, item: { name: string; description: string; dietary_tags: string[] }) => void;
   onDeleteItem: (id: string) => void;
 }) {
   const [editingName, setEditingName] = useState(false);
   const [nameDraft, setNameDraft] = useState(section.name);
   const [adding, setAdding] = useState(false);
+  const [editingItemId, setEditingItemId] = useState<string | null>(null);
+  const { tags: foodTags } = useContext(FoodTagsContext);
 
   const commitName = () => {
     setEditingName(false);
@@ -233,31 +365,52 @@ function MenuSectionCard({ section, items, onRename, onDelete, onAddItem, onDele
       </div>
 
       {items.length > 0 && (
-        <div className="mt-4 divide-y divide-line/60 border-t border-line/60">
+        <div className="mt-4 border-t border-line/60">
           {items.map((it) => (
-            <div key={it.id} className="py-3 flex items-start justify-between gap-3 group">
-              <div className="min-w-0">
-                <p className="text-sm font-medium text-ink">{it.name}</p>
-                {it.description && <p className="mt-0.5 text-sm text-muted-foreground leading-relaxed">{it.description}</p>}
-                {it.dietary_tags.length > 0 && (
-                  <div className="mt-1.5 flex flex-wrap gap-1">
-                    {it.dietary_tags.map((t) => (
-                      <span key={t} className="text-[10px] uppercase tracking-widest rounded-full bg-sage-soft px-2 py-0.5 text-ink">{t}</span>
-                    ))}
-                  </div>
-                )}
+            editingItemId === it.id ? (
+              <div key={it.id} className="py-3">
+                <ItemForm
+                  initial={{ name: it.name, description: it.description ?? "", dietary_tags: it.dietary_tags }}
+                  submitLabel="Save" submitIcon={Check}
+                  onSubmit={(item) => { onUpdateItem(it.id, item); setEditingItemId(null); }}
+                  onCancel={() => setEditingItemId(null)}
+                />
               </div>
-              <button onClick={() => onDeleteItem(it.id)}
-                className="text-muted-foreground hover:text-cherry p-1 shrink-0 opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer">
-                <Trash2 className="h-3.5 w-3.5" />
-              </button>
-            </div>
+            ) : (
+              <div key={it.id} className="py-3 flex items-start justify-between gap-3 group">
+                <div className="min-w-0 flex-1">
+                  <div className="flex items-baseline justify-between gap-2">
+                    <p className="text-sm font-medium text-ink">{it.name}</p>
+                    {it.dietary_tags.length > 0 && (
+                      <div className="flex flex-wrap justify-end gap-1 shrink-0">
+                        {it.dietary_tags.map((t) => {
+                          const ft = foodTags.find((x) => x.name === t);
+                          return <TagChip key={t} tag={ft ?? { name: t, color: "#6E9B72" }} className="text-[10px] px-2 py-0.5 shadow-none" />;
+                        })}
+                      </div>
+                    )}
+                  </div>
+                  {it.description && <p className="mt-0.5 text-sm text-muted-foreground leading-relaxed">{it.description}</p>}
+                </div>
+                <div className="flex items-center gap-1 shrink-0 opacity-0 group-hover:opacity-100 transition-opacity">
+                  <button onClick={() => setEditingItemId(it.id)}
+                    className="text-muted-foreground hover:text-ink p-1 cursor-pointer" title="Edit item">
+                    <Pencil className="h-3.5 w-3.5" />
+                  </button>
+                  <button onClick={() => onDeleteItem(it.id)}
+                    className="text-muted-foreground hover:text-cherry p-1 cursor-pointer" title="Delete item">
+                    <Trash2 className="h-3.5 w-3.5" />
+                  </button>
+                </div>
+              </div>
+            )
           ))}
         </div>
       )}
 
       {adding ? (
-        <AddItemForm onCancel={() => setAdding(false)} onAdd={(item) => { onAddItem(item); setAdding(false); }} />
+        <ItemForm onCancel={() => setAdding(false)} submitLabel="Add" submitIcon={Plus}
+          onSubmit={(item) => { onAddItem(item); setAdding(false); }} />
       ) : (
         <button onClick={() => setAdding(true)}
           className="mt-4 inline-flex items-center gap-1.5 text-sm text-clay hover:underline cursor-pointer">
@@ -268,19 +421,26 @@ function MenuSectionCard({ section, items, onRename, onDelete, onAddItem, onDele
   );
 }
 
-function AddItemForm({ onAdd, onCancel }: {
-  onAdd: (item: { name: string; description: string; dietary_tags: string[] }) => void;
+// Shared by both "add a new dish" and "edit an existing dish" — same fields,
+// same dietary/allergen chip toggles, just pre-filled (or not) and a
+// different submit label.
+function ItemForm({ initial, submitLabel, submitIcon: SubmitIcon, onSubmit, onCancel }: {
+  initial?: { name: string; description: string; dietary_tags: string[] };
+  submitLabel: string;
+  submitIcon: any;
+  onSubmit: (item: { name: string; description: string; dietary_tags: string[] }) => void;
   onCancel: () => void;
 }) {
-  const [name, setName] = useState("");
-  const [description, setDescription] = useState("");
-  const [tags, setTags] = useState<string[]>([]);
+  const [name, setName] = useState(initial?.name ?? "");
+  const [description, setDescription] = useState(initial?.description ?? "");
+  const [tags, setTags] = useState<string[]>(initial?.dietary_tags ?? []);
+  const food = useContext(FoodTagsContext);
 
   const toggleTag = (t: string) => setTags((prev) => (prev.includes(t) ? prev.filter((x) => x !== t) : [...prev, t]));
 
   const submit = () => {
     if (!name.trim()) return;
-    onAdd({ name, description, dietary_tags: tags });
+    onSubmit({ name, description, dietary_tags: tags });
   };
 
   return (
@@ -291,24 +451,26 @@ function AddItemForm({ onAdd, onCancel }: {
         <input value={description} onChange={(e) => setDescription(e.target.value)} placeholder="Description (optional)"
           className="rounded-xl border border-line bg-pearl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-clay" />
       </div>
-      <div className="flex flex-wrap gap-1.5">
-        {[...DIETARY, ...ALLERGIES].map((t) => {
-          const on = tags.includes(t);
-          return (
-            <button key={t} type="button" onClick={() => toggleTag(t)}
-              className={cn(
-                "rounded-full border px-2.5 py-1 text-sm transition-colors cursor-pointer",
-                on ? "bg-sage-deep text-pearl border-sage-deep" : "bg-pearl text-ink border-line hover:bg-stone",
-              )}>
-              {t}
-            </button>
-          );
+      <div className="flex flex-wrap items-center gap-1.5">
+        {([["diet", "Add dietary tag"], ["allergy", "Add allergen"]] as const).map(([kind, label]) => (
+          <TagPicker key={kind} triggerLabel={label}
+            library={food.tags.filter((t) => t.kind === kind)}
+            selected={tags}
+            onToggle={toggleTag}
+            onCreate={(input) => food.create(kind, input)}
+            onUpdate={food.update}
+            onDelete={food.remove}
+            autoSelectOnCreate={false} />
+        ))}
+        {tags.map((t) => {
+          const ft = food.tags.find((x) => x.name === t);
+          return <TagChip key={t} tag={ft ?? { name: t, color: "#6E9B72" }} onRemove={() => toggleTag(t)} />;
         })}
       </div>
       <div className="flex items-center gap-2">
         <button onClick={submit} disabled={!name.trim()}
           className="inline-flex items-center gap-1.5 rounded-full bg-ink text-paper px-4 py-1.5 text-sm hover:bg-clay disabled:opacity-60 cursor-pointer">
-          <Check className="h-3.5 w-3.5" /> Add
+          <SubmitIcon className="h-3.5 w-3.5" /> {submitLabel}
         </button>
         <button onClick={onCancel} className="inline-flex items-center gap-1.5 rounded-full border border-line px-4 py-1.5 text-sm hover:bg-stone cursor-pointer">
           <X className="h-3.5 w-3.5" /> Cancel

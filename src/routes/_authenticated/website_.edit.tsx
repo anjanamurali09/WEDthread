@@ -1,5 +1,5 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { createContext, useContext, useEffect, useMemo, useRef, useState } from "react";
 import { AppShell, SIDEBAR_COLLAPSED_KEY } from "@/components/app-shell";
 import { useCurrentWedding, useInvalidateWedding, useEvents, useWeddingPhotos } from "@/lib/wedding-hooks";
 import { supabase } from "@/integrations/supabase/client";
@@ -7,7 +7,7 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import {
   GripVertical, Eye, EyeOff, Trash2, Plus, Upload, ExternalLink, ArrowLeft, Palette, CalendarDays, MapPin,
-  Monitor, Smartphone, Type, LayoutGrid, Sparkles, Minus, Images, ChevronDown, Image as ImageIcon,
+  Monitor, Smartphone, Type, LayoutGrid, Sparkles, Minus, Images, ChevronDown, Image as ImageIcon, Search, Menu, X, ChevronLeft, ChevronRight,
 } from "lucide-react";
 import { TEMPLATES, SECTION_LIBRARY, getTemplate, type SectionType } from "@/lib/website-templates";
 import { DndContext, closestCenter, PointerSensor, useSensor, useSensors, type DragEndEvent } from "@dnd-kit/core";
@@ -17,6 +17,11 @@ import { cn } from "@/lib/utils";
 import { ConfirmDialog } from "@/components/confirm-dialog";
 import { Popover, PopoverTrigger, PopoverContent } from "@/components/ui/popover";
 import { RichTextField } from "@/components/rich-text-field";
+import { DatePicker } from "@/components/ui/datepicker";
+import { SwatchGroup } from "@/components/palette-swatches";
+import { Logo } from "@/components/logo";
+import { isDark } from "@/lib/seating-geometry";
+import { SiteDecor, DECOR_OPTIONS, type DecorKind } from "@/components/botanical-art";
 import { GOOGLE_FONT_OPTIONS, useGoogleFonts, useAllGoogleFontsWhenOpen, type FontGroup } from "@/lib/google-fonts";
 import { FocalPointPicker, focalPosition } from "@/components/focal-point-picker";
 
@@ -43,8 +48,7 @@ const IMAGE_SIZE_OPTIONS = [
   { value: "l", label: "L" }, { value: "xl", label: "XL" },
 ];
 const IMAGE_SHAPE_OPTIONS = [
-  { value: "circle", label: "Circle" }, { value: "square", label: "Square" }, { value: "oval", label: "Oval" },
-  { value: "rectangle", label: "Rectangle" }, { value: "heart", label: "Heart" },
+  { value: "full", label: "Full width" }, { value: "circle", label: "Circle" }, { value: "oval", label: "Oval" }, { value: "heart", label: "Heart" },
 ];
 // Heart normalized to a 0-100 box, drawn via an inline SVG <clipPath> rather than a CSS
 // clip-path: path() — CSS path() clips in the box's literal pixel coordinates and won't
@@ -64,7 +68,7 @@ export type PageLayout = "scroll" | "split" | "nav";
 const PAGE_LAYOUT_OPTIONS: { value: PageLayout; label: string; desc: string }[] = [
   { value: "scroll", label: "Single Page Scroll", desc: "Everything stacked in one continuous scroll — today's default." },
   { value: "split", label: "Split View", desc: "Your Hero photo stays fixed on one side while the rest scrolls beside it." },
-  { value: "nav", label: "Classic Navigation", desc: "A sticky bar links to each section, jumping there on click." },
+  { value: "nav", label: "Classic Navigation", desc: "A floating MENU button opens links to each section." },
 ];
 
 // Tuned clamp() strings per level (not a flat multiplier on the base clamp) — a
@@ -102,9 +106,13 @@ const FONT_GROUPS_ORDERED = Array.from(new Set(GOOGLE_FONT_OPTIONS.map((f) => f.
 // platforms. The full curated list only loads (one batched request) once this is opened.
 function FontPicker({ value, onChange, allowClear = true }: { value: string; onChange: (v: string) => void; allowClear?: boolean }) {
   const [open, setOpen] = useState(false);
+  const [query, setQuery] = useState("");
   useAllGoogleFontsWhenOpen(open);
+  const q = query.trim().toLowerCase();
+  const matches = (name: string) => !q || name.toLowerCase().includes(q);
+  const groups = FONT_GROUPS_ORDERED.map((g) => ({ g, fonts: GOOGLE_FONT_OPTIONS.filter((f) => f.group === g && matches(f.name)) })).filter((x) => x.fonts.length);
   return (
-    <Popover open={open} onOpenChange={setOpen}>
+    <Popover open={open} onOpenChange={(o) => { setOpen(o); if (!o) setQuery(""); }}>
       <PopoverTrigger asChild>
         <button type="button"
           className="w-full flex items-center justify-between gap-2 rounded-xl border border-line bg-pearl px-3 py-2 text-sm hover:border-wine cursor-pointer">
@@ -112,25 +120,35 @@ function FontPicker({ value, onChange, allowClear = true }: { value: string; onC
           <ChevronDown className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
         </button>
       </PopoverTrigger>
-      <PopoverContent align="start" className="w-64 max-h-72 overflow-y-auto rounded-2xl border-line bg-paper p-1.5">
-        {allowClear && (
-          <button type="button" onClick={() => { onChange(""); setOpen(false); }}
-            className={cn("w-full text-left px-3 py-2 text-sm rounded-xl hover:bg-blush-soft cursor-pointer", !value && "font-medium")}>
-            Use site font
-          </button>
-        )}
-        {FONT_GROUPS_ORDERED.map((group) => (
-          <div key={group}>
-            <p className="px-3 pt-2 pb-1 text-[8px] uppercase tracking-widest text-muted-foreground">{group}</p>
-            {GOOGLE_FONT_OPTIONS.filter((f) => f.group === group).map((f) => (
-              <button key={f.name} type="button" onClick={() => { onChange(f.name); setOpen(false); }}
-                style={{ fontFamily: `"${f.name}"` }}
-                className={cn("w-full text-left px-3 py-2 text-base rounded-xl hover:bg-blush-soft cursor-pointer truncate", value === f.name && "font-medium bg-blush-soft/60")}>
-                {f.name}
-              </button>
-            ))}
+      <PopoverContent align="start" className="w-72 rounded-2xl border-line bg-paper p-0 overflow-hidden">
+        <div className="max-h-80 overflow-y-auto px-3 pt-1">
+          {allowClear && matches("use site font") && (
+            <button type="button" onClick={() => { onChange(""); setOpen(false); }}
+              className={cn("block w-full text-center py-3 text-sm border-b border-line/70 hover:bg-blush-soft cursor-pointer", !value && "font-medium")}>
+              Use site font
+            </button>
+          )}
+          {groups.map(({ g, fonts }) => (
+            <div key={g}>
+              <p className="pt-3 pb-1 text-center text-[9px] uppercase tracking-widest text-muted-foreground">{g}</p>
+              {fonts.map((f) => (
+                <button key={f.name} type="button" onClick={() => { onChange(f.name); setOpen(false); }}
+                  style={{ fontFamily: `"${f.name}"` }}
+                  className={cn("block w-full text-center py-3 text-xl border-b border-line/70 hover:bg-blush-soft cursor-pointer truncate", value === f.name && "bg-blush-soft/70")}>
+                  {f.name}
+                </button>
+              ))}
+            </div>
+          ))}
+          {groups.length === 0 && <p className="py-8 text-center text-sm text-muted-foreground">No fonts match "{query}".</p>}
+        </div>
+        <div className="border-t border-line p-2">
+          <div className="flex items-center gap-2 rounded-full border border-line bg-pearl px-3 py-1.5">
+            <Search className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
+            <input value={query} onChange={(e) => setQuery(e.target.value)} placeholder="Search fonts"
+              className="w-full bg-transparent text-sm focus:outline-none" />
           </div>
-        ))}
+        </div>
       </PopoverContent>
     </Popover>
   );
@@ -138,7 +156,7 @@ function FontPicker({ value, onChange, allowClear = true }: { value: string; onC
 
 export const Route = createFileRoute("/_authenticated/website_/edit")({ component: EditorPage });
 
-type Section = {
+export type Section = {
   id: string;
   wedding_id: string;
   section_type: SectionType;
@@ -161,7 +179,7 @@ function EditorPage() {
   const palette = { ...template.palette, ...(custom.palette ?? {}) };
   const fonts = { ...template.fonts, ...(custom.fonts ?? {}) };
   const fontScale = custom.fontScale ?? 1;
-  const pageLayout: PageLayout = custom.pageLayout ?? "scroll";
+  const pageLayout: PageLayout = custom.pageLayout ?? template.pageLayout ?? "scroll";
 
   // The editor's own workspace (sections, editor, live preview) needs all the horizontal
   // room it can get, so collapse the main app sidebar via its existing toggle/localStorage
@@ -199,7 +217,17 @@ function EditorPage() {
           section_type: type,
           sort_order: i,
           visible: true,
-          content: def.defaultContent,
+          content: type === "hero"
+            ? {
+                ...def.defaultContent,
+                ...(template.heroLayout ? { imageLayout: template.heroLayout } : {}),
+                ...(template.heroAlign ? { overlayAlign: template.heroAlign } : {}),
+                // Keep the people in frame in the template's own sample hero photo.
+                ...(template.images?.hero && template.previewFocus
+                  ? { focalX: Number(template.previewFocus.split("%")[0]), focalY: Number(template.previewFocus.split("%")[1]?.trim()) }
+                  : {}),
+              }
+            : def.defaultContent,
           image_url: template.images?.[type] ?? null,
         };
       });
@@ -302,6 +330,19 @@ function EditorPage() {
     invalidateWedding(wedding.id);
   };
 
+  const setDecoration = async (value: string | undefined) => {
+    if (!wedding) return;
+    const next = { ...custom, decoration: value };
+    await supabase.from("weddings").update({ site_customization: next }).eq("id", wedding.id);
+    invalidateWedding(wedding.id);
+  };
+  const setBackground = async (value: SiteBackground | null) => {
+    if (!wedding) return;
+    const next = { ...custom, background: value ?? undefined };
+    await supabase.from("weddings").update({ site_customization: next }).eq("id", wedding.id);
+    invalidateWedding(wedding.id);
+  };
+
   const setPageLayout = async (value: PageLayout) => {
     if (!wedding) return;
     const next = { ...custom, pageLayout: value };
@@ -327,16 +368,22 @@ function EditorPage() {
                 <Palette className="h-4 w-4" /> Colors
               </button>
             </PopoverTrigger>
-            <PopoverContent align="end" className="w-64 rounded-2xl border-line bg-paper p-4">
-              <p className="text-[10px] uppercase tracking-widest text-wine">Colors</p>
-              <div className="mt-3 space-y-2">
-                {(["bg", "ink", "accent", "soft"] as const).map((k) => (
-                  <label key={k} className="flex items-center justify-between text-sm">
-                    <span className="capitalize">{k === "bg" ? "background" : k}</span>
-                    <input type="color" value={palette[k]} onChange={(e) => setPalette(k, e.target.value)}
-                      className="h-7 w-14 rounded border border-line bg-transparent cursor-pointer" />
-                  </label>
-                ))}
+            <PopoverContent align="end" className="w-80 rounded-2xl border-line bg-paper p-5">
+              <p className="font-medium">Site Artwork</p>
+              <div className="mt-3">
+                <SwatchGroup onChange={setPalette} items={[
+                  { key: "artBg", label: "Background Behind Art", help: "The colour behind your photos — what shows while they load and around them.", value: palette.artBg ?? palette.soft },
+                  { key: "artInk", label: "Text on Art", help: "The colour of text placed over artwork, like your monogram.", value: palette.artInk ?? palette.ink },
+                ]} />
+              </div>
+              <p className="mt-6 font-medium">Pages</p>
+              <div className="mt-3">
+                <SwatchGroup onChange={setPalette} items={[
+                  { key: "bg", label: "Page Background", help: "The background of every page on your site.", value: palette.bg },
+                  { key: "ink", label: "Page Text", help: "The colour of headings and body text.", value: palette.ink },
+                  { key: "accent", label: "Buttons & Links", help: "Buttons, links and small highlights like the & in your names.", value: palette.accent },
+                  { key: "soft", label: "Cards & Dividers", help: "Soft panels behind events and other cards, and the thin lines between sections.", value: palette.soft },
+                ]} />
               </div>
               <button onClick={resetPalette} className="mt-3 text-sm text-muted-foreground hover:text-wine underline cursor-pointer">Reset to template</button>
             </PopoverContent>
@@ -392,6 +439,7 @@ function EditorPage() {
               </div>
             </PopoverContent>
           </Popover>
+          <BackgroundPopover weddingId={wedding.id} bg={custom.background} onChange={setBackground} decoration={custom.decoration} templateDecor={template.decoration} onDecoration={setDecoration} />
           <a href={url} target="_blank" rel="noreferrer" className="inline-flex items-center gap-2 rounded-full bg-ink text-pearl px-5 py-2 text-sm hover:bg-wine">Preview <ExternalLink className="h-3.5 w-3.5" /></a>
         </div>
       }
@@ -412,7 +460,8 @@ function EditorPage() {
                   {sections.map((s, i) => (
                     <div key={s.id}>
                       <SortableSectionRow section={s} selected={s.id === selectedId}
-                        onSelect={() => setSelectedId((prev) => (prev === s.id ? null : s.id))}
+                        onSelect={() => setSelectedId(s.id)}
+                        onDeselect={() => setSelectedId(null)}
                         onToggle={() => updateSection(s.id, { visible: !s.visible })}
                         onDelete={() => setConfirmDeleteId(s.id)} />
                       <InsertSectionDivider onAdd={(t) => addSection(t, i + 1)} existing={sections.map((sec) => sec.section_type)} />
@@ -454,7 +503,7 @@ function EditorPage() {
           </div>
           <div className="max-h-[80vh] overflow-y-auto scroll-smooth bg-stone/30">
             <div className={cn(previewDevice === "mobile" && "max-w-[390px] mx-auto border-x border-line")}>
-              <SitePreview wedding={wedding} sections={sections} palette={palette} template={template} fonts={fonts} fontScale={fontScale} pageLayout={pageLayout} events={events} />
+              <SitePreview wedding={wedding} sections={sections} palette={palette} template={template} fonts={fonts} fontScale={fontScale} pageLayout={pageLayout} events={events} background={custom.background} decoration={custom.decoration} edit={{ selectedId, onSelect: setSelectedId, onDeselect: () => setSelectedId(null) }} />
             </div>
           </div>
         </div>
@@ -477,8 +526,8 @@ function EditorPage() {
   );
 }
 
-function SortableSectionRow({ section, selected, onSelect, onToggle, onDelete }: {
-  section: Section; selected: boolean; onSelect: () => void; onToggle: () => void; onDelete: () => void;
+function SortableSectionRow({ section, selected, onSelect, onDeselect, onToggle, onDelete }: {
+  section: Section; selected: boolean; onSelect: () => void; onDeselect: () => void; onToggle: () => void; onDelete: () => void;
 }) {
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id: section.id });
   const def = SECTION_LIBRARY.find((s) => s.type === section.section_type);
@@ -491,7 +540,7 @@ function SortableSectionRow({ section, selected, onSelect, onToggle, onDelete }:
       <button {...attributes} {...listeners} className="cursor-grab active:cursor-grabbing p-1 opacity-60 hover:opacity-100">
         <GripVertical className="h-4 w-4" />
       </button>
-      <button onClick={onSelect} className="flex-1 text-left truncate focus:outline-none">
+      <button onClick={onSelect} onDoubleClick={onDeselect} className="flex-1 text-left truncate select-none focus:outline-none">
         {label}
       </button>
       <button onClick={onToggle} className="p-1 opacity-60 hover:opacity-100" title={section.visible ? "Hide" : "Show"}>
@@ -624,8 +673,10 @@ function SectionEditor({ section, weddingId, events, pageLayout, onChange }: {
           viewport-width md: breakpoint would force two columns into too little space. */}
       <div className="space-y-4">
         <div className="space-y-3">
-          <SectionFields section={section} setField={setField} events={events} />
+          <SectionFields section={section} setField={setField} events={events} weddingId={weddingId} />
         </div>
+
+        <LinksEditor links={section.content?.links ?? []} onChange={(links) => setField("links", links)} />
 
         {!NO_HEADING_TYPES.includes(section.section_type) && (
           <div>
@@ -644,13 +695,15 @@ function SectionEditor({ section, weddingId, events, pageLayout, onChange }: {
 
         <div>
           <p className="text-sm text-muted-foreground mb-2">Section photo</p>
-          {section.image_url ? (
-            <FocalPointPicker src={section.image_url} x={section.content?.focalX ?? 50} y={section.content?.focalY ?? 50} onChange={setFocal} />
-          ) : (
-            <div className="relative aspect-[4/3] rounded-2xl border border-dashed border-line overflow-hidden bg-stone/40">
-              <div className="w-full h-full grid place-items-center text-sm text-muted-foreground">No photo</div>
-            </div>
-          )}
+          <div className="w-36">
+            {section.image_url ? (
+              <FocalPointPicker src={section.image_url} x={section.content?.focalX ?? 50} y={section.content?.focalY ?? 50} onChange={setFocal} />
+            ) : (
+              <div className="relative aspect-[4/3] rounded-xl border border-dashed border-line overflow-hidden bg-stone/40">
+                <div className="w-full h-full grid place-items-center text-xs text-muted-foreground">No photo</div>
+              </div>
+            )}
+          </div>
           <div className="flex flex-wrap gap-2 mt-3">
             <input ref={fileRef} type="file" accept="image/*" hidden
               onChange={(e) => { const f = e.target.files?.[0]; if (f) uploadImage(f); }} />
@@ -668,7 +721,7 @@ function SectionEditor({ section, weddingId, events, pageLayout, onChange }: {
                 {library.length === 0 ? (
                   <p className="text-sm text-muted-foreground text-center py-4">No photos yet — upload one first and it'll show up here.</p>
                 ) : (
-                  <div className="grid grid-cols-3 gap-1.5 max-h-64 overflow-y-auto">
+                  <div className="grid grid-cols-6 gap-1 max-h-48 overflow-y-auto">
                     {library.map((p) => (
                       <button key={p.id} onClick={() => { onChange({ image_url: p.url }); setLibraryOpen(false); }}
                         className={cn("aspect-square rounded-lg overflow-hidden border-2 cursor-pointer", section.image_url === p.url ? "border-wine" : "border-transparent hover:border-line")}>
@@ -683,14 +736,40 @@ function SectionEditor({ section, weddingId, events, pageLayout, onChange }: {
               <button onClick={() => onChange({ image_url: null })} className="text-sm text-muted-foreground hover:text-wine underline cursor-pointer">Remove</button>
             )}
           </div>
-          {IMAGE_LAYOUT_TYPES.includes(section.section_type) && pageLayout !== "split" && (
+          {section.section_type === "hero" && pageLayout !== "split" && (
+            <div className="mt-3">
+              <p className="text-sm text-muted-foreground mb-1.5">Cover layout</p>
+              <div className="space-y-1">
+                {([["left", "Photo on the left", "The photo fills the whole left side"], ["top", "Photo on top", "Full width, text underneath"], ["overlay", "Text over photo", "Full width, text on the photo"]] as const).map(([v, label, desc]) => {
+                  const cur = ["left", "overlay"].includes(section.content?.imageLayout) ? section.content.imageLayout : "top";
+                  return (
+                    <button key={v} type="button" onClick={() => setField("imageLayout", v)}
+                      className={cn("w-full text-left px-3 py-2 rounded-xl cursor-pointer", cur === v ? "bg-blush-soft" : "hover:bg-stone")}>
+                      <span className="text-sm font-medium">{label}</span> <span className="text-xs text-muted-foreground">{desc}</span>
+                    </button>
+                  );
+                })}
+              </div>
+              {section.content?.imageLayout === "overlay" && (
+                <div className="mt-2 inline-flex rounded-full border border-line p-0.5">
+                  {(["left", "center", "right"] as const).map((v) => (
+                    <button key={v} type="button" onClick={() => setField("overlayAlign", v)}
+                      className={cn("rounded-full px-3 py-1 text-sm capitalize cursor-pointer", (section.content?.overlayAlign ?? "center") === v ? "bg-ink text-paper" : "text-muted-foreground hover:text-ink")}>
+                      Text {v === "center" ? "middle" : v}
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
+          )}
+          {section.section_type !== "hero" && IMAGE_LAYOUT_TYPES.includes(section.section_type) && pageLayout !== "split" && (
             <div className="mt-3">
               <p className="text-sm text-muted-foreground mb-1.5">Photo layout</p>
               <div className="inline-flex rounded-full border border-line p-0.5">
                 {(["full", "left", "right"] as const).map((v) => (
                   <button key={v} type="button" onClick={() => setField("imageLayout", v)}
-                    className={cn("rounded-full px-3 py-1 text-sm capitalize cursor-pointer", (section.content?.imageLayout ?? "full") === v ? "bg-ink text-paper" : "text-muted-foreground hover:text-ink")}>
-                    {v === "full" ? "Full width" : v}
+                    className={cn("rounded-full px-3 py-1 text-sm cursor-pointer", ((["left", "right"].includes(section.content?.imageLayout) ? section.content.imageLayout : "full")) === v ? "bg-ink text-paper" : "text-muted-foreground hover:text-ink")}>
+                    {v === "full" ? "Photo on top" : v === "left" ? "Left side" : "Right side"}
                   </button>
                 ))}
               </div>
@@ -702,7 +781,200 @@ function SectionEditor({ section, weddingId, events, pageLayout, onChange }: {
   );
 }
 
-function SectionFields({ section, setField, events }: { section: Section; setField: (k: string, v: any) => void; events: { id: string; name: string }[] }) {
+const DATE_FORMATS = [
+  { value: "long", label: "Saturday, December 7, 2024" },
+  { value: "medium", label: "December 7, 2024" },
+  { value: "short", label: "7 Dec 2024" },
+  { value: "numeric", label: "12/07/2024" },
+];
+const COUNTDOWN_FORMATS = [
+  { value: "dhms", label: "667 days 7 hrs 21 mins 1 secs" },
+  { value: "dhm", label: "667 days 7 hrs 21 mins" },
+  { value: "days", label: "667 days" },
+];
+
+function Toggle({ checked, onChange, label }: { checked: boolean; onChange: (v: boolean) => void; label: string }) {
+  return (
+    <label className="flex items-center justify-between gap-3 text-sm cursor-pointer">
+      {label}
+      <button type="button" role="switch" aria-checked={checked} onClick={() => onChange(!checked)}
+        className={cn("relative h-6 w-11 shrink-0 rounded-full transition-colors cursor-pointer", checked ? "bg-ink" : "bg-neutral-300")}>
+        <span className={cn("absolute top-0.5 h-5 w-5 rounded-full bg-paper transition-all", checked ? "left-[22px]" : "left-0.5")} />
+      </button>
+    </label>
+  );
+}
+
+// The Hero's date / location / countdown / RSVP-button settings (all optional; a hero that
+// has never set any of them renders exactly as before).
+function HeroDetailFields({ c, setField }: { c: Record<string, any>; setField: (k: string, v: any) => void }) {
+  const inp = "w-full rounded-xl border border-line bg-pearl px-3 py-2 text-sm focus:outline-none focus:border-wine";
+  const label = (t: string) => <label className="block text-xs uppercase tracking-widest text-muted-foreground mb-1">{t}</label>;
+  const select = (value: string, opts: { value: string; label: string }[], onChange: (v: string) => void) => (
+    <select className={inp} value={value} onChange={(e) => onChange(e.target.value)}>
+      {opts.map((o) => <option key={o.value} value={o.value}>{o.label}</option>)}
+    </select>
+  );
+  return (
+    <div className="space-y-4 pt-1">
+      <div className="space-y-3">
+        <p className="font-medium text-sm">Date</p>
+        <div>{label("Event date")}
+          <DatePicker value={c.date ?? ""} onChange={(v) => setField("date", v || undefined)} placeholder="First dated event" className="rounded-xl bg-pearl px-3 py-2" />
+          <p className="mt-1 text-xs text-muted-foreground">
+            Leave empty to use your first dated event.
+            {c.date && <> <button type="button" onClick={() => setField("date", undefined)} className="underline hover:text-ink cursor-pointer">Clear</button></>}
+          </p></div>
+        <Toggle label="Show date on the site" checked={!!c.showDate} onChange={(v) => setField("showDate", v)} />
+        {c.showDate && <div>{label("Date format")}{select(c.dateFormat ?? "long", DATE_FORMATS, (v) => setField("dateFormat", v))}</div>}
+      </div>
+      <div className="space-y-3">
+        <p className="font-medium text-sm">Location</p>
+        <input className={inp} value={c.location ?? ""} onChange={(e) => setField("location", e.target.value)} />
+        <Toggle label="Show location on the site" checked={!!c.showLocation} onChange={(v) => setField("showLocation", v)} />
+      </div>
+      <div className="space-y-3">
+        <p className="font-medium text-sm">Countdown</p>
+        <Toggle label="Display event countdown" checked={!!c.showCountdown} onChange={(v) => setField("showCountdown", v)} />
+        {c.showCountdown && <div>{label("Countdown format")}{select(c.countdownFormat ?? "dhms", COUNTDOWN_FORMATS, (v) => setField("countdownFormat", v))}</div>}
+      </div>
+      <Toggle label="Show an RSVP button" checked={!!c.showRsvp} onChange={(v) => setField("showRsvp", v)} />
+    </div>
+  );
+}
+
+type MediaItem = { url: string; type: "image" | "video" };
+const VIDEO_EXT = /\.(mp4|mov|webm|m4v|ogg)(\?|$)/i;
+const mediaTypeOf = (url: string): "image" | "video" => (VIDEO_EXT.test(url) ? "video" : "image");
+
+// Everything the gallery shows, in order: pasted image URLs from before this became an
+// uploader (content.images, kept so nothing is lost), then uploaded / added media.
+function galleryItems(c: Record<string, any>): MediaItem[] {
+  return [
+    ...((c.images ?? []) as string[]).map((url) => ({ url, type: mediaTypeOf(url) })),
+    ...((c.media ?? []) as MediaItem[]),
+  ];
+}
+
+// Photos and videos for the Moments slideshow: upload several at once from the device, or add
+// one by link; reorder or remove each.
+function GalleryEditor({ section, weddingId, setField }: { section: Section; weddingId: string; setField: (k: string, v: any) => void }) {
+  const items = galleryItems(section.content ?? {});
+  const [busy, setBusy] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(null);
+  const [url, setUrl] = useState("");
+  const inp = "w-full rounded-xl border border-line bg-pearl px-3 py-2 text-sm focus:outline-none focus:border-wine";
+  // Writing the combined list to `media` (and emptying the legacy `images`) is what folds old
+  // pasted URLs into the same ordered list on the first change.
+  const commit = (next: MediaItem[]) => { setField("media", next); if ((section.content?.images ?? []).length) setField("images", []); };
+  const move = (i: number, d: number) => {
+    const j = i + d;
+    if (j < 0 || j >= items.length) return;
+    const next = [...items];
+    [next[i], next[j]] = [next[j], next[i]];
+    commit(next);
+  };
+  const upload = async (files: FileList | null) => {
+    if (!files?.length) return;
+    setError(null);
+    const added: MediaItem[] = [];
+    const list = Array.from(files);
+    for (let i = 0; i < list.length; i++) {
+      const f = list[i];
+      setBusy(`Uploading ${i + 1} of ${list.length}…`);
+      const ext = f.name.split(".").pop() || "jpg";
+      const path = `${weddingId}/website/${section.id}-gallery-${Date.now()}-${i}.${ext}`;
+      const { error: err } = await supabase.storage.from("wedding-assets").upload(path, f, { upsert: true });
+      if (err) { setError(err.message); break; }
+      added.push({ url: supabase.storage.from("wedding-assets").getPublicUrl(path).data.publicUrl, type: f.type.startsWith("video") ? "video" : "image" });
+    }
+    setBusy(null);
+    if (added.length) commit([...items, ...added]);
+  };
+  return (
+    <div className="space-y-3">
+      <p className="block text-sm text-muted-foreground">Photos &amp; videos</p>
+      {items.length > 0 && (
+        <div className="flex flex-wrap gap-1.5">
+          {items.map((it, i) => (
+            <div key={`${it.url}-${i}`} className="group relative h-11 w-11 shrink-0 overflow-hidden rounded-lg border border-line bg-stone">
+              {it.type === "video"
+                ? <video src={it.url} muted preload="metadata" className="h-full w-full object-cover" />
+                : <img src={it.url} alt="" className="h-full w-full object-cover" />}
+              {it.type === "video" && <span className="absolute left-0.5 top-0.5 rounded bg-black/60 px-0.5 text-[8px] leading-tight text-white">▶</span>}
+              <div className="absolute inset-x-0 bottom-0 flex items-center justify-between bg-black/55 px-0.5 text-[10px] leading-4 text-white opacity-0 transition-opacity group-hover:opacity-100">
+                <button type="button" onClick={() => move(i, -1)} disabled={i === 0} title="Move earlier" className="disabled:opacity-30 cursor-pointer">←</button>
+                <button type="button" onClick={() => commit(items.filter((_, j) => j !== i))} title="Remove" className="cursor-pointer">×</button>
+                <button type="button" onClick={() => move(i, 1)} disabled={i === items.length - 1} title="Move later" className="disabled:opacity-30 cursor-pointer">→</button>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+      <label className={cn("inline-flex items-center gap-2 rounded-full border border-line px-4 py-2 text-sm hover:bg-stone cursor-pointer", busy && "opacity-60 pointer-events-none")}>
+        <Upload className="h-4 w-4" /> {busy ?? "Add photos or videos"}
+        <input type="file" accept="image/*,video/*" multiple className="hidden" onChange={(e) => { upload(e.target.files); e.target.value = ""; }} />
+      </label>
+      <div className="flex gap-2">
+        <input className={inp} placeholder="Or paste a link to a photo or video" value={url} onChange={(e) => setUrl(e.target.value)}
+          onKeyDown={(e) => { if (e.key === "Enter" && url.trim()) { e.preventDefault(); commit([...items, { url: url.trim(), type: mediaTypeOf(url) }]); setUrl(""); } }} />
+        <button type="button" disabled={!url.trim()} onClick={() => { commit([...items, { url: url.trim(), type: mediaTypeOf(url) }]); setUrl(""); }}
+          className="shrink-0 rounded-full bg-ink text-paper px-4 py-2 text-sm hover:bg-clay disabled:opacity-50 cursor-pointer">Add</button>
+      </div>
+      {error && <p className="text-sm text-destructive">{error}</p>}
+    </div>
+  );
+}
+
+type SectionLink = { label: string; url: string };
+
+// Any section can carry a list of links (a hotel's booking page, a map, a registry...) that
+// show as buttons under it — add as many as needed.
+function LinksEditor({ links, onChange }: { links: SectionLink[]; onChange: (links: SectionLink[]) => void }) {
+  const inp = "w-full rounded-xl border border-line bg-pearl px-3 py-2 text-sm focus:outline-none focus:border-wine";
+  const update = (i: number, patch: Partial<SectionLink>) => onChange(links.map((l, j) => (j === i ? { ...l, ...patch } : l)));
+  return (
+    <div>
+      <label className="block text-sm text-muted-foreground mb-1">Links</label>
+      <div className="space-y-2">
+        {links.map((l, i) => (
+          <div key={i} className="rounded-xl border border-line p-2.5 space-y-2">
+            <div className="flex items-center gap-2">
+              <input className={inp} placeholder="Button text" value={l.label} onChange={(e) => update(i, { label: e.target.value })} />
+              <button type="button" onClick={() => onChange(links.filter((_, j) => j !== i))} title="Remove link"
+                className="shrink-0 p-1.5 text-muted-foreground hover:text-cherry cursor-pointer"><Trash2 className="h-4 w-4" /></button>
+            </div>
+            <input className={inp} placeholder="https://" value={l.url} onChange={(e) => update(i, { url: e.target.value })} />
+          </div>
+        ))}
+      </div>
+      <button type="button" onClick={() => onChange([...links, { label: "", url: "" }])}
+        className="mt-2 inline-flex items-center gap-1.5 text-sm text-clay hover:underline cursor-pointer">
+        <Plus className="h-3.5 w-3.5" /> Add link
+      </button>
+    </div>
+  );
+}
+
+const normalizeUrl = (u: string) => (/^[a-z][a-z0-9+.-]*:/i.test(u.trim()) ? u.trim() : `https://${u.trim()}`);
+
+function SectionLinks({ links, palette }: { links?: SectionLink[]; palette: any }) {
+  const shown = (links ?? []).filter((l) => l.url.trim());
+  if (shown.length === 0) return null;
+  return (
+    <div className="px-6 pb-10 -mt-6 max-w-3xl mx-auto flex flex-wrap justify-center gap-2">
+      {shown.map((l, i) => (
+        <a key={i} href={normalizeUrl(l.url)} target="_blank" rel="noreferrer"
+          className="inline-flex items-center gap-1.5 rounded-full border px-5 py-2 text-sm hover:opacity-70 transition-opacity"
+          style={{ borderColor: palette.accent, color: palette.accent }}>
+          {l.label.trim() || l.url.replace(/^https?:\/\/(www\.)?/i, "").replace(/\/$/, "")} <ExternalLink className="h-3 w-3" />
+        </a>
+      ))}
+    </div>
+  );
+}
+
+function SectionFields({ section, setField, events, weddingId }: { section: Section; setField: (k: string, v: any) => void; events: { id: string; name: string }[]; weddingId: string }) {
   const c = section.content ?? {};
   const inp = "w-full rounded-xl border border-line bg-pearl px-3 py-2 text-sm focus:outline-none focus:border-wine";
   const label = (t: string) => <label className="block text-sm text-muted-foreground mb-1">{t}</label>;
@@ -711,12 +983,11 @@ function SectionFields({ section, setField, events }: { section: Section; setFie
     case "hero":
       return (
         <>
+          <div>{label("Couple names")}<input className={inp} value={c.names ?? ""} onChange={(e) => setField("names", e.target.value)} />
+            <p className="mt-1 text-xs text-muted-foreground">Leave empty to use the names from your profile.</p></div>
           <div>{label("Eyebrow")}<input className={inp} value={c.eyebrow ?? ""} onChange={(e) => setField("eyebrow", e.target.value)} /></div>
           <div>{label("Tagline")}<input className={inp} value={c.tagline ?? ""} onChange={(e) => setField("tagline", e.target.value)} /></div>
-          <label className="flex items-center gap-2 text-sm cursor-pointer">
-            <input type="checkbox" checked={c.showCountdown ?? false} onChange={(e) => setField("showCountdown", e.target.checked)} />
-            Show a live countdown to your next event
-          </label>
+          <HeroDetailFields c={c} setField={setField} />
         </>
       );
     case "header":
@@ -766,13 +1037,13 @@ function SectionFields({ section, setField, events }: { section: Section; setFie
             <div className="flex flex-wrap gap-1.5">
               {IMAGE_SHAPE_OPTIONS.map((o) => (
                 <button key={o.value} type="button" onClick={() => setField("shape", o.value)}
-                  className={cn("rounded-full border px-3 py-1 text-sm cursor-pointer", (c.shape ?? "rectangle") === o.value ? "bg-ink text-paper border-ink" : "border-line text-muted-foreground hover:bg-stone")}>
+                  className={cn("rounded-full border px-3 py-1 text-sm cursor-pointer", (["circle", "oval", "heart"].includes(c.shape) ? c.shape : "full") === o.value ? "bg-ink text-paper border-ink" : "border-line text-muted-foreground hover:bg-stone")}>
                   {o.label}
                 </button>
               ))}
             </div>
           </div>
-          <div>
+          {["circle", "oval", "heart"].includes(c.shape) && <div>
             {label("Size")}
             <div className="inline-flex rounded-full border border-line p-0.5">
               {IMAGE_SIZE_OPTIONS.map((o) => (
@@ -782,7 +1053,7 @@ function SectionFields({ section, setField, events }: { section: Section; setFie
                 </button>
               ))}
             </div>
-          </div>
+          </div>}
         </>
       );
     case "story":
@@ -826,17 +1097,13 @@ function SectionFields({ section, setField, events }: { section: Section; setFie
         </>
       );
     }
-    case "gallery": {
-      const images: string[] = c.images ?? [];
+    case "gallery":
       return (
         <>
           <div>{label("Title")}<input className={inp} value={c.title ?? ""} onChange={(e) => setField("title", e.target.value)} /></div>
-          {label("Image URLs, one per line")}
-          <textarea rows={5} className={inp} value={images.join("\n")}
-            onChange={(e) => setField("images", e.target.value.split("\n").map((s) => s.trim()).filter(Boolean))} />
+          <GalleryEditor section={section} weddingId={weddingId} setField={setField} />
         </>
       );
-    }
     case "party": {
       const members: { name: string; role: string }[] = c.members ?? [];
       return (
@@ -885,14 +1152,119 @@ function SectionFields({ section, setField, events }: { section: Section; setFie
   }
 }
 
+// Moments: a horizontal scroll-snap slideshow of photos and videos. Slides peek in from the
+// sides, arrows step through them, and it drifts to the next slide every few seconds until
+// someone hovers over it or plays a video (never, for people who prefer reduced motion).
+function GallerySlideshow({ items, focal, palette }: { items: MediaItem[]; focal?: React.CSSProperties; palette: any }) {
+  const track = useRef<HTMLDivElement>(null);
+  const paused = useRef(false);
+  const step = (dir: 1 | -1) => {
+    const el = track.current;
+    if (!el) return;
+    const slide = el.firstElementChild as HTMLElement | null;
+    const w = (slide?.offsetWidth ?? el.clientWidth) + 16;
+    if (dir === 1 && el.scrollLeft + el.clientWidth >= el.scrollWidth - 8) el.scrollTo({ left: 0, behavior: "smooth" });
+    else el.scrollBy({ left: dir * w, behavior: "smooth" });
+  };
+  useEffect(() => {
+    if (items.length < 2 || window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+    const id = setInterval(() => { if (!paused.current) step(1); }, 4500);
+    return () => clearInterval(id);
+  }, [items.length]);
+  const arrow = "absolute top-1/2 z-10 -translate-y-1/2 grid h-10 w-10 place-items-center rounded-full border shadow-sm cursor-pointer hover:opacity-80";
+  return (
+    <div className="relative" onPointerEnter={() => { paused.current = true; }} onPointerLeave={() => { paused.current = false; }}>
+      <div ref={track} className="flex gap-4 overflow-x-auto snap-x snap-mandatory scroll-smooth pb-2 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+        {items.map((it, i) => (
+          <div key={`${it.url}-${i}`} className="shrink-0 snap-center w-[82%] sm:w-[62%] aspect-[4/3] overflow-hidden rounded-2xl" style={{ background: palette.soft }}>
+            {it.type === "video"
+              ? <video src={it.url} controls playsInline preload="metadata" onPlay={() => { paused.current = true; }} className="h-full w-full object-cover" />
+              : <img src={it.url} alt="" style={i === 0 ? focal : undefined} className="h-full w-full object-cover" />}
+          </div>
+        ))}
+      </div>
+      {items.length > 1 && (
+        <>
+          <button type="button" aria-label="Previous" onClick={(e) => { e.stopPropagation(); step(-1); }} className={cn(arrow, "left-2")} style={{ background: palette.bg, borderColor: palette.soft, color: palette.ink }}><ChevronLeft className="h-4 w-4" /></button>
+          <button type="button" aria-label="Next" onClick={(e) => { e.stopPropagation(); step(1); }} className={cn(arrow, "right-2")} style={{ background: palette.bg, borderColor: palette.soft, color: palette.ink }}><ChevronRight className="h-4 w-4" /></button>
+        </>
+      )}
+    </div>
+  );
+}
+
+// Photos in the scrolling layouts blur and fade as they leave (or before they fully enter)
+// the middle of the screen, so one photo dissolves into the next as you scroll instead of
+// stacking one after another. The effect is written straight to the element's style from a
+// scroll listener (no React state, so scrolling never re-renders anything) and is skipped
+// for people who've asked for reduced motion.
+// Template galleries render pages scaled down inside cards; there the scroll effect would just blur
+// whichever photos happen to sit mid-window, so they opt out.
+// `vh` is the fixed "screen height" (design px) such previews use in place of the real window height,
+// so a card looks the same on a small laptop and a tall monitor.
+export const StaticPreviewContext = createContext<{ vh: number; compact?: boolean; mobile?: boolean } | null>(null);
+
+function ScrollBlurImg(props: React.ImgHTMLAttributes<HTMLImageElement>) {
+  const ref = useRef<HTMLImageElement>(null);
+  const isStatic = !!useContext(StaticPreviewContext);
+  useEffect(() => {
+    const el = ref.current;
+    if (isStatic || !el || window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+    let raf = 0;
+    const update = () => {
+      raf = 0;
+      const r = el.getBoundingClientRect();
+      const vh = window.innerHeight;
+      const d = Math.abs(r.top + r.height / 2 - vh / 2) / (vh / 2 + r.height / 2); // 0 centred → 1 fully off-screen
+      const p = Math.min(1, Math.max(0, (d - 0.3) / 0.7));
+      const eased = p * p * (3 - 2 * p);
+      el.style.filter = eased > 0.01 ? `blur(${(eased * 16).toFixed(1)}px)` : "";
+      el.style.opacity = String(1 - eased * 0.85);
+    };
+    const onScroll = () => { if (!raf) raf = requestAnimationFrame(update); };
+    update();
+    // capture:true so scrolling inside the editor's own scroll containers is caught too.
+    window.addEventListener("scroll", onScroll, { passive: true, capture: true });
+    window.addEventListener("resize", onScroll);
+    return () => {
+      window.removeEventListener("scroll", onScroll, true);
+      window.removeEventListener("resize", onScroll);
+      if (raf) cancelAnimationFrame(raf);
+    };
+  }, [props.src, isStatic]);
+  return <img ref={ref} {...props} style={{ willChange: "filter, opacity", ...props.style }} />;
+}
+
 // Every section renders on the right in document order; the ones with a photo double as
 // scroll triggers — as each one crosses into view, the fixed left panel crossfades to its
 // photo. A separate component (not a branch inside SiteShell) because it needs its own
 // hooks, which can't live inside one conditional branch of a function also used for the
 // other, hookless layout modes.
+// Marks whichever node has scrolled past the middle of its scrolling area as "current". Measured against
+// the nearest scrolling ancestor (the editor's preview pane, a template preview card, the right column
+// of Split View) or the window — an IntersectionObserver rooted at the window can't tell when content
+// scrolls inside a nested pane, which is why photos wouldn't switch there.
+function scrollSpy(getNodes: () => [string, HTMLElement][], onActive: (id: string) => void) {
+  const handler = () => {
+    const nodes = getNodes();
+    if (nodes.length === 0) return;
+    let sp: HTMLElement | null = nodes[0][1].parentElement;
+    while (sp && !/(auto|scroll)/.test(getComputedStyle(sp).overflowY)) sp = sp.parentElement;
+    const mid = sp ? sp.getBoundingClientRect().top + sp.getBoundingClientRect().height / 2 : window.innerHeight / 2;
+    let cur = nodes[0][0];
+    for (const [id, el] of nodes) if (el.getBoundingClientRect().top <= mid) cur = id;
+    onActive(cur);
+  };
+  handler();
+  window.addEventListener("scroll", handler, { passive: true, capture: true });
+  window.addEventListener("resize", handler);
+  return () => { window.removeEventListener("scroll", handler, true); window.removeEventListener("resize", handler); };
+}
+
 function SplitViewShell({ wedding, sections, palette, template, events, monogram }: {
   wedding: any; sections: Section[]; palette: any; template: any; events: any[]; monogram: React.ReactNode;
 }) {
+  const stat = useContext(StaticPreviewContext);
   const withPhoto = sections.filter((s) => s.image_url);
   const [activeId, setActiveId] = useState<string | null>(withPhoto[0]?.id ?? null);
   const nodesRef = useRef(new Map<string, HTMLElement>());
@@ -900,20 +1272,7 @@ function SplitViewShell({ wedding, sections, palette, template, events, monogram
 
   useEffect(() => {
     if (!photoKey) return;
-    const observer = new IntersectionObserver(
-      (entries) => {
-        const visible = entries.filter((e) => e.isIntersecting);
-        if (visible.length === 0) return;
-        // Closest to the top of the viewport among everything currently in view — the
-        // section the couple is most looking at right now.
-        visible.sort((a, b) => a.boundingClientRect.top - b.boundingClientRect.top);
-        const id = visible[0].target.getAttribute("data-section-id");
-        if (id) setActiveId(id);
-      },
-      { threshold: 0.35 },
-    );
-    photoKey.split("|").forEach((id) => { const el = nodesRef.current.get(id); if (el) observer.observe(el); });
-    return () => observer.disconnect();
+    return scrollSpy(() => photoKey.split("|").flatMap((id) => { const el = nodesRef.current.get(id); return el ? [[id, el] as [string, HTMLElement]] : []; }), setActiveId);
   }, [photoKey]);
 
   return (
@@ -921,22 +1280,23 @@ function SplitViewShell({ wedding, sections, palette, template, events, monogram
       {/* Below lg, the fixed side-by-side panels don't fit — each section's photo instead
           renders inline as its own full-screen slide, immediately followed by that
           section's content, so scrolling alternates photo/content/photo/content. */}
-      <div className="hidden lg:block relative flex-1 basis-96 lg:sticky lg:top-0 lg:h-screen overflow-hidden" style={{ background: palette.soft }}>
+      <div className="hidden lg:block relative flex-1 basis-96 lg:sticky lg:top-0 lg:h-screen overflow-hidden" style={{ background: palette.artBg ?? palette.soft, height: stat?.vh }}>
         {withPhoto.length === 0 && <div className="absolute inset-0 grid place-items-center">{monogram}</div>}
         {withPhoto.map((s) => (
-          <img key={s.id} src={s.image_url!} alt="" style={{ ...focalPosition(s.content), opacity: activeId === s.id ? 1 : 0 }}
-            className="absolute inset-0 w-full h-full object-cover transition-opacity duration-700 ease-in-out" />
+          <img key={s.id} src={s.image_url!} alt="" style={{ ...focalPosition(s.content), opacity: activeId === s.id ? 1 : 0, filter: activeId === s.id ? "blur(0px)" : "blur(6px)" }}
+            className="absolute inset-0 w-full h-full object-cover transition-[opacity,filter] duration-[1400ms] ease-[cubic-bezier(0.4,0,0.2,1)]" />
         ))}
       </div>
-      <div className="flex-1 basis-96 lg:h-screen lg:overflow-y-auto">
-        {withPhoto.length === 0 && <div className="min-h-[50vh] grid place-items-center lg:hidden" style={{ background: palette.soft }}>{monogram}</div>}
+      <div className="flex-1 basis-96 lg:h-screen lg:overflow-y-auto" style={{ height: stat?.vh }}>
+        {withPhoto.length === 0 && <div className="min-h-[50vh] grid place-items-center lg:hidden" style={{ background: palette.artBg ?? palette.soft }}>{monogram}</div>}
         {sections.map((s) => (
           <div key={s.id}
             ref={(el) => { if (el) nodesRef.current.set(s.id, el); else nodesRef.current.delete(s.id); }}
             data-section-id={s.id}
+            style={stat && s.image_url ? { minHeight: stat.vh / 2 } : undefined}
             className={s.image_url ? "lg:min-h-[50vh] lg:flex lg:flex-col lg:justify-center" : undefined}>
             {s.image_url && (
-              <div className="relative min-h-screen overflow-hidden lg:hidden" style={{ background: palette.soft }}>
+              <div className="relative min-h-screen overflow-hidden lg:hidden" style={{ background: palette.artBg ?? palette.soft }}>
                 <img src={s.image_url} alt="" style={focalPosition(s.content)} className="absolute inset-0 w-full h-full object-cover" />
               </div>
             )}
@@ -949,6 +1309,222 @@ function SplitViewShell({ wedding, sections, palette, template, events, monogram
   );
 }
 
+// A run of consecutive sections whose photo is set to sit left/right of the text. They share
+// ONE sticky photo frame (always the same size, whatever the text beside it runs to): the frame
+// stays put through the whole band, and as each section's text reaches the middle of the screen
+// the photo dissolves — blurring out as the next one blurs in — instead of every section
+// bringing its own differently-sized photo. Container queries (not viewport breakpoints) so the
+// editor's narrow preview and the phone-width preview fall back to a photo above each section's text.
+function PhotoBand({ sections, palette, template, wedding, events }: {
+  sections: Section[]; palette: any; template: any; wedding: any; events: any[];
+}) {
+  const [activeId, setActiveId] = useState(sections[0].id);
+  const nodes = useRef(new Map<string, HTMLElement>());
+  const key = sections.map((s) => s.id).join("|");
+  const photoRight = (sections[0].content?.imageLayout as string) === "right";
+  // In the editor the preview pane is 80vh tall, not the whole window.
+  const inEditor = !!useContext(PreviewEditContext);
+  const stat = useContext(StaticPreviewContext);
+  const fullH = stat ? `${stat.vh}px` : inEditor ? "80vh" : "100vh";
+
+  useEffect(() => scrollSpy(() => key.split("|").flatMap((id) => { const el = nodes.current.get(id); return el ? [[id, el] as [string, HTMLElement]] : []; }), setActiveId), [key]);
+
+  return (
+    <div className="@container">
+      <div className={cn("flex flex-col @3xl:flex-row", photoRight && "@3xl:flex-row-reverse")}>
+        <div className="hidden @3xl:block @3xl:w-1/2 shrink-0 self-start sticky top-0 overflow-hidden" style={{ height: fullH, background: palette.artBg ?? palette.soft }}>
+          {sections.map((s) => {
+            const on = activeId === s.id;
+            return (
+              <img key={s.id} src={s.image_url!} alt="" style={{ ...focalPosition(s.content), opacity: on ? 1 : 0, filter: on ? "blur(0px)" : "blur(6px)" }}
+                className="absolute inset-0 w-full h-full object-cover transition-[opacity,filter] duration-[1400ms] ease-[cubic-bezier(0.4,0,0.2,1)]" />
+            );
+          })}
+        </div>
+        <div className="min-w-0 @3xl:w-1/2">
+          {sections.map((s) => (
+            <div key={s.id} data-band-id={s.id}
+              ref={(el) => { if (el) nodes.current.set(s.id, el); else nodes.current.delete(s.id); }}
+              style={{ ["--band-h" as any]: fullH }}
+              className="@3xl:min-h-[var(--band-h)] @3xl:flex @3xl:flex-col @3xl:justify-center">
+              {/* On a phone: the cover photo fills the screen, then the text follows; other photos fill half. */}
+              <div className="@3xl:hidden">
+                <ScrollBlurImg src={s.image_url!} alt="" style={{ ...focalPosition(s.content), height: s.section_type === "hero" ? "var(--screen)" : "calc(var(--screen) * 0.5)" }} className="block w-full object-cover" />
+              </div>
+              <RenderSection section={s} palette={palette} template={template} wedding={wedding} events={events} suppressImage inBand />
+            </div>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// A small floating MENU pill that stays put while the page scrolls (sticky inside whatever
+// scrolls — the editor's preview pane or the public page) and opens a card of links to each
+// section. Zero-height wrapper so it overlays the content instead of pushing it down.
+function FloatingMenu({ sections, palette }: { sections: Section[]; palette: any }) {
+  const [open, setOpen] = useState(false);
+  const go = (id: string) => {
+    setOpen(false);
+    document.getElementById(`section-${id}`)?.scrollIntoView({ behavior: "smooth", block: "start" });
+  };
+  return (
+    <div className="sticky top-3 z-40 h-0 pl-4">
+      <button type="button" onClick={() => setOpen((v) => !v)} aria-expanded={open}
+        className="inline-flex items-center gap-2 rounded-full border px-4 py-2 text-[11px] font-medium uppercase tracking-widest shadow-sm"
+        style={{ background: palette.bg, borderColor: palette.soft, color: palette.ink }}>
+        {open ? <X className="h-3.5 w-3.5" /> : <Menu className="h-3.5 w-3.5" />} Menu
+      </button>
+      {open && (
+        <div className="mt-2 w-60 rounded-2xl border p-2 shadow-lg" style={{ background: palette.bg, borderColor: palette.soft, color: palette.ink }}>
+          {sections.map((s) => (
+            <button key={s.id} type="button" onClick={() => go(s.id)}
+              className="block w-full rounded-xl px-3 py-2 text-left text-sm uppercase tracking-widest hover:opacity-60">
+              {SECTION_LIBRARY.find((d) => d.type === s.section_type)?.label ?? s.section_type}
+            </button>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
+// A full-site artwork layer (e.g. a designer's theme): sits above the page colour and below all
+// content, never intercepts clicks. Needs the wrapper to create a stacking context (`isolate`).
+// Which botanical art (if any) a page shows: the couple's own choice ("none" turns it off),
+// otherwise whatever their template ships with.
+export function decorFor(template: { decoration?: string }, chosen?: string | null): DecorKind | null {
+  if (chosen === "none") return null;
+  const k = chosen ?? template.decoration;
+  return DECOR_OPTIONS.some((o) => o.value === k) ? (k as DecorKind) : null;
+}
+
+// The first hero's cover layout, used to keep decoration clear of the cover photo.
+export function heroCoverOf(sections: { section_type: string; image_url: string | null; content: Record<string, any> }[]): string | undefined {
+  const hero = sections.find((s) => s.section_type === "hero");
+  if (!hero?.image_url) return undefined;
+  const l = hero.content?.imageLayout;
+  return l === "left" || l === "right" || l === "overlay" ? l : "top";
+}
+
+export type SiteBackground = { url: string; fit?: "cover" | "width" | "repeat"; opacity?: number; fixed?: boolean };
+
+export function SiteBackdrop({ bg }: { bg?: SiteBackground | null }) {
+  if (!bg?.url) return null;
+  const fit = bg.fit ?? "cover";
+  return (
+    <div aria-hidden className="pointer-events-none absolute inset-0 -z-10" style={{
+      backgroundImage: `url("${bg.url}")`,
+      backgroundSize: fit === "cover" ? "cover" : fit === "width" ? "100% auto" : "auto",
+      backgroundRepeat: fit === "repeat" ? "repeat" : "no-repeat",
+      backgroundPosition: "center top",
+      backgroundAttachment: bg.fixed ? "fixed" : "scroll",
+      opacity: (bg.opacity ?? 100) / 100,
+    }} />
+  );
+}
+
+const BG_FIT_OPTIONS: { value: NonNullable<SiteBackground["fit"]>; label: string; desc: string }[] = [
+  { value: "cover", label: "Fill", desc: "Stretch to cover the whole page" },
+  { value: "width", label: "Full width", desc: "Fit the width, from the top" },
+  { value: "repeat", label: "Repeat", desc: "Tile it like a pattern" },
+];
+
+// Upload a theme image from a designer and place it behind the whole site.
+function BackgroundPopover({ weddingId, bg, onChange, decoration, templateDecor, onDecoration }: { weddingId: string; bg?: SiteBackground; onChange: (next: SiteBackground | null) => void; decoration?: string; templateDecor?: string; onDecoration: (v: string | undefined) => void }) {
+  const [uploading, setUploading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [opacity, setOpacity] = useState(bg?.opacity ?? 100);
+  const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  useEffect(() => { setOpacity(bg?.opacity ?? 100); }, [bg?.opacity]);
+  const upload = async (file: File) => {
+    setUploading(true); setError(null);
+    const ext = file.name.split(".").pop() || "png";
+    const path = `${weddingId}/website/background-${Date.now()}.${ext}`;
+    const { error: err } = await supabase.storage.from("wedding-assets").upload(path, file, { upsert: true });
+    if (err) { setUploading(false); setError(err.message); return; }
+    onChange({ fit: "cover", opacity: 100, ...bg, url: supabase.storage.from("wedding-assets").getPublicUrl(path).data.publicUrl });
+    setUploading(false);
+  };
+  const patch = (p: Partial<SiteBackground>) => bg && onChange({ ...bg, ...p });
+  return (
+    <Popover>
+      <PopoverTrigger asChild>
+        <button className="inline-flex items-center gap-2 rounded-full border border-line px-4 py-2 text-sm hover:bg-stone cursor-pointer">
+          <Images className="h-4 w-4" /> Background
+        </button>
+      </PopoverTrigger>
+      <PopoverContent align="end" className="w-80 rounded-2xl border-line bg-paper p-5">
+        <p className="font-medium">Decoration</p>
+        <p className="mt-1 text-sm text-muted-foreground">Hand-drawn botanicals in the corners of your pages.</p>
+        <div className="mt-2 flex flex-wrap gap-1.5">
+          {[{ value: undefined, label: "Template default" }, { value: "none", label: "None" }, ...DECOR_OPTIONS].map((o) => {
+            const on = (decoration ?? undefined) === o.value;
+            return (
+              <button key={o.label} type="button" onClick={() => onDecoration(o.value)}
+                className={cn("rounded-full border px-3 py-1 text-sm cursor-pointer", on ? "border-ink bg-ink text-paper" : "border-line hover:bg-stone")}>
+                {o.label}
+              </button>
+            );
+          })}
+        </div>
+        <div className="my-4 border-t border-line" />
+        <p className="font-medium">Background overlay</p>
+        <p className="mt-1 text-sm text-muted-foreground">Add a theme or artwork (for example from your designer) behind your whole site.</p>
+        {bg?.url && <div className="mt-3 h-24 w-full overflow-hidden rounded-xl border border-line bg-stone" style={{ backgroundImage: `url("${bg.url}")`, backgroundSize: "cover", backgroundPosition: "center top" }} />}
+        <div className="mt-3 flex items-center gap-3">
+          <label className={cn("inline-flex items-center gap-1.5 rounded-full border border-line px-3 py-1.5 text-sm hover:border-wine cursor-pointer", uploading && "opacity-60 pointer-events-none")}>
+            <Upload className="h-3.5 w-3.5" /> {uploading ? "Uploading…" : bg?.url ? "Replace" : "Upload image"}
+            <input type="file" accept="image/*" className="hidden" onChange={(e) => { const f = e.target.files?.[0]; if (f) upload(f); e.target.value = ""; }} />
+          </label>
+          {bg?.url && <button type="button" onClick={() => onChange(null)} className="text-sm text-muted-foreground hover:text-wine underline cursor-pointer">Remove</button>}
+        </div>
+        {error && <p className="mt-2 text-sm text-destructive">{error}</p>}
+        {bg?.url && (
+          <div className="mt-4 space-y-4">
+            <div>
+              <p className="text-sm text-muted-foreground mb-1.5">Placement</p>
+              <div className="space-y-1">
+                {BG_FIT_OPTIONS.map((o) => (
+                  <button key={o.value} type="button" onClick={() => patch({ fit: o.value })}
+                    className={cn("w-full text-left px-3 py-1.5 rounded-xl cursor-pointer", (bg.fit ?? "cover") === o.value ? "bg-blush-soft" : "hover:bg-stone")}>
+                    <span className="text-sm font-medium">{o.label}</span> <span className="text-xs text-muted-foreground">{o.desc}</span>
+                  </button>
+                ))}
+              </div>
+            </div>
+            <div>
+              <div className="flex items-center justify-between text-sm text-muted-foreground mb-1.5"><span>Opacity</span><span className="tabular-nums">{opacity}%</span></div>
+              <input type="range" min={5} max={100} step={5} value={opacity} className="w-full accent-[#243746] cursor-pointer"
+                onChange={(e) => {
+                  const v = Number(e.target.value);
+                  setOpacity(v);
+                  if (timer.current) clearTimeout(timer.current);
+                  timer.current = setTimeout(() => patch({ opacity: v }), 250);
+                }} />
+            </div>
+            <Toggle label="Stay in place while scrolling" checked={!!bg.fixed} onChange={(v) => patch({ fixed: v })} />
+          </div>
+        )}
+      </PopoverContent>
+    </Popover>
+  );
+}
+
+// The WEDthread wordmark that closes every published site (and the editor's preview of it) —
+// always the brand dark blue, whatever palette the couple has chosen.
+export function SiteFooter({ palette }: { palette: any }) {
+  return (
+    <footer className="flex h-28 items-center justify-center border-t" style={{ borderColor: palette.soft }}>
+      {/* Dark blue on a light page, white on a dark one — never changes on hover. Still a link. */}
+      <a href="/" data-static aria-label="WEDthread" className="flex items-center leading-none">
+        <Logo sizeClassName="text-2xl" style={{ color: isDark(palette.bg) ? "#FFFFFF" : "#243746" }} />
+      </a>
+    </footer>
+  );
+}
+
 // Same-page approximations of withjoy's Split View / Classic Navigation — not a true
 // multi-page rebuild with its own routes. Shared by the editor's SitePreview and the
 // public w.$slug.tsx so both always render a given wedding's chosen layout identically.
@@ -956,7 +1532,7 @@ export function SiteShell({ wedding, sections, palette, template, events, layout
   wedding: any; sections: Section[]; palette: any; template: any; events: any[]; layoutMode: PageLayout;
 }) {
   const monogram = (
-    <p className="font-serif text-3xl text-center px-6" style={{ fontFamily: `"${template.fonts.display}", serif` }}>
+    <p className="font-serif text-3xl text-center px-6" style={{ fontFamily: `"${template.fonts.display}", serif`, color: palette.artInk ?? palette.ink }}>
       {wedding.partner_a} & {wedding.partner_b}
     </p>
   );
@@ -968,16 +1544,7 @@ export function SiteShell({ wedding, sections, palette, template, events, layout
   if (layoutMode === "nav") {
     return (
       <div>
-        {/* Scoped to this render only — cleans up on unmount, doesn't leak scroll-behavior
-            to other pages in the app. */}
-        <style>{"html { scroll-behavior: smooth; }"}</style>
-        <nav className="sticky top-0 z-10 flex flex-wrap items-center gap-x-5 gap-y-1 px-6 py-3 border-b" style={{ background: palette.bg, borderColor: palette.soft }}>
-          {sections.map((s) => (
-            <a key={s.id} href={`#section-${s.id}`} className="text-sm uppercase tracking-widest hover:opacity-70" style={{ color: palette.ink }}>
-              {SECTION_LIBRARY.find((d) => d.type === s.section_type)?.label ?? s.section_type}
-            </a>
-          ))}
-        </nav>
+        <FloatingMenu sections={sections} palette={palette} />
         {sections.map((s) => (
           <div key={s.id} id={`section-${s.id}`}>
             <RenderSection section={s} palette={palette} template={template} wedding={wedding} events={events} />
@@ -988,16 +1555,26 @@ export function SiteShell({ wedding, sections, palette, template, events, layout
     );
   }
 
+  // Consecutive sections with a side-by-side photo are grouped into one PhotoBand.
+  const isBanded = (s: Section) => IMAGE_LAYOUT_TYPES.includes(s.section_type) && !!s.image_url && ["left", "right"].includes(s.content?.imageLayout);
+  const blocks: ({ band: Section[] } | { one: Section })[] = [];
+  sections.forEach((s) => {
+    const last = blocks[blocks.length - 1];
+    if (isBanded(s)) { if (last && "band" in last) last.band.push(s); else blocks.push({ band: [s] }); }
+    else blocks.push({ one: s });
+  });
   return (
     <>
-      {sections.map((s) => <RenderSection key={s.id} section={s} palette={palette} template={template} wedding={wedding} events={events} />)}
+      {blocks.map((b) => "band" in b
+        ? <PhotoBand key={b.band.map((s) => s.id).join("|")} sections={b.band} palette={palette} template={template} wedding={wedding} events={events} />
+        : <RenderSection key={b.one.id} section={b.one} palette={palette} template={template} wedding={wedding} events={events} />)}
       {sections.length === 0 && <div className="p-10 text-center text-sm">All sections hidden.</div>}
     </>
   );
 }
 
-function SitePreview({ wedding, sections, palette, template, fonts, fontScale, pageLayout, events }: {
-  wedding: any; sections: Section[]; palette: any; template: any; fonts?: { display: string; body: string }; fontScale?: number; pageLayout?: PageLayout; events: any[];
+export function SitePreview({ wedding, sections, palette, template, fonts, fontScale, pageLayout, events, edit, background, decoration }: {
+  wedding: any; sections: Section[]; palette: any; template: any; fonts?: { display: string; body: string }; fontScale?: number; pageLayout?: PageLayout; events: any[]; edit?: PreviewEdit; background?: SiteBackground; decoration?: string;
 }) {
   const visible = sections.filter((s) => s.visible);
   // Overriding fonts here (rather than threading a separate prop through RenderSection)
@@ -1005,20 +1582,29 @@ function SitePreview({ wedding, sections, palette, template, fonts, fontScale, p
   // work unchanged. --site-scale is a plain CSS variable, so it cascades to every
   // descendant's `calc(... * var(--site-scale, 1))` heading style with no prop drilling.
   const effectiveTemplate = fonts ? { ...template, fonts } : template;
+  // What "the screen" means for full-screen covers: a fixed height inside template cards, the pane in
+  // the editor, the real screen on the published site.
+  const staticCtx = useContext(StaticPreviewContext);
+  const screenH = staticCtx ? `${staticCtx.vh}px` : edit ? "80vh" : "100svh";
   // Only load fonts this wedding's site actually uses — the sitewide pair plus any
   // per-section overrides — not the whole curated GOOGLE_FONT_OPTIONS list.
   useGoogleFonts([effectiveTemplate.fonts.display, effectiveTemplate.fonts.body, ...sections.map((s) => s.content?.fontFamily)]);
   return (
-    <div style={{ background: palette.bg, color: palette.ink, fontFamily: `"${effectiveTemplate.fonts.body}", sans-serif`, ["--site-scale" as any]: fontScale ?? 1 }}>
-      <SiteShell wedding={wedding} sections={visible} palette={palette} template={effectiveTemplate} events={events} layoutMode={pageLayout ?? "scroll"} />
-    </div>
+    <PreviewEditContext.Provider value={edit ?? null}>
+      <div className="@container relative isolate" style={{ background: palette.bg, color: palette.ink, fontFamily: `"${effectiveTemplate.fonts.body}", sans-serif`, ["--site-scale" as any]: fontScale ?? 1, ["--screen" as any]: screenH }}>
+        <SiteBackdrop bg={background} />
+        <SiteDecor kind={decorFor(template, decoration)} color={palette.accent} heroLayout={heroCoverOf(sections)} />
+        <SiteShell wedding={wedding} sections={visible} palette={palette} template={effectiveTemplate} events={events} layoutMode={pageLayout ?? "scroll"} />
+        <SiteFooter palette={palette} />
+      </div>
+    </PreviewEditContext.Provider>
   );
 }
 
 // Live countdown to a target date/time — its own component (not inline in RenderSection)
 // because it needs its own ticking interval; RenderSection itself stays a plain render
 // switch with no timers of its own.
-function CountdownTimer({ target }: { target: string }) {
+function CountdownTimer({ target, fontFamily, format = "dhms" }: { target: string; fontFamily?: string; format?: string }) {
   const [now, setNow] = useState(() => Date.now());
   useEffect(() => {
     const id = setInterval(() => setNow(Date.now()), 1000);
@@ -1029,7 +1615,42 @@ function CountdownTimer({ target }: { target: string }) {
   const hours = Math.floor((diff % 86400000) / 3600000);
   const minutes = Math.floor((diff % 3600000) / 60000);
   const seconds = Math.floor((diff % 60000) / 1000);
-  return <p className="mt-4 text-sm opacity-70 tabular-nums">{days}d {hours}h {minutes}m {seconds}s</p>;
+  const text = format === "days" ? `${days} days` : format === "dhm" ? `${days} days ${hours} hrs ${minutes} mins` : `${days} days ${hours} hrs ${minutes} mins ${seconds} secs`;
+  return <p className="mt-6 text-lg tabular-nums" style={{ fontFamily }}>{text}</p>;
+}
+
+function formatHeroDate(iso: string, fmt: string) {
+  const d = new Date(`${iso}T00:00:00`);
+  if (Number.isNaN(d.getTime())) return iso;
+  const opts: Record<string, Intl.DateTimeFormatOptions> = {
+    long: { weekday: "long", month: "long", day: "numeric", year: "numeric" },
+    medium: { month: "long", day: "numeric", year: "numeric" },
+    short: { day: "numeric", month: "short", year: "numeric" },
+    numeric: { month: "2-digit", day: "2-digit", year: "numeric" },
+  };
+  return d.toLocaleDateString("en-US", opts[fmt] ?? opts.long);
+}
+
+// Date, location, countdown and RSVP button for the hero — each individually switched on in
+// the Hero editor. `centered` is the stacked layout under the names; the split-view hero uses
+// it as the whole right-hand column.
+function HeroDetails({ c, wedding, events, palette, fontFamily }: { c: Record<string, any>; wedding: any; events: any[]; palette: any; fontFamily: string }) {
+  const nextDate: string | undefined = c.date || events.filter((e: any) => e.event_date).map((e: any) => e.event_date).sort()[0];
+  const location = (c.location ?? "").trim() || [wedding.destination_city, wedding.destination_country].filter(Boolean).join(", ");
+  return (
+    <div className="space-y-2">
+      {c.showDate && nextDate && <p className="text-2xl" style={{ fontFamily }}>{formatHeroDate(nextDate, c.dateFormat ?? "long")}</p>}
+      {c.showLocation && location && <p className="text-lg opacity-70" style={{ fontFamily }}>{location}</p>}
+      {c.showCountdown && nextDate && <CountdownTimer target={nextDate} fontFamily={fontFamily} format={c.countdownFormat} />}
+      {c.showRsvp && (
+        <Link to="/rsvp/w/$slug" params={{ slug: wedding.slug ?? "" }}
+          className="mt-6 inline-flex items-center rounded-full border px-6 py-2 text-xs uppercase tracking-widest hover:opacity-70"
+          style={{ borderColor: palette.ink }}>
+          RSVP
+        </Link>
+      )}
+    </div>
+  );
 }
 
 // Hand-drawn (not sourced — self-authored, so no licensing question), used by any
@@ -1086,43 +1707,44 @@ function RichBody({ html, className }: { html: string; className?: string }) {
 function MediaSection({ section, title, body, displayFont, align = "left", cta, suppressImage = false }: {
   section: Section; title: string; body: string; displayFont: any; align?: "left" | "center"; cta?: React.ReactNode; suppressImage?: boolean;
 }) {
-  const layout = (section.content?.imageLayout as "full" | "left" | "right" | undefined) ?? "full";
+  const raw = section.content?.imageLayout as string | undefined;
+  const layout: "top" | "left" | "right" = raw === "left" || raw === "right" ? raw : "top";
   const hasImage = !!section.image_url && !suppressImage;
 
-  if (hasImage && layout !== "full") {
-    // flex-wrap (not grid + a viewport md: breakpoint) so this responds to the space it's
-    // actually rendered in — a real phone, the editor's narrower preview column, or the
-    // simulated mobile-width preview all wrap correctly, since flex-wrap reacts to the
-    // container's own width, not a media query on the browser window. Text stays
-    // left-aligned in both the side-by-side and stacked arrangement rather than
-    // conditionally centering, so there's nothing that only looks right at one width.
+  // Photo fills one whole side edge to edge, text on the other. flex-wrap (not a viewport
+  // breakpoint) so it responds to the width it's actually rendered in — a phone, the editor's narrow
+  // preview, the mobile-width preview.
+  if (hasImage && layout !== "top") {
     const imageBlock = (
-      <div className="flex-1 basis-72 min-w-[220px] max-w-[420px] mx-auto">
-        <div className="aspect-[4/3] rounded-2xl overflow-hidden">
-          <img src={section.image_url!} alt="" style={focalPosition(section.content)} className="w-full h-full object-cover" />
-        </div>
+      <div className="relative flex-1 basis-80 min-h-[360px]">
+        <ScrollBlurImg src={section.image_url!} alt="" style={focalPosition(section.content)} className="absolute inset-0 h-full w-full object-cover" />
       </div>
     );
     const textBlock = (
-      <div className="flex-1 basis-72 min-w-[240px] text-left">
+      <div className="flex flex-1 basis-80 flex-col justify-center px-8 py-16 text-left">
         <h2 style={sectionHeadingStyle(displayFont, section.content)} className="mb-4">{title}</h2>
         <RichBody html={body} />
         {cta}
       </div>
     );
     return (
-      <section className="px-6 py-16 max-w-5xl mx-auto flex flex-wrap items-center justify-center gap-8">
+      <section className="flex flex-wrap items-stretch">
         {layout === "right" ? <>{textBlock}{imageBlock}</> : <>{imageBlock}{textBlock}</>}
       </section>
     );
   }
 
+  // Photo end to end above the text (the same structure as the cover), or just text.
   return (
-    <section className={cn("px-6 py-16 max-w-3xl mx-auto", align === "center" && "text-center")}>
-      <h2 style={sectionHeadingStyle(displayFont, section.content)} className="mb-4">{title}</h2>
-      {hasImage && <img src={section.image_url!} alt="" style={focalPosition(section.content)} className="rounded-2xl mb-4 w-full max-h-96 object-cover" />}
-      <RichBody html={body} />
-      {cta}
+    <section className={cn(align === "center" && "text-center")}>
+      {hasImage && (
+        <ScrollBlurImg src={section.image_url!} alt="" style={focalPosition(section.content)} className="block w-full aspect-[16/9] max-h-[62vh] object-cover" />
+      )}
+      <div className="px-6 py-16 max-w-3xl mx-auto">
+        <h2 style={sectionHeadingStyle(displayFont, section.content)} className="mb-4">{title}</h2>
+        <RichBody html={body} />
+        {cta}
+      </div>
     </section>
   );
 }
@@ -1130,80 +1752,164 @@ function MediaSection({ section, title, body, displayFont, align = "left", cta, 
 // suppressImage is set by SiteShell's Split View, where every section's own photo already
 // shows in the fixed left panel (crossfading as the couple scrolls) — rendering it again
 // inline here would just duplicate it. Never affects "scroll"/"nav" layouts.
-export function RenderSection({ section, palette, template, wedding, events = [], suppressImage = false }: {
-  section: Section; palette: any; template: any; wedding: any; events?: any[]; suppressImage?: boolean;
+// Provided only by the editor's live preview: hovering a section outlines it with its name,
+// clicking selects it in the editor panel. The public site renders with no provider, so
+// RenderSection there is exactly the section and nothing else.
+type PreviewEdit = { selectedId: string | null; onSelect: (id: string) => void; onDeselect: () => void };
+const PreviewEditContext = createContext<PreviewEdit | null>(null);
+
+export function RenderSection(props: {
+  section: Section; palette: any; template: any; wedding: any; events?: any[]; suppressImage?: boolean; inBand?: boolean;
 }) {
+  const edit = useContext(PreviewEditContext);
+  if (!edit) return <RenderSectionBody {...props} />;
+  const { section } = props;
+  const selected = edit.selectedId === section.id;
+  const name = SECTION_LIBRARY.find((d) => d.type === section.section_type)?.label ?? section.section_type;
+  return (
+    <div
+      className={cn("group/edit relative cursor-pointer select-none", selected && "z-10")}
+      // Double-clicking the selected section lets go of it.
+      onDoubleClickCapture={(e) => { e.preventDefault(); e.stopPropagation(); edit.onDeselect(); }}
+      // Capture, so links and buttons inside the section select it instead of navigating.
+      onClickCapture={(e) => { e.preventDefault(); e.stopPropagation(); edit.onSelect(section.id); }}
+    >
+      <div className={cn(
+        "pointer-events-none absolute inset-0 z-20 rounded-lg border-2 transition-opacity",
+        selected ? "border-neutral-400 opacity-100" : "border-neutral-300 opacity-0 group-hover/edit:opacity-100",
+      )} />
+      <span className={cn(
+        "pointer-events-none absolute left-2 top-2 z-30 rounded-md bg-neutral-200 px-2 py-0.5 text-[11px] font-medium text-neutral-700 transition-opacity",
+        selected ? "opacity-100" : "opacity-0 group-hover/edit:opacity-100",
+      )}>{name}</span>
+      <RenderSectionBody {...props} />
+    </div>
+  );
+}
+
+function RenderSectionBody(props: {
+  section: Section; palette: any; template: any; wedding: any; events?: any[]; suppressImage?: boolean; inBand?: boolean;
+}) {
+  return (
+    <>
+      <SectionContent {...props} />
+      <SectionLinks links={props.section.content?.links} palette={props.palette} />
+    </>
+  );
+}
+
+function SectionContent({ section, palette, template, wedding, events = [], suppressImage = false, inBand = false }: {
+  section: Section; palette: any; template: any; wedding: any; events?: any[]; suppressImage?: boolean; inBand?: boolean;
+}) {
+  const stat = useContext(StaticPreviewContext);
   const c = section.content ?? {};
   const displayFont = { fontFamily: `"${template.fonts.display}", serif` };
   switch (section.section_type) {
     case "hero": {
-      const layout = (c.imageLayout as "full" | "left" | "right" | undefined) ?? "full";
-      // Countdown targets the soonest dated event — weddings has no single canonical
-      // "the date," each event carries its own, so this is the couple's actual next
-      // upcoming moment rather than an arbitrary pick.
-      const nextEvent = events
-        .filter((e: any) => e.event_date)
-        .sort((a: any, b: any) => a.event_date.localeCompare(b.event_date))[0];
-      const heroText = (
-        <>
-          <p className="text-[10px] uppercase tracking-[0.3em]" style={{ color: palette.accent }}>{c.eyebrow || "Together with their families"}</p>
-          <h1 className="mt-6" style={{
-            fontFamily: sectionFontFamily(c, displayFont),
-            fontSize: c.fontSize
-              ? HERO_HEADING_SIZES[c.fontSize]
-              : `calc(${HERO_HEADING_SIZES.medium} * var(--site-scale, 1))`,
-            lineHeight: 1,
-          }}>
-            {wedding.partner_a}<br /><span style={{ color: palette.accent }}>&</span><br />{wedding.partner_b}
-          </h1>
-          {c.tagline && <p className="mt-6 text-sm opacity-70">{c.tagline}</p>}
-          {c.showCountdown && nextEvent && <CountdownTimer target={nextEvent.event_date} />}
-        </>
-      );
-      const scrollCue = layout === "full" && (
+      // Cover options: "left" (photo fills the left side), "top" (photo end to end, text below) and
+      // "overlay" (photo end to end, text over it). Anything else — including the old centred-
+      // rectangle "full" — falls back to "top".
+      const rawLayout = c.imageLayout as string | undefined;
+      const layout: "left" | "right" | "top" | "overlay" = rawLayout === "left" || rawLayout === "right" || rawLayout === "overlay" ? rawLayout : "top";
+      const align: "left" | "center" | "right" = c.overlayAlign === "left" || c.overlayAlign === "right" ? c.overlayAlign : "center";
+      const heroFont = sectionFontFamily(c, displayFont);
+      // Over a photo, text and accents go light so they read against it.
+      const makeHeroText = (onImage: boolean) => {
+        const pal = onImage ? { ...palette, ink: "#FFFFFF", accent: "rgba(255,255,255,0.85)" } : palette;
+        return (
+          <>
+            <p className="text-[10px] uppercase tracking-[0.3em]" style={{ color: pal.accent }}>{c.eyebrow || "Together with their families"}</p>
+            <h1 className="mt-6" style={{
+              fontFamily: heroFont,
+              // In a gallery thumbnail the "photo on top" cover is 40% photo / 60% text, so the names
+              // are set smaller there to fit fully.
+              fontSize: stat?.compact && layout === "top" && section.image_url
+                ? `calc(${HERO_HEADING_SIZES.medium} * 0.7)`
+                : c.fontSize
+                  ? HERO_HEADING_SIZES[c.fontSize]
+                  : `calc(${HERO_HEADING_SIZES.medium} * var(--site-scale, 1))`,
+              lineHeight: 1,
+            }}>
+              {c.names?.trim()
+                ? c.names
+                : <>{wedding.partner_a}<br /><span style={{ color: pal.accent }}>&</span><br />{wedding.partner_b}</>}
+            </h1>
+            {c.tagline && <p className="mt-6 text-sm opacity-80">{c.tagline}</p>}
+            {(c.showDate || c.showLocation || c.showCountdown || c.showRsvp) && (
+              <div className="mt-6"><HeroDetails c={c} wedding={wedding} events={events} palette={pal} fontFamily={heroFont} /></div>
+            )}
+          </>
+        );
+      };
+      const heroText = makeHeroText(false);
+      const scrollCue = (
         <ChevronDown className="mx-auto mt-10 h-4 w-4 animate-bounce opacity-50" style={{ color: palette.accent }} />
       );
       if (suppressImage) {
+        // Split View / photo band: the photo lives in the sticky panel beside this, so this
+        // column carries all the hero text (names, tagline, date, place, countdown, RSVP).
         return (
-          <section className="relative px-6 py-16 text-center overflow-hidden">
+          <section style={stat ? { minHeight: inBand ? stat.vh * 0.85 : stat.vh } : undefined}
+            className={cn("relative px-6 py-16 text-center overflow-hidden flex flex-col items-center justify-center", inBand ? "@3xl:min-h-[85vh]" : "lg:min-h-screen")}>
             {template.decoration === "floral" && (
-              <FloralFlourish color={palette.accent} className="absolute -top-4 -right-4 h-20 w-20 opacity-70" />
+              <>
+                <FloralFlourish color={palette.accent} className="absolute -top-4 -right-4 h-28 w-28 opacity-70" />
+                <FloralFlourish color={palette.accent} className="absolute -bottom-4 -right-4 h-28 w-28 opacity-70 rotate-180" />
+              </>
             )}
             {heroText}
+            <ChevronDown className="mt-10 h-4 w-4 animate-bounce opacity-50" style={{ color: palette.accent }} />
           </section>
         );
       }
-      if (section.image_url && layout !== "full") {
-        // flex-wrap, not grid + a viewport md: breakpoint — see the matching comment in
-        // MediaSection for why: it needs to respond to the space it's actually rendered
-        // in (a real phone, the editor's narrower preview column, the simulated
-        // mobile-width preview), not the browser window's real size.
-        const photo = (
-          <div className="flex-1 basis-72 min-w-[220px] max-w-[420px] mx-auto">
-            <div className="aspect-[4/5] rounded-3xl overflow-hidden">
-              <img src={section.image_url} alt="" style={focalPosition(c)} className="w-full h-full object-cover" />
+
+      // 3. Text over a photo that runs edge to edge.
+      if (section.image_url && layout === "overlay") {
+        return (
+          <section className={cn("relative flex min-h-[var(--screen)] items-center overflow-hidden text-white @3xl:min-h-[88vh]",
+            align === "left" ? "justify-start text-left" : align === "right" ? "justify-end text-right" : "justify-center text-center")}
+            style={stat ? { minHeight: stat.vh } : undefined}>
+            <ScrollBlurImg src={section.image_url} alt="" style={focalPosition(c)} className="absolute inset-0 h-full w-full object-cover" />
+            {/* The tint is darkest on the side the text sits, so it stays readable whatever the photo. */}
+            <div className="absolute inset-0" style={{ background: align === "left" ? "linear-gradient(90deg, rgba(0,0,0,0.6), rgba(0,0,0,0.05) 75%)" : align === "right" ? "linear-gradient(270deg, rgba(0,0,0,0.6), rgba(0,0,0,0.05) 75%)" : "rgba(0,0,0,0.42)" }} />
+            <div className={cn("relative px-8 py-24 md:px-16", align !== "center" && "max-w-xl")}>
+              {makeHeroText(true)}
+              {align === "center" && <ChevronDown className="mx-auto mt-10 h-4 w-4 animate-bounce opacity-70" />}
             </div>
+          </section>
+        );
+      }
+
+      // 1. Photo fills the whole left (or right) side, text on the other.
+      if (section.image_url && (layout === "left" || layout === "right")) {
+        // flex-wrap rather than a viewport breakpoint, so it responds to the width it's actually
+        // rendered in (a phone, the editor's narrow preview, the mobile-width preview).
+        const photo = (
+          <div className="relative flex-1 basis-80 min-h-[var(--screen)] @3xl:min-h-[420px]" style={{ minHeight: stat && !stat.mobile ? stat.vh : undefined }}>
+            <ScrollBlurImg src={section.image_url} alt="" style={focalPosition(c)} className="absolute inset-0 h-full w-full object-cover" />
           </div>
         );
-        const textBlock = <div className="flex-1 basis-72 min-w-[240px] text-left">{heroText}</div>;
+        const textBlock = <div className="flex flex-1 basis-80 flex-col items-center justify-center px-8 py-16 text-center">{heroText}</div>;
         return (
-          <section className="px-6 py-16 max-w-5xl mx-auto flex flex-wrap items-center justify-center gap-10">
+          <section className="flex flex-wrap items-stretch">
             {layout === "right" ? <>{textBlock}{photo}</> : <>{photo}{textBlock}</>}
           </section>
         );
       }
+
+      // 2. Photo end to end, text underneath (also the look when there's no photo yet).
       return (
-        <section className="relative px-6 py-24 text-center overflow-hidden" style={{ background: section.image_url ? undefined : palette.bg }}>
+        <section className="relative overflow-hidden text-center">
           {template.decoration === "floral" && (
-            <FloralFlourish color={palette.accent} className="absolute -top-4 -right-4 h-24 w-24 md:h-32 md:w-32 opacity-70" />
+            <FloralFlourish color={palette.accent} className="absolute -top-4 -right-4 z-10 h-24 w-24 md:h-32 md:w-32 opacity-70" />
           )}
           {section.image_url && (
-            <div className="mx-auto max-w-3xl aspect-[16/10] rounded-3xl overflow-hidden mb-8">
-              <img src={section.image_url} alt="" style={focalPosition(c)} className="w-full h-full object-cover" />
-            </div>
+            <ScrollBlurImg data-decor-top="" src={section.image_url} alt="" style={{ ...focalPosition(c), ...(stat && !stat.mobile ? { height: stat.vh * (stat.compact ? 0.4 : 0.62), aspectRatio: "auto" } : {}) }} className="block h-[calc(var(--screen)*0.5)] w-full object-cover @3xl:aspect-[16/9] @3xl:h-auto @3xl:max-h-[62vh]" />
           )}
-          {heroText}
-          {scrollCue}
+          <div className={cn("px-6", section.image_url ? "py-16" : "py-24")} style={stat?.compact && section.image_url ? { paddingTop: 36 } : undefined}>
+            {heroText}
+            {scrollCue}
+          </div>
         </section>
       );
     }
@@ -1252,13 +1958,19 @@ export function RenderSection({ section, palette, template, wedding, events = []
       // the fixed left panel, there's nothing left to render on the right; it stays only
       // as an (invisible) scroll trigger for the left panel to switch to it.
       if (!section.image_url || suppressImage) return null;
-      const shape = (c.shape as string | undefined) ?? "rectangle";
+      // Photos run end to end by default; only a deliberately chosen circle, oval or heart is shaped.
+      const shape = (["circle", "oval", "heart"].includes(c.shape) ? c.shape : "full") as string;
+      if (shape === "full") {
+        return (
+          <section>
+            <ScrollBlurImg src={section.image_url} alt="" style={focalPosition(c)} className="block w-full max-h-[70vh] object-cover" />
+          </section>
+        );
+      }
       const size = IMAGE_SIZES[(c.size as string | undefined) ?? "m"];
       const shapeClass = shape === "circle" ? "aspect-square rounded-full"
-        : shape === "square" ? "aspect-square rounded-2xl"
         : shape === "oval" ? "aspect-[3/2] rounded-full"
-        : shape === "heart" ? "aspect-square"
-        : "aspect-[4/3] rounded-2xl";
+        : "aspect-square";
       return (
         <section className="px-6 py-10 flex items-center justify-center">
           <div style={{ width: size }} className={cn("overflow-hidden", shapeClass)}>
@@ -1272,7 +1984,7 @@ export function RenderSection({ section, palette, template, wedding, events = []
                 <image href={section.image_url} width="100" height="100" preserveAspectRatio="xMidYMid slice" clipPath={`url(#heart-${section.id})`} />
               </svg>
             ) : (
-              <img src={section.image_url} alt="" style={focalPosition(c)} className="w-full h-full object-cover" />
+              <ScrollBlurImg src={section.image_url} alt="" style={focalPosition(c)} className="w-full h-full object-cover" />
             )}
           </div>
         </section>
@@ -1329,20 +2041,18 @@ export function RenderSection({ section, palette, template, wedding, events = []
       );
     }
     case "gallery": {
-      const images: string[] = c.images ?? [];
-      // Only section.image_url (index 0) is what Split View's left panel already shows —
-      // the rest are plain pasted URLs, unrelated to that mechanism, so they still render.
-      const all = section.image_url && !suppressImage ? [section.image_url, ...images] : images;
+      // Only section.image_url (index 0) is what Split View's left panel already shows, so it's
+      // left out of the slideshow there; everything else always renders.
+      const all: MediaItem[] = [
+        ...(section.image_url && !suppressImage ? [{ url: section.image_url, type: "image" as const }] : []),
+        ...galleryItems(c),
+      ];
       return (
         <section className="px-6 py-16 max-w-5xl mx-auto">
           <h2 style={sectionHeadingStyle(displayFont, c)} className="mb-6 text-center">{c.title || "Moments"}</h2>
-          <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
-            {/* focalX/focalY only apply to index 0 — that's the one uploaded via this
-                section's own photo picker; the rest are plain pasted URLs with no
-                per-image focal point mechanism of their own. */}
-            {all.map((src, i) => <img key={i} src={src} alt="" style={i === 0 && !suppressImage ? focalPosition(c) : undefined} className="aspect-square object-cover rounded-2xl" />)}
-            {all.length === 0 && <p className="col-span-full text-center text-sm opacity-60">Add photo URLs or upload one for this section.</p>}
-          </div>
+          {all.length > 0
+            ? <GallerySlideshow items={all} focal={suppressImage ? undefined : focalPosition(c)} palette={palette} />
+            : <p className="text-center text-sm opacity-60">Add photos or videos to this section.</p>}
         </section>
       );
     }

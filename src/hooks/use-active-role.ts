@@ -7,8 +7,10 @@ export type AppRole = "couple" | "planner" | "venue" | "vendor" | "seller" | "ad
 export const ROLE_LANDING: Record<AppRole, string> = {
   couple: "/dashboard",
   planner: "/dashboard",
-  venue: "/vendors",
-  vendor: "/vendors",
+  // Was "/vendors" (the public marketplace) — a vendor/venue signing in
+  // should land on their own workspace, not a browse page.
+  venue: "/business/dashboard",
+  vendor: "/business/dashboard",
   seller: "/vendors",
   admin: "/dashboard",
 };
@@ -68,4 +70,18 @@ export async function addRoleForCurrentUser(role: AppRole) {
   // Unique violation is fine — role already exists.
   if (error && !String(error.message).toLowerCase().includes("duplicate")) throw error;
   if (typeof window !== "undefined") window.localStorage.setItem(STORAGE_KEY, role);
+}
+
+// Removes a role from the current user's account — used by "leave this
+// workspace" for roles with no underlying data row of their own (admin has
+// no business/wedding to delete; the role IS the workspace). Vendor/venue/
+// couple "delete workspace" instead deletes the business/wedding row and
+// deliberately leaves the role in place, so re-onboarding under the same
+// role just works — this helper is for the one case that has nothing else
+// to delete.
+export async function removeRoleForCurrentUser(role: AppRole) {
+  const { data: u } = await supabase.auth.getUser();
+  if (!u.user) throw new Error("Not signed in");
+  const { error } = await supabase.from("user_roles").delete().eq("user_id", u.user.id).eq("role", role);
+  if (error) throw error;
 }

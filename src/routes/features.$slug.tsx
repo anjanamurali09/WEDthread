@@ -114,7 +114,7 @@ function FeaturePage() {
   return (
     <div ref={rootRef as any} className="min-h-screen bg-white text-[#243746]">
       <header className="sticky top-0 z-20 bg-white/85 backdrop-blur-md border-b border-line/50 px-6 md:px-12 py-6 flex items-center justify-between">
-        <Link to="/" className="flex items-center gap-2">
+        <Link to="/" data-static className="flex items-center gap-2">
           <Logo sizeClassName="text-3xl" />
         </Link>
         <div className="flex items-center gap-3">

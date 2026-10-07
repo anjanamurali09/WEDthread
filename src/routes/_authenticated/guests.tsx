@@ -2,17 +2,21 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useMemo, useRef, useState } from "react";
 import Papa from "papaparse";
 import { AppShell } from "@/components/app-shell";
-import { useCurrentWedding, useEvents, useGuests, useInvites, useInvalidateWedding, useRsvpQuestions, useRsvpResponses, type Guest, type Invite, type Wedding } from "@/lib/wedding-hooks";
+import { useCurrentWedding, useEvents, useGuests, useGuestTags, useFoodTags, useInvites, useInvalidateWedding, useRsvpQuestions, useRsvpResponses, type Guest, type GuestTag, type FoodTag, type Invite, type Wedding } from "@/lib/wedding-hooks";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-import { Plus, Upload, Download, X, Trash2, Search, MessageCircle, Copy, FileText, Columns3, Check, ChevronDown } from "lucide-react";
+import { Plus, Upload, Download, X, Trash2, Search, MessageCircle, Copy, FileText, Columns3, Check, ChevronDown, GripVertical } from "lucide-react";
 import { cn, formatNumber } from "@/lib/utils";
 import { Popover, PopoverTrigger, PopoverContent } from "@/components/ui/popover";
 import { PhotoEmptyState } from "@/components/photo-empty-state";
 import { ConfirmDialog } from "@/components/confirm-dialog";
-import { DIETARY, ALLERGIES } from "@/lib/dietary-tags";
+import { TagPicker, TagChip } from "@/components/tag-picker";
+import { useFoodTagActions } from "@/lib/food-tags";
 import { DEFAULT_ACCEPT_LABEL, DEFAULT_DECLINE_LABEL, DEFAULT_MAYBE_LABEL } from "@/components/rsvp-form";
 import { summarizeGuestRsvps } from "@/lib/rsvp-stats";
+import { DndContext, closestCenter, PointerSensor, useSensor, useSensors, type DragEndEvent } from "@dnd-kit/core";
+import { SortableContext, arrayMove, useSortable, verticalListSortingStrategy } from "@dnd-kit/sortable";
+import { CSS } from "@dnd-kit/utilities";
 
 // Mirrors the wording the couple set on the RSVP builder (weddings.attendance_*_label,
 // defaulting the same as the guest-facing form) so this table never drifts out of sync.
@@ -33,22 +37,33 @@ export const Route = createFileRoute("/_authenticated/guests")({
   validateSearch: (s: Record<string, unknown>) => ({ event: typeof s.event === "string" ? s.event : undefined }),
 });
 
-type ColKey = "name" | "household" | "email" | "phone" | "dietary" | "events" | "rsvp";
+type ColKey = "name" | "household" | "email" | "phone" | "dietary" | "tags" | "events" | "rsvp" | "actions";
 const ALL_COLS: { key: ColKey; label: string }[] = [
   { key: "name", label: "Guest name" },
   { key: "household", label: "Family / Group" },
   { key: "email", label: "Email" },
   { key: "phone", label: "Phone" },
   { key: "dietary", label: "Dietary" },
+  { key: "tags", label: "Tags" },
   { key: "events", label: "Events" },
   { key: "rsvp", label: "RSVP status" },
+  { key: "actions", label: "Actions" },
 ];
-const DEFAULT_COLS: ColKey[] = ["name", "household", "email", "phone", "dietary", "events", "rsvp"];
+const DEFAULT_COLS: ColKey[] = ["name", "household", "email", "phone", "dietary", "tags", "events", "rsvp", "actions"];
+const DEFAULT_COL_ORDER: ColKey[] = DEFAULT_COLS;
+const COL_HEADER_TEXT: Record<ColKey, string> = {
+  name: "Guest name", household: "Family / Group", email: "Email", phone: "Phone",
+  dietary: "Dietary", tags: "Tags", events: "Event", rsvp: "RSVP status", actions: "",
+};
+const COL_NOWRAP: ColKey[] = ["name", "household", "email", "phone"];
 
 function GuestsPage() {
   const { data: wedding, isLoading: weddingLoading } = useCurrentWedding();
   const { data: events = [], isLoading: eventsLoading } = useEvents(wedding?.id);
   const { data: guests = [], isLoading: guestsLoading } = useGuests(wedding?.id);
+  const { data: guestTags = [] } = useGuestTags(wedding?.id);
+  const { data: foodTags = [] } = useFoodTags(wedding?.id);
+  const foodActions = useFoodTagActions(wedding?.id, foodTags);
   const { data: invites = [], isLoading: invitesLoading } = useInvites(wedding?.id);
   const { data: rsvpQuestions = [] } = useRsvpQuestions(wedding?.id);
   const { data: rsvpResponses = [] } = useRsvpResponses(wedding?.id);
@@ -80,13 +95,27 @@ function GuestsPage() {
   const [confirmDeleteGuest, setConfirmDeleteGuest] = useState<Guest | null>(null);
   const [q, setQ] = useState("");
   const [filterDiet, setFilterDiet] = useState<string[]>([]);
+  const [filterTags, setFilterTags] = useState<string[]>([]);
   const [filterHousehold, setFilterHousehold] = useState<string | null>(null);
   const [filterEvent, setFilterEvent] = useState<string | null>(null);
   const [filterRsvp, setFilterRsvp] = useState<string | null>(null);
   const fileRef = useRef<HTMLInputElement>(null);
   const [visibleCols, setVisibleCols] = useState<ColKey[]>(() => {
-    try { const s = localStorage.getItem("wedthread_guest_cols"); if (s) return JSON.parse(s); } catch {}
+    try {
+      const s = localStorage.getItem("wedthread_guest_cols");
+      if (s) { const parsed = JSON.parse(s) as ColKey[]; return parsed.includes("actions") ? parsed : [...parsed, "actions"]; }
+    } catch {}
     return DEFAULT_COLS;
+  });
+  const [colOrder, setColOrder] = useState<ColKey[]>(() => {
+    try {
+      const s = localStorage.getItem("wedthread_guest_col_order");
+      if (s) {
+        const parsed = JSON.parse(s) as ColKey[];
+        return [...parsed, ...DEFAULT_COL_ORDER.filter((k) => !parsed.includes(k))];
+      }
+    } catch {}
+    return DEFAULT_COL_ORDER;
   });
   const [colsOpen, setColsOpen] = useState(false);
   const toggleCol = (k: ColKey) => setVisibleCols((prev) => {
@@ -94,6 +123,19 @@ function GuestsPage() {
     try { localStorage.setItem("wedthread_guest_cols", JSON.stringify(next)); } catch {}
     return next;
   });
+  const reorderCols = (from: ColKey, to: ColKey) => setColOrder((prev) => {
+    const oldIdx = prev.indexOf(from);
+    const newIdx = prev.indexOf(to);
+    const next = arrayMove(prev, oldIdx, newIdx);
+    try { localStorage.setItem("wedthread_guest_col_order", JSON.stringify(next)); } catch {}
+    return next;
+  });
+  const colSensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 4 } }));
+  const onColDragEnd = (e: DragEndEvent) => {
+    const { active, over } = e;
+    if (!over || active.id === over.id) return;
+    reorderCols(active.id as ColKey, over.id as ColKey);
+  };
   const showCol = (k: ColKey) => visibleCols.includes(k);
 
   const scopedGuestIds = useMemo(() => {
@@ -107,6 +149,20 @@ function GuestsPage() {
     return [...s].sort();
   }, [guests]);
 
+  // Dietary/allergy values are free text now, so the filter offers whatever's actually
+  // been entered across the guest list rather than a fixed preset list.
+  const dietaryOptions = useMemo(() => {
+    const set = new Set<string>();
+    guests.forEach((g) => { g.dietary_tags?.forEach((t) => set.add(t)); g.food_allergies?.forEach((t) => set.add(t)); });
+    return [...set].sort((a, b) => a.localeCompare(b));
+  }, [guests]);
+
+  const tagByName = useMemo(() => {
+    const m = new Map<string, GuestTag>();
+    guestTags.forEach((t) => m.set(t.name, t));
+    return m;
+  }, [guestTags]);
+
   const inviteByGuest = useMemo(() => {
     const m = new Map<string, Invite[]>();
     invites.forEach((i) => { const l = m.get(i.guest_id) ?? []; l.push(i); m.set(i.guest_id, l); });
@@ -118,16 +174,34 @@ function GuestsPage() {
       if (scopedGuestIds && !scopedGuestIds.has(g.id)) return false;
       if (q && !g.full_name.toLowerCase().includes(q.toLowerCase()) && !(g.email || "").toLowerCase().includes(q.toLowerCase())) return false;
       if (filterDiet.length && !filterDiet.some((d) => g.dietary_tags?.includes(d) || g.food_allergies?.includes(d))) return false;
+      if (filterTags.length && !filterTags.some((t) => g.tags?.includes(t))) return false;
       if (filterHousehold && g.household_group !== filterHousehold) return false;
       const gi = inviteByGuest.get(g.id) ?? [];
       if (filterEvent && !gi.some((i) => i.event_id === filterEvent)) return false;
       if (filterRsvp && !gi.some((i) => i.rsvp_status === filterRsvp)) return false;
       return true;
     });
-  }, [guests, q, filterDiet, filterHousehold, filterEvent, filterRsvp, scopedGuestIds, inviteByGuest]);
+  }, [guests, q, filterDiet, filterTags, filterHousehold, filterEvent, filterRsvp, scopedGuestIds, inviteByGuest]);
 
-  const anyFilter = !!(q || filterDiet.length || filterHousehold || filterEvent || filterRsvp);
-  const clearFilters = () => { setQ(""); setFilterDiet([]); setFilterHousehold(null); setFilterEvent(null); setFilterRsvp(null); };
+  // Keeps guests in the same family/group next to each other (stable — a
+  // group's own internal order, and where each group first appears, both
+  // stay as-is) so the table can skip the row divider between them instead
+  // of drawing a line through what's really one household.
+  const groupedFiltered = useMemo(() => {
+    const groups = new Map<string, typeof filtered>();
+    const order: string[] = [];
+    for (const g of filtered) {
+      // No household_group → its own singleton group, so it's never treated
+      // as "same family" as an unrelated guest that also has none.
+      const key = g.household_group ? `h:${g.household_group}` : `g:${g.id}`;
+      if (!groups.has(key)) { groups.set(key, []); order.push(key); }
+      groups.get(key)!.push(g);
+    }
+    return order.flatMap((key) => groups.get(key)!);
+  }, [filtered]);
+
+  const anyFilter = !!(q || filterDiet.length || filterTags.length || filterHousehold || filterEvent || filterRsvp);
+  const clearFilters = () => { setQ(""); setFilterDiet([]); setFilterTags([]); setFilterHousehold(null); setFilterEvent(null); setFilterRsvp(null); };
 
   const importCsv = () => fileRef.current?.click();
 
@@ -195,6 +269,29 @@ function GuestsPage() {
     a.href = URL.createObjectURL(blob); a.download = "guests.csv"; a.click();
   };
 
+  const createGuestTag = async (input: { name: string; color: string; emoji: string | null }): Promise<void> => {
+    if (!wedding) return;
+    const { error } = await supabase.from("guest_tags").insert({ wedding_id: wedding.id, ...input });
+    if (error) { toast.error(error.message); return; }
+    invalidate(wedding.id);
+  };
+
+  // Renaming a tag has to walk every guest currently wearing the old name
+  // and swap it for the new one — guests.tags stores names, not tag ids, so
+  // a rename would otherwise silently orphan the tag on everyone who has it.
+  const updateGuestTag = async (id: string, oldName: string, input: { name: string; color: string; emoji: string | null }): Promise<void> => {
+    if (!wedding) return;
+    const { error } = await supabase.from("guest_tags").update(input).eq("id", id);
+    if (error) { toast.error(error.message); return; }
+    if (input.name !== oldName) {
+      const affected = guests.filter((g) => g.tags?.includes(oldName));
+      await Promise.all(affected.map((g) =>
+        supabase.from("guests").update({ tags: (g.tags ?? []).map((t) => (t === oldName ? input.name : t)) }).eq("id", g.id)
+      ));
+    }
+    invalidate(wedding.id);
+  };
+
   const save = async (g: Partial<Guest> & { invitedEventIds?: string[] }) => {
     if (!wedding) return;
     try {
@@ -208,6 +305,7 @@ function GuestsPage() {
         email: g.email || null, phone: g.phone || null,
         household_group: g.household_group || null,
         dietary_tags: g.dietary_tags ?? [], food_allergies: g.food_allergies ?? [],
+        tags: g.tags ?? [],
         dietary_notes: g.dietary_notes || null, accessibility_notes: g.accessibility_notes || null,
       };
       let guestId = g.id;
@@ -271,6 +369,68 @@ function GuestsPage() {
     toast.success("RSVP link copied");
   };
 
+  const orderedVisibleCols = useMemo(() => colOrder.filter((k) => showCol(k)), [colOrder, visibleCols]);
+
+  const renderCell = (key: ColKey, g: Guest, gi: Invite[]) => {
+    switch (key) {
+      case "name": return g.full_name;
+      case "household": return g.household_group || "—";
+      case "email": return g.email || "—";
+      case "phone": return g.phone || "—";
+      case "dietary": return (
+        <div className="flex flex-wrap gap-1">
+          {g.dietary_tags?.map((t) => <TagChip key={t} tag={foodTags.find((f) => f.name === t) ?? { name: t, color: "#6E9B72" }} className="text-[11px] px-2 py-0.5 shadow-none" />)}
+          {g.food_allergies?.map((t) => <TagChip key={t} tag={foodTags.find((f) => f.name === t) ?? { name: t, color: "#E0805F" }} className="text-[11px] px-2 py-0.5 shadow-none" />)}
+          {!g.dietary_tags?.length && !g.food_allergies?.length && <span className="text-xs text-muted-foreground">—</span>}
+        </div>
+      );
+      case "tags": return (
+        <div className="flex flex-wrap gap-1">
+          {g.tags?.map((t) => <TagChip key={t} tag={tagByName.get(t) ?? { name: t, color: "#6B7A8F" }} />)}
+          {!g.tags?.length && <span className="text-xs text-muted-foreground">—</span>}
+        </div>
+      );
+      case "events": return (
+        <div className="flex flex-col gap-1">
+          {gi.length === 0 && <span className="text-xs text-muted-foreground">—</span>}
+          {gi.map((i) => {
+            const ev = events.find((e) => e.id === i.event_id);
+            return (
+              <button key={i.id} type="button"
+                onClick={() => removeInvite(i)}
+                className="group inline-flex items-center gap-1 text-[11px] rounded-full border border-line px-2 py-0.5 w-fit whitespace-nowrap hover:bg-stone transition-colors cursor-pointer">
+                {ev?.name ?? "?"}
+                <X className="h-2.5 w-2.5 opacity-0 group-hover:opacity-100 transition-opacity shrink-0" />
+              </button>
+            );
+          })}
+        </div>
+      );
+      case "rsvp": return (
+        <div className="flex flex-col gap-1">
+          {gi.length === 0 && <span className="text-xs text-muted-foreground">—</span>}
+          {gi.map((i) => (
+            <RsvpStatusPicker
+              key={i.id}
+              value={i.rsvp_status}
+              options={rsvpStatusOptions(wedding)}
+              onChange={(v) => setInviteStatus(i, v as Invite["rsvp_status"])}
+            />
+          ))}
+        </div>
+      );
+      case "actions": return (
+        <div className="flex gap-1 justify-end">
+          <button onClick={() => copyRsvpLink(g)} title="Copy RSVP link" className="p-2 rounded-full hover:bg-stone"><Copy className="h-3.5 w-3.5" /></button>
+          <a href={`https://wa.me/${g.phone ? g.phone.replace(/[^0-9]/g, "") : ""}?text=${encodeURIComponent(`Hi ${g.full_name}, please RSVP at ${window.location.origin}/rsvp/${g.rsvp_token}`)}`}
+            target="_blank" rel="noreferrer" className="p-2 rounded-full hover:bg-stone" title="Open WhatsApp"><MessageCircle className="h-3.5 w-3.5" /></a>
+          <button onClick={() => setEditing(g)} className="text-xs rounded-full border border-line px-3 py-1 hover:bg-stone">Edit</button>
+          <button onClick={() => setConfirmDeleteGuest(g)} className="p-2 rounded-full hover:bg-stone text-muted-foreground"><Trash2 className="h-3.5 w-3.5" /></button>
+        </div>
+      );
+    }
+  };
+
   // A guest counts as Attending if they've accepted at least one of their (relevant)
   // invited events, and as Pending unless they've given a firm accept/decline to EVERY
   // one of them — narrows to a single event's invite when that event is filtered/scoped.
@@ -309,19 +469,22 @@ function GuestsPage() {
           <section className="grid grid-cols-3 gap-3 md:gap-4 mb-6">
             <Stat label="Total guests" value={stats.total} />
             <Stat label="Attending" value={stats.attending} tone="sage" />
-            <Stat label="Pending replies" value={stats.pending} tone="gold" />
+            <Stat label="Pending replies" value={stats.pending} />
           </section>
 
 
       <div className="flex flex-wrap gap-2 mb-4 items-center">
-        <div className="relative flex-1 min-w-[220px]">
+        <div className="relative w-64 shrink-0">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-          <input value={q} onChange={(e) => setQ(e.target.value)} placeholder="Search name or email…" className="w-full rounded-full border border-line pl-10 pr-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-clay" />
+          <input value={q} onChange={(e) => setQ(e.target.value)} placeholder="Search name or email" className="w-full rounded-full border border-line pl-10 pr-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-clay" />
         </div>
         <FilterSelect label="Family / Group" value={filterHousehold} onChange={setFilterHousehold}
           options={households.map((h) => ({ value: h, label: h }))} />
         <FilterMultiSelect label="Dietary" value={filterDiet} onChange={setFilterDiet}
-          options={[...DIETARY, ...ALLERGIES].map((t) => ({ value: t, label: t }))} />
+          options={dietaryOptions.map((t) => ({ value: t, label: t }))} />
+        <TagPicker library={guestTags} selected={filterTags}
+          onToggle={(name) => setFilterTags((prev) => prev.includes(name) ? prev.filter((t) => t !== name) : [...prev, name])}
+          onCreate={createGuestTag} onUpdate={updateGuestTag} autoSelectOnCreate={false} />
         <FilterSelect label="Event" value={filterEvent} onChange={setFilterEvent}
           options={events.map((e) => ({ value: e.id, label: e.name }))} />
         <FilterSelect label="RSVP status" value={filterRsvp} onChange={setFilterRsvp}
@@ -339,18 +502,17 @@ function GuestsPage() {
             <>
               <div className="fixed inset-0 z-10" onClick={() => setColsOpen(false)} />
               <div className="absolute right-0 mt-2 z-20 w-56 rounded-2xl border border-line bg-pearl shadow-lg p-2">
-                <p className="px-3 py-2 text-[10px] uppercase tracking-widest text-muted-foreground">Show columns</p>
-                {ALL_COLS.map((c) => {
-                  const on = showCol(c.key);
-                  const disabled = c.key === "name";
-                  return (
-                    <button key={c.key} disabled={disabled} onClick={() => toggleCol(c.key)}
-                      className={`w-full flex items-center justify-between gap-2 px-3 py-2 text-sm rounded-xl ${disabled ? "opacity-60 cursor-not-allowed" : "hover:bg-blush-soft"}`}>
-                      <span>{c.label}</span>
-                      {on && <Check className="h-4 w-4 text-cherry" />}
-                    </button>
-                  );
-                })}
+                <p className="px-3 py-2 text-[10px] uppercase tracking-widest text-muted-foreground">Show &amp; reorder columns</p>
+                <DndContext sensors={colSensors} collisionDetection={closestCenter} onDragEnd={onColDragEnd}>
+                  <SortableContext items={colOrder} strategy={verticalListSortingStrategy}>
+                    {colOrder.map((k) => {
+                      const c = ALL_COLS.find((x) => x.key === k)!;
+                      return (
+                        <SortableColumnRow key={k} id={k} label={c.label} on={showCol(k)} disabled={k === "name"} onToggle={() => toggleCol(k)} />
+                      );
+                    })}
+                  </SortableContext>
+                </DndContext>
               </div>
             </>
           )}
@@ -382,74 +544,30 @@ function GuestsPage() {
           <button onClick={() => setEditing({})} className="inline-flex items-center gap-2 rounded-full border border-ink px-5 py-2.5 text-sm hover:bg-blush-soft"><Plus className="h-4 w-4" /> Add first guest</button>
         </PhotoEmptyState>
       ) : (
-        <div className="paper-card overflow-x-auto">
+        <div className="overflow-x-auto">
           <table className="w-full text-xs">
-            <thead className="bg-sage-soft text-left text-xs uppercase tracking-widest text-muted-foreground">
+            <thead className="text-left text-xs uppercase tracking-widest text-muted-foreground">
               <tr>
-                {showCol("name") && <th className="px-4 py-3 whitespace-nowrap">Guest name</th>}
-                {showCol("household") && <th className="px-4 py-3 whitespace-nowrap">Family / Group</th>}
-                {showCol("email") && <th className="px-4 py-3 whitespace-nowrap">Email</th>}
-                {showCol("phone") && <th className="px-4 py-3 whitespace-nowrap">Phone</th>}
-                {showCol("dietary") && <th className="px-4 py-3 whitespace-nowrap">Dietary</th>}
-                {showCol("events") && <th className="px-4 py-3 whitespace-nowrap">Event</th>}
-                {showCol("rsvp") && <th className="px-4 py-3 whitespace-nowrap">RSVP status</th>}
+                {orderedVisibleCols.map((k) => (
+                  <th key={k} className={cn("px-4 py-3 whitespace-nowrap", k === "actions" && "text-right")}>{COL_HEADER_TEXT[k]}</th>
+                ))}
                 {columnQuestions.map((cq) => (
                   <th key={cq.id} className="px-4 py-3 whitespace-nowrap">{cq.guest_column_label}</th>
                 ))}
-                <th className="px-4 py-3"></th>
               </tr>
             </thead>
             <tbody>
-              {filtered.map((g) => {
+              {groupedFiltered.map((g, i) => {
                 const gi = inviteByGuest.get(g.id) ?? [];
+                const prev = groupedFiltered[i - 1];
+                const sameGroup = !!prev && !!g.household_group && g.household_group === prev.household_group;
                 return (
-                  <tr key={g.id} className="border-t border-line hover:bg-stone/30 align-top">
-                    {showCol("name") && <td className="px-4 py-3 font-medium whitespace-nowrap">{g.full_name}</td>}
-                    {showCol("household") && <td className="px-4 py-3 text-xs text-muted-foreground whitespace-nowrap">{g.household_group || "—"}</td>}
-                    {showCol("email") && <td className="px-4 py-3 text-xs text-muted-foreground whitespace-nowrap">{g.email || "—"}</td>}
-                    {showCol("phone") && <td className="px-4 py-3 text-xs text-muted-foreground whitespace-nowrap">{g.phone || "—"}</td>}
-                    {showCol("dietary") && (
-                      <td className="px-4 py-3">
-                        <div className="flex flex-wrap gap-1">
-                          {g.dietary_tags?.map((t) => <span key={t} className="text-[11px] bg-clay-soft text-clay rounded-full px-2 py-0.5 whitespace-nowrap">{t}</span>)}
-                          {g.food_allergies?.map((t) => <span key={t} className="text-[11px] bg-destructive/10 text-destructive rounded-full px-2 py-0.5 whitespace-nowrap">⚠ {t}</span>)}
-                          {!g.dietary_tags?.length && !g.food_allergies?.length && <span className="text-xs text-muted-foreground">—</span>}
-                        </div>
+                  <tr key={g.id} className={cn("hover:bg-stone/30 align-top", !sameGroup && "border-t border-line")}>
+                    {orderedVisibleCols.map((k) => (
+                      <td key={k} className={cn("px-4 py-3", COL_NOWRAP.includes(k) && "whitespace-nowrap", k === "name" && "font-medium", ["household", "email", "phone"].includes(k) && "text-xs text-muted-foreground")}>
+                        {renderCell(k, g, gi)}
                       </td>
-                    )}
-                    {showCol("events") && (
-                      <td className="px-4 py-3">
-                        <div className="flex flex-col gap-1">
-                          {gi.length === 0 && <span className="text-xs text-muted-foreground">—</span>}
-                          {gi.map((i) => {
-                            const ev = events.find((e) => e.id === i.event_id);
-                            return (
-                              <button key={i.id} type="button"
-                                onClick={() => removeInvite(i)}
-                                className="group inline-flex items-center gap-1 text-[11px] rounded-full border border-line px-2 py-0.5 w-fit whitespace-nowrap hover:bg-stone transition-colors cursor-pointer">
-                                {ev?.name ?? "?"}
-                                <X className="h-2.5 w-2.5 opacity-0 group-hover:opacity-100 transition-opacity shrink-0" />
-                              </button>
-                            );
-                          })}
-                        </div>
-                      </td>
-                    )}
-                    {showCol("rsvp") && (
-                      <td className="px-4 py-3">
-                        <div className="flex flex-col gap-1">
-                          {gi.length === 0 && <span className="text-xs text-muted-foreground">—</span>}
-                          {gi.map((i) => (
-                            <RsvpStatusPicker
-                              key={i.id}
-                              value={i.rsvp_status}
-                              options={rsvpStatusOptions(wedding)}
-                              onChange={(v) => setInviteStatus(i, v as Invite["rsvp_status"])}
-                            />
-                          ))}
-                        </div>
-                      </td>
-                    )}
+                    ))}
                     {columnQuestions.map((cq) => {
                       const answer = columnAnswerFor(g.id, cq.id);
                       return (
@@ -458,15 +576,6 @@ function GuestsPage() {
                         </td>
                       );
                     })}
-                    <td className="px-4 py-3">
-                      <div className="flex gap-1 justify-end">
-                        <button onClick={() => copyRsvpLink(g)} title="Copy RSVP link" className="p-2 rounded-full hover:bg-stone"><Copy className="h-3.5 w-3.5" /></button>
-                        <a href={`https://wa.me/${g.phone ? g.phone.replace(/[^0-9]/g, "") : ""}?text=${encodeURIComponent(`Hi ${g.full_name}, please RSVP at ${window.location.origin}/rsvp/${g.rsvp_token}`)}`}
-                          target="_blank" rel="noreferrer" className="p-2 rounded-full hover:bg-stone" title="Open WhatsApp"><MessageCircle className="h-3.5 w-3.5" /></a>
-                        <button onClick={() => setEditing(g)} className="text-xs rounded-full border border-line px-3 py-1 hover:bg-stone">Edit</button>
-                        <button onClick={() => setConfirmDeleteGuest(g)} className="p-2 rounded-full hover:bg-stone text-muted-foreground"><Trash2 className="h-3.5 w-3.5" /></button>
-                      </div>
-                    </td>
                   </tr>
                 );
               })}
@@ -477,7 +586,7 @@ function GuestsPage() {
         </>
       )}
 
-      {editing && <GuestDialog guest={editing} events={events} existingInvites={editing.id ? (inviteByGuest.get(editing.id) ?? []) : []} onClose={() => setEditing(null)} onSave={save} />}
+      {editing && <GuestDialog guest={editing} events={events} existingInvites={editing.id ? (inviteByGuest.get(editing.id) ?? []) : []} guestTags={guestTags} foodTags={foodTags} foodActions={foodActions} onCreateTag={createGuestTag} onUpdateTag={updateGuestTag} onClose={() => setEditing(null)} onSave={save} />}
       {confirmDeleteGuest && (
         <ConfirmDialog
           title="Remove guest"
@@ -506,15 +615,29 @@ function Stat({ label, value, tone }: { label: string; value: number; tone?: key
   );
 }
 
-function GuestDialog({ guest, events, existingInvites, onClose, onSave }: {
-  guest: Partial<Guest>; events: any[]; existingInvites: Invite[]; onClose: () => void;
+function GuestDialog({ guest, events, existingInvites, guestTags, foodTags, foodActions, onCreateTag, onUpdateTag, onClose, onSave }: {
+  guest: Partial<Guest>; events: any[]; existingInvites: Invite[]; guestTags: GuestTag[];
+  foodTags: FoodTag[]; foodActions: ReturnType<typeof useFoodTagActions>;
+  onCreateTag: (input: { name: string; color: string; emoji: string | null }) => Promise<void>;
+  onUpdateTag: (id: string, oldName: string, input: { name: string; color: string; emoji: string | null }) => Promise<void>;
+  onClose: () => void;
   onSave: (g: Partial<Guest> & { invitedEventIds?: string[] }) => Promise<void>;
 }) {
-  const [form, setForm] = useState<Partial<Guest>>({ ...guest, dietary_tags: guest.dietary_tags ?? [], food_allergies: guest.food_allergies ?? [] });
+  const [form, setForm] = useState<Partial<Guest>>({ ...guest, dietary_tags: guest.dietary_tags ?? [], food_allergies: guest.food_allergies ?? [], tags: guest.tags ?? [] });
   const [invited, setInvited] = useState<string[]>(existingInvites.map((i) => i.event_id));
   const [saving, setSaving] = useState(false);
 
   const toggle = (arr: string[], v: string) => arr.includes(v) ? arr.filter((x) => x !== v) : [...arr, v];
+
+  // If a tag already on this guest gets renamed mid-dialog, keep the form's
+  // own copy of its tags in sync so the picker's selection/checkmarks don't
+  // silently fall out of step with the library.
+  const handleUpdateTag = async (id: string, oldName: string, input: { name: string; color: string; emoji: string | null }) => {
+    await onUpdateTag(id, oldName, input);
+    if (input.name !== oldName) {
+      setForm((f) => ({ ...f, tags: (f.tags ?? []).map((t) => (t === oldName ? input.name : t)) }));
+    }
+  };
 
   const submit = async (e: React.FormEvent) => {
     e.preventDefault(); setSaving(true);
@@ -524,61 +647,60 @@ function GuestDialog({ guest, events, existingInvites, onClose, onSave }: {
 
   return (
     <div className="fixed inset-0 z-50 bg-ink/40 flex items-center justify-center p-4" onClick={onClose}>
-      <div className="bg-paper rounded-3xl max-w-xl w-full p-8 max-h-[92vh] overflow-y-auto" onClick={(e) => e.stopPropagation()}>
+      <div className="bg-paper rounded-3xl max-w-lg w-full p-6 max-h-[92vh] overflow-y-auto" onClick={(e) => e.stopPropagation()}>
         <div className="flex items-start justify-between">
-          <h3 className="font-serif text-2xl">{guest.id ? "Edit guest" : "Add guest"}</h3>
+          <h3 className="font-serif text-xl">{guest.id ? "Edit guest" : "Add guest"}</h3>
           <button onClick={onClose}><X className="h-4 w-4" /></button>
         </div>
-        <form onSubmit={submit} className="mt-6 space-y-4">
-          <div className="grid grid-cols-2 gap-3">
+        <form onSubmit={submit} className="mt-4 space-y-3">
+          <div className="grid grid-cols-2 gap-2.5">
             <F label="First name" required value={(form as any).first_name ?? form.full_name?.split(" ")[0] ?? ""} onChange={(v) => setForm({ ...form, first_name: v } as any)} />
             <F label="Last name" value={(form as any).last_name ?? form.full_name?.split(" ").slice(1).join(" ") ?? ""} onChange={(v) => setForm({ ...form, last_name: v } as any)} />
           </div>
-          <div className="grid grid-cols-2 gap-3">
+          <div className="grid grid-cols-2 gap-2.5">
             <F label="Email" type="email" value={form.email ?? ""} onChange={(v) => setForm({ ...form, email: v })} />
-            <F label="Phone (with country code)" value={form.phone ?? ""} onChange={(v) => setForm({ ...form, phone: v })} placeholder="+91 98…" />
+            <F label="Phone" value={form.phone ?? ""} onChange={(v) => setForm({ ...form, phone: v.replace(/\s/g, "") })} placeholder="(+)(Country code)(Number)" />
           </div>
-          <F label="Family / Group" value={form.household_group ?? ""} onChange={(v) => setForm({ ...form, household_group: v })} placeholder="e.g. Rao family" />
+          <F label="Family / Group" value={form.household_group ?? ""} onChange={(v) => setForm({ ...form, household_group: v })} />
+
+          <FoodTagField kind="diet" label="Dietary tags" tags={foodTags} actions={foodActions} values={form.dietary_tags ?? []} onChange={(v) => setForm({ ...form, dietary_tags: v })} />
+          <FoodTagField kind="allergy" label="Food allergies" tags={foodTags} actions={foodActions} values={form.food_allergies ?? []} onChange={(v) => setForm({ ...form, food_allergies: v })} />
 
           <div>
-            <p className="text-sm uppercase tracking-widest text-muted-foreground mb-2">Dietary tags</p>
-            <div className="flex flex-wrap gap-1.5">
-              {DIETARY.map((t) => (
-                <button type="button" key={t} onClick={() => setForm({ ...form, dietary_tags: toggle(form.dietary_tags ?? [], t) })}
-                  className={`text-sm rounded-full border px-3 py-1 ${form.dietary_tags?.includes(t) ? "bg-clay-soft border-clay text-clay" : "border-line hover:bg-stone"}`}>{t}</button>
-              ))}
-            </div>
+            <p className="text-xs uppercase tracking-widest text-muted-foreground mb-1">Tags</p>
+            <p className="text-xs text-muted-foreground mb-2">Create your own labels e.g. "Groom's side", "College friends", "VIP"</p>
+            <TagPicker library={guestTags} selected={form.tags ?? []}
+              onToggle={(name) => setForm({ ...form, tags: toggle(form.tags ?? [], name) })}
+              onCreate={onCreateTag} onUpdate={handleUpdateTag} />
+            {!!form.tags?.length && (
+              <div className="mt-2 flex flex-wrap gap-1.5">
+                {form.tags.map((t) => (
+                  <TagChip key={t} tag={guestTags.find((gt) => gt.name === t) ?? { name: t, color: "#6B7A8F" }}
+                    onRemove={() => setForm({ ...form, tags: toggle(form.tags ?? [], t) })} />
+                ))}
+              </div>
+            )}
           </div>
 
           <div>
-            <p className="text-sm uppercase tracking-widest text-muted-foreground mb-2">Food allergies</p>
-            <div className="flex flex-wrap gap-1.5">
-              {ALLERGIES.map((t) => (
-                <button type="button" key={t} onClick={() => setForm({ ...form, food_allergies: toggle(form.food_allergies ?? [], t) })}
-                  className={`text-sm rounded-full border px-3 py-1 ${form.food_allergies?.includes(t) ? "bg-destructive/10 border-destructive text-destructive" : "border-line hover:bg-stone"}`}>⚠ {t}</button>
-              ))}
-            </div>
-          </div>
-
-          <div>
-            <label className="text-sm uppercase tracking-widest text-muted-foreground">Dietary notes</label>
+            <label className="text-xs uppercase tracking-widest text-muted-foreground">Dietary notes</label>
             <textarea rows={2} value={form.dietary_notes ?? ""} onChange={(e) => setForm({ ...form, dietary_notes: e.target.value })}
-              className="mt-1 w-full rounded-2xl border border-line px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-clay" placeholder="e.g. severe peanut allergy, no cross-contact" />
+              className="mt-1 w-full rounded-xl border border-line px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-clay" />
           </div>
-          <F label="Accessibility notes" value={form.accessibility_notes ?? ""} onChange={(v) => setForm({ ...form, accessibility_notes: v })} placeholder="e.g. wheelchair access needed" />
+          <F label="Accessibility notes" value={form.accessibility_notes ?? ""} onChange={(v) => setForm({ ...form, accessibility_notes: v })} />
 
           <div>
-            <p className="text-sm uppercase tracking-widest text-muted-foreground mb-2">Invited to</p>
+            <p className="text-xs uppercase tracking-widest text-muted-foreground mb-1.5">Invited to</p>
             {events.length === 0 ? <p className="text-sm text-muted-foreground">Add events first to invite this guest.</p> :
               <div className="flex flex-wrap gap-1.5">
                 {events.map((e: any) => (
                   <button type="button" key={e.id} onClick={() => setInvited(toggle(invited, e.id))}
-                    className={`text-sm rounded-full border px-3 py-1 ${invited.includes(e.id) ? "bg-ink text-paper border-ink" : "border-line hover:bg-stone"}`}>{e.name}</button>
+                    className={`text-xs rounded-full border px-2.5 py-1 ${invited.includes(e.id) ? "bg-ink text-paper border-ink" : "border-line hover:bg-stone"}`}>{e.name}</button>
                 ))}
               </div>}
           </div>
 
-          <div className="flex justify-end gap-2 pt-4">
+          <div className="flex justify-end gap-2 pt-2">
             <button type="button" onClick={onClose} className="rounded-full px-5 py-2 text-sm border border-line hover:bg-stone">Cancel</button>
             <button disabled={saving} className="rounded-full bg-ink text-paper px-6 py-2 text-sm hover:bg-clay disabled:opacity-60">{saving ? "Saving…" : "Save guest"}</button>
           </div>
@@ -588,13 +710,38 @@ function GuestDialog({ guest, events, existingInvites, onClose, onSave }: {
   );
 }
 
+const FIELD_INPUT = "mt-1 w-full rounded-xl border border-line px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-clay";
+
 function F({ label, value, onChange, type = "text", placeholder, required }: { label: string; value: string; onChange: (v: string) => void; type?: string; placeholder?: string; required?: boolean }) {
   return (
     <label className="block">
-      <span className="text-sm uppercase tracking-widest text-muted-foreground">{label}</span>
+      <span className="text-xs uppercase tracking-widest text-muted-foreground">{label}</span>
       <input type={type} required={required} value={value} onChange={(e) => onChange(e.target.value)} placeholder={placeholder}
-        className="mt-1 w-full rounded-2xl border border-line px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-clay" />
+        className={FIELD_INPUT} />
     </label>
+  );
+}
+
+// Dietary tags / food allergies are picked from the wedding's shared library (the same one
+// the Menu page uses): search or "New tag" to create one with its own colour and emoji.
+function FoodTagField({ label, kind, tags, actions, values, onChange }: {
+  label: string; kind: "diet" | "allergy"; tags: FoodTag[]; actions: ReturnType<typeof useFoodTagActions>;
+  values: string[]; onChange: (v: string[]) => void;
+}) {
+  const toggle = (name: string) => onChange(values.includes(name) ? values.filter((x) => x !== name) : [...values, name]);
+  return (
+    <div>
+      <span className="text-xs uppercase tracking-widest text-muted-foreground">{label}</span>
+      <div className="mt-1 flex flex-wrap items-center gap-1.5">
+        <TagPicker triggerLabel="Add tag" library={tags.filter((t) => t.kind === kind)} selected={values}
+          onToggle={toggle}
+          onCreate={(input) => actions.create(kind, input)}
+          onUpdate={actions.update} onDelete={actions.remove} />
+        {values.map((v) => (
+          <TagChip key={v} tag={tags.find((t) => t.name === v) ?? { name: v, color: kind === "allergy" ? "#E0805F" : "#6E9B72" }} onRemove={() => toggle(v)} />
+        ))}
+      </div>
+    </div>
   );
 }
 
@@ -672,6 +819,25 @@ function RsvpStatusPicker({ value, options, onChange }: {
   );
 }
 
+function SortableColumnRow({ id, label, on, disabled, onToggle }: {
+  id: string; label: string; on: boolean; disabled: boolean; onToggle: () => void;
+}) {
+  const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id });
+  return (
+    <div ref={setNodeRef} style={{ transform: CSS.Transform.toString(transform), transition, opacity: isDragging ? 0.5 : 1 }}
+      className="w-full flex items-center gap-1">
+      <button type="button" {...attributes} {...listeners} className="p-1.5 text-muted-foreground hover:text-ink cursor-grab active:cursor-grabbing shrink-0">
+        <GripVertical className="h-3.5 w-3.5" />
+      </button>
+      <button type="button" disabled={disabled} onClick={onToggle}
+        className={cn("flex-1 flex items-center justify-between gap-2 px-2 py-1.5 text-sm rounded-xl text-left", disabled ? "opacity-60 cursor-not-allowed" : "hover:bg-blush-soft cursor-pointer")}>
+        <span>{label}</span>
+        {on && <Check className="h-4 w-4 text-cherry" />}
+      </button>
+    </div>
+  );
+}
+
 function FilterSelect({ label, value, onChange, options }: {
   label: string; value: string | null; onChange: (v: string | null) => void;
   options: { value: string; label: string }[];
@@ -683,7 +849,6 @@ function FilterSelect({ label, value, onChange, options }: {
       <button onClick={() => setOpen((v) => !v)}
         className={`inline-flex items-center gap-2 rounded-full border px-3 py-2 text-sm cursor-pointer transition-colors ${active ? "bg-clay text-paper border-clay" : "border-line hover:bg-stone"}`}>
         <span className="uppercase tracking-widest text-[10px] opacity-80">{label}</span>
-        <span className="font-medium">{active?.label ?? "Any"}</span>
         <ChevronDown className="h-3 w-3 opacity-70" />
       </button>
       {open && (
@@ -718,7 +883,6 @@ function FilterMultiSelect({ label, value, onChange, options }: {
       <button onClick={() => setOpen((v) => !v)}
         className={`inline-flex items-center gap-2 rounded-full border px-3 py-2 text-sm cursor-pointer transition-colors ${value.length ? "bg-clay text-paper border-clay" : "border-line hover:bg-stone"}`}>
         <span className="uppercase tracking-widest text-[10px] opacity-80">{label}</span>
-        <span className="font-medium">{value.length ? `${formatNumber(value.length)} selected` : "Any"}</span>
         <ChevronDown className="h-3 w-3 opacity-70" />
       </button>
       {open && (

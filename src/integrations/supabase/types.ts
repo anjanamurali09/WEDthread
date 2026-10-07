@@ -196,6 +196,276 @@ export type Database = {
           },
         ]
       }
+      businesses: {
+        Row: {
+          business_description: string
+          business_type: Database["public"]["Enums"]["business_type"]
+          country: string | null
+          city: string | null
+          address: string | null
+          social_media: string | null
+          instagram_url: string | null
+          tiktok_url: string | null
+          facebook_url: string | null
+          youtube_url: string | null
+          website_url: string | null
+          booking_link_url: string | null
+          contact_email: string | null
+          contact_phone: string | null
+          created_at: string
+          id: string
+          legal_business_name: string
+          updated_at: string
+          user_id: string | null
+          vat_tax_number: string | null
+          verification_status: Database["public"]["Enums"]["business_verification_status"]
+        }
+        Insert: {
+          business_description: string
+          business_type: Database["public"]["Enums"]["business_type"]
+          country?: string | null
+          city?: string | null
+          address?: string | null
+          social_media?: string | null
+          instagram_url?: string | null
+          tiktok_url?: string | null
+          facebook_url?: string | null
+          youtube_url?: string | null
+          website_url?: string | null
+          booking_link_url?: string | null
+          contact_email?: string | null
+          contact_phone?: string | null
+          created_at?: string
+          id?: string
+          legal_business_name: string
+          updated_at?: string
+          user_id?: string | null
+          vat_tax_number?: string | null
+          verification_status?: Database["public"]["Enums"]["business_verification_status"]
+        }
+        Update: {
+          business_description?: string
+          business_type?: Database["public"]["Enums"]["business_type"]
+          country?: string | null
+          city?: string | null
+          address?: string | null
+          social_media?: string | null
+          instagram_url?: string | null
+          tiktok_url?: string | null
+          facebook_url?: string | null
+          youtube_url?: string | null
+          website_url?: string | null
+          booking_link_url?: string | null
+          contact_email?: string | null
+          contact_phone?: string | null
+          created_at?: string
+          id?: string
+          legal_business_name?: string
+          updated_at?: string
+          user_id?: string | null
+          vat_tax_number?: string | null
+          verification_status?: Database["public"]["Enums"]["business_verification_status"]
+        }
+        Relationships: []
+      }
+      business_claims: {
+        Row: {
+          id: string
+          business_id: string
+          claimant_user_id: string
+          claimant_email: string
+          message: string | null
+          status: "pending" | "approved" | "rejected"
+          created_at: string
+          decided_at: string | null
+        }
+        Insert: {
+          id?: string
+          business_id: string
+          claimant_user_id: string
+          claimant_email: string
+          message?: string | null
+          status?: "pending" | "approved" | "rejected"
+          created_at?: string
+          decided_at?: string | null
+        }
+        Update: {
+          id?: string
+          business_id?: string
+          claimant_user_id?: string
+          claimant_email?: string
+          message?: string | null
+          status?: "pending" | "approved" | "rejected"
+          created_at?: string
+          decided_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "business_claims_business_id_fkey"
+            columns: ["business_id"]
+            isOneToOne: false
+            referencedRelation: "businesses"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      business_suggestions: {
+        Row: {
+          id: string
+          business_id: string
+          suggested_by_user_id: string
+          suggested_by_email: string
+          message: string
+          status: "pending" | "approved" | "rejected"
+          created_at: string
+          decided_at: string | null
+        }
+        Insert: {
+          id?: string
+          business_id: string
+          suggested_by_user_id: string
+          suggested_by_email: string
+          message: string
+          status?: "pending" | "approved" | "rejected"
+          created_at?: string
+          decided_at?: string | null
+        }
+        Update: {
+          id?: string
+          business_id?: string
+          suggested_by_user_id?: string
+          suggested_by_email?: string
+          message?: string
+          status?: "pending" | "approved" | "rejected"
+          created_at?: string
+          decided_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "business_suggestions_business_id_fkey"
+            columns: ["business_id"]
+            isOneToOne: false
+            referencedRelation: "businesses"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      saved_listings: {
+        Row: {
+          id: string
+          user_id: string
+          business_id: string
+          listing_id: string | null
+          created_at: string
+        }
+        Insert: {
+          id?: string
+          user_id: string
+          business_id: string
+          listing_id?: string | null
+          created_at?: string
+        }
+        Update: {
+          id?: string
+          user_id?: string
+          business_id?: string
+          listing_id?: string | null
+          created_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "saved_listings_business_id_fkey"
+            columns: ["business_id"]
+            isOneToOne: false
+            referencedRelation: "businesses"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "saved_listings_listing_id_fkey"
+            columns: ["listing_id"]
+            isOneToOne: false
+            referencedRelation: "vendor_services"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      business_documents: {
+        Row: {
+          business_id: string
+          file_name: string
+          file_url: string
+          id: string
+          uploaded_at: string
+        }
+        Insert: {
+          business_id: string
+          file_name: string
+          file_url: string
+          id?: string
+          uploaded_at?: string
+        }
+        Update: {
+          business_id?: string
+          file_name?: string
+          file_url?: string
+          id?: string
+          uploaded_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "business_documents_business_id_fkey"
+            columns: ["business_id"]
+            isOneToOne: false
+            referencedRelation: "businesses"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      business_media: {
+        Row: {
+          business_id: string
+          created_at: string
+          id: string
+          listing_id: string | null
+          media_type: Database["public"]["Enums"]["business_media_type"]
+          sort_order: number
+          url: string
+        }
+        Insert: {
+          business_id: string
+          created_at?: string
+          id?: string
+          listing_id?: string | null
+          media_type: Database["public"]["Enums"]["business_media_type"]
+          sort_order?: number
+          url: string
+        }
+        Update: {
+          business_id?: string
+          created_at?: string
+          id?: string
+          listing_id?: string | null
+          media_type?: Database["public"]["Enums"]["business_media_type"]
+          sort_order?: number
+          url?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "business_media_business_id_fkey"
+            columns: ["business_id"]
+            isOneToOne: false
+            referencedRelation: "businesses"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "business_media_listing_id_fkey"
+            columns: ["listing_id"]
+            isOneToOne: false
+            referencedRelation: "vendor_services"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       events: {
         Row: {
           address: string | null
@@ -210,6 +480,7 @@ export type Database = {
           country: string | null
           created_at: string
           description: string | null
+          dress_code: string | null
           enabled_categories: string[]
           event_date: string | null
           event_end_time: string | null
@@ -234,6 +505,7 @@ export type Database = {
           country?: string | null
           created_at?: string
           description?: string | null
+          dress_code?: string | null
           enabled_categories?: string[]
           event_date?: string | null
           event_end_time?: string | null
@@ -258,6 +530,7 @@ export type Database = {
           country?: string | null
           created_at?: string
           description?: string | null
+          dress_code?: string | null
           enabled_categories?: string[]
           event_date?: string | null
           event_end_time?: string | null
@@ -340,6 +613,7 @@ export type Database = {
           phone: string | null
           rsvp_submitted_at: string | null
           rsvp_token: string
+          tags: string[]
           wedding_id: string
         }
         Insert: {
@@ -357,6 +631,7 @@ export type Database = {
           phone?: string | null
           rsvp_submitted_at?: string | null
           rsvp_token?: string
+          tags?: string[]
           wedding_id: string
         }
         Update: {
@@ -374,6 +649,7 @@ export type Database = {
           phone?: string | null
           rsvp_submitted_at?: string | null
           rsvp_token?: string
+          tags?: string[]
           wedding_id?: string
         }
         Relationships: [
@@ -436,6 +712,219 @@ export type Database = {
           title?: string
         }
         Relationships: []
+      }
+      lead_forms: {
+        Row: {
+          business_id: string
+          created_at: string
+          id: string
+          title: string
+          vendor_service_id: string | null
+        }
+        Insert: {
+          business_id: string
+          created_at?: string
+          id?: string
+          title?: string
+          vendor_service_id?: string | null
+        }
+        Update: {
+          business_id?: string
+          created_at?: string
+          id?: string
+          title?: string
+          vendor_service_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "lead_forms_business_id_fkey"
+            columns: ["business_id"]
+            isOneToOne: false
+            referencedRelation: "businesses"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "lead_forms_vendor_service_id_fkey"
+            columns: ["vendor_service_id"]
+            isOneToOne: false
+            referencedRelation: "vendor_services"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      lead_form_fields: {
+        Row: {
+          field_type: Database["public"]["Enums"]["lead_form_field_type"]
+          id: string
+          label: string
+          lead_form_id: string
+          options: Json
+          required: boolean
+          sort_order: number
+        }
+        Insert: {
+          field_type: Database["public"]["Enums"]["lead_form_field_type"]
+          id?: string
+          label: string
+          lead_form_id: string
+          options?: Json
+          required?: boolean
+          sort_order?: number
+        }
+        Update: {
+          field_type?: Database["public"]["Enums"]["lead_form_field_type"]
+          id?: string
+          label?: string
+          lead_form_id?: string
+          options?: Json
+          required?: boolean
+          sort_order?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "lead_form_fields_lead_form_id_fkey"
+            columns: ["lead_form_id"]
+            isOneToOne: false
+            referencedRelation: "lead_forms"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      lead_form_submissions: {
+        Row: {
+          created_at: string
+          id: string
+          lead_form_id: string | null
+          responses: Json
+          vendor_service_id: string | null
+          business_id: string | null
+          wedding_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          lead_form_id?: string | null
+          responses?: Json
+          vendor_service_id?: string | null
+          business_id?: string | null
+          wedding_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          lead_form_id?: string | null
+          responses?: Json
+          vendor_service_id?: string | null
+          business_id?: string | null
+          wedding_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "lead_form_submissions_lead_form_id_fkey"
+            columns: ["lead_form_id"]
+            isOneToOne: false
+            referencedRelation: "lead_forms"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "lead_form_submissions_vendor_service_id_fkey"
+            columns: ["vendor_service_id"]
+            isOneToOne: false
+            referencedRelation: "vendor_services"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "lead_form_submissions_business_id_fkey"
+            columns: ["business_id"]
+            isOneToOne: false
+            referencedRelation: "businesses"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "lead_form_submissions_wedding_id_fkey"
+            columns: ["wedding_id"]
+            isOneToOne: false
+            referencedRelation: "weddings"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      venue_details: {
+        Row: {
+          business_id: string
+          capacity_min: number | null
+          capacity_max: number | null
+          capacity_seated: number | null
+          capacity_standing: number | null
+          type_of_space: string[]
+          facilities_included: string[]
+          facilities_excluded: string[]
+          price_range_min: number | null
+          price_range_max: number | null
+          currency: string
+          about_sections: Json
+          faqs: Json
+          price_start_from: number | null
+          price_start_from_currency: string | null
+          minimum_spend: number | null
+          minimum_spend_currency: string | null
+          price_details: string | null
+          price_includes: string[]
+          price_additional_costs: string[]
+        }
+        Insert: {
+          business_id: string
+          capacity_min?: number | null
+          capacity_max?: number | null
+          capacity_seated?: number | null
+          capacity_standing?: number | null
+          type_of_space?: string[]
+          facilities_included?: string[]
+          facilities_excluded?: string[]
+          price_range_min?: number | null
+          price_range_max?: number | null
+          currency?: string
+          about_sections?: Json
+          faqs?: Json
+          price_start_from?: number | null
+          price_start_from_currency?: string | null
+          minimum_spend?: number | null
+          minimum_spend_currency?: string | null
+          price_details?: string | null
+          price_includes?: string[]
+          price_additional_costs?: string[]
+        }
+        Update: {
+          business_id?: string
+          capacity_min?: number | null
+          capacity_max?: number | null
+          capacity_seated?: number | null
+          capacity_standing?: number | null
+          type_of_space?: string[]
+          facilities_included?: string[]
+          facilities_excluded?: string[]
+          price_range_min?: number | null
+          price_range_max?: number | null
+          currency?: string
+          about_sections?: Json
+          faqs?: Json
+          price_start_from?: number | null
+          price_start_from_currency?: string | null
+          minimum_spend?: number | null
+          minimum_spend_currency?: string | null
+          price_details?: string | null
+          price_includes?: string[]
+          price_additional_costs?: string[]
+        }
+        Relationships: [
+          {
+            foreignKeyName: "venue_details_business_id_fkey"
+            columns: ["business_id"]
+            isOneToOne: true
+            referencedRelation: "businesses"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       message_sends: {
         Row: {
@@ -607,6 +1096,7 @@ export type Database = {
       }
       registries: {
         Row: {
+          contribution_instructions: string | null
           country_code: string | null
           created_at: string
           currency_code: string | null
@@ -617,6 +1107,7 @@ export type Database = {
           wedding_id: string
         }
         Insert: {
+          contribution_instructions?: string | null
           country_code?: string | null
           created_at?: string
           currency_code?: string | null
@@ -627,6 +1118,7 @@ export type Database = {
           wedding_id: string
         }
         Update: {
+          contribution_instructions?: string | null
           country_code?: string | null
           created_at?: string
           currency_code?: string | null
@@ -654,6 +1146,9 @@ export type Database = {
           id: string
           image_url: string | null
           is_most_wanted: boolean
+          kind: string
+          purchased_at: string | null
+          purchased_by: string | null
           price_cents: number | null
           product_url: string | null
           quantity: number
@@ -671,6 +1166,9 @@ export type Database = {
           id?: string
           image_url?: string | null
           is_most_wanted?: boolean
+          kind?: string
+          purchased_at?: string | null
+          purchased_by?: string | null
           price_cents?: number | null
           product_url?: string | null
           quantity?: number
@@ -688,6 +1186,9 @@ export type Database = {
           id?: string
           image_url?: string | null
           is_most_wanted?: boolean
+          kind?: string
+          purchased_at?: string | null
+          purchased_by?: string | null
           price_cents?: number | null
           product_url?: string | null
           quantity?: number
@@ -710,33 +1211,45 @@ export type Database = {
       }
       reviews: {
         Row: {
-          author_id: string
-          body: string | null
-          created_at: string
           id: string
+          business_id: string
+          wedding_id: string
           rating: number
-          target_id: string
-          target_type: string
+          review_text: string | null
+          created_at: string
         }
         Insert: {
-          author_id: string
-          body?: string | null
-          created_at?: string
           id?: string
+          business_id: string
+          wedding_id: string
           rating: number
-          target_id: string
-          target_type: string
+          review_text?: string | null
+          created_at?: string
         }
         Update: {
-          author_id?: string
-          body?: string | null
-          created_at?: string
           id?: string
+          business_id?: string
+          wedding_id?: string
           rating?: number
-          target_id?: string
-          target_type?: string
+          review_text?: string | null
+          created_at?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "reviews_business_id_fkey"
+            columns: ["business_id"]
+            isOneToOne: false
+            referencedRelation: "businesses"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "reviews_wedding_id_fkey"
+            columns: ["wedding_id"]
+            isOneToOne: false
+            referencedRelation: "weddings"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       rsvp_questions: {
         Row: {
@@ -1056,6 +1569,7 @@ export type Database = {
           parent_id: string | null
           slug: string | null
           sort_order: number
+          suggested_lead_fields: Json
         }
         Insert: {
           id?: string
@@ -1064,6 +1578,7 @@ export type Database = {
           parent_id?: string | null
           slug?: string | null
           sort_order?: number
+          suggested_lead_fields?: Json
         }
         Update: {
           id?: string
@@ -1072,11 +1587,96 @@ export type Database = {
           parent_id?: string | null
           slug?: string | null
           sort_order?: number
+          suggested_lead_fields?: Json
         }
         Relationships: [
           {
             foreignKeyName: "vendor_categories_parent_id_fkey"
             columns: ["parent_id"]
+            isOneToOne: false
+            referencedRelation: "vendor_categories"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      vendor_services: {
+        Row: {
+          business_id: string
+          category_id: string | null
+          category_ids: string[]
+          created_at: string
+          currency: string
+          description: string | null
+          id: string
+          price_range_max: number | null
+          price_range_min: number | null
+          price_start_from: number | null
+          price_start_from_currency: string | null
+          minimum_spend: number | null
+          minimum_spend_currency: string | null
+          about_sections: Json
+          faqs: Json
+          price_details: string | null
+          price_includes: string[]
+          price_additional_costs: string[]
+          service_name: string | null
+          status: Database["public"]["Enums"]["vendor_service_status"]
+        }
+        Insert: {
+          business_id: string
+          category_id?: string | null
+          category_ids?: string[]
+          created_at?: string
+          currency?: string
+          description?: string | null
+          id?: string
+          price_range_max?: number | null
+          price_range_min?: number | null
+          price_start_from?: number | null
+          price_start_from_currency?: string | null
+          minimum_spend?: number | null
+          minimum_spend_currency?: string | null
+          about_sections?: Json
+          faqs?: Json
+          price_details?: string | null
+          price_includes?: string[]
+          price_additional_costs?: string[]
+          service_name?: string | null
+          status?: Database["public"]["Enums"]["vendor_service_status"]
+        }
+        Update: {
+          business_id?: string
+          category_id?: string | null
+          category_ids?: string[]
+          created_at?: string
+          currency?: string
+          description?: string | null
+          id?: string
+          price_range_max?: number | null
+          price_range_min?: number | null
+          price_start_from?: number | null
+          price_start_from_currency?: string | null
+          minimum_spend?: number | null
+          minimum_spend_currency?: string | null
+          about_sections?: Json
+          faqs?: Json
+          price_details?: string | null
+          price_includes?: string[]
+          price_additional_costs?: string[]
+          service_name?: string | null
+          status?: Database["public"]["Enums"]["vendor_service_status"]
+        }
+        Relationships: [
+          {
+            foreignKeyName: "vendor_services_business_id_fkey"
+            columns: ["business_id"]
+            isOneToOne: false
+            referencedRelation: "businesses"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "vendor_services_category_id_fkey"
+            columns: ["category_id"]
             isOneToOne: false
             referencedRelation: "vendor_categories"
             referencedColumns: ["id"]
@@ -1351,6 +1951,44 @@ export type Database = {
           },
         ]
       }
+      wedding_enquiry_defaults: {
+        Row: {
+          wedding_id: string
+          full_name: string | null
+          email: string | null
+          phone: string | null
+          approx_guests: number | null
+          preferred_dates: string | null
+          updated_at: string
+        }
+        Insert: {
+          wedding_id: string
+          full_name?: string | null
+          email?: string | null
+          phone?: string | null
+          approx_guests?: number | null
+          preferred_dates?: string | null
+          updated_at?: string
+        }
+        Update: {
+          wedding_id?: string
+          full_name?: string | null
+          email?: string | null
+          phone?: string | null
+          approx_guests?: number | null
+          preferred_dates?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "wedding_enquiry_defaults_wedding_id_fkey"
+            columns: ["wedding_id"]
+            isOneToOne: true
+            referencedRelation: "weddings"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       wedding_photos: {
         Row: {
           caption: string | null
@@ -1472,6 +2110,7 @@ export type Database = {
           owner_id: string
           partner_a: string
           partner_b: string
+          rsvp_mode: string
           seating_shape_defaults: Json | null
           site_config: Json
           site_customization: Json
@@ -1509,6 +2148,7 @@ export type Database = {
           owner_id: string
           partner_a: string
           partner_b: string
+          rsvp_mode?: string
           seating_shape_defaults?: Json | null
           site_config?: Json
           site_customization?: Json
@@ -1546,6 +2186,7 @@ export type Database = {
           owner_id?: string
           partner_a?: string
           partner_b?: string
+          rsvp_mode?: string
           seating_shape_defaults?: Json | null
           site_config?: Json
           site_customization?: Json
@@ -1773,6 +2414,8 @@ export type Database = {
           name: string
           paid_by: string | null
           paid_date: string | null
+          reminder_at: string | null
+          reminder_sent_at: string | null
           payment_method: string | null
           sort_order: number
           status: string
@@ -1790,6 +2433,8 @@ export type Database = {
           name: string
           paid_by?: string | null
           paid_date?: string | null
+          reminder_at?: string | null
+          reminder_sent_at?: string | null
           payment_method?: string | null
           sort_order?: number
           status?: string
@@ -1807,6 +2452,8 @@ export type Database = {
           name?: string
           paid_by?: string | null
           paid_date?: string | null
+          reminder_at?: string | null
+          reminder_sent_at?: string | null
           payment_method?: string | null
           sort_order?: number
           status?: string
@@ -1899,6 +2546,148 @@ export type Database = {
           },
         ]
       }
+      food_tags: {
+        Row: {
+          abbr: string | null
+          color: string
+          created_at: string
+          emoji: string | null
+          id: string
+          kind: string
+          name: string
+          wedding_id: string
+        }
+        Insert: {
+          abbr?: string | null
+          color?: string
+          created_at?: string
+          emoji?: string | null
+          id?: string
+          kind?: string
+          name: string
+          wedding_id: string
+        }
+        Update: {
+          abbr?: string | null
+          color?: string
+          created_at?: string
+          emoji?: string | null
+          id?: string
+          kind?: string
+          name?: string
+          wedding_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "food_tags_wedding_id_fkey"
+            columns: ["wedding_id"]
+            isOneToOne: false
+            referencedRelation: "weddings"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      integrations: {
+        Row: {
+          account_email: string | null
+          created_at: string
+          id: string
+          provider: string
+          wedding_id: string
+        }
+        Insert: {
+          account_email?: string | null
+          created_at?: string
+          id?: string
+          provider?: string
+          wedding_id: string
+        }
+        Update: {
+          account_email?: string | null
+          created_at?: string
+          id?: string
+          provider?: string
+          wedding_id?: string
+        }
+        Relationships: []
+      }
+      integration_links: {
+        Row: {
+          auto_sync: boolean
+          created_at: string
+          id: string
+          integration_id: string
+          kind: string
+          last_error: string | null
+          last_synced_at: string | null
+          sheet_title: string
+          spreadsheet_id: string
+          spreadsheet_url: string
+          wedding_id: string
+        }
+        Insert: {
+          auto_sync?: boolean
+          created_at?: string
+          id?: string
+          integration_id: string
+          kind: string
+          last_error?: string | null
+          last_synced_at?: string | null
+          sheet_title: string
+          spreadsheet_id: string
+          spreadsheet_url: string
+          wedding_id: string
+        }
+        Update: {
+          auto_sync?: boolean
+          created_at?: string
+          id?: string
+          integration_id?: string
+          kind?: string
+          last_error?: string | null
+          last_synced_at?: string | null
+          sheet_title?: string
+          spreadsheet_id?: string
+          spreadsheet_url?: string
+          wedding_id?: string
+        }
+        Relationships: []
+      }
+      guest_tags: {
+        Row: {
+          color: string
+          created_at: string
+          emoji: string | null
+          id: string
+          name: string
+          wedding_id: string
+        }
+        Insert: {
+          color?: string
+          created_at?: string
+          emoji?: string | null
+          id?: string
+          name: string
+          wedding_id: string
+        }
+        Update: {
+          color?: string
+          created_at?: string
+          emoji?: string | null
+          id?: string
+          name?: string
+          wedding_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "guest_tags_wedding_id_fkey"
+            columns: ["wedding_id"]
+            isOneToOne: false
+            referencedRelation: "weddings"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       payment_reminders: {
         Row: {
           amount: number | null
@@ -1949,6 +2738,265 @@ export type Database = {
             columns: ["wedding_id"]
             isOneToOne: false
             referencedRelation: "weddings"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      app_settings: {
+        Row: {
+          key: string
+          value: Json
+          updated_at: string
+        }
+        Insert: {
+          key: string
+          value: Json
+          updated_at?: string
+        }
+        Update: {
+          key?: string
+          value?: Json
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      enquiry_rates: {
+        Row: {
+          id: string
+          country_code: string | null
+          amount_cents: number
+          currency: string
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          id?: string
+          country_code?: string | null
+          amount_cents: number
+          currency?: string
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          id?: string
+          country_code?: string | null
+          amount_cents?: number
+          currency?: string
+          created_at?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      payment_methods: {
+        Row: {
+          id: string
+          user_id: string
+          stripe_customer_id: string
+          stripe_payment_method_id: string
+          card_brand: string | null
+          card_last4: string | null
+          is_default: boolean
+          created_at: string
+        }
+        Insert: {
+          id?: string
+          user_id: string
+          stripe_customer_id: string
+          stripe_payment_method_id: string
+          card_brand?: string | null
+          card_last4?: string | null
+          is_default?: boolean
+          created_at?: string
+        }
+        Update: {
+          id?: string
+          user_id?: string
+          stripe_customer_id?: string
+          stripe_payment_method_id?: string
+          card_brand?: string | null
+          card_last4?: string | null
+          is_default?: boolean
+          created_at?: string
+        }
+        Relationships: []
+      }
+      conversations: {
+        Row: {
+          id: string
+          wedding_id: string
+          business_id: string
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          id?: string
+          wedding_id: string
+          business_id: string
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          id?: string
+          wedding_id?: string
+          business_id?: string
+          created_at?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "conversations_wedding_id_fkey"
+            columns: ["wedding_id"]
+            isOneToOne: false
+            referencedRelation: "weddings"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "conversations_business_id_fkey"
+            columns: ["business_id"]
+            isOneToOne: false
+            referencedRelation: "businesses"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      conversation_messages: {
+        Row: {
+          id: string
+          conversation_id: string
+          sender_role: string
+          sender_user_id: string | null
+          body: string
+          created_at: string
+        }
+        Insert: {
+          id?: string
+          conversation_id: string
+          sender_role: string
+          sender_user_id?: string | null
+          body: string
+          created_at?: string
+        }
+        Update: {
+          id?: string
+          conversation_id?: string
+          sender_role?: string
+          sender_user_id?: string | null
+          body?: string
+          created_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "conversation_messages_conversation_id_fkey"
+            columns: ["conversation_id"]
+            isOneToOne: false
+            referencedRelation: "conversations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      enquiries: {
+        Row: {
+          id: string
+          wedding_id: string
+          business_id: string
+          vendor_service_id: string | null
+          lead_form_submission_id: string
+          conversation_id: string
+          status: Database["public"]["Enums"]["enquiry_status"]
+          created_at: string
+        }
+        Insert: {
+          id?: string
+          wedding_id: string
+          business_id: string
+          vendor_service_id?: string | null
+          lead_form_submission_id: string
+          conversation_id: string
+          status?: Database["public"]["Enums"]["enquiry_status"]
+          created_at?: string
+        }
+        Update: {
+          id?: string
+          wedding_id?: string
+          business_id?: string
+          vendor_service_id?: string | null
+          lead_form_submission_id?: string
+          conversation_id?: string
+          status?: Database["public"]["Enums"]["enquiry_status"]
+          created_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "enquiries_wedding_id_fkey"
+            columns: ["wedding_id"]
+            isOneToOne: false
+            referencedRelation: "weddings"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "enquiries_business_id_fkey"
+            columns: ["business_id"]
+            isOneToOne: false
+            referencedRelation: "businesses"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "enquiries_vendor_service_id_fkey"
+            columns: ["vendor_service_id"]
+            isOneToOne: false
+            referencedRelation: "vendor_services"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "enquiries_lead_form_submission_id_fkey"
+            columns: ["lead_form_submission_id"]
+            isOneToOne: false
+            referencedRelation: "lead_form_submissions"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "enquiries_conversation_id_fkey"
+            columns: ["conversation_id"]
+            isOneToOne: false
+            referencedRelation: "conversations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      enquiry_charges: {
+        Row: {
+          id: string
+          enquiry_id: string | null
+          stripe_payment_intent_id: string | null
+          amount_cents: number
+          currency: string
+          status: Database["public"]["Enums"]["enquiry_charge_status"]
+          charged_at: string
+        }
+        Insert: {
+          id?: string
+          enquiry_id?: string | null
+          stripe_payment_intent_id?: string | null
+          amount_cents: number
+          currency: string
+          status: Database["public"]["Enums"]["enquiry_charge_status"]
+          charged_at?: string
+        }
+        Update: {
+          id?: string
+          enquiry_id?: string | null
+          stripe_payment_intent_id?: string | null
+          amount_cents?: number
+          currency?: string
+          status?: Database["public"]["Enums"]["enquiry_charge_status"]
+          charged_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "enquiry_charges_enquiry_id_fkey"
+            columns: ["enquiry_id"]
+            isOneToOne: false
+            referencedRelation: "enquiries"
             referencedColumns: ["id"]
           },
         ]
@@ -2084,6 +3132,12 @@ export type Database = {
     }
     Enums: {
       app_role: "couple" | "vendor" | "admin" | "venue" | "seller" | "planner"
+      business_media_type: "photo" | "video"
+      business_type: "vendor" | "venue"
+      business_verification_status: "pending" | "verified" | "rejected"
+      enquiry_status: "new" | "replied" | "closed"
+      enquiry_charge_status: "succeeded" | "failed" | "skipped"
+      lead_form_field_type: "text" | "number" | "textarea" | "date" | "select"
       message_kind:
         | "save_the_date"
         | "rsvp_request"
@@ -2094,6 +3148,7 @@ export type Database = {
       rsvp_question_type: "yes_no" | "multiple_choice" | "short_text"
       rsvp_source: "guest_submitted" | "manual"
       rsvp_status: "pending" | "attending" | "declined" | "maybe"
+      vendor_service_status: "active" | "inactive"
       vendor_status: "pending" | "approved" | "rejected"
       venue_status: "pending" | "approved" | "rejected"
     }
@@ -2224,6 +3279,12 @@ export const Constants = {
   public: {
     Enums: {
       app_role: ["couple", "vendor", "admin", "venue", "seller", "planner"],
+      business_media_type: ["photo", "video"],
+      business_type: ["vendor", "venue"],
+      business_verification_status: ["pending", "verified", "rejected"],
+      enquiry_status: ["new", "replied", "closed"],
+      enquiry_charge_status: ["succeeded", "failed", "skipped"],
+      lead_form_field_type: ["text", "number", "textarea", "date", "select"],
       message_kind: [
         "save_the_date",
         "rsvp_request",
@@ -2235,6 +3296,7 @@ export const Constants = {
       rsvp_question_type: ["yes_no", "multiple_choice", "short_text"],
       rsvp_source: ["guest_submitted", "manual"],
       rsvp_status: ["pending", "attending", "declined", "maybe"],
+      vendor_service_status: ["active", "inactive"],
       vendor_status: ["pending", "approved", "rejected"],
       venue_status: ["pending", "approved", "rejected"],
     },

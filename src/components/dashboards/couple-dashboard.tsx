@@ -5,42 +5,44 @@ import { useCurrentWedding, useEvents, useGuests, useInvites, useExpenses, useIn
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { ArrowRight } from "lucide-react";
-import { formatNumber } from "@/lib/utils";
+import { formatNumber, cn } from "@/lib/utils";
 import { summarizeGuestRsvps } from "@/lib/rsvp-stats";
 import { DashboardWidgetGrid, normalizeDashboardLayout, type DashboardLayoutEntry, type WidgetContext } from "@/components/dashboard-widgets";
-import { WeddingMindmap } from "@/components/dashboards/wedding-mindmap";
+import { ResizeHandle } from "@/components/resize-handle";
 
-// compact is owned by the route (src/routes/_authenticated/dashboard.tsx) and
-// passed down — the toggle button itself renders in the AppShell header (via
-// its `actions` prop) so it sits flush with the title/subtitle line, which
-// isn't reachable from inside this component's own render tree.
-export function CoupleDashboard({ compact }: { compact: boolean }) {
+const EVENTS_PER_ROW_KEY = "wedthread_events_per_row";
+type EventsPerRow = 2 | 3 | 4;
+// Literal classes (not interpolated) so Tailwind's build-time scan finds them.
+const EVENTS_GRID_CLASS: Record<EventsPerRow, string> = {
+  2: "grid-cols-1 sm:grid-cols-2",
+  3: "grid-cols-1 sm:grid-cols-2 lg:grid-cols-3",
+  4: "grid-cols-1 sm:grid-cols-2 lg:grid-cols-4",
+};
+
+export function CoupleDashboard() {
   const navigate = useNavigate();
   const qc = useQueryClient();
+  const [eventsPerRow, setEventsPerRow] = useState<EventsPerRow>(() => {
+    try {
+      const v = Number(localStorage.getItem(EVENTS_PER_ROW_KEY));
+      return v === 2 || v === 3 || v === 4 ? (v as EventsPerRow) : 4;
+    } catch {
+      return 4;
+    }
+  });
+  const cycleEventsPerRow = () => {
+    setEventsPerRow((prev) => {
+      const next: EventsPerRow = prev === 4 ? 2 : prev === 2 ? 3 : 4;
+      try { localStorage.setItem(EVENTS_PER_ROW_KEY, String(next)); } catch {}
+      return next;
+    });
+  };
   const invalidateWedding = useInvalidateWedding();
   const { data: wedding, isLoading, isError, refetch } = useCurrentWedding();
   const { data: events = [], isLoading: eventsLoading } = useEvents(wedding?.id);
   const { data: guests = [], isLoading: guestsLoading } = useGuests(wedding?.id);
   const { data: invites = [], isLoading: invitesLoading } = useInvites(wedding?.id);
   const { data: expenses = [] } = useExpenses(wedding?.id);
-
-  // Raw rows, not pre-aggregated — the mindmap needs seating broken down PER
-  // event (only shown at all when that event has seating enabled), which a
-  // single wedding-wide count can't answer. events!inner(wedding_id) scopes
-  // this to the current wedding without waiting on the `events` query above.
-  const { data: seatingData } = useQuery({
-    queryKey: ["dashboard-seating-raw", wedding?.id],
-    enabled: !!wedding?.id,
-    queryFn: async () => {
-      const { data: tables } = await supabase
-        .from("wedding_tables").select("id, event_id, seats, events!inner(wedding_id)").eq("events.wedding_id", wedding!.id);
-      const tableIds = (tables ?? []).map((t: any) => t.id as string);
-      const seatAssignments = tableIds.length === 0 ? [] : (
-        await supabase.from("seat_assignments").select("id, table_id").in("table_id", tableIds)
-      ).data ?? [];
-      return { tables: (tables ?? []) as { id: string; event_id: string; seats: number }[], seatAssignments };
-    },
-  });
 
   // menuStats/seatingStats used to be gated on `eventIds`, which only exists once the
   // `events` query above has fully resolved — that turned every dashboard load into a
@@ -127,26 +129,6 @@ export function CoupleDashboard({ compact }: { compact: boolean }) {
     if (!error) qc.invalidateQueries({ queryKey: ["current-wedding"] });
   };
 
-  const uploadCouplePhoto = async (file: File) => {
-    const ext = file.name.split(".").pop() || "jpg";
-    const path = `${wedding.id}/couple-photo-${Date.now()}.${ext}`;
-    const { error } = await supabase.storage.from("wedding-assets").upload(path, file, { upsert: true });
-    if (error) return toast.error(error.message);
-    const { data } = supabase.storage.from("wedding-assets").getPublicUrl(path);
-    // Reset the crop — a leftover zoom/pan from a previous photo has no
-    // meaning against a brand new one.
-    const { error: updateError } = await supabase.from("weddings")
-      .update({ couple_photo_url: data.publicUrl, couple_photo_zoom: 1, couple_photo_pan_x: 0, couple_photo_pan_y: 0 }).eq("id", wedding.id);
-    if (updateError) return toast.error(updateError.message);
-    invalidateWedding(wedding.id);
-  };
-
-  const updateCouplePhotoCrop = async (zoom: number, panX: number, panY: number) => {
-    const { error } = await supabase.from("weddings").update({ couple_photo_zoom: zoom, couple_photo_pan_x: panX, couple_photo_pan_y: panY }).eq("id", wedding.id);
-    if (error) return toast.error(error.message);
-    invalidateWedding(wedding.id);
-  };
-
   const ctx: WidgetContext = {
     wedding, events, guestsCount: guests.length, attending, totalInvites, rsvpd,
     budgetSpent, budgetCurrency: wedding.budget_currency ?? "USD",
@@ -157,12 +139,22 @@ export function CoupleDashboard({ compact }: { compact: boolean }) {
 
   return (
     <div>
-      {compact ? (
+      {(
         <>
-          <section className="paper-card p-6 md:p-8">
+          <section className="group">
             <div className="flex items-center justify-between">
               <h2 className="font-serif text-2xl">Your events</h2>
-              <Link to="/events" className="text-sm text-clay uppercase tracking-widest inline-flex items-center gap-1">Manage <ArrowRight className="h-3 w-3" /></Link>
+              <div className="flex items-center gap-2">
+                {events.length > 0 && (
+                  <ResizeHandle
+                    cursor="cursor-pointer"
+                    onClick={cycleEventsPerRow}
+                    title={`${eventsPerRow} per row — click to change`}
+                    className="opacity-0 group-hover:opacity-100"
+                  />
+                )}
+                <Link to="/events" className="text-sm text-clay uppercase tracking-widest inline-flex items-center gap-1">Manage <ArrowRight className="h-3 w-3" /></Link>
+              </div>
             </div>
             {events.length === 0 ? (
               <div className="mt-6 rounded-2xl border border-dashed border-line p-8 text-center">
@@ -170,7 +162,7 @@ export function CoupleDashboard({ compact }: { compact: boolean }) {
                 <Link to="/events" className="mt-4 inline-flex rounded-full bg-ink text-paper px-5 py-2 text-sm hover:bg-clay">Add your first event</Link>
               </div>
             ) : (
-              <div className="mt-6 grid md:grid-cols-2 lg:grid-cols-3 gap-4">
+              <div className={cn("mt-6 grid gap-4", EVENTS_GRID_CLASS[eventsPerRow])}>
                 {events.map((e, i) => (
                   <div key={e.id} className="border border-line rounded-2xl p-5">
                     <p className="text-[10px] uppercase tracking-widest text-clay">Event {i + 1}</p>
@@ -186,20 +178,13 @@ export function CoupleDashboard({ compact }: { compact: boolean }) {
             )}
           </section>
 
-          {layout && <DashboardWidgetGrid layout={layout} ctx={ctx} onLayoutChange={persistLayout} />}
+          {layout && (
+            <>
+              <h2 className="mt-10 font-serif text-2xl text-cherry">Your workspace</h2>
+              <DashboardWidgetGrid layout={layout} ctx={ctx} onLayoutChange={persistLayout} />
+            </>
+          )}
         </>
-      ) : (
-        <WeddingMindmap
-          wedding={wedding}
-          events={events}
-          guests={guests}
-          invites={invites}
-          tables={seatingData?.tables ?? []}
-          seatAssignments={seatingData?.seatAssignments ?? []}
-          budgetSpent={budgetSpent}
-          onUploadPhoto={uploadCouplePhoto}
-          onCropChange={updateCouplePhotoCrop}
-        />
       )}
     </div>
   );

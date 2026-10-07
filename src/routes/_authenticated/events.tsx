@@ -1,23 +1,26 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { AppShell } from "@/components/app-shell";
 import { useCurrentWedding, useEvents, useGuests, useInvites, useInvalidateWedding, type Event } from "@/lib/wedding-hooks";
 import { supabase } from "@/integrations/supabase/client";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import {
-  Plus, Trash2, X, CalendarDays, Users, Armchair, MapPin, Gift, Globe2, Handshake, ChevronRight, GripVertical, Check, Gauge, Utensils,
+  Plus, Trash2, X, CalendarDays, Users, Armchair, MapPin, Gift, Globe2, Handshake, ChevronRight, GripVertical, Check, Gauge, Utensils, Shirt, ImagePlus, Loader2,
 } from "lucide-react";
 import { DatePicker } from "@/components/ui/datepicker";
 import { TimePicker } from "@/components/ui/timepicker";
-import { cn, formatNumber } from "@/lib/utils";
+import { cn, formatNumber, truncateWords } from "@/lib/utils";
 import { PhotoEmptyState } from "@/components/photo-empty-state";
 import { ConfirmDialog } from "@/components/confirm-dialog";
 import { DndContext, closestCenter, PointerSensor, useSensor, useSensors, type DragEndEvent } from "@dnd-kit/core";
-import { SortableContext, arrayMove, useSortable, rectSortingStrategy } from "@dnd-kit/sortable";
+import { SortableContext, arrayMove, useSortable, verticalListSortingStrategy } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
+import { PhotoCropDialog } from "@/components/photo-crop-dialog";
 
 export const Route = createFileRoute("/_authenticated/events")({ component: EventsPage });
+
+const PHOTO_HIDDEN_KEY = "wedthread_events_photo_hidden";
 
 // Roughly most to least common across weddings, cultural traditions interleaved rather than grouped.
 const SUGGESTIONS = [
@@ -94,6 +97,16 @@ function EventsPage() {
   const [editing, setEditing] = useState<Partial<Event> | null>(null);
   const [trackOpen, setTrackOpen] = useState(false);
   const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
+  const [showPhoto, setShowPhoto] = useState(() => {
+    try { return localStorage.getItem(PHOTO_HIDDEN_KEY) !== "1"; } catch { return true; }
+  });
+  const togglePhoto = () => {
+    setShowPhoto((prev) => {
+      const next = !prev;
+      try { localStorage.setItem(PHOTO_HIDDEN_KEY, next ? "0" : "1"); } catch {}
+      return next;
+    });
+  };
 
   // Global counts for wedding-wide categories (registry / website / vendors)
   const { data: counts, isLoading: countsLoading } = useQuery({
@@ -130,6 +143,7 @@ function EventsPage() {
       event_end_time: (e as any).event_end_time || null,
       venue_name: e.venue_name || null, address: e.address || null, city: e.city || null,
       country: e.country || null, description: e.description || null,
+      dress_code: e.dress_code || null,
       sort_order: e.sort_order ?? events.length,
       enabled_categories: (e as any).enabled_categories ?? ALL_CATEGORIES.map((c) => c.key),
     };
@@ -163,6 +177,32 @@ function EventsPage() {
     if (!confirmDeleteId) return;
     await del(confirmDeleteId);
     setConfirmDeleteId(null);
+  };
+
+  // Reuses the same couple photo shown on the dashboard mindmap (wedding.
+  // couple_photo_url) rather than a new field — one "this is us" photo for
+  // the wedding, kept in sync wherever it appears, no new migration needed.
+  const uploadEventsPhoto = async (file: File) => {
+    if (!wedding) return;
+    const ext = file.name.split(".").pop() || "jpg";
+    const path = `${wedding.id}/couple-photo-${Date.now()}.${ext}`;
+    const { error } = await supabase.storage.from("wedding-assets").upload(path, file, { upsert: true });
+    if (error) { toast.error(error.message); return; }
+    const { data } = supabase.storage.from("wedding-assets").getPublicUrl(path);
+    // Reset the crop — a leftover zoom/pan from a previous photo has no
+    // meaning against a brand new one (same reset the dashboard mindmap's
+    // own upload does).
+    const { error: updateError } = await supabase.from("weddings")
+      .update({ couple_photo_url: data.publicUrl, couple_photo_zoom: 1, couple_photo_pan_x: 0, couple_photo_pan_y: 0 }).eq("id", wedding.id);
+    if (updateError) { toast.error(updateError.message); return; }
+    invalidate(wedding.id);
+  };
+
+  const updateEventsPhotoCrop = async (zoom: number, panX: number, panY: number) => {
+    if (!wedding) return;
+    const { error } = await supabase.from("weddings").update({ couple_photo_zoom: zoom, couple_photo_pan_x: panX, couple_photo_pan_y: panY }).eq("id", wedding.id);
+    if (error) { toast.error(error.message); return; }
+    invalidate(wedding.id);
   };
 
   const persistOrder = async (ordered: Event[]) => {
@@ -213,26 +253,52 @@ function EventsPage() {
           </PhotoEmptyState>
         ) : (
           <>
-            <p className="text-sm text-muted-foreground mb-3">{formatNumber(events.length)} event{events.length === 1 ? "" : "s"} · drag to reorder</p>
-            <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={onDragEnd}>
-              <SortableContext items={events.map((e) => e.id)} strategy={rectSortingStrategy}>
-                <div className="grid md:grid-cols-2 xl:grid-cols-3 gap-4">
-                  {events.map((e, i) => (
-                    <EventCard
-                      key={e.id}
-                      event={e}
-                      index={i}
-                      guests={guests}
-                      invites={invites}
-                      tableCount={tableCounts[e.id] ?? 0}
-                      counts={counts}
-                      onEdit={() => setEditing(e)}
-                      onDelete={() => setConfirmDeleteId(e.id)}
-                    />
-                  ))}
-                </div>
-              </SortableContext>
-            </DndContext>
+            <div className="flex items-center justify-between gap-3 mb-3">
+              <p className="text-sm text-muted-foreground">{formatNumber(events.length)} event{events.length === 1 ? "" : "s"}</p>
+              <button type="button" onClick={togglePhoto} className="text-sm text-clay hover:underline cursor-pointer shrink-0">
+                {showPhoto ? "Hide photo" : "Show photo"}
+              </button>
+            </div>
+            <div className={cn("lg:grid lg:gap-8 lg:items-start mx-auto", showPhoto ? "lg:grid-cols-[3fr_3fr_3fr] max-w-[1400px]" : "lg:grid-cols-[1fr_1fr]")}>
+              {/* Each pane sticky and scrolling on its own once it's actually taller than
+                  the available space — a long event list or a long agenda shouldn't push
+                  the other panes (or the photo) around. max-h, capped a touch taller than
+                  before (14.5rem of headroom instead of 17rem). */}
+              <div className="lg:sticky lg:top-40 lg:max-h-[calc(100vh-14.5rem)] lg:overflow-y-auto lg:no-scrollbar lg:pr-1">
+                <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={onDragEnd}>
+                  <SortableContext items={events.map((e) => e.id)} strategy={verticalListSortingStrategy}>
+                    <div className="grid gap-4">
+                      {events.map((e, i) => (
+                        <EventCard
+                          key={e.id}
+                          event={e}
+                          index={i}
+                          guests={guests}
+                          invites={invites}
+                          tableCount={tableCounts[e.id] ?? 0}
+                          counts={counts}
+                          onEdit={() => setEditing(e)}
+                          onDelete={() => setConfirmDeleteId(e.id)}
+                        />
+                      ))}
+                    </div>
+                  </SortableContext>
+                </DndContext>
+              </div>
+
+              {showPhoto && (
+                <EventsPhotoPanel
+                  photoUrl={wedding?.couple_photo_url ?? null}
+                  zoom={wedding?.couple_photo_zoom ?? 1}
+                  panX={wedding?.couple_photo_pan_x ?? 0}
+                  panY={wedding?.couple_photo_pan_y ?? 0}
+                  onUpload={uploadEventsPhoto}
+                  onCropChange={updateEventsPhotoCrop}
+                />
+              )}
+
+              <AgendaPreview events={events} />
+            </div>
           </>
         )
       }
@@ -327,6 +393,143 @@ function EventCard({ event, index, guests, invites, tableCount, counts, onEdit, 
   );
 }
 
+// Sits between the event list and the Agenda preview — a photo of the
+// couple, purely decorative, to make the page feel like theirs rather than
+// a bare planning tool. Shares wedding.couple_photo_url (and its zoom/pan
+// crop) with the dashboard mindmap's center photo, so there's one "this is
+// us" photo per wedding, adjustable the same way in both places — same
+// PhotoCropDialog, just a tall rectangular frame here instead of a circle.
+function EventsPhotoPanel({ photoUrl, zoom, panX, panY, onUpload, onCropChange }: {
+  photoUrl: string | null; zoom: number; panX: number; panY: number;
+  onUpload: (file: File) => Promise<void>; onCropChange: (zoom: number, panX: number, panY: number) => Promise<void>;
+}) {
+  const [uploading, setUploading] = useState(false);
+  const [cropOpen, setCropOpen] = useState(false);
+  const [cropAspect, setCropAspect] = useState(4 / 5);
+  const fileRef = useRef<HTMLInputElement>(null);
+  const frameRef = useRef<HTMLDivElement>(null);
+
+  const handleFile = async (file: File | undefined) => {
+    if (!file) return;
+    setUploading(true);
+    await onUpload(file);
+    setUploading(false);
+  };
+
+  // Measured from the actual on-page frame right before opening the
+  // dialog — its own aspect ratio is responsive (tall rectangle on
+  // desktop, a fixed 4:5 box below lg), so a hardcoded ratio would crop
+  // differently in the dialog than what's actually shown here.
+  const openCrop = () => {
+    const rect = frameRef.current?.getBoundingClientRect();
+    if (rect && rect.width > 0 && rect.height > 0) setCropAspect(rect.width / rect.height);
+    setCropOpen(true);
+  };
+
+  return (
+    <div className="mt-8 lg:mt-0 lg:sticky lg:top-40 lg:h-[calc(100vh-14.5rem)] lg:max-h-[638px] mx-auto lg:max-w-[380px] w-full">
+      <div ref={frameRef} className="group relative aspect-[4/5] lg:aspect-auto lg:h-full rounded-3xl overflow-hidden border border-line bg-stone">
+        <input ref={fileRef} type="file" accept="image/*" hidden onChange={(e) => { handleFile(e.target.files?.[0]); e.target.value = ""; }} />
+        {photoUrl ? (
+          <>
+            <img src={photoUrl} className="absolute inset-0 w-full h-full object-cover" alt=""
+              style={{ transform: `translate(${panX}%, ${panY}%) scale(${zoom})` }} />
+            <div className="absolute inset-0 bg-ink/0 group-hover:bg-ink/30 transition-colors flex items-end justify-center gap-2 pb-5 opacity-0 group-hover:opacity-100">
+              <button type="button" onClick={() => fileRef.current?.click()}
+                className="inline-flex items-center gap-2 rounded-full bg-paper/95 text-ink px-4 py-2 text-sm font-medium hover:bg-paper cursor-pointer">
+                {uploading ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <ImagePlus className="h-3.5 w-3.5" />}
+                {uploading ? "Uploading…" : "Replace"}
+              </button>
+              <button type="button" onClick={openCrop}
+                className="rounded-full bg-paper/95 text-ink px-4 py-2 text-sm font-medium hover:bg-paper cursor-pointer">
+                Adjust
+              </button>
+            </div>
+          </>
+        ) : (
+          <button type="button" onClick={() => fileRef.current?.click()}
+            className="absolute inset-0 flex flex-col items-center justify-center text-center px-8 hover:bg-cream/40 transition-colors cursor-pointer">
+            <ImagePlus className="h-6 w-6 text-muted-foreground" />
+            <p className="mt-3 text-sm font-medium text-ink">{uploading ? "Uploading…" : "Add a photo"}</p>
+            <p className="mt-1 text-sm text-muted-foreground">A photo of the two of you, right between your events and agenda.</p>
+          </button>
+        )}
+      </div>
+
+      {cropOpen && photoUrl && (
+        <PhotoCropDialog src={photoUrl} zoom={zoom} panX={panX} panY={panY} aspectRatio={cropAspect}
+          frameClassName="mx-auto max-h-[55vh] max-w-full rounded-2xl"
+          onSave={(z, x, y) => { onCropChange(z, x, y); setCropOpen(false); }}
+          onClose={() => setCropOpen(false)} />
+      )}
+    </div>
+  );
+}
+
+// A read-only, guest-facing-style preview of the schedule — the same
+// events from the list on the left, grouped by date and formatted like an
+// actual wedding agenda, so the couple can see at a glance how their
+// schedule reads before it goes on the website/invites.
+function AgendaPreview({ events }: { events: Event[] }) {
+  const sorted = [...events].sort((a, b) =>
+    (a.event_date ?? "9999").localeCompare(b.event_date ?? "9999") || (a.event_time ?? "99:99").localeCompare(b.event_time ?? "99:99"));
+
+  const groups: { key: string; label: string; events: Event[] }[] = [];
+  for (const e of sorted) {
+    const key = e.event_date ?? "tbd";
+    const label = e.event_date
+      ? new Date(e.event_date).toLocaleDateString(undefined, { weekday: "long", month: "long", day: "numeric" })
+      : "Date TBD";
+    const group = groups.find((g) => g.key === key);
+    if (group) group.events.push(e);
+    else groups.push({ key, label, events: [e] });
+  }
+
+  const formatTime = (t: string | null | undefined) => t ? new Date(`2000-01-01T${t}`).toLocaleTimeString(undefined, { hour: "numeric", minute: "2-digit" }) : null;
+
+  return (
+    <div className="rounded-3xl border border-line bg-paper p-8 mt-8 lg:mt-0 lg:sticky lg:top-40 lg:max-h-[calc(100vh-14.5rem)] flex flex-col">
+      <p className="text-sm uppercase tracking-widest text-muted-foreground shrink-0">Preview</p>
+      <h2 className="font-serif text-3xl mt-1 shrink-0">Agenda</h2>
+
+      <div className="mt-6 grid gap-8 lg:flex-1 lg:min-h-0 lg:overflow-y-auto lg:no-scrollbar pr-1">
+        {groups.map((g) => (
+          <div key={g.key}>
+            <p className="text-xs uppercase tracking-widest text-clay border-b border-line/60 pb-2 mb-4">{g.label}</p>
+            <div className="grid gap-5">
+              {g.events.map((e) => {
+                const start = formatTime(e.event_time);
+                const end = formatTime((e as any).event_end_time);
+                const place = [e.venue_name, e.address, [e.city, e.country].filter(Boolean).join(", ")].filter(Boolean).join(", ");
+                return (
+                  <div key={e.id} className="text-center">
+                    <p className="font-serif text-lg">{e.name}</p>
+                    {(start || place) && (
+                      <p className="text-xs text-cherry mt-0.5">
+                        {start ? `${start}${end ? ` – ${end}` : ""}` : null}
+                        {start && place ? " · " : ""}
+                        {place}
+                      </p>
+                    )}
+                    {e.description && (
+                      <p className="text-sm text-muted-foreground mt-2 leading-relaxed">{truncateWords(e.description, 60)}</p>
+                    )}
+                    {e.dress_code && (
+                      <p className="mt-2 text-xs text-cherry inline-flex items-center gap-1.5">
+                        <Shirt className="h-3 w-3" /> {e.dress_code}
+                      </p>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
 function ProgressRing({ pct }: { pct: number }) {
   const r = 18, c = 2 * Math.PI * r;
   const off = c - (pct / 100) * c;
@@ -382,14 +585,7 @@ function EventDialog({ event, onClose, onSave }: { event: Partial<Event>; onClos
           <button onClick={onClose} className="text-muted-foreground hover:text-ink cursor-pointer"><X className="h-4 w-4" /></button>
         </div>
         <form noValidate onSubmit={submit} className="mt-6 space-y-4">
-          <div>
-            <F label="Name of event" required value={form.name ?? ""} onChange={(v) => setField("name", v)} placeholder="e.g. Sangeet" error={touched.name ? errors.name : undefined} />
-            <div className="mt-2 flex flex-wrap gap-1.5">
-              {SUGGESTIONS.map((s) => (
-                <button type="button" key={s} onClick={() => setField("name", s)} className="text-sm rounded-full border border-line px-2.5 py-0.5 hover:bg-stone text-muted-foreground cursor-pointer">{s}</button>
-              ))}
-            </div>
-          </div>
+          <F label="Name of event" required value={form.name ?? ""} onChange={(v) => setField("name", v)} error={touched.name ? errors.name : undefined} />
           <div>
             <label className="block text-sm uppercase tracking-widest text-muted-foreground">Date</label>
             <div className="mt-1">
@@ -410,7 +606,7 @@ function EventDialog({ event, onClose, onSave }: { event: Partial<Event>; onClos
               </div>
             </div>
           </div>
-          <F label="Venue name" value={form.venue_name ?? ""} onChange={(v) => setField("venue_name", v)} placeholder="e.g. Jag Mandir" />
+          <F label="Venue name" value={form.venue_name ?? ""} onChange={(v) => setField("venue_name", v)} />
           <F label="Address" value={form.address ?? ""} onChange={(v) => setField("address", v)} />
           <div className="grid grid-cols-2 gap-3">
             <F label="City" value={form.city ?? ""} onChange={(v) => setField("city", v)} />
@@ -421,6 +617,7 @@ function EventDialog({ event, onClose, onSave }: { event: Partial<Event>; onClos
             <textarea rows={3} value={form.description ?? ""} onChange={(e) => setField("description", e.target.value)}
               className="mt-1 w-full rounded-2xl border border-line px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-clay bg-paper" />
           </div>
+          <F label="Dress code" value={form.dress_code ?? ""} onChange={(v) => setField("dress_code", v)} />
 
           <div className="pt-2">
             <label className="text-sm uppercase tracking-widest text-muted-foreground">What does this event need?</label>

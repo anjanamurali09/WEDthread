@@ -1,6 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import type { Tables } from "@/integrations/supabase/types";
+import { DEFAULT_FOOD_TAGS, DIET_COLOR, ALLERGY_COLOR } from "@/lib/dietary-tags";
 
 export type Wedding = Tables<"weddings">;
 export type Event = Tables<"events">;
@@ -19,6 +20,8 @@ export type PaymentReminder = Tables<"payment_reminders">;
 export type Note = Tables<"notes">;
 export type Collaborator = Tables<"wedding_collaborators">;
 export type WeddingPhoto = Tables<"wedding_photos">;
+export type GuestTag = Tables<"guest_tags">;
+export type FoodTag = Tables<"food_tags">;
 
 async function getUserId() {
   const { data } = await supabase.auth.getUser();
@@ -278,6 +281,51 @@ export function useWeddingPhotos(weddingId?: string) {
   });
 }
 
+export function useGuestTags(weddingId?: string) {
+  return useQuery({
+    queryKey: ["guest-tags", weddingId],
+    enabled: !!weddingId,
+    queryFn: async (): Promise<GuestTag[]> => {
+      const { data, error } = await supabase
+        .from("guest_tags")
+        .select("*")
+        .eq("wedding_id", weddingId!)
+        .order("created_at");
+      if (error) throw error;
+      return data ?? [];
+    },
+  });
+}
+
+// Dietary / allergen library. A wedding starts with the usual defaults, seeded on first
+// load; if the table doesn't exist yet (migration not run) the defaults are returned
+// read-only so the Menu and Guests pages keep working.
+export function useFoodTags(weddingId?: string) {
+  return useQuery({
+    queryKey: ["food-tags", weddingId],
+    enabled: !!weddingId,
+    queryFn: async (): Promise<FoodTag[]> => {
+      const fallback = (): FoodTag[] => DEFAULT_FOOD_TAGS.map((t) => ({
+        id: `default:${t.name}`, wedding_id: weddingId!, name: t.name, kind: t.kind, abbr: t.abbr,
+        color: t.kind === "allergy" ? ALLERGY_COLOR : DIET_COLOR, emoji: null, created_at: "",
+      }));
+      const load = () => supabase.from("food_tags").select("*").eq("wedding_id", weddingId!).order("created_at").order("name");
+      const first = await load();
+      if (first.error) return fallback();
+      if (first.data.length > 0) return first.data;
+      await supabase.from("food_tags").upsert(
+        DEFAULT_FOOD_TAGS.map((t) => ({
+          wedding_id: weddingId!, name: t.name, kind: t.kind, abbr: t.abbr,
+          color: t.kind === "allergy" ? ALLERGY_COLOR : DIET_COLOR,
+        })),
+        { onConflict: "wedding_id,name", ignoreDuplicates: true },
+      );
+      const second = await load();
+      return second.error || second.data.length === 0 ? fallback() : second.data;
+    },
+  });
+}
+
 export function usePaymentReminders(weddingId?: string) {
   return useQuery({
     queryKey: ["payment-reminders", weddingId],
@@ -300,6 +348,7 @@ export function useInvalidateWedding() {
     qc.invalidateQueries({ queryKey: ["current-wedding"] });
     qc.invalidateQueries({ queryKey: ["events", weddingId] });
     qc.invalidateQueries({ queryKey: ["guests", weddingId] });
+    qc.invalidateQueries({ queryKey: ["guest-tags", weddingId] });
     qc.invalidateQueries({ queryKey: ["invites", weddingId] });
     qc.invalidateQueries({ queryKey: ["tables", weddingId] });
     qc.invalidateQueries({ queryKey: ["expenses", weddingId] });

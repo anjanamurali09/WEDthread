@@ -25,6 +25,16 @@ export function AddRoleDialog({
   const [saving, setSaving] = useState<AppRole | null>(null);
 
   const pick = async (role: AppRole) => {
+    // Vendor and venue both get the same multi-step business signup (legal
+    // details, verification documents, media, and — venue only — venue
+    // details + lead form) instead of the instant add-and-land every other
+    // role uses — the role itself isn't added until that wizard is actually
+    // completed (see BusinessSignupForm's `finish` step).
+    if (role === "vendor" || role === "venue") {
+      onOpenChange(false);
+      router.navigate({ to: (role === "venue" ? "/business/onboarding/venue" : "/business/onboarding") as any });
+      return;
+    }
     setSaving(role);
     try {
       await addRoleForCurrentUser(role);

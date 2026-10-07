@@ -4,9 +4,10 @@ import { AppShell, SIDEBAR_COLLAPSED_KEY } from "@/components/app-shell";
 import { useCurrentWedding, useInvalidateWedding } from "@/lib/wedding-hooks";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-import { Copy, Check, ExternalLink, Pencil } from "lucide-react";
+import { Copy, Check, ExternalLink, Pencil, Monitor, Smartphone, Heart } from "lucide-react";
 import { TEMPLATES, getTemplate } from "@/lib/website-templates";
-import { TemplatePreview } from "@/components/template-preview";
+import { TemplateThumb } from "@/components/template-thumb";
+import { TemplateSitePreview } from "@/components/template-site-preview";
 import { cn } from "@/lib/utils";
 
 export const Route = createFileRoute("/_authenticated/website")({ component: WebsitePage });
@@ -16,6 +17,10 @@ function WebsitePage() {
   const invalidate = useInvalidateWedding();
   const [saving, setSaving] = useState(false);
   const [copied, setCopied] = useState(false);
+  // The design highlighted on the left and shown on the right (not yet applied).
+  const [previewId, setPreviewId] = useState<string | null>(null);
+  const [device, setDevice] = useState<"desktop" | "mobile">("desktop");
+  const [onlyFavourites, setOnlyFavourites] = useState(false);
 
   // The website section's own workspace needs the horizontal room, so collapse the main
   // app sidebar via its existing toggle the moment either website page mounts (see the
@@ -40,6 +45,15 @@ function WebsitePage() {
   const url = typeof window !== "undefined" ? `${window.location.origin}/w/${wedding.slug ?? ""}` : `/w/${wedding.slug ?? ""}`;
   const copy = async () => { await navigator.clipboard.writeText(url); setCopied(true); setTimeout(() => setCopied(false), 1500); };
   const template = getTemplate(wedding.site_template_id);
+  const shown = getTemplate(previewId ?? wedding.site_template_id);
+  // Saved on the wedding itself (site_customization.favoriteTemplates), so there's nothing extra to migrate.
+  const favourites: string[] = ((wedding.site_customization as any)?.favoriteTemplates as string[] | undefined) ?? [];
+  const toggleFavourite = async (id: string) => {
+    const next = favourites.includes(id) ? favourites.filter((f) => f !== id) : [...favourites, id];
+    const { error } = await supabase.from("weddings").update({ site_customization: { ...((wedding.site_customization as any) ?? {}), favoriteTemplates: next } }).eq("id", wedding.id);
+    if (error) return toast.error(error.message);
+    invalidate(wedding.id);
+  };
 
   // Only changes the palette/font/photo defaults a NEW wedding would seed — an existing
   // wedding's sections (and any content already typed into them) are untouched, since
@@ -75,29 +89,74 @@ function WebsitePage() {
       </div>
 
       <h2 className="font-serif text-2xl mt-10 mb-1">Templates</h2>
-      <p className="text-sm text-muted-foreground mb-4">Pick a starting point — colors, fonts, and photos differ per template. Switching doesn't touch anything you've already written or uploaded.</p>
-      <div className="grid sm:grid-cols-2 gap-4 max-w-2xl">
-        {TEMPLATES.map((t) => {
-          const active = t.id === template.id;
-          return (
-            <div key={t.id} className={cn("paper-card p-4", active && "ring-2 ring-wine")}>
-              <button onClick={() => selectTemplate(t.id)} className="block w-full rounded-2xl overflow-hidden cursor-pointer">
-                <TemplatePreview t={t} names={{ a: wedding.partner_a || "Aanya", b: wedding.partner_b || "Rahul" }} />
-              </button>
-              <div className="mt-4 flex items-start justify-between gap-3">
-                <div className="min-w-0">
-                  <p className="font-serif text-xl">{t.name}</p>
-                  <p className="text-sm text-muted-foreground mt-1">{t.desc}</p>
+      <p className="text-sm text-muted-foreground mb-4">Click a design to preview it on the right. Switching doesn't touch anything you've already written or uploaded.</p>
+      <div className="mb-4 inline-flex rounded-full border border-line p-0.5">
+          {([["All", false], [`Favourites${favourites.length ? ` (${favourites.length})` : ""}`, true]] as const).map(([label, fav]) => (
+            <button key={label} onClick={() => setOnlyFavourites(fav)}
+              className={cn("rounded-full px-4 py-1 text-sm cursor-pointer", onlyFavourites === fav ? "bg-ink text-paper" : "text-muted-foreground hover:text-ink")}>{label}</button>
+          ))}
+        </div>
+      <div className="grid gap-5 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.15fr)] lg:items-start">
+        <div>
+        {onlyFavourites && favourites.length === 0 && (
+          <p className="rounded-xl border border-dashed border-line p-6 text-center text-sm text-muted-foreground">Tap the heart on a design to save it here.</p>
+        )}
+        <div className="grid grid-cols-2 gap-3">
+          {TEMPLATES.filter((t) => !onlyFavourites || favourites.includes(t.id)).map((t) => {
+            const isCurrent = t.id === template.id;
+            const isPreviewing = t.id === shown.id;
+            return (
+              <div key={t.id} role="button" tabIndex={0} onClick={() => setPreviewId(t.id)} onKeyDown={(e) => e.key === "Enter" && setPreviewId(t.id)} title={t.desc}
+                className={cn("paper-card p-2 text-left cursor-pointer transition", isPreviewing && "ring-2 ring-ink")}>
+                <div className="overflow-hidden rounded-lg">
+                  <TemplateThumb t={t} wedding={wedding} current={isCurrent} />
                 </div>
-                {active ? (
-                  <Link to="/website/edit" className="shrink-0 text-[10px] rounded-full bg-wine text-pearl px-3 py-1.5 whitespace-nowrap">Edit</Link>
-                ) : (
-                  <button onClick={() => selectTemplate(t.id)} className="shrink-0 text-[10px] rounded-full border border-wine text-wine px-3 py-1.5 whitespace-nowrap hover:bg-wine hover:text-pearl transition cursor-pointer">Use this</button>
-                )}
+                <div className="mt-2 flex items-center justify-between gap-2 px-0.5">
+                  <p className="min-w-0 truncate text-sm font-medium">{t.name}</p>
+                  <div className="flex shrink-0 items-center gap-1.5">
+                    {isCurrent && <span className="rounded-full bg-ink px-2 py-0.5 text-[10px] text-paper">Current</span>}
+                    <button type="button" aria-label={favourites.includes(t.id) ? "Remove from favourites" : "Add to favourites"}
+                      onClick={(e) => { e.stopPropagation(); toggleFavourite(t.id); }} className="cursor-pointer p-0.5">
+                      <Heart className={cn("h-4 w-4 transition", favourites.includes(t.id) ? "fill-[#E63950] text-[#E63950]" : "text-muted-foreground hover:text-ink")} />
+                    </button>
+                  </div>
+                </div>
+                <div className="mt-1.5 flex gap-1.5 px-0.5">
+                  {[t.palette.bg, t.palette.soft, t.palette.accent, t.palette.ink].map((c) => (
+                    <span key={c} className="h-3.5 w-3.5 rounded-full border border-neutral-300" style={{ background: c }} />
+                  ))}
+                </div>
               </div>
+            );
+          })}
+        </div>
+        </div>
+
+        {/* Right: a live preview of whichever design is highlighted, before choosing it. */}
+        <div className="paper-card overflow-hidden lg:sticky lg:top-4">
+          <div className="flex items-center justify-between gap-3 border-b border-neutral-300 px-4 py-3">
+            <div className="flex items-center gap-2 min-w-0">
+              {[shown.palette.bg, shown.palette.soft, shown.palette.accent, shown.palette.ink].map((c) => (
+                <span key={c} className="h-4 w-4 shrink-0 rounded-full border border-neutral-300" style={{ background: c }} />
+              ))}
+              <span className="ml-1 truncate font-serif text-lg">{shown.name}</span>
             </div>
-          );
-        })}
+            <div className="flex items-center gap-2 shrink-0">
+              <div className="inline-flex rounded-full border border-neutral-300 p-0.5">
+                <button onClick={() => setDevice("desktop")} title="Desktop" className={cn("rounded-full p-1.5 cursor-pointer", device === "desktop" ? "bg-ink text-paper" : "text-muted-foreground hover:text-ink")}><Monitor className="h-3.5 w-3.5" /></button>
+                <button onClick={() => setDevice("mobile")} title="Phone" className={cn("rounded-full p-1.5 cursor-pointer", device === "mobile" ? "bg-ink text-paper" : "text-muted-foreground hover:text-ink")}><Smartphone className="h-3.5 w-3.5" /></button>
+              </div>
+              {shown.id === template.id ? (
+                <Link to="/website/edit" className="rounded-full bg-ink px-4 py-1.5 text-sm text-paper hover:bg-clay">Continue editing</Link>
+              ) : (
+                <button onClick={() => selectTemplate(shown.id)} className="rounded-full bg-ink px-4 py-1.5 text-sm text-paper hover:bg-clay cursor-pointer">Select this design →</button>
+              )}
+            </div>
+          </div>
+          <div className="h-[70vh] bg-stone/30">
+            <TemplateSitePreview key={shown.id} t={shown} wedding={wedding} current={shown.id === template.id} device={device} />
+          </div>
+        </div>
       </div>
     </AppShell>
   );

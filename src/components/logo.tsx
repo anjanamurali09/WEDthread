@@ -12,9 +12,9 @@ import { cn } from "@/lib/utils";
 const DIDOT_STACK = '"Didot", "Bodoni Moda", "Didot LT STD", Georgia, serif';
 const SNELL_STACK = '"Snell Roundhand", "Mrs Saint Delafield", "Segoe Script", cursive';
 
-export function Logo({ className, sizeClassName = "text-2xl" }: { className?: string; sizeClassName?: string }) {
+export function Logo({ className, sizeClassName = "text-2xl", style }: { className?: string; sizeClassName?: string; style?: React.CSSProperties }) {
   return (
-    <span className={cn("inline-flex items-baseline text-wine select-none", sizeClassName, className)}>
+    <span className={cn("inline-flex items-baseline text-wine select-none", sizeClassName, className)} style={style}>
       <span style={{ fontFamily: DIDOT_STACK, fontWeight: 700 }}>WED</span>
       <span style={{ fontFamily: SNELL_STACK, fontStyle: "italic", fontWeight: 400 }}>thread</span>
     </span>

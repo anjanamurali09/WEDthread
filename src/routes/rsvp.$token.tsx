@@ -1,7 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useRef, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
-import { RsvpPageBody, rsvpAnswerKey, DEFAULT_ATTENDANCE_TEXT, type RsvpEventRow, type RsvpQuestionRow, type RsvpSaveStatus } from "@/components/rsvp-form";
+import { RsvpPageBody, rsvpAnswerKey, DEFAULT_ATTENDANCE_TEXT, type RsvpEventRow, type RsvpQuestionRow, type RsvpSaveStatus, type RsvpMode } from "@/components/rsvp-form";
 
 export const Route = createFileRoute("/rsvp/$token")({ component: RsvpPage });
 
@@ -10,6 +10,7 @@ type ContextRow = {
   partner_a: string; partner_b: string;
   attendance_question_text: string; attendance_allow_maybe: boolean;
   attendance_accept_label: string; attendance_decline_label: string; attendance_maybe_label: string;
+  rsvp_mode: string;
   rsvp_submitted_at: string | null;
   event_id: string | null; event_name: string | null; event_date: string | null; event_time: string | null;
   venue_name: string | null; city: string | null;
@@ -132,6 +133,7 @@ function RsvpPage() {
         attendanceQuestionText={first.attendance_question_text ?? DEFAULT_ATTENDANCE_TEXT}
         allowMaybe={first.attendance_allow_maybe ?? false}
         acceptLabel={first.attendance_accept_label} declineLabel={first.attendance_decline_label} maybeLabel={first.attendance_maybe_label}
+        rsvpMode={(first.rsvp_mode as RsvpMode) ?? "per_event"}
         eventRows={eventRows} questions={questions}
         answers={answers} saveStatus={saveStatus} rsvpSaveStatus={rsvpSaveStatus}
         submitted={first.rsvp_submitted_at != null} submitting={submitting} submitError={submitError}

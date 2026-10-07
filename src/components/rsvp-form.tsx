@@ -1,5 +1,5 @@
 import { useMemo, useState } from "react";
-import { Sparkles, Check, X as XIcon, HelpCircle, MapPin, CalendarDays, Loader2, ChevronDown } from "lucide-react";
+import { Check, X as XIcon, HelpCircle, MapPin, CalendarDays, Loader2, ChevronDown } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Logo } from "@/components/logo";
 
@@ -30,10 +30,12 @@ export const DEFAULT_MAYBE_LABEL = "Maybe";
 
 const renderAttendanceText = (template: string, eventName: string) => template.replaceAll("{event}", eventName);
 
+export type RsvpMode = "per_event" | "single";
+
 export function RsvpPageBody({
   partnerA, partnerB, guestName,
   eventRows, questions,
-  attendanceQuestionText, allowMaybe,
+  attendanceQuestionText, allowMaybe, rsvpMode = "per_event",
   acceptLabel = DEFAULT_ACCEPT_LABEL, declineLabel = DEFAULT_DECLINE_LABEL, maybeLabel = DEFAULT_MAYBE_LABEL,
   answers, saveStatus, rsvpSaveStatus,
   submitted, submitting, submitError,
@@ -41,7 +43,7 @@ export function RsvpPageBody({
 }: {
   partnerA: string; partnerB: string; guestName: string;
   eventRows: RsvpEventRow[]; questions: RsvpQuestionRow[];
-  attendanceQuestionText: string; allowMaybe: boolean;
+  attendanceQuestionText: string; allowMaybe: boolean; rsvpMode?: RsvpMode;
   acceptLabel?: string; declineLabel?: string; maybeLabel?: string;
   answers: Record<string, string>; saveStatus: Record<string, RsvpSaveStatus>; rsvpSaveStatus: Record<string, RsvpSaveStatus>;
   submitted: boolean; submitting: boolean; submitError?: string | null;
@@ -91,16 +93,28 @@ export function RsvpPageBody({
   const toggleStatus = (r: RsvpEventRow, status: string, plusOnes: number) =>
     onRespond(r.event_id, r.current_status === status ? "pending" : status, r.current_status === status ? 0 : plusOnes);
 
+  // One RSVP for every event at once — reuses the same per-event onRespond
+  // the couple's chosen mode just calls it once per event instead of the
+  // guest clicking through each event separately.
+  const unifiedStatus = eventRows[0]?.current_status ?? "pending";
+  const unifiedPlusOnes = eventRows[0]?.current_plus_ones ?? 0;
+  const unifiedSaving = eventRows.some((r) => rsvpSaveStatus[r.event_id] === "saving");
+  const unifiedSaved = eventRows.length > 0 && eventRows.every((r) => rsvpSaveStatus[r.event_id] === "saved");
+  const respondAll = (status: string, plusOnes: number) => {
+    const next = unifiedStatus === status ? "pending" : status;
+    const nextPlusOnes = unifiedStatus === status ? 0 : plusOnes;
+    eventRows.forEach((r) => onRespond(r.event_id, next, nextPlusOnes));
+  };
+
   return (
     <div className="max-w-2xl mx-auto">
       <div className="flex items-center gap-2 justify-center mb-8">
-        <span className="grid h-8 w-8 place-items-center rounded-full bg-clay text-paper"><Sparkles className="h-3.5 w-3.5" /></span>
         <Logo sizeClassName="text-xl" />
       </div>
       <p className="text-center text-sm uppercase tracking-[0.25em] text-clay">You are invited to celebrate</p>
       <h1 className="mt-4 text-center font-serif text-4xl md:text-6xl leading-tight">{partnerA} <span className="text-clay">&</span> {partnerB}</h1>
       <p className="mt-4 text-center text-muted-foreground">
-        Dear <span className="text-ink">{guestName}</span>, {eventRows.length > 0 ? "please respond to each event below." : "we're finalizing your invitation details."}
+        Dear <span className="text-ink">{guestName}</span>, {eventRows.length === 0 ? "we're finalizing your invitation details." : rsvpMode === "single" ? "please respond below." : "please respond to each event below."}
       </p>
       {hasRequiredQuestion && (
         <p className="mt-3 text-center text-sm text-muted-foreground">
@@ -114,6 +128,30 @@ export function RsvpPageBody({
         </div>
       ) : (
       <div className="mt-10 space-y-4">
+        {rsvpMode === "single" && (
+          <div className="warm-wash rounded-[28px] border border-line/60 p-6">
+            <p className="text-[10px] uppercase tracking-widest text-clay">Your RSVP</p>
+            <h3 className="font-serif text-2xl mt-1">{renderAttendanceText(attendanceQuestionText, "the celebration")}</h3>
+            <p className="text-sm text-muted-foreground mt-1">Covers every event you're invited to, listed below.</p>
+            <div className="mt-4 flex flex-wrap items-center gap-2">
+              <RsvpBtn active={unifiedStatus === "attending"} activeClass="bg-sage-deep text-pearl border-sage-deep"
+                disabled={submitted} onClick={() => respondAll("attending", unifiedPlusOnes || 0)} icon={Check} label={acceptLabel} />
+              {allowMaybe && (
+                <RsvpBtn active={unifiedStatus === "maybe"} activeClass="bg-ink text-paper border-ink"
+                  disabled={submitted} onClick={() => respondAll("maybe", 0)} icon={HelpCircle} label={maybeLabel} />
+              )}
+              <RsvpBtn active={unifiedStatus === "declined"} activeClass="bg-cherry text-pearl border-cherry"
+                disabled={submitted} onClick={() => respondAll("declined", 0)} icon={XIcon} label={declineLabel} />
+              <SaveIndicator status={unifiedSaving ? "saving" : unifiedSaved ? "saved" : "idle"} />
+            </div>
+            {unifiedStatus === "attending" && (
+              <div className="mt-4 flex items-center gap-3 text-sm text-muted-foreground">
+                Bringing:
+                <PlusOnesPicker value={unifiedPlusOnes} disabled={submitted} onChange={(n) => eventRows.forEach((r) => onRespond(r.event_id, "attending", n))} />
+              </div>
+            )}
+          </div>
+        )}
         {eventRows.map((r) => {
           const eventQuestions = questions.filter((q) => q.event_id === r.event_id && isVisible(q));
           const showQuestions = r.current_status === "attending" || r.current_status === "maybe";
@@ -128,24 +166,28 @@ export function RsvpPageBody({
               </p>
               {(r.venue_name || r.city) && <p className="text-sm text-muted-foreground mt-1.5 flex items-center gap-1"><MapPin className="h-3 w-3" /> {[r.venue_name, r.city].filter(Boolean).join(" · ")}</p>}
 
-              <p className="mt-5 text-sm text-ink">{renderAttendanceText(attendanceQuestionText, r.event_name)}</p>
-              <div className="mt-2 flex flex-wrap items-center gap-2">
-                <RsvpBtn active={r.current_status === "attending"} activeClass="bg-sage-deep text-pearl border-sage-deep"
-                  disabled={submitted} onClick={() => toggleStatus(r, "attending", r.current_plus_ones)} icon={Check} label={acceptLabel} />
-                {allowMaybe && (
-                  <RsvpBtn active={r.current_status === "maybe"} activeClass="bg-ink text-paper border-ink"
-                    disabled={submitted} onClick={() => toggleStatus(r, "maybe", 0)} icon={HelpCircle} label={maybeLabel} />
-                )}
-                <RsvpBtn active={r.current_status === "declined"} activeClass="bg-cherry text-pearl border-cherry"
-                  disabled={submitted} onClick={() => toggleStatus(r, "declined", 0)} icon={XIcon} label={declineLabel} />
-                <SaveIndicator status={rsvpSaveStatus[r.event_id] ?? "idle"} />
-              </div>
+              {rsvpMode === "per_event" && (
+                <>
+                  <p className="mt-5 text-sm text-ink">{renderAttendanceText(attendanceQuestionText, r.event_name)}</p>
+                  <div className="mt-2 flex flex-wrap items-center gap-2">
+                    <RsvpBtn active={r.current_status === "attending"} activeClass="bg-sage-deep text-pearl border-sage-deep"
+                      disabled={submitted} onClick={() => toggleStatus(r, "attending", r.current_plus_ones)} icon={Check} label={acceptLabel} />
+                    {allowMaybe && (
+                      <RsvpBtn active={r.current_status === "maybe"} activeClass="bg-ink text-paper border-ink"
+                        disabled={submitted} onClick={() => toggleStatus(r, "maybe", 0)} icon={HelpCircle} label={maybeLabel} />
+                    )}
+                    <RsvpBtn active={r.current_status === "declined"} activeClass="bg-cherry text-pearl border-cherry"
+                      disabled={submitted} onClick={() => toggleStatus(r, "declined", 0)} icon={XIcon} label={declineLabel} />
+                    <SaveIndicator status={rsvpSaveStatus[r.event_id] ?? "idle"} />
+                  </div>
 
-              {r.current_status === "attending" && (
-                <div className="mt-4 flex items-center gap-3 text-sm text-muted-foreground">
-                  Bringing:
-                  <PlusOnesPicker value={r.current_plus_ones} disabled={submitted} onChange={(n) => onRespond(r.event_id, "attending", n)} />
-                </div>
+                  {r.current_status === "attending" && (
+                    <div className="mt-4 flex items-center gap-3 text-sm text-muted-foreground">
+                      Bringing:
+                      <PlusOnesPicker value={r.current_plus_ones} disabled={submitted} onChange={(n) => onRespond(r.event_id, "attending", n)} />
+                    </div>
+                  )}
+                </>
               )}
 
               {showQuestions && eventQuestions.length > 0 && (
@@ -210,7 +252,7 @@ export function RsvpPageBody({
             </button>
             {!readyToSubmit && (
               <p className="mt-2 text-sm text-muted-foreground">
-                {!allEventsResponded ? "Please respond to each event above to finish your RSVP." : "A few required questions above still need an answer."}
+                {!allEventsResponded ? (rsvpMode === "single" ? "Please respond above to finish your RSVP." : "Please respond to each event above to finish your RSVP.") : "A few required questions above still need an answer."}
               </p>
             )}
             {submitError && <p className="mt-2 text-sm text-cherry">{submitError}</p>}

@@ -63,7 +63,7 @@ export function ShareRsvpDialog({ wedding, guests, onClose }: {
           <p className="text-sm uppercase tracking-widest text-muted-foreground mb-2">Personalized links</p>
           <div className="relative">
             <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
-            <input value={query} onChange={(e) => setQuery(e.target.value)} placeholder="Search guests…"
+            <input value={query} onChange={(e) => setQuery(e.target.value)} placeholder="Search guests"
               className="w-full rounded-full border border-line bg-paper pl-9 pr-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-clay" />
           </div>
           {query.trim() && (
@@ -85,7 +85,7 @@ export function ShareRsvpDialog({ wedding, guests, onClose }: {
 
         <div className="mt-6 pt-4 border-t border-line/60 flex items-center justify-between gap-2">
           <p className="text-sm text-muted-foreground">Head to Messages to send this to your guests</p>
-          <Link to="/messages" title="Go to Messages"
+          <Link to="/messages" search={{ remind: undefined }} title="Go to Messages"
             className="grid h-8 w-8 shrink-0 place-items-center rounded-full bg-ink text-paper hover:bg-clay cursor-pointer">
             <ArrowRight className="h-3.5 w-3.5" />
           </Link>

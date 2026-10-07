@@ -1,7 +1,6 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
-import { Sparkles } from "lucide-react";
 import { ROLE_LANDING, type AppRole } from "@/hooks/use-active-role";
 import { resolveCoupleLanding } from "@/lib/wedding-hooks";
 
@@ -66,10 +65,7 @@ function AuthCallback() {
   return (
     <div className="min-h-screen bg-pearl text-ink grid place-items-center">
       <div className="flex flex-col items-center gap-4">
-        <span className="grid h-12 w-12 place-items-center rounded-full bg-cherry text-pearl animate-pulse">
-          <Sparkles className="h-5 w-5" />
-        </span>
-        <p className="font-serif text-2xl">Signing you in…</p>
+        <p className="font-serif text-2xl animate-pulse">Signing you in…</p>
         <p className="text-sm text-muted-foreground">One moment while we set things up.</p>
       </div>
     </div>

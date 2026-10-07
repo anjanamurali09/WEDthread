@@ -1,10 +1,14 @@
-import { createFileRoute, Link } from "@tanstack/react-router";
+import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useEffect, useRef, useState } from "react";
 import { Sparkles, ArrowRight, Globe2, MessageCircle, Star, CookingPot, BedDouble, Coffee, Luggage, Check, ChefHat, Wine, Flame, Droplet, MousePointer2, Bell } from "lucide-react";
 import { LoginDialog } from "@/components/login-dialog";
 import { Logo } from "@/components/logo";
 import { Accordion, AccordionItem, AccordionTrigger, AccordionContent } from "@/components/ui/accordion";
 import { cn } from "@/lib/utils";
+import { supabase } from "@/integrations/supabase/client";
+import { VenueCard, type VenueCardData } from "@/components/venue-card";
+import { VendorServiceCard, type VendorServiceCardData } from "@/components/vendor-service-card";
+import { useSavedListings } from "@/hooks/use-saved-listings";
 
 import heroAsset from "@/assets/homepage-hero.png.asset.json";
 const heroImg = heroAsset.url;
@@ -33,7 +37,12 @@ export function useReveal() {
   useEffect(() => {
     const root = ref.current;
     if (!root) return;
-    const els = root.querySelectorAll<HTMLElement>("[data-reveal]");
+
+    // [data-reveal] starts at opacity:0 but still reserves its full layout
+    // height, so anything that never gets marked visible shows up as a
+    // blank gap the exact height of that section, with everything after it
+    // reading as "too far down." threshold 0 + a generous positive
+    // rootMargin makes the trigger fire as early and reliably as possible.
     const io = new IntersectionObserver((entries) => {
       entries.forEach((e) => {
         if (e.isIntersecting) {
@@ -41,9 +50,30 @@ export function useReveal() {
           io.unobserve(e.target);
         }
       });
-    }, { threshold: 0.15, rootMargin: "0px 0px -60px 0px" });
-    els.forEach((el) => io.observe(el));
-    return () => io.disconnect();
+    }, { threshold: 0, rootMargin: "0px 0px 200px 0px" });
+
+    const observeNew = () => {
+      root.querySelectorAll<HTMLElement>("[data-reveal]:not([data-visible])").forEach((el) => io.observe(el));
+    };
+    observeNew();
+
+    // The real bug this was chasing: sections that render asynchronously
+    // (e.g. RealListingsPreview's venues/vendors, fetched from Supabase
+    // after mount) insert their own [data-reveal] elements well after this
+    // effect's one-time querySelectorAll already ran — without watching for
+    // that, those elements are never observed at all and stay stuck at
+    // opacity:0 forever. A MutationObserver catches anything added later,
+    // for this component or any future one built the same way.
+    const mo = new MutationObserver(observeNew);
+    mo.observe(root, { childList: true, subtree: true });
+
+    // Last-resort safety net in case a section still somehow never
+    // triggers (e.g. it's positioned such that it never intersects).
+    const fallback = setTimeout(() => {
+      root.querySelectorAll<HTMLElement>("[data-reveal]").forEach((el) => { el.dataset.visible = "true"; });
+    }, 1500);
+
+    return () => { io.disconnect(); mo.disconnect(); clearTimeout(fallback); };
   }, []);
   return ref;
 }
@@ -117,17 +147,9 @@ export const SHOWCASE_FEATURES = [
 
 const MID_CTA_HEADLINES = ["Every tradition, one beautiful plan.", "Every family, every custom, one plan."];
 
-// Tones deliberately never repeat on two adjacent items.
 const CULTURE_ITEMS = [
-  { t: "Planner", tone: "navy" },
-  { t: "Guest list", tone: "blue" },
-  { t: "Venues & Vendors", tone: "yellow" },
-  { t: "Marketplace", tone: "blue" },
-  { t: "Budgeting tool", tone: "navy" },
-  { t: "Messaging automation", tone: "blue" },
-  { t: "Seating chart", tone: "navy" },
-  { t: "Registry", tone: "yellow" },
-  { t: "Website", tone: "blue" },
+  "Planner", "Guest list", "Venues & Vendors", "Marketplace", "Budgeting tool",
+  "Messaging automation", "Seating chart", "Registry", "Website",
 ];
 
 const TESTIMONIALS = [
@@ -158,24 +180,75 @@ const REGISTRY_ITEMS = [
   { n: "Bath Towel Set", p: "$95", icon: Droplet, swatch: "bg-[#A8C6E7]", photo: registryTowelsImg },
 ];
 
-const VENDOR_CATEGORIES = [
-  "Florist", "DJ", "Live Painting", "Custom Favours", "Mehendi Artist",
-  "Photographer", "Caterer", "Decorator", "Makeup Artist", "Live Band",
+// Fixed 3-per-column grid (see the vendors block below) — each of the 6
+// positions cross-fades between two categories over a shared 10s loop
+// Driven by VendorPills below: each of the 6 stays in its fixed grid slot
+// (uniform positions), popping in one at a time, holding together, then all
+// fading out at once before the next set pops in the same way.
+const VENDOR_SLOTS: [string, string][] = [
+  ["Florist", "Live Painting"],
+  ["Photographer", "Videographer"],
+  ["DJ", "Custom Favours"],
+  ["Caterer", "Baker"],
+  ["Decorator", "Mehendi Artist"],
+  ["Makeup Artist", "Officiant"],
 ];
-// Staggered heights per column (not a strict 2x2+center grid) so the labels
-// read as organically scattered rather than aligned, sized to fit each slot's
-// widest label (two labels share a slot, staggered in time by the vendor-N
-// keyframes) inside the rendered 262x190 box (the card's own padding is
-// reclaimed via negative margin so the labels have room) with a 16px+ margin
-// from every edge and no pair overlapping. Measured against actual rendered
-// pill sizes, not estimated, since the visual frame clips anything larger.
-const VENDOR_SLOTS = [
-  { left: 16, top: 32 },
-  { left: 16, top: 120 },
-  { left: 134, top: 16 },
-  { left: 55, top: 74 },
-  { left: 132, top: 140 },
-];
+
+// A slight, alternating slant per slot so the grid reads as hand-placed
+// rather than mechanical.
+const VENDOR_SLOT_ROTATIONS = [-3, 2, -4, 3, -2, 4];
+
+// Timed pop-in sequence: all 6 hidden, then slot 1 pops in, then 2, 3...
+// through 6 (staggered), a brief hold with all 6 visible, then all 6 fade
+// out together, then the next set (round) runs the same sequence.
+function VendorPills() {
+  const [round, setRound] = useState(0);
+  const [visibleCount, setVisibleCount] = useState(0);
+
+  useEffect(() => {
+    const STAGGER = 350;
+    const HOLD = 1600;
+    const FADE = 350;
+    const GAP = 350;
+    const timers: ReturnType<typeof setTimeout>[] = [];
+    let cancelled = false;
+
+    function runRound() {
+      if (cancelled) return;
+      setVisibleCount(0);
+      for (let i = 1; i <= 6; i++) {
+        timers.push(setTimeout(() => !cancelled && setVisibleCount(i), i * STAGGER));
+      }
+      const fadeAt = 6 * STAGGER + HOLD;
+      timers.push(setTimeout(() => !cancelled && setVisibleCount(0), fadeAt));
+      timers.push(setTimeout(() => {
+        if (cancelled) return;
+        setRound((r) => (r === 0 ? 1 : 0));
+        runRound();
+      }, fadeAt + FADE + GAP));
+    }
+    runRound();
+    return () => { cancelled = true; timers.forEach(clearTimeout); };
+  }, []);
+
+  return (
+    <div className="w-[calc(100%+2rem)] -mx-4 h-[190px] grid grid-cols-2 gap-x-5 gap-y-7 content-center px-2">
+      {VENDOR_SLOTS.map(([a, b], slotIdx) => {
+        const visible = slotIdx < visibleCount;
+        const rotation = VENDOR_SLOT_ROTATIONS[slotIdx % VENDOR_SLOT_ROTATIONS.length];
+        return (
+          <div key={slotIdx} className="min-w-0 flex justify-center">
+            <span
+              className="inline-flex items-center justify-center rounded-full border border-line bg-paper px-2 py-1 text-[10.5px] shadow-sm whitespace-nowrap max-w-full truncate transition-all duration-300 ease-out"
+              style={{ opacity: visible ? 1 : 0, transform: `rotate(${rotation}deg) scale(${visible ? 1 : 0.7})` }}>
+              {round === 0 ? a : b}
+            </span>
+          </div>
+        );
+      })}
+    </div>
+  );
+}
 
 // Mini table, styled like the real seating canvas: a filled mat-colored shape (round or
 // rect, same border-radius rule as SeatTable in seating.tsx) with small initials chips
@@ -200,7 +273,7 @@ function SeatedTable({ cx, cy, shape = "round", radius = 20, width, height, labe
         const sx = cx + Math.cos(angle) * orbitX;
         const sy = cy + Math.sin(angle) * orbitY;
         return (
-          <div key={init} className={cn("absolute h-[20px] w-[20px] rounded-full bg-paper border shadow-sm grid place-items-center text-xs font-semibold text-[#6B6B6B]", seatColor)}
+          <div key={init} className={cn("absolute h-[20px] w-[20px] rounded-full bg-paper border shadow-sm grid place-items-center text-[6px] font-semibold text-[#7FA8D6]", seatColor)}
             style={{ left: sx - 10, top: sy - 10 }}>
             {init}
           </div>
@@ -328,21 +401,7 @@ export function FeatureVisual({ kind }: { kind: (typeof SHOWCASE_FEATURES)[numbe
           </div>
         </div>
       )}
-      {kind === "vendors" && (
-        <div className="relative w-[calc(100%+32px)] -mx-4 h-[190px]">
-          {VENDOR_CATEGORIES.map((n, idx) => {
-            // The second 5 categories reuse the same slot as the first 5, in the
-            // same order: Photographer takes Florist's spot, Caterer takes DJ's, etc.
-            const slotIndex = idx % 5;
-            return (
-              <span key={n} className="absolute rounded-full border border-line bg-paper px-2.5 py-1.5 text-sm shadow-sm whitespace-nowrap"
-                style={{ ...VENDOR_SLOTS[slotIndex], animation: `vendor-${idx} 10s ease-in-out infinite` } as any}>
-                {n}
-              </span>
-            );
-          })}
-        </div>
-      )}
+      {kind === "vendors" && <VendorPills />}
       {kind === "budget" && (
         <div className="relative w-full max-w-[270px] h-[190px]">
           <div className="absolute left-1/2 top-2 -translate-x-1/2 w-[220px] paper-card bg-paper border border-line p-4 shadow-lg -rotate-1">
@@ -431,6 +490,146 @@ function CompactCta({ headline, onClick, tone = "cherry" }: { headline: string; 
   );
 }
 
+// A real, live teaser of the marketplace — three actual venues and three
+// actual vendor services, each linking straight to its real public page.
+// Anyone can click in; useAnonViewGate (wired into the detail pages
+// themselves, not here) is what actually caps a signed-out visitor at 3
+// listing views before asking them to sign up, so this section doesn't need
+// its own click-counting logic. Reuses the exact same VenueCard/
+// VendorServiceCard as the marketplace pages (photo carousel, heart/save)
+// rather than a simplified duplicate, so the teaser behaves identically to
+// the real thing.
+function RealListingsPreview() {
+  const [venues, setVenues] = useState<VenueCardData[]>([]);
+  const [services, setServices] = useState<VendorServiceCardData[]>([]);
+  const { signedIn, saved, toggle } = useSavedListings();
+  const [authOpen, setAuthOpen] = useState(false);
+
+  const handleToggleVenueSaved = (businessId: string) => {
+    if (!signedIn) { setAuthOpen(true); return; }
+    toggle({ businessId });
+  };
+  const handleToggleServiceSaved = (service: VendorServiceCardData) => {
+    if (!signedIn) { setAuthOpen(true); return; }
+    toggle({ businessId: service.business_id, listingId: service.id });
+  };
+
+  useEffect(() => {
+    (async () => {
+      const { data: venueBiz } = await supabase
+        .from("businesses").select("id,legal_business_name,verification_status,city,country")
+        .eq("business_type", "venue").eq("verification_status", "verified")
+        .order("created_at", { ascending: false }).limit(3);
+      if (venueBiz && venueBiz.length > 0) {
+        const ids = venueBiz.map((b) => b.id);
+        const [{ data: details }, { data: media }] = await Promise.all([
+          supabase.from("venue_details").select("business_id,capacity_min,capacity_max,type_of_space,price_range_min").in("business_id", ids),
+          supabase.from("business_media").select("business_id,url,sort_order").in("business_id", ids).is("listing_id", null).eq("media_type", "photo").order("sort_order"),
+        ]);
+        const detailsByBiz = new Map((details ?? []).map((d) => [d.business_id, d]));
+        const photosByBiz = new Map<string, string[]>();
+        for (const m of media ?? []) {
+          const list = photosByBiz.get(m.business_id) ?? [];
+          list.push(m.url);
+          photosByBiz.set(m.business_id, list);
+        }
+        setVenues(venueBiz.map((b) => {
+          const d = detailsByBiz.get(b.id);
+          return {
+            id: b.id, legal_business_name: b.legal_business_name, verified: b.verification_status === "verified",
+            city: b.city, country: b.country,
+            capacity_min: d?.capacity_min ?? null, capacity_max: d?.capacity_max ?? null,
+            type_of_space: d?.type_of_space ?? [], price_range_min: d?.price_range_min ?? null,
+            photos: photosByBiz.get(b.id) ?? [],
+          };
+        }));
+      }
+
+      const { data: svcRows } = await supabase
+        .from("vendor_services").select("id,business_id,category_ids")
+        .eq("status", "active").order("created_at", { ascending: false }).limit(10);
+      if (svcRows && svcRows.length > 0) {
+        const bizIds = Array.from(new Set(svcRows.map((s) => s.business_id)));
+        const [{ data: biz }, { data: cats }] = await Promise.all([
+          supabase.from("businesses").select("id,legal_business_name,city,country").in("id", bizIds).eq("verification_status", "verified"),
+          supabase.from("vendor_categories").select("id,name"),
+        ]);
+        const bizById = new Map((biz ?? []).map((b) => [b.id, b]));
+        const catName = new Map((cats ?? []).map((c) => [c.id, c.name]));
+        const eligible = svcRows.filter((s) => bizById.has(s.business_id)).slice(0, 3);
+        const svcIds = eligible.map((s) => s.id);
+        const [{ data: media }, { data: bizMedia }] = await Promise.all([
+          svcIds.length > 0
+            ? supabase.from("business_media").select("listing_id,url,sort_order").in("listing_id", svcIds).eq("media_type", "photo").order("sort_order")
+            : Promise.resolve({ data: [] as { listing_id: string | null; url: string; sort_order: number }[] }),
+          // Falls back to the business's general photos when a service has
+          // none of its own (see v.tsx for why this can happen).
+          supabase.from("business_media").select("business_id,url,sort_order").in("business_id", bizIds).is("listing_id", null).eq("media_type", "photo").order("sort_order"),
+        ]);
+        const photosByService = new Map<string, string[]>();
+        for (const m of media ?? []) {
+          if (!m.listing_id) continue;
+          const list = photosByService.get(m.listing_id) ?? [];
+          list.push(m.url);
+          photosByService.set(m.listing_id, list);
+        }
+        const photosByBusiness = new Map<string, string[]>();
+        for (const m of bizMedia ?? []) {
+          const list = photosByBusiness.get(m.business_id) ?? [];
+          list.push(m.url);
+          photosByBusiness.set(m.business_id, list);
+        }
+        setServices(eligible.map((s) => {
+          const b = bizById.get(s.business_id)!;
+          return {
+            id: s.id, business_id: s.business_id,
+            categoryNames: (s.category_ids ?? []).map((id: string) => catName.get(id)).filter((n): n is string => !!n),
+            city: b.city ?? null, country: b.country ?? null,
+            photos: photosByService.get(s.id) ?? photosByBusiness.get(s.business_id) ?? [],
+            businessName: b.legal_business_name, verified: true,
+          };
+        }));
+      }
+    })();
+  }, []);
+
+  if (venues.length === 0 && services.length === 0) return null;
+
+  return (
+    <section className="relative z-10 py-10 px-6 md:px-12">
+      <div className="text-center max-w-2xl mx-auto" data-reveal>
+        <p className="text-sm uppercase tracking-[0.2em] text-[#7FA8D6]">Take a look around</p>
+        <h2 className="mt-2 font-serif text-3xl md:text-4xl leading-[0.95]">Real venues, real vendors, right now.</h2>
+        <p className="mt-3 text-[#243746]">Browse freely — click into a few, then sign up free to keep exploring.</p>
+      </div>
+
+      {venues.length > 0 && (
+        <div className="mt-10 max-w-6xl mx-auto" data-reveal>
+          <p className="text-sm uppercase tracking-widest text-[#7FA8D6] mb-3">Venues</p>
+          <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
+            {venues.map((v) => (
+              <VenueCard key={v.id} venue={v} saved={saved.has(v.id)} onToggleSaved={handleToggleVenueSaved} compact />
+            ))}
+          </div>
+        </div>
+      )}
+
+      {services.length > 0 && (
+        <div className="mt-10 max-w-6xl mx-auto" data-reveal>
+          <p className="text-sm uppercase tracking-widest text-[#7FA8D6] mb-3">Vendors</p>
+          <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
+            {services.map((s) => (
+              <VendorServiceCard key={s.id} service={s} saved={saved.has(s.id)} onToggleSaved={handleToggleServiceSaved} compact />
+            ))}
+          </div>
+        </div>
+      )}
+
+      <LoginDialog open={authOpen} onOpenChange={setAuthOpen} initialMode="signup" />
+    </section>
+  );
+}
+
 function LoadingScreen({ visible }: { visible: boolean }) {
   return (
     <div aria-hidden={!visible}
@@ -453,6 +652,9 @@ function LoadingScreen({ visible }: { visible: boolean }) {
 function Landing() {
   const rootRef = useReveal();
   const [authOpen, setAuthOpen] = useState<false | "signin" | "signup">(false);
+  const navigate = useNavigate();
+  // "Start planning" goes to the full sign-up page; only "Sign in" uses the small popup.
+  const goSignup = () => navigate({ to: "/auth", search: { mode: "signup" } as any });
   const [ready, setReady] = useState(false);
 
   useEffect(() => {
@@ -477,13 +679,13 @@ function Landing() {
           <Logo sizeClassName="text-3xl" />
         </Link>
         <nav className="hidden md:flex items-center gap-8 text-lg text-[#243746]">
-          <Link to="/venues" data-static className="story-link hover:text-[#7FA8D6] transition-colors">Venues</Link>
-          <Link to="/vendors" data-static className="story-link hover:text-[#7FA8D6] transition-colors">Marketplace</Link>
+          <Link to="/venue" data-static className="story-link hover:text-[#7FA8D6] transition-colors">Venues</Link>
+          <Link to="/v" data-static className="story-link hover:text-[#7FA8D6] transition-colors">Vendors</Link>
           <a href="#how" data-static className="story-link hover:text-[#7FA8D6] transition-colors">How it works</a>
         </nav>
         <div className="flex items-center gap-3">
           <button onClick={() => setAuthOpen("signin")} className="text-sm text-[#243746] hover:text-[#7FA8D6] transition-colors hidden sm:inline">Sign in</button>
-          <button onClick={() => setAuthOpen("signup")}
+          <button onClick={() => goSignup()}
             className="rounded-full bg-[#243746] text-[#FFF7D6] px-5 py-2 text-sm transition-all hover:bg-[#FFE08A] hover:text-[#243746] hover:rounded-2xl">
             Start planning
           </button>
@@ -503,11 +705,11 @@ function Landing() {
             Big, small, traditional, or entirely your own.
           </p>
           <div className="mt-8 flex flex-wrap gap-3">
-            <button onClick={() => setAuthOpen("signup")}
+            <button onClick={() => goSignup()}
               className="inline-flex items-center gap-2 rounded-full bg-[#FFE08A] text-[#243746] px-6 py-3 text-sm font-medium transition-all hover:bg-[#243746] hover:text-[#FFF7D6] hover:rounded-2xl hover:gap-3">
               Start your plan <ArrowRight className="h-4 w-4" />
             </button>
-            <Link to="/venues"
+            <Link to="/venue"
               className="inline-flex items-center gap-2 rounded-full border border-[#7FA8D6] text-[#7FA8D6] px-6 py-3 text-sm transition-all hover:bg-[#7FA8D6] hover:text-[#FFF7D6] hover:rounded-2xl">
               Browse destinations
             </Link>
@@ -515,7 +717,7 @@ function Landing() {
         </div>
 
         <div className="lg:col-span-6 relative" data-reveal>
-          <div className="relative overflow-hidden shadow-2xl blob-2 group">
+          <div className="relative overflow-hidden shadow-2xl blob-2 group [mask-image:linear-gradient(to_top,black_78%,transparent_100%)] [-webkit-mask-image:linear-gradient(to_top,black_78%,transparent_100%)]">
             <img src={heroImg} alt="Bride and groom embraced beneath ivy-covered arches overlooking a lake at sunset"
               className="w-full h-[420px] object-cover object-bottom transition-transform duration-[1200ms] group-hover:scale-105"
               width={1200} height={1500} loading="eager" decoding="async" />
@@ -544,15 +746,12 @@ function Landing() {
       {/* Culture strip */}
       <section id="how" className="relative z-10 bg-white py-10 px-6 md:px-12" data-reveal>
         <div className="flex flex-nowrap items-center justify-center overflow-x-auto">
-          {CULTURE_ITEMS.map(({ t, tone }, i) => {
-            const toneClass = tone === "navy" ? "text-[#243746]" : tone === "yellow" ? "text-[#E0A800]" : "text-[#7FA8D6]";
-            return (
-              <span key={t} className="flex shrink-0 items-center whitespace-nowrap">
-                <span className={cn("px-1.5 text-[12.5px] font-medium", toneClass)}>{t}</span>
-                {i < CULTURE_ITEMS.length - 1 && <span className="text-muted-foreground">•</span>}
-              </span>
-            );
-          })}
+          {CULTURE_ITEMS.map((t, i) => (
+            <span key={t} className="flex shrink-0 items-center whitespace-nowrap">
+              <span className="px-1.5 text-[12.5px] font-medium text-[#243746]">{t}</span>
+              {i < CULTURE_ITEMS.length - 1 && <span className="text-muted-foreground">•</span>}
+            </span>
+          ))}
         </div>
       </section>
 
@@ -568,9 +767,11 @@ function Landing() {
         </div>
 
         <div className="px-6 md:px-12 pt-4">
-          <CompactCta headline={MID_CTA_HEADLINES[0]} tone="sage" onClick={() => setAuthOpen("signup")} />
+          <CompactCta headline={MID_CTA_HEADLINES[0]} tone="sage" onClick={() => goSignup()} />
         </div>
       </section>
+
+      <RealListingsPreview />
 
       {/* Testimonials */}
       <section className="relative z-10 bg-[#7FA8D6]/40 border-y border-line py-24 px-6 md:px-12">
@@ -600,7 +801,7 @@ function Landing() {
 
       {/* Mid CTA */}
       <section className="relative z-10 px-6 md:px-12 py-16">
-        <CompactCta headline={MID_CTA_HEADLINES[1]} tone="pearl" onClick={() => setAuthOpen("signup")} />
+        <CompactCta headline={MID_CTA_HEADLINES[1]} tone="pearl" onClick={() => goSignup()} />
       </section>
 
       {/* FAQ */}
@@ -624,7 +825,7 @@ function Landing() {
       <section className="relative z-10 mx-6 md:mx-12 mb-16 rounded-[3rem] bg-[#FFE08A] text-[#243746] py-24 px-6 md:px-12 text-center overflow-hidden" data-reveal>
         <p className="relative text-sm uppercase tracking-[0.3em] text-[#243746]">FOR EVERY WEDDING, ANYWHERE</p>
         <h2 className="relative mt-4 font-serif text-5xl md:text-7xl max-w-3xl mx-auto leading-[0.95]">Your wedding, every ceremony, in one place.</h2>
-        <button onClick={() => setAuthOpen("signup")}
+        <button onClick={() => goSignup()}
           className="relative mt-10 inline-flex items-center gap-2 rounded-full bg-[#243746] text-[#FFF7D6] px-8 py-4 text-sm font-medium transition-all hover:bg-[#FFF7D6] hover:text-[#243746] hover:rounded-2xl hover:gap-3">
           Start planning for free <ArrowRight className="h-4 w-4" />
         </button>

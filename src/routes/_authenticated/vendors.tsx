@@ -5,6 +5,7 @@ import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { MapPin, Search, X, MessageCircle, Send } from "lucide-react";
 import { LeadDialog } from "@/components/lead-dialog";
+import { Dropdown } from "@/components/dropdown";
 import { whatsappUrl, buildLeadMessage } from "@/lib/lead-utm";
 import { useCurrentWedding } from "@/lib/wedding-hooks";
 
@@ -14,7 +15,7 @@ type Cat = { id: string; name: string; slug: string | null; parent_id: string | 
 
 function VendorsPage() {
   const [q, setQ] = useState("");
-  const [location, setLocation] = useState("");
+  const [country, setCountry] = useState("");
   const [tier1Id, setTier1Id] = useState<string>("");
   const [tier2Id, setTier2Id] = useState<string>("");
   const [tag, setTag] = useState<string>("");
@@ -51,35 +52,37 @@ function VendorsPage() {
     return Array.from(s).sort();
   }, [vendors]);
 
+  const countries = useMemo(() => {
+    const s = new Set<string>();
+    for (const v of vendors as any[]) if (v.home_country) s.add(v.home_country);
+    return Array.from(s).sort();
+  }, [vendors]);
+
   const filtered = (vendors as any[]).filter((v) => {
-    const loc = location.trim().toLowerCase();
     return (
       (activeCatIds.length === 0 || activeCatIds.includes(v.category_id)) &&
       (!tag || (v.tags ?? []).includes(tag)) &&
-      (!loc || (v.home_city || "").toLowerCase().includes(loc) || (v.home_country || "").toLowerCase().includes(loc)) &&
+      (!country || v.home_country === country) &&
       (!q || v.business_name.toLowerCase().includes(q.toLowerCase()) || (v.description ?? "").toLowerCase().includes(q.toLowerCase()))
     );
   });
 
-  const clear = () => { setTier1Id(""); setTier2Id(""); setTag(""); setQ(""); setLocation(""); };
-  const anyFilter = tier1Id || tier2Id || tag || q || location;
+  const clear = () => { setTier1Id(""); setTier2Id(""); setTag(""); setQ(""); setCountry(""); };
+  const anyFilter = tier1Id || tier2Id || tag || q || country;
 
   return (
     <AppShell title="Vendors" subtitle="Filter by category, subcategory, and tags, from mehendi artists to invitation designers.">
-      {/* Search + category + location */}
-      <div className="flex flex-wrap gap-2 mb-3">
-        <select value={tier1Id} onChange={(e) => { setTier1Id(e.target.value); setTier2Id(""); }} className="rounded-full border border-line px-4 py-2.5 text-sm bg-paper">
-          <option value="">All categories</option>
-          {tier1.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
-        </select>
-        <div className="relative flex-1 min-w-[200px]">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-          <input value={q} onChange={(e) => setQ(e.target.value)} placeholder="Search vendors, styles…" className="w-full rounded-full border border-line pl-10 pr-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-cherry bg-pearl" />
+      {/* Search + category + country — same compact search + Dropdown pattern as the vendor marketplace (/v) */}
+      <div className="flex flex-wrap gap-3 mb-3">
+        <div className="relative w-56">
+          <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+          <input value={q} onChange={(e) => setQ(e.target.value)} placeholder="Search"
+            className="w-full rounded-2xl border border-line bg-paper pl-11 pr-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-clay" />
         </div>
-        <div className="relative flex-1 min-w-[200px]">
-          <MapPin className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-          <input value={location} onChange={(e) => setLocation(e.target.value)} placeholder="Location: city or country…" className="w-full rounded-full border border-line pl-10 pr-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-cherry bg-pearl" />
-        </div>
+        <Dropdown value={tier1Id} onChange={(v) => { setTier1Id(v); setTier2Id(""); }} placeholder="All categories" className="w-48"
+          options={[{ value: "", label: "All categories" }, ...tier1.map((c) => ({ value: c.id, label: c.name }))]} />
+        <Dropdown value={country} onChange={setCountry} placeholder="Any country" className="w-44"
+          options={[{ value: "", label: "Any country" }, ...countries.map((c) => ({ value: c, label: c }))]} />
       </div>
 
       {/* Tier 2 chips */}

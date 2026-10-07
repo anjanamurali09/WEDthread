@@ -9,15 +9,20 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
+import { Route as VenueRouteImport } from './routes/venue'
+import { Route as VRouteImport } from './routes/v'
 import { Route as AuthRouteImport } from './routes/auth'
 import { Route as AuthenticatedRouteRouteImport } from './routes/_authenticated/route'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as AuthIndexRouteImport } from './routes/auth.index'
 import { Route as WSlugRouteImport } from './routes/w.$slug'
+import { Route as VenueBusinessIdRouteImport } from './routes/venue_.$businessId'
+import { Route as VBusinessIdRouteImport } from './routes/v_.$businessId'
 import { Route as RsvpTokenRouteImport } from './routes/rsvp.$token'
 import { Route as FeaturesSlugRouteImport } from './routes/features.$slug'
 import { Route as AuthRoleRouteImport } from './routes/auth.role'
 import { Route as AuthCallbackRouteImport } from './routes/auth.callback'
+import { Route as AuthenticatedWorkspaceSettingsRouteImport } from './routes/_authenticated/workspace-settings'
 import { Route as AuthenticatedWebsiteRouteImport } from './routes/_authenticated/website'
 import { Route as AuthenticatedVenuesRouteImport } from './routes/_authenticated/venues'
 import { Route as AuthenticatedVendorsRouteImport } from './routes/_authenticated/vendors'
@@ -33,11 +38,38 @@ import { Route as AuthenticatedGuestsRouteImport } from './routes/_authenticated
 import { Route as AuthenticatedEventsRouteImport } from './routes/_authenticated/events'
 import { Route as AuthenticatedDashboardRouteImport } from './routes/_authenticated/dashboard'
 import { Route as AuthenticatedBudgetRouteImport } from './routes/_authenticated/budget'
-import { Route as WSlugRegistryRouteImport } from './routes/w.$slug.registry'
+import { Route as WSlugRegistryRouteImport } from './routes/w.$slug_.registry'
+import { Route as VBusinessIdServiceIdRouteImport } from './routes/v_.$businessId_.$serviceId'
 import { Route as RsvpWSlugRouteImport } from './routes/rsvp.w.$slug'
 import { Route as AuthenticatedWebsiteEditRouteImport } from './routes/_authenticated/website_.edit'
 import { Route as AuthenticatedSettingsProfileRouteImport } from './routes/_authenticated/settings.profile'
+import { Route as AuthenticatedBusinessVenueDetailsRouteImport } from './routes/_authenticated/business.venue-details'
+import { Route as AuthenticatedBusinessOnboardingRouteImport } from './routes/_authenticated/business.onboarding'
+import { Route as AuthenticatedBusinessMessagesRouteImport } from './routes/_authenticated/business.messages'
+import { Route as AuthenticatedBusinessDashboardRouteImport } from './routes/_authenticated/business.dashboard'
+import { Route as AuthenticatedBusinessBrowseVenuesRouteImport } from './routes/_authenticated/business.browse-venues'
+import { Route as AuthenticatedBusinessBrowseVendorsRouteImport } from './routes/_authenticated/business.browse-vendors'
+import { Route as AuthenticatedAdminVenuesRouteImport } from './routes/_authenticated/admin.venues'
+import { Route as AuthenticatedAdminVendorsRouteImport } from './routes/_authenticated/admin.vendors'
+import { Route as AuthenticatedAdminSuggestionsRouteImport } from './routes/_authenticated/admin.suggestions'
+import { Route as AuthenticatedAdminClaimsRouteImport } from './routes/_authenticated/admin.claims'
+import { Route as AuthenticatedAdminAddVenueRouteImport } from './routes/_authenticated/admin.add-venue'
+import { Route as AuthenticatedAdminAddVendorRouteImport } from './routes/_authenticated/admin.add-vendor'
+import { Route as AuthenticatedBusinessServicesServiceIdRouteImport } from './routes/_authenticated/business.services.$serviceId'
+import { Route as AuthenticatedBusinessOnboardingVenueRouteImport } from './routes/_authenticated/business.onboarding_.venue'
+import { Route as AuthenticatedAdminAddVenueBusinessIdRouteImport } from './routes/_authenticated/admin.add-venue_.$businessId'
+import { Route as AuthenticatedAdminAddVendorBusinessIdRouteImport } from './routes/_authenticated/admin.add-vendor_.$businessId'
 
+const VenueRoute = VenueRouteImport.update({
+  id: '/venue',
+  path: '/venue',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const VRoute = VRouteImport.update({
+  id: '/v',
+  path: '/v',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const AuthRoute = AuthRouteImport.update({
   id: '/auth',
   path: '/auth',
@@ -62,6 +94,16 @@ const WSlugRoute = WSlugRouteImport.update({
   path: '/w/$slug',
   getParentRoute: () => rootRouteImport,
 } as any)
+const VenueBusinessIdRoute = VenueBusinessIdRouteImport.update({
+  id: '/venue_/$businessId',
+  path: '/venue/$businessId',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const VBusinessIdRoute = VBusinessIdRouteImport.update({
+  id: '/v_/$businessId',
+  path: '/v/$businessId',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const RsvpTokenRoute = RsvpTokenRouteImport.update({
   id: '/rsvp/$token',
   path: '/rsvp/$token',
@@ -82,6 +124,12 @@ const AuthCallbackRoute = AuthCallbackRouteImport.update({
   path: '/callback',
   getParentRoute: () => AuthRoute,
 } as any)
+const AuthenticatedWorkspaceSettingsRoute =
+  AuthenticatedWorkspaceSettingsRouteImport.update({
+    id: '/workspace-settings',
+    path: '/workspace-settings',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
 const AuthenticatedWebsiteRoute = AuthenticatedWebsiteRouteImport.update({
   id: '/website',
   path: '/website',
@@ -159,9 +207,14 @@ const AuthenticatedBudgetRoute = AuthenticatedBudgetRouteImport.update({
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
 const WSlugRegistryRoute = WSlugRegistryRouteImport.update({
-  id: '/registry',
-  path: '/registry',
-  getParentRoute: () => WSlugRoute,
+  id: '/w/$slug_/registry',
+  path: '/w/$slug/registry',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const VBusinessIdServiceIdRoute = VBusinessIdServiceIdRouteImport.update({
+  id: '/v_/$businessId_/$serviceId',
+  path: '/v/$businessId/$serviceId',
+  getParentRoute: () => rootRouteImport,
 } as any)
 const RsvpWSlugRoute = RsvpWSlugRouteImport.update({
   id: '/rsvp/w/$slug',
@@ -180,10 +233,108 @@ const AuthenticatedSettingsProfileRoute =
     path: '/settings/profile',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
+const AuthenticatedBusinessVenueDetailsRoute =
+  AuthenticatedBusinessVenueDetailsRouteImport.update({
+    id: '/business/venue-details',
+    path: '/business/venue-details',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
+const AuthenticatedBusinessOnboardingRoute =
+  AuthenticatedBusinessOnboardingRouteImport.update({
+    id: '/business/onboarding',
+    path: '/business/onboarding',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
+const AuthenticatedBusinessMessagesRoute =
+  AuthenticatedBusinessMessagesRouteImport.update({
+    id: '/business/messages',
+    path: '/business/messages',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
+const AuthenticatedBusinessDashboardRoute =
+  AuthenticatedBusinessDashboardRouteImport.update({
+    id: '/business/dashboard',
+    path: '/business/dashboard',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
+const AuthenticatedBusinessBrowseVenuesRoute =
+  AuthenticatedBusinessBrowseVenuesRouteImport.update({
+    id: '/business/browse-venues',
+    path: '/business/browse-venues',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
+const AuthenticatedBusinessBrowseVendorsRoute =
+  AuthenticatedBusinessBrowseVendorsRouteImport.update({
+    id: '/business/browse-vendors',
+    path: '/business/browse-vendors',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
+const AuthenticatedAdminVenuesRoute =
+  AuthenticatedAdminVenuesRouteImport.update({
+    id: '/admin/venues',
+    path: '/admin/venues',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
+const AuthenticatedAdminVendorsRoute =
+  AuthenticatedAdminVendorsRouteImport.update({
+    id: '/admin/vendors',
+    path: '/admin/vendors',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
+const AuthenticatedAdminSuggestionsRoute =
+  AuthenticatedAdminSuggestionsRouteImport.update({
+    id: '/admin/suggestions',
+    path: '/admin/suggestions',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
+const AuthenticatedAdminClaimsRoute =
+  AuthenticatedAdminClaimsRouteImport.update({
+    id: '/admin/claims',
+    path: '/admin/claims',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
+const AuthenticatedAdminAddVenueRoute =
+  AuthenticatedAdminAddVenueRouteImport.update({
+    id: '/admin/add-venue',
+    path: '/admin/add-venue',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
+const AuthenticatedAdminAddVendorRoute =
+  AuthenticatedAdminAddVendorRouteImport.update({
+    id: '/admin/add-vendor',
+    path: '/admin/add-vendor',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
+const AuthenticatedBusinessServicesServiceIdRoute =
+  AuthenticatedBusinessServicesServiceIdRouteImport.update({
+    id: '/business/services/$serviceId',
+    path: '/business/services/$serviceId',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
+const AuthenticatedBusinessOnboardingVenueRoute =
+  AuthenticatedBusinessOnboardingVenueRouteImport.update({
+    id: '/business/onboarding_/venue',
+    path: '/business/onboarding/venue',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
+const AuthenticatedAdminAddVenueBusinessIdRoute =
+  AuthenticatedAdminAddVenueBusinessIdRouteImport.update({
+    id: '/admin/add-venue_/$businessId',
+    path: '/admin/add-venue/$businessId',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
+const AuthenticatedAdminAddVendorBusinessIdRoute =
+  AuthenticatedAdminAddVendorBusinessIdRouteImport.update({
+    id: '/admin/add-vendor_/$businessId',
+    path: '/admin/add-vendor/$businessId',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/auth': typeof AuthRouteWithChildren
+  '/v': typeof VRoute
+  '/venue': typeof VenueRoute
   '/budget': typeof AuthenticatedBudgetRoute
   '/dashboard': typeof AuthenticatedDashboardRoute
   '/events': typeof AuthenticatedEventsRoute
@@ -199,19 +350,41 @@ export interface FileRoutesByFullPath {
   '/vendors': typeof AuthenticatedVendorsRoute
   '/venues': typeof AuthenticatedVenuesRoute
   '/website': typeof AuthenticatedWebsiteRoute
+  '/workspace-settings': typeof AuthenticatedWorkspaceSettingsRoute
   '/auth/callback': typeof AuthCallbackRoute
   '/auth/role': typeof AuthRoleRoute
   '/features/$slug': typeof FeaturesSlugRoute
   '/rsvp/$token': typeof RsvpTokenRoute
-  '/w/$slug': typeof WSlugRouteWithChildren
+  '/v/$businessId': typeof VBusinessIdRoute
+  '/venue/$businessId': typeof VenueBusinessIdRoute
+  '/w/$slug': typeof WSlugRoute
   '/auth/': typeof AuthIndexRoute
+  '/admin/add-vendor': typeof AuthenticatedAdminAddVendorRoute
+  '/admin/add-venue': typeof AuthenticatedAdminAddVenueRoute
+  '/admin/claims': typeof AuthenticatedAdminClaimsRoute
+  '/admin/suggestions': typeof AuthenticatedAdminSuggestionsRoute
+  '/admin/vendors': typeof AuthenticatedAdminVendorsRoute
+  '/admin/venues': typeof AuthenticatedAdminVenuesRoute
+  '/business/browse-vendors': typeof AuthenticatedBusinessBrowseVendorsRoute
+  '/business/browse-venues': typeof AuthenticatedBusinessBrowseVenuesRoute
+  '/business/dashboard': typeof AuthenticatedBusinessDashboardRoute
+  '/business/messages': typeof AuthenticatedBusinessMessagesRoute
+  '/business/onboarding': typeof AuthenticatedBusinessOnboardingRoute
+  '/business/venue-details': typeof AuthenticatedBusinessVenueDetailsRoute
   '/settings/profile': typeof AuthenticatedSettingsProfileRoute
   '/website/edit': typeof AuthenticatedWebsiteEditRoute
   '/rsvp/w/$slug': typeof RsvpWSlugRoute
+  '/v/$businessId/$serviceId': typeof VBusinessIdServiceIdRoute
   '/w/$slug/registry': typeof WSlugRegistryRoute
+  '/admin/add-vendor/$businessId': typeof AuthenticatedAdminAddVendorBusinessIdRoute
+  '/admin/add-venue/$businessId': typeof AuthenticatedAdminAddVenueBusinessIdRoute
+  '/business/onboarding/venue': typeof AuthenticatedBusinessOnboardingVenueRoute
+  '/business/services/$serviceId': typeof AuthenticatedBusinessServicesServiceIdRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/v': typeof VRoute
+  '/venue': typeof VenueRoute
   '/budget': typeof AuthenticatedBudgetRoute
   '/dashboard': typeof AuthenticatedDashboardRoute
   '/events': typeof AuthenticatedEventsRoute
@@ -227,22 +400,44 @@ export interface FileRoutesByTo {
   '/vendors': typeof AuthenticatedVendorsRoute
   '/venues': typeof AuthenticatedVenuesRoute
   '/website': typeof AuthenticatedWebsiteRoute
+  '/workspace-settings': typeof AuthenticatedWorkspaceSettingsRoute
   '/auth/callback': typeof AuthCallbackRoute
   '/auth/role': typeof AuthRoleRoute
   '/features/$slug': typeof FeaturesSlugRoute
   '/rsvp/$token': typeof RsvpTokenRoute
-  '/w/$slug': typeof WSlugRouteWithChildren
+  '/v/$businessId': typeof VBusinessIdRoute
+  '/venue/$businessId': typeof VenueBusinessIdRoute
+  '/w/$slug': typeof WSlugRoute
   '/auth': typeof AuthIndexRoute
+  '/admin/add-vendor': typeof AuthenticatedAdminAddVendorRoute
+  '/admin/add-venue': typeof AuthenticatedAdminAddVenueRoute
+  '/admin/claims': typeof AuthenticatedAdminClaimsRoute
+  '/admin/suggestions': typeof AuthenticatedAdminSuggestionsRoute
+  '/admin/vendors': typeof AuthenticatedAdminVendorsRoute
+  '/admin/venues': typeof AuthenticatedAdminVenuesRoute
+  '/business/browse-vendors': typeof AuthenticatedBusinessBrowseVendorsRoute
+  '/business/browse-venues': typeof AuthenticatedBusinessBrowseVenuesRoute
+  '/business/dashboard': typeof AuthenticatedBusinessDashboardRoute
+  '/business/messages': typeof AuthenticatedBusinessMessagesRoute
+  '/business/onboarding': typeof AuthenticatedBusinessOnboardingRoute
+  '/business/venue-details': typeof AuthenticatedBusinessVenueDetailsRoute
   '/settings/profile': typeof AuthenticatedSettingsProfileRoute
   '/website/edit': typeof AuthenticatedWebsiteEditRoute
   '/rsvp/w/$slug': typeof RsvpWSlugRoute
+  '/v/$businessId/$serviceId': typeof VBusinessIdServiceIdRoute
   '/w/$slug/registry': typeof WSlugRegistryRoute
+  '/admin/add-vendor/$businessId': typeof AuthenticatedAdminAddVendorBusinessIdRoute
+  '/admin/add-venue/$businessId': typeof AuthenticatedAdminAddVenueBusinessIdRoute
+  '/business/onboarding/venue': typeof AuthenticatedBusinessOnboardingVenueRoute
+  '/business/services/$serviceId': typeof AuthenticatedBusinessServicesServiceIdRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/_authenticated': typeof AuthenticatedRouteRouteWithChildren
   '/auth': typeof AuthRouteWithChildren
+  '/v': typeof VRoute
+  '/venue': typeof VenueRoute
   '/_authenticated/budget': typeof AuthenticatedBudgetRoute
   '/_authenticated/dashboard': typeof AuthenticatedDashboardRoute
   '/_authenticated/events': typeof AuthenticatedEventsRoute
@@ -258,22 +453,44 @@ export interface FileRoutesById {
   '/_authenticated/vendors': typeof AuthenticatedVendorsRoute
   '/_authenticated/venues': typeof AuthenticatedVenuesRoute
   '/_authenticated/website': typeof AuthenticatedWebsiteRoute
+  '/_authenticated/workspace-settings': typeof AuthenticatedWorkspaceSettingsRoute
   '/auth/callback': typeof AuthCallbackRoute
   '/auth/role': typeof AuthRoleRoute
   '/features/$slug': typeof FeaturesSlugRoute
   '/rsvp/$token': typeof RsvpTokenRoute
-  '/w/$slug': typeof WSlugRouteWithChildren
+  '/v_/$businessId': typeof VBusinessIdRoute
+  '/venue_/$businessId': typeof VenueBusinessIdRoute
+  '/w/$slug': typeof WSlugRoute
   '/auth/': typeof AuthIndexRoute
+  '/_authenticated/admin/add-vendor': typeof AuthenticatedAdminAddVendorRoute
+  '/_authenticated/admin/add-venue': typeof AuthenticatedAdminAddVenueRoute
+  '/_authenticated/admin/claims': typeof AuthenticatedAdminClaimsRoute
+  '/_authenticated/admin/suggestions': typeof AuthenticatedAdminSuggestionsRoute
+  '/_authenticated/admin/vendors': typeof AuthenticatedAdminVendorsRoute
+  '/_authenticated/admin/venues': typeof AuthenticatedAdminVenuesRoute
+  '/_authenticated/business/browse-vendors': typeof AuthenticatedBusinessBrowseVendorsRoute
+  '/_authenticated/business/browse-venues': typeof AuthenticatedBusinessBrowseVenuesRoute
+  '/_authenticated/business/dashboard': typeof AuthenticatedBusinessDashboardRoute
+  '/_authenticated/business/messages': typeof AuthenticatedBusinessMessagesRoute
+  '/_authenticated/business/onboarding': typeof AuthenticatedBusinessOnboardingRoute
+  '/_authenticated/business/venue-details': typeof AuthenticatedBusinessVenueDetailsRoute
   '/_authenticated/settings/profile': typeof AuthenticatedSettingsProfileRoute
   '/_authenticated/website_/edit': typeof AuthenticatedWebsiteEditRoute
   '/rsvp/w/$slug': typeof RsvpWSlugRoute
-  '/w/$slug/registry': typeof WSlugRegistryRoute
+  '/v_/$businessId_/$serviceId': typeof VBusinessIdServiceIdRoute
+  '/w/$slug_/registry': typeof WSlugRegistryRoute
+  '/_authenticated/admin/add-vendor_/$businessId': typeof AuthenticatedAdminAddVendorBusinessIdRoute
+  '/_authenticated/admin/add-venue_/$businessId': typeof AuthenticatedAdminAddVenueBusinessIdRoute
+  '/_authenticated/business/onboarding_/venue': typeof AuthenticatedBusinessOnboardingVenueRoute
+  '/_authenticated/business/services/$serviceId': typeof AuthenticatedBusinessServicesServiceIdRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
     | '/'
     | '/auth'
+    | '/v'
+    | '/venue'
     | '/budget'
     | '/dashboard'
     | '/events'
@@ -289,19 +506,41 @@ export interface FileRouteTypes {
     | '/vendors'
     | '/venues'
     | '/website'
+    | '/workspace-settings'
     | '/auth/callback'
     | '/auth/role'
     | '/features/$slug'
     | '/rsvp/$token'
+    | '/v/$businessId'
+    | '/venue/$businessId'
     | '/w/$slug'
     | '/auth/'
+    | '/admin/add-vendor'
+    | '/admin/add-venue'
+    | '/admin/claims'
+    | '/admin/suggestions'
+    | '/admin/vendors'
+    | '/admin/venues'
+    | '/business/browse-vendors'
+    | '/business/browse-venues'
+    | '/business/dashboard'
+    | '/business/messages'
+    | '/business/onboarding'
+    | '/business/venue-details'
     | '/settings/profile'
     | '/website/edit'
     | '/rsvp/w/$slug'
+    | '/v/$businessId/$serviceId'
     | '/w/$slug/registry'
+    | '/admin/add-vendor/$businessId'
+    | '/admin/add-venue/$businessId'
+    | '/business/onboarding/venue'
+    | '/business/services/$serviceId'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
+    | '/v'
+    | '/venue'
     | '/budget'
     | '/dashboard'
     | '/events'
@@ -317,21 +556,43 @@ export interface FileRouteTypes {
     | '/vendors'
     | '/venues'
     | '/website'
+    | '/workspace-settings'
     | '/auth/callback'
     | '/auth/role'
     | '/features/$slug'
     | '/rsvp/$token'
+    | '/v/$businessId'
+    | '/venue/$businessId'
     | '/w/$slug'
     | '/auth'
+    | '/admin/add-vendor'
+    | '/admin/add-venue'
+    | '/admin/claims'
+    | '/admin/suggestions'
+    | '/admin/vendors'
+    | '/admin/venues'
+    | '/business/browse-vendors'
+    | '/business/browse-venues'
+    | '/business/dashboard'
+    | '/business/messages'
+    | '/business/onboarding'
+    | '/business/venue-details'
     | '/settings/profile'
     | '/website/edit'
     | '/rsvp/w/$slug'
+    | '/v/$businessId/$serviceId'
     | '/w/$slug/registry'
+    | '/admin/add-vendor/$businessId'
+    | '/admin/add-venue/$businessId'
+    | '/business/onboarding/venue'
+    | '/business/services/$serviceId'
   id:
     | '__root__'
     | '/'
     | '/_authenticated'
     | '/auth'
+    | '/v'
+    | '/venue'
     | '/_authenticated/budget'
     | '/_authenticated/dashboard'
     | '/_authenticated/events'
@@ -347,30 +608,70 @@ export interface FileRouteTypes {
     | '/_authenticated/vendors'
     | '/_authenticated/venues'
     | '/_authenticated/website'
+    | '/_authenticated/workspace-settings'
     | '/auth/callback'
     | '/auth/role'
     | '/features/$slug'
     | '/rsvp/$token'
+    | '/v_/$businessId'
+    | '/venue_/$businessId'
     | '/w/$slug'
     | '/auth/'
+    | '/_authenticated/admin/add-vendor'
+    | '/_authenticated/admin/add-venue'
+    | '/_authenticated/admin/claims'
+    | '/_authenticated/admin/suggestions'
+    | '/_authenticated/admin/vendors'
+    | '/_authenticated/admin/venues'
+    | '/_authenticated/business/browse-vendors'
+    | '/_authenticated/business/browse-venues'
+    | '/_authenticated/business/dashboard'
+    | '/_authenticated/business/messages'
+    | '/_authenticated/business/onboarding'
+    | '/_authenticated/business/venue-details'
     | '/_authenticated/settings/profile'
     | '/_authenticated/website_/edit'
     | '/rsvp/w/$slug'
-    | '/w/$slug/registry'
+    | '/v_/$businessId_/$serviceId'
+    | '/w/$slug_/registry'
+    | '/_authenticated/admin/add-vendor_/$businessId'
+    | '/_authenticated/admin/add-venue_/$businessId'
+    | '/_authenticated/business/onboarding_/venue'
+    | '/_authenticated/business/services/$serviceId'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AuthenticatedRouteRoute: typeof AuthenticatedRouteRouteWithChildren
   AuthRoute: typeof AuthRouteWithChildren
+  VRoute: typeof VRoute
+  VenueRoute: typeof VenueRoute
   FeaturesSlugRoute: typeof FeaturesSlugRoute
   RsvpTokenRoute: typeof RsvpTokenRoute
-  WSlugRoute: typeof WSlugRouteWithChildren
+  VBusinessIdRoute: typeof VBusinessIdRoute
+  VenueBusinessIdRoute: typeof VenueBusinessIdRoute
+  WSlugRoute: typeof WSlugRoute
   RsvpWSlugRoute: typeof RsvpWSlugRoute
+  VBusinessIdServiceIdRoute: typeof VBusinessIdServiceIdRoute
+  WSlugRegistryRoute: typeof WSlugRegistryRoute
 }
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
+    '/venue': {
+      id: '/venue'
+      path: '/venue'
+      fullPath: '/venue'
+      preLoaderRoute: typeof VenueRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/v': {
+      id: '/v'
+      path: '/v'
+      fullPath: '/v'
+      preLoaderRoute: typeof VRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/auth': {
       id: '/auth'
       path: '/auth'
@@ -406,6 +707,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof WSlugRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/venue_/$businessId': {
+      id: '/venue_/$businessId'
+      path: '/venue/$businessId'
+      fullPath: '/venue/$businessId'
+      preLoaderRoute: typeof VenueBusinessIdRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/v_/$businessId': {
+      id: '/v_/$businessId'
+      path: '/v/$businessId'
+      fullPath: '/v/$businessId'
+      preLoaderRoute: typeof VBusinessIdRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/rsvp/$token': {
       id: '/rsvp/$token'
       path: '/rsvp/$token'
@@ -433,6 +748,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/auth/callback'
       preLoaderRoute: typeof AuthCallbackRouteImport
       parentRoute: typeof AuthRoute
+    }
+    '/_authenticated/workspace-settings': {
+      id: '/_authenticated/workspace-settings'
+      path: '/workspace-settings'
+      fullPath: '/workspace-settings'
+      preLoaderRoute: typeof AuthenticatedWorkspaceSettingsRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_authenticated/website': {
       id: '/_authenticated/website'
@@ -539,12 +861,19 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedBudgetRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
-    '/w/$slug/registry': {
-      id: '/w/$slug/registry'
-      path: '/registry'
+    '/w/$slug_/registry': {
+      id: '/w/$slug_/registry'
+      path: '/w/$slug/registry'
       fullPath: '/w/$slug/registry'
       preLoaderRoute: typeof WSlugRegistryRouteImport
-      parentRoute: typeof WSlugRoute
+      parentRoute: typeof rootRouteImport
+    }
+    '/v_/$businessId_/$serviceId': {
+      id: '/v_/$businessId_/$serviceId'
+      path: '/v/$businessId/$serviceId'
+      fullPath: '/v/$businessId/$serviceId'
+      preLoaderRoute: typeof VBusinessIdServiceIdRouteImport
+      parentRoute: typeof rootRouteImport
     }
     '/rsvp/w/$slug': {
       id: '/rsvp/w/$slug'
@@ -567,6 +896,118 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedSettingsProfileRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/business/venue-details': {
+      id: '/_authenticated/business/venue-details'
+      path: '/business/venue-details'
+      fullPath: '/business/venue-details'
+      preLoaderRoute: typeof AuthenticatedBusinessVenueDetailsRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/business/onboarding': {
+      id: '/_authenticated/business/onboarding'
+      path: '/business/onboarding'
+      fullPath: '/business/onboarding'
+      preLoaderRoute: typeof AuthenticatedBusinessOnboardingRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/business/messages': {
+      id: '/_authenticated/business/messages'
+      path: '/business/messages'
+      fullPath: '/business/messages'
+      preLoaderRoute: typeof AuthenticatedBusinessMessagesRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/business/dashboard': {
+      id: '/_authenticated/business/dashboard'
+      path: '/business/dashboard'
+      fullPath: '/business/dashboard'
+      preLoaderRoute: typeof AuthenticatedBusinessDashboardRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/business/browse-venues': {
+      id: '/_authenticated/business/browse-venues'
+      path: '/business/browse-venues'
+      fullPath: '/business/browse-venues'
+      preLoaderRoute: typeof AuthenticatedBusinessBrowseVenuesRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/business/browse-vendors': {
+      id: '/_authenticated/business/browse-vendors'
+      path: '/business/browse-vendors'
+      fullPath: '/business/browse-vendors'
+      preLoaderRoute: typeof AuthenticatedBusinessBrowseVendorsRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/admin/venues': {
+      id: '/_authenticated/admin/venues'
+      path: '/admin/venues'
+      fullPath: '/admin/venues'
+      preLoaderRoute: typeof AuthenticatedAdminVenuesRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/admin/vendors': {
+      id: '/_authenticated/admin/vendors'
+      path: '/admin/vendors'
+      fullPath: '/admin/vendors'
+      preLoaderRoute: typeof AuthenticatedAdminVendorsRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/admin/suggestions': {
+      id: '/_authenticated/admin/suggestions'
+      path: '/admin/suggestions'
+      fullPath: '/admin/suggestions'
+      preLoaderRoute: typeof AuthenticatedAdminSuggestionsRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/admin/claims': {
+      id: '/_authenticated/admin/claims'
+      path: '/admin/claims'
+      fullPath: '/admin/claims'
+      preLoaderRoute: typeof AuthenticatedAdminClaimsRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/admin/add-venue': {
+      id: '/_authenticated/admin/add-venue'
+      path: '/admin/add-venue'
+      fullPath: '/admin/add-venue'
+      preLoaderRoute: typeof AuthenticatedAdminAddVenueRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/admin/add-vendor': {
+      id: '/_authenticated/admin/add-vendor'
+      path: '/admin/add-vendor'
+      fullPath: '/admin/add-vendor'
+      preLoaderRoute: typeof AuthenticatedAdminAddVendorRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/business/services/$serviceId': {
+      id: '/_authenticated/business/services/$serviceId'
+      path: '/business/services/$serviceId'
+      fullPath: '/business/services/$serviceId'
+      preLoaderRoute: typeof AuthenticatedBusinessServicesServiceIdRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/business/onboarding_/venue': {
+      id: '/_authenticated/business/onboarding_/venue'
+      path: '/business/onboarding/venue'
+      fullPath: '/business/onboarding/venue'
+      preLoaderRoute: typeof AuthenticatedBusinessOnboardingVenueRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/admin/add-venue_/$businessId': {
+      id: '/_authenticated/admin/add-venue_/$businessId'
+      path: '/admin/add-venue/$businessId'
+      fullPath: '/admin/add-venue/$businessId'
+      preLoaderRoute: typeof AuthenticatedAdminAddVenueBusinessIdRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/admin/add-vendor_/$businessId': {
+      id: '/_authenticated/admin/add-vendor_/$businessId'
+      path: '/admin/add-vendor/$businessId'
+      fullPath: '/admin/add-vendor/$businessId'
+      preLoaderRoute: typeof AuthenticatedAdminAddVendorBusinessIdRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
   }
 }
 
@@ -586,8 +1027,25 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedVendorsRoute: typeof AuthenticatedVendorsRoute
   AuthenticatedVenuesRoute: typeof AuthenticatedVenuesRoute
   AuthenticatedWebsiteRoute: typeof AuthenticatedWebsiteRoute
+  AuthenticatedWorkspaceSettingsRoute: typeof AuthenticatedWorkspaceSettingsRoute
+  AuthenticatedAdminAddVendorRoute: typeof AuthenticatedAdminAddVendorRoute
+  AuthenticatedAdminAddVenueRoute: typeof AuthenticatedAdminAddVenueRoute
+  AuthenticatedAdminClaimsRoute: typeof AuthenticatedAdminClaimsRoute
+  AuthenticatedAdminSuggestionsRoute: typeof AuthenticatedAdminSuggestionsRoute
+  AuthenticatedAdminVendorsRoute: typeof AuthenticatedAdminVendorsRoute
+  AuthenticatedAdminVenuesRoute: typeof AuthenticatedAdminVenuesRoute
+  AuthenticatedBusinessBrowseVendorsRoute: typeof AuthenticatedBusinessBrowseVendorsRoute
+  AuthenticatedBusinessBrowseVenuesRoute: typeof AuthenticatedBusinessBrowseVenuesRoute
+  AuthenticatedBusinessDashboardRoute: typeof AuthenticatedBusinessDashboardRoute
+  AuthenticatedBusinessMessagesRoute: typeof AuthenticatedBusinessMessagesRoute
+  AuthenticatedBusinessOnboardingRoute: typeof AuthenticatedBusinessOnboardingRoute
+  AuthenticatedBusinessVenueDetailsRoute: typeof AuthenticatedBusinessVenueDetailsRoute
   AuthenticatedSettingsProfileRoute: typeof AuthenticatedSettingsProfileRoute
   AuthenticatedWebsiteEditRoute: typeof AuthenticatedWebsiteEditRoute
+  AuthenticatedAdminAddVendorBusinessIdRoute: typeof AuthenticatedAdminAddVendorBusinessIdRoute
+  AuthenticatedAdminAddVenueBusinessIdRoute: typeof AuthenticatedAdminAddVenueBusinessIdRoute
+  AuthenticatedBusinessOnboardingVenueRoute: typeof AuthenticatedBusinessOnboardingVenueRoute
+  AuthenticatedBusinessServicesServiceIdRoute: typeof AuthenticatedBusinessServicesServiceIdRoute
 }
 
 const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
@@ -606,8 +1064,32 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedVendorsRoute: AuthenticatedVendorsRoute,
   AuthenticatedVenuesRoute: AuthenticatedVenuesRoute,
   AuthenticatedWebsiteRoute: AuthenticatedWebsiteRoute,
+  AuthenticatedWorkspaceSettingsRoute: AuthenticatedWorkspaceSettingsRoute,
+  AuthenticatedAdminAddVendorRoute: AuthenticatedAdminAddVendorRoute,
+  AuthenticatedAdminAddVenueRoute: AuthenticatedAdminAddVenueRoute,
+  AuthenticatedAdminClaimsRoute: AuthenticatedAdminClaimsRoute,
+  AuthenticatedAdminSuggestionsRoute: AuthenticatedAdminSuggestionsRoute,
+  AuthenticatedAdminVendorsRoute: AuthenticatedAdminVendorsRoute,
+  AuthenticatedAdminVenuesRoute: AuthenticatedAdminVenuesRoute,
+  AuthenticatedBusinessBrowseVendorsRoute:
+    AuthenticatedBusinessBrowseVendorsRoute,
+  AuthenticatedBusinessBrowseVenuesRoute:
+    AuthenticatedBusinessBrowseVenuesRoute,
+  AuthenticatedBusinessDashboardRoute: AuthenticatedBusinessDashboardRoute,
+  AuthenticatedBusinessMessagesRoute: AuthenticatedBusinessMessagesRoute,
+  AuthenticatedBusinessOnboardingRoute: AuthenticatedBusinessOnboardingRoute,
+  AuthenticatedBusinessVenueDetailsRoute:
+    AuthenticatedBusinessVenueDetailsRoute,
   AuthenticatedSettingsProfileRoute: AuthenticatedSettingsProfileRoute,
   AuthenticatedWebsiteEditRoute: AuthenticatedWebsiteEditRoute,
+  AuthenticatedAdminAddVendorBusinessIdRoute:
+    AuthenticatedAdminAddVendorBusinessIdRoute,
+  AuthenticatedAdminAddVenueBusinessIdRoute:
+    AuthenticatedAdminAddVenueBusinessIdRoute,
+  AuthenticatedBusinessOnboardingVenueRoute:
+    AuthenticatedBusinessOnboardingVenueRoute,
+  AuthenticatedBusinessServicesServiceIdRoute:
+    AuthenticatedBusinessServicesServiceIdRoute,
 }
 
 const AuthenticatedRouteRouteWithChildren =
@@ -627,24 +1109,20 @@ const AuthRouteChildren: AuthRouteChildren = {
 
 const AuthRouteWithChildren = AuthRoute._addFileChildren(AuthRouteChildren)
 
-interface WSlugRouteChildren {
-  WSlugRegistryRoute: typeof WSlugRegistryRoute
-}
-
-const WSlugRouteChildren: WSlugRouteChildren = {
-  WSlugRegistryRoute: WSlugRegistryRoute,
-}
-
-const WSlugRouteWithChildren = WSlugRoute._addFileChildren(WSlugRouteChildren)
-
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AuthenticatedRouteRoute: AuthenticatedRouteRouteWithChildren,
   AuthRoute: AuthRouteWithChildren,
+  VRoute: VRoute,
+  VenueRoute: VenueRoute,
   FeaturesSlugRoute: FeaturesSlugRoute,
   RsvpTokenRoute: RsvpTokenRoute,
-  WSlugRoute: WSlugRouteWithChildren,
+  VBusinessIdRoute: VBusinessIdRoute,
+  VenueBusinessIdRoute: VenueBusinessIdRoute,
+  WSlugRoute: WSlugRoute,
   RsvpWSlugRoute: RsvpWSlugRoute,
+  VBusinessIdServiceIdRoute: VBusinessIdServiceIdRoute,
+  WSlugRegistryRoute: WSlugRegistryRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

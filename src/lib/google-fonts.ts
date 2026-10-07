@@ -27,6 +27,11 @@ export const GOOGLE_FONT_OPTIONS: { group: FontGroup; name: string }[] = [
   { group: "Serif", name: "Bitter" },
   { group: "Serif", name: "Domine" },
   { group: "Serif", name: "Cormorant Infant" },
+  { group: "Serif", name: "Gilda Display" },
+  { group: "Serif", name: "Libre Bodoni" },
+  { group: "Serif", name: "Volkhov" },
+  { group: "Serif", name: "Viaoda Libre" },
+  { group: "Serif", name: "Yeseva One" },
   // Sans
   { group: "Sans", name: "Instrument Sans" },
   { group: "Sans", name: "Poppins" },
@@ -69,6 +74,11 @@ export const GOOGLE_FONT_OPTIONS: { group: FontGroup; name: string }[] = [
   { group: "Script", name: "Caveat" },
   { group: "Script", name: "Kalam" },
   { group: "Script", name: "Shadows Into Light" },
+  { group: "Script", name: "Seaweed Script" },
+  { group: "Script", name: "WindSong" },
+  { group: "Script", name: "Beth Ellen" },
+  { group: "Script", name: "Yesteryear" },
+  { group: "Script", name: "Zeyada" },
   // Display
   { group: "Display", name: "Abril Fatface" },
   { group: "Display", name: "Cinzel" },
@@ -82,6 +92,7 @@ export const GOOGLE_FONT_OPTIONS: { group: FontGroup; name: string }[] = [
   { group: "Display", name: "Playfair Display SC" },
   { group: "Display", name: "Cinzel Decorative" },
   { group: "Display", name: "Unica One" },
+  { group: "Display", name: "Wire One" },
 ];
 
 const loadedFonts = new Set<string>();

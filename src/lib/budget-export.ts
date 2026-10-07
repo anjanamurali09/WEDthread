@@ -1,5 +1,6 @@
-import * as XLSX from "xlsx";
+import ExcelJS from "exceljs";
 import jsPDF from "jspdf";
+import { registerPoppins, PDF_FONT } from "@/lib/pdf-fonts";
 import autoTable from "jspdf-autotable";
 import { formatMoney } from "@/lib/currency";
 import type { Expense, BudgetCustomColumn } from "@/lib/wedding-hooks";
@@ -48,7 +49,7 @@ export type BudgetExportInput = {
   customColumns: BudgetCustomColumn[];
 };
 
-export function exportBudgetExcel(input: BudgetExportInput) {
+export async function exportBudgetExcel(input: BudgetExportInput) {
   const { weddingLabel, currency, totalSpent, budgetLimit, categoryTotals, expenses, customColumns } = input;
   const headers = [...EXPENSE_HEADERS, ...customColumns.map((c) => c.name)];
 
@@ -67,17 +68,32 @@ export function exportBudgetExcel(input: BudgetExportInput) {
     ...expenses.map((e) => expenseRow(e, currency, customColumns)),
   ];
 
-  const ws = XLSX.utils.aoa_to_sheet(rows);
-  ws["!cols"] = [{ wch: 28 }, { wch: 16 }, { wch: 14 }, { wch: 12 }, { wch: 16 }, { wch: 10 }, { wch: 12 }, { wch: 34 }, ...customColumns.map(() => ({ wch: 16 }))];
-  const wb = XLSX.utils.book_new();
-  XLSX.utils.book_append_sheet(wb, ws, "Budget");
-  XLSX.writeFile(wb, `wedthread-budget-${weddingLabel}.xlsx`);
+  const wb = new ExcelJS.Workbook();
+  const ws = wb.addWorksheet("Budget");
+  ws.columns = [28, 16, 14, 12, 16, 10, 12, 34, ...customColumns.map(() => 16)].map((width) => ({ width }));
+  const headerRowNumber = rows.findIndex((r) => r === headers) + 1;
+  const titleRows = new Set([1, 6, 10, headerRowNumber]);
+  rows.forEach((r, i) => {
+    const row = ws.addRow(r);
+    row.eachCell({ includeEmpty: true }, (cell) => {
+      cell.font = { name: "Poppins", size: 10, bold: titleRows.has(i + 1) };
+    });
+  });
+  ws.getRow(1).getCell(1).font = { name: "Poppins", size: 14, bold: true };
+
+  const buf = await wb.xlsx.writeBuffer();
+  const a = document.createElement("a");
+  a.href = URL.createObjectURL(new Blob([buf], { type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" }));
+  a.download = `wedthread-budget-${weddingLabel}.xlsx`;
+  a.click();
+  URL.revokeObjectURL(a.href);
 }
 
-export function exportBudgetPdf(input: BudgetExportInput) {
+export async function exportBudgetPdf(input: BudgetExportInput) {
   const { weddingLabel, currency, totalSpent, budgetLimit, categoryTotals, expenses, customColumns } = input;
   const headers = [...EXPENSE_HEADERS, ...customColumns.map((c) => c.name)];
   const doc = new jsPDF();
+  await registerPoppins(doc);
 
   // Page 1: summary + category breakdown.
   doc.setFontSize(16);
@@ -91,7 +107,7 @@ export function exportBudgetPdf(input: BudgetExportInput) {
       startY: 42,
       head: [["Category", "Total"]],
       body: categoryTotals.map(([cat, total]) => [cat, formatMoney(total, currency)]),
-      styles: { fontSize: 9 },
+      styles: { font: PDF_FONT, fontSize: 9 },
       headStyles: { fillColor: [138, 18, 38] },
       margin: { left: 14, right: 14 },
     });
@@ -106,7 +122,7 @@ export function exportBudgetPdf(input: BudgetExportInput) {
     startY: 24,
     head: [headers],
     body: expenses.map((e) => expenseRow(e, currency, customColumns)),
-    styles: { fontSize: 8 },
+    styles: { font: PDF_FONT, fontSize: 8 },
     headStyles: { fillColor: [138, 18, 38] },
     margin: { left: 14, right: 14 },
   });

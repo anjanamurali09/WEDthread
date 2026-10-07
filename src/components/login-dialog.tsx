@@ -1,10 +1,8 @@
 import { useEffect, useState } from "react";
 import { Dialog, DialogContent, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { supabase } from "@/integrations/supabase/client";
-import { lovable } from "@/integrations/lovable/index";
 import { toast } from "sonner";
-import { Sparkles } from "lucide-react";
-import { Link, useNavigate } from "@tanstack/react-router";
+import { useNavigate } from "@tanstack/react-router";
 import { ROLE_LANDING, type AppRole } from "@/hooks/use-active-role";
 import { resolveCoupleLanding } from "@/lib/wedding-hooks";
 
@@ -82,25 +80,10 @@ export function LoginDialog({
     }
   };
 
-  const google = async () => {
-    setLoading(true);
-    try {
-      try { window.sessionStorage.setItem("wedthread.authIntent", mode); } catch {}
-      const result = await lovable.auth.signInWithOAuth("google", {
-        redirect_uri: window.location.origin + "/auth/callback",
-      });
-      if (result.error) { toast.error(result.error.message ?? "Google sign-in failed"); return; }
-      if (result.redirected) return;
-      close(false);
-      navigate({ to: "/auth/callback" as any });
-    } finally { setLoading(false); }
-  };
-
   return (
     <Dialog open={open} onOpenChange={close}>
       <DialogContent className="max-w-md rounded-3xl bg-pearl border-line p-0 overflow-hidden">
-        <div className="p-6 pb-4 border-b border-line/60 flex items-center gap-3">
-          <span className="grid h-9 w-9 place-items-center rounded-full bg-cherry text-pearl"><Sparkles className="h-4 w-4" /></span>
+        <div className="px-6 pt-6 pb-3 border-b border-line/60 flex items-center gap-3">
           <div>
             <DialogTitle className="font-serif text-xl">
               {mode === "signup" ? "Create your account" : "Welcome back"}
@@ -111,14 +94,7 @@ export function LoginDialog({
           </div>
         </div>
 
-        <div className="p-6">
-          <button onClick={google} disabled={loading}
-            className="w-full flex items-center justify-center gap-3 rounded-full border border-line py-2.5 text-sm hover:bg-cream disabled:opacity-60 transition-colors">
-            <GoogleIcon /> Continue with Google
-          </button>
-          <div className="my-4 flex items-center gap-3 text-[10px] uppercase tracking-widest text-muted-foreground">
-            <div className="h-px flex-1 bg-line" /> or email <div className="h-px flex-1 bg-line" />
-          </div>
+        <div className="px-6 pt-4 pb-6">
           <form onSubmit={submit} className="space-y-3">
             <input required type="email" placeholder="Email" value={email} onChange={(e) => setEmail(e.target.value)}
               className="w-full rounded-2xl border border-line bg-pearl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-cherry" />
@@ -131,21 +107,18 @@ export function LoginDialog({
           </form>
           <p className="mt-4 text-sm text-center text-muted-foreground">
             {mode === "signup" ? "Already have an account?" : "New here?"}{" "}
-            <button onClick={() => setMode(mode === "signup" ? "signin" : "signup")} className="text-cherry underline underline-offset-4">
+            <button
+              onClick={() => {
+                // Creating an account happens on the full page; this popup is just for signing in.
+                if (mode === "signin") { close(false); navigate({ to: "/auth", search: { mode: "signup" } as any }); }
+                else setMode("signin");
+              }}
+              className="text-cherry underline underline-offset-4">
               {mode === "signup" ? "Sign in" : "Create an account"}
             </button>
-          </p>
-          <p className="mt-5 text-sm text-center text-muted-foreground">
-            Prefer the full page? <Link to="/auth" onClick={() => close(false)} className="underline underline-offset-2 hover:text-cherry">Open sign-in page</Link>
           </p>
         </div>
       </DialogContent>
     </Dialog>
-  );
-}
-
-function GoogleIcon() {
-  return (
-    <svg width="16" height="16" viewBox="0 0 48 48"><path fill="#EA4335" d="M24 9.5c3.5 0 6.6 1.2 9 3.5l6.7-6.7C35.6 2.4 30.2 0 24 0 14.6 0 6.4 5.4 2.5 13.3l7.8 6C12.2 13.4 17.6 9.5 24 9.5z"/><path fill="#4285F4" d="M46.5 24.5c0-1.6-.1-3.1-.4-4.5H24v9h12.7c-.6 3-2.2 5.5-4.8 7.2l7.4 5.7c4.3-4 6.7-9.9 6.7-17.4z"/><path fill="#FBBC05" d="M10.3 28.7c-.5-1.5-.8-3-.8-4.7s.3-3.2.8-4.7l-7.8-6C.8 16.7 0 20.2 0 24s.8 7.3 2.5 10.7l7.8-6z"/><path fill="#34A853" d="M24 48c6.2 0 11.4-2 15.2-5.5l-7.4-5.7c-2.1 1.4-4.8 2.2-7.8 2.2-6.4 0-11.8-3.9-13.7-9.3l-7.8 6C6.4 42.6 14.6 48 24 48z"/></svg>
   );
 }

@@ -1,15 +1,23 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { AppShell } from "@/components/app-shell";
-import { useCurrentWedding, useGuests, useInvalidateWedding } from "@/lib/wedding-hooks";
+import { useCurrentWedding, useGuests, useInvites, useInvalidateWedding } from "@/lib/wedding-hooks";
+import { guestInvites, isGuestResponded } from "@/lib/rsvp-stats";
 import { supabase } from "@/integrations/supabase/client";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
-import { Mail, MessageCircle, Send, Plus, Trash2, X, ExternalLink, Check, SkipForward, Smile } from "lucide-react";
+import { Mail, MessageCircle, Send, Plus, Trash2, X, ExternalLink, Check, SkipForward, Smile, Store } from "lucide-react";
 import { PhotoEmptyState } from "@/components/photo-empty-state";
 import { cn, formatNumber } from "@/lib/utils";
+import { ConversationThreadDialog } from "@/components/conversation-thread-dialog";
 
-export const Route = createFileRoute("/_authenticated/messages")({ component: MessagesPage });
+export const Route = createFileRoute("/_authenticated/messages")({
+  component: MessagesPage,
+  // ?remind=1 arrives from the RSVP tracker's "Remind them" nudge — auto-opens
+  // the reminder template with every not-yet-responded guest pre-selected,
+  // instead of making the couple re-find and re-filter them by hand.
+  validateSearch: (s: Record<string, unknown>) => ({ remind: s.remind === true || s.remind === "1" || s.remind === "true" ? true : undefined }),
+});
 
 // Email and WhatsApp are both "open the app with the message pre-filled, you hit send
 // yourself" channels — neither has a real bulk-send API from a browser (WhatsApp has none
@@ -151,10 +159,12 @@ function getCaretCoordinates(textarea: HTMLTextAreaElement, position: number) {
 function MessagesPage() {
   const { data: wedding } = useCurrentWedding();
   const { data: guests = [] } = useGuests(wedding?.id);
+  const { data: invites = [] } = useInvites(wedding?.id);
   const invalidate = useInvalidateWedding();
   const qc = useQueryClient();
   const [editing, setEditing] = useState<any | null>(null);
-  const [sending, setSending] = useState<{ template: any; channel: "email" | "whatsapp" } | null>(null);
+  const [sending, setSending] = useState<{ template: any; channel: "email" | "whatsapp"; initialSelected?: string[]; audienceLabel?: string } | null>(null);
+  const { remind } = Route.useSearch();
 
   const { data: templates = [], isLoading: templatesLoading } = useQuery({
     queryKey: ["templates", wedding?.id],
@@ -164,6 +174,21 @@ function MessagesPage() {
       return data ?? [];
     },
   });
+
+  // ?remind=1: pre-fill the reminder template's audience with every guest
+  // who hasn't fully RSVP'd yet — a guest with no invites at all isn't
+  // "not RSVP'd," there's nothing to remind them about.
+  const remindedRef = useRef(false);
+  useEffect(() => {
+    if (!remind || remindedRef.current || !wedding || templatesLoading) return;
+    remindedRef.current = true;
+    const pendingIds = guests.filter((g) => {
+      const relevant = guestInvites(g.id, invites);
+      return relevant.length > 0 && !isGuestResponded(relevant);
+    }).map((g) => g.id);
+    const template = templates.find((t: any) => t.kind === "reminder") ?? defaultTemplates(wedding).find((t) => t.kind === "reminder")!;
+    setSending({ template, channel: "email", initialSelected: pendingIds, audienceLabel: "guests who haven't RSVP'd yet" });
+  }, [remind, wedding, guests, invites, templates, templatesLoading]);
 
   const WHATSAPP_WAITLIST_FEATURE = "whatsapp_direct_send";
   const { data: onWaitlist = false } = useQuery({
@@ -210,7 +235,7 @@ function MessagesPage() {
   return (
     <AppShell
       title="Messages"
-      subtitle="Email templates with merge tags. Preview per guest, then send, no logins."
+      subtitle="Guest email/WhatsApp templates below, vendor enquiry conversations above."
       actions={
         <div className="flex gap-2">
           {!templatesLoading && templates.length === 0 && <button onClick={seedDefaults} className="rounded-full border border-line px-4 py-2 text-sm hover:bg-stone">Load starter templates</button>}
@@ -218,6 +243,8 @@ function MessagesPage() {
         </div>
       }
     >
+      <VendorConversationsSection weddingId={wedding.id} />
+
       {templatesLoading ? (
         <p className="text-sm text-muted-foreground">Loading…</p>
       ) : templates.length === 0 ? (
@@ -262,13 +289,76 @@ function MessagesPage() {
         {onWaitlist ? (
           <span className="inline-flex items-center gap-1.5 text-sm text-sage-deep shrink-0"><Check className="h-3.5 w-3.5" /> You're on the waitlist</span>
         ) : (
-          <button onClick={joinWaitlist} className="rounded-full bg-ink text-paper px-5 py-2 text-sm hover:bg-clay cursor-pointer shrink-0">Join the waitlist</button>
+          <button onClick={joinWaitlist} className="rounded-full bg-blush text-ink px-5 py-2 text-sm hover:bg-[#FFE08A] cursor-pointer shrink-0">Join the waitlist</button>
         )}
       </div>
 
       {editing && <TemplateDialog template={editing} onClose={() => setEditing(null)} onSave={saveTemplate} />}
-      {sending && <SendDialog channel={sending.channel} template={sending.template} guests={guests} wedding={wedding} onClose={() => setSending(null)} />}
+      {sending && (
+        <SendDialog channel={sending.channel} template={sending.template} guests={guests} wedding={wedding}
+          initialSelected={sending.initialSelected} audienceLabel={sending.audienceLabel}
+          onClose={() => setSending(null)} />
+      )}
     </AppShell>
+  );
+}
+
+type ConversationRow = { id: string; businessId: string; businessName: string; preview: string; updatedAt: string };
+
+// Where a couple's vendor enquiries land, per Phase 4: submit-enquiry
+// creates/reuses one conversation per vendor and posts the lead form answers
+// as its first message — this list is that inbox, separate from the
+// guest-broadcast templates below (a different audience, a different kind
+// of "message" entirely).
+function VendorConversationsSection({ weddingId }: { weddingId: string }) {
+  const { data: conversations = [], isLoading } = useQuery({
+    queryKey: ["couple-conversations", weddingId],
+    queryFn: async (): Promise<ConversationRow[]> => {
+      const { data: convos } = await supabase.from("conversations").select("id,business_id,updated_at").eq("wedding_id", weddingId).order("updated_at", { ascending: false });
+      if (!convos || convos.length === 0) return [];
+      const [{ data: businesses }, { data: msgs }] = await Promise.all([
+        supabase.from("businesses").select("id,legal_business_name").in("id", convos.map((c) => c.business_id)),
+        supabase.from("conversation_messages").select("conversation_id,body,created_at").in("conversation_id", convos.map((c) => c.id)).order("created_at", { ascending: false }),
+      ]);
+      const nameById = new Map((businesses ?? []).map((b) => [b.id, b.legal_business_name]));
+      const previewByConvo = new Map<string, string>();
+      for (const m of msgs ?? []) if (!previewByConvo.has(m.conversation_id)) previewByConvo.set(m.conversation_id, m.body);
+      return convos.map((c) => ({
+        id: c.id, businessId: c.business_id, businessName: nameById.get(c.business_id) ?? "Vendor",
+        preview: previewByConvo.get(c.id) ?? "", updatedAt: c.updated_at,
+      }));
+    },
+  });
+  const [openThread, setOpenThread] = useState<ConversationRow | null>(null);
+
+  if (isLoading || conversations.length === 0) return null;
+
+  return (
+    <div className="mb-10">
+      <h3 className="font-serif text-2xl mb-4 inline-flex items-center gap-2"><Store className="h-5 w-5" /> Vendor enquiries</h3>
+      <div className="grid gap-2">
+        {conversations.map((c) => (
+          <button key={c.id} type="button" onClick={() => setOpenThread(c)}
+            className="text-left rounded-2xl border border-line px-5 py-3.5 hover:bg-stone/50 cursor-pointer flex items-center justify-between gap-3">
+            <div className="min-w-0">
+              <p className="font-medium text-sm">{c.businessName}</p>
+              <p className="text-sm text-muted-foreground truncate">{c.preview}</p>
+            </div>
+            <span className="text-sm text-muted-foreground shrink-0">{new Date(c.updatedAt).toLocaleDateString()}</span>
+          </button>
+        ))}
+      </div>
+      {openThread && (
+        <ConversationThreadDialog
+          conversationId={openThread.id}
+          title={openThread.businessName}
+          senderRole="couple"
+          open={!!openThread}
+          onOpenChange={(o) => !o && setOpenThread(null)}
+          reviewBusiness={{ id: openThread.businessId, name: openThread.businessName }}
+        />
+      )}
+    </div>
   );
 }
 
@@ -419,12 +509,17 @@ function ctxFor(g: any, wedding: any) {
 // BCC group — each guest's RSVP link is unique, and there's no one "name" for a group.
 const PERSONAL_TAGS = /\{\{(name|rsvp_link)\}\}/;
 
-function SendDialog({ template, guests, wedding, channel, onClose }: {
-  template: any; guests: any[]; wedding: any; channel: "email" | "whatsapp"; onClose: () => void;
+function SendDialog({ template, guests, wedding, channel, initialSelected, audienceLabel, onClose }: {
+  template: any; guests: any[]; wedding: any; channel: "email" | "whatsapp";
+  // Arrives from the RSVP tracker's "Remind them" nudge — pre-checks
+  // whoever it already computed as not-yet-responded, so the couple isn't
+  // re-doing that filtering by hand.
+  initialSelected?: string[]; audienceLabel?: string;
+  onClose: () => void;
 }) {
   const isWa = channel === "whatsapp";
   const eligibleGuests = guests.filter((g: any) => (isWa ? !!g.phone : !!g.email));
-  const [selected, setSelected] = useState<Set<string>>(new Set());
+  const [selected, setSelected] = useState<Set<string>>(() => new Set(initialSelected ?? []));
   const toggle = (id: string) => { const n = new Set(selected); n.has(id) ? n.delete(id) : n.add(id); setSelected(n); };
   const [queueGuests, setQueueGuests] = useState<any[] | null>(null);
   const [sendingBcc, setSendingBcc] = useState(false);
@@ -472,6 +567,10 @@ function SendDialog({ template, guests, wedding, channel, onClose }: {
           </div>
           <button onClick={onClose}><X className="h-4 w-4" /></button>
         </div>
+
+        {audienceLabel && (
+          <p className="mt-4 text-sm rounded-2xl bg-stone px-4 py-2.5">Pre-selected: {formatNumber(selected.size)} {audienceLabel}.</p>
+        )}
 
         <div className="mt-6 flex items-center justify-between">
           <p className="text-sm text-muted-foreground">{formatNumber(eligibleGuests.length)} guests · {formatNumber(selected.size)} selected</p>

@@ -1,5 +1,6 @@
 import { Link } from "@tanstack/react-router";
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
+import { attachSparkleTrail } from "@/lib/sparkle-trail";
 import {
   DndContext, closestCenter, PointerSensor, useSensor, useSensors, type DragEndEvent,
 } from "@dnd-kit/core";
@@ -7,7 +8,7 @@ import { SortableContext, arrayMove, useSortable, rectSortingStrategy } from "@d
 import { CSS } from "@dnd-kit/utilities";
 import {
   CalendarDays, Users, Grid3x3, Armchair, Globe, ArrowRight, MessageCircle, Wallet, Utensils,
-  Gift, GripVertical, X, Plus,
+  Gift, GripVertical, X, Plus, MapPin, Store,
 } from "lucide-react";
 import { formatMoney } from "@/lib/currency";
 import { formatNumber, cn } from "@/lib/utils";
@@ -50,9 +51,17 @@ const WIDGET_META: Record<WidgetType, { label: string }> = {
 const DEFAULT_SIZE: Record<WidgetType, WidgetSize> = {
   events: "small", guests: "small", rsvps: "small", website: "small",
   budget: "small", menu: "small", registry: "small",
-  seating: "medium", discover_venues: "medium", discover_vendors: "medium",
-  whatsapp: "full",
+  seating: "medium",
+  // Kept small so these sit in the same compact row as the stat tiles rather
+  // than sprawling — see FIXED_SMALL_TYPES below, which pins their DISPLAYED
+  // size to small regardless of what's actually saved for a given wedding.
+  discover_venues: "small", discover_vendors: "small", whatsapp: "small",
 };
+
+// These three are always shown compact (icon + short heading + one link line,
+// same footprint as Events/Guests/Budget/RSVPs) — not resizable, so a wedding
+// that saved them at their old medium/full size still renders them small.
+const FIXED_SMALL_TYPES: WidgetType[] = ["discover_venues", "discover_vendors", "whatsapp"];
 
 const DEFAULT_ORDER: WidgetType[] = [
   "events", "guests", "rsvps", "website", "discover_venues", "discover_vendors", "whatsapp",
@@ -102,14 +111,14 @@ export type WidgetContext = {
   hasRegistry: boolean;
 };
 
-function StatBody({ icon: Icon, label, value, sub }: { icon: any; label: string; value: string; sub: string }) {
+function StatBody({ icon: Icon, label, value, sub, blue }: { icon: any; label: string; value: string; sub: string; blue?: boolean }) {
   return (
     <>
       <div className="flex items-center justify-between">
         <span className="text-[10px] uppercase tracking-widest text-muted-foreground">{label}</span>
-        <Icon className="h-4 w-4 text-clay" />
+        <Icon className="h-4 w-4 text-cherry" />
       </div>
-      <p className="mt-3 font-serif text-4xl">{value}</p>
+      <p className={cn("mt-3 font-serif text-4xl", blue && "text-cherry")}>{value}</p>
       <p className="text-sm text-muted-foreground mt-1">{sub}</p>
     </>
   );
@@ -136,49 +145,55 @@ function WidgetBody({ type, ctx }: { type: WidgetType; ctx: WidgetContext }) {
 
   switch (type) {
     case "events":
-      return <StatBody icon={CalendarDays} label="Events" value={formatNumber(events.length)} sub={events.length === 1 ? "ceremony" : "ceremonies"} />;
+      return <StatBody blue icon={CalendarDays} label="Events" value={formatNumber(events.length)} sub={events.length === 1 ? "ceremony" : "ceremonies"} />;
     case "guests":
-      return <StatBody icon={Users} label="Guests" value={formatNumber(guestsCount)} sub={`${formatNumber(attending)} attending`} />;
+      return <StatBody blue icon={Users} label="Guests" value={formatNumber(guestsCount)} sub={`${formatNumber(attending)} attending`} />;
     case "rsvps":
-      return <StatBody icon={Grid3x3} label="RSVPs" value={`${totalInvites ? Math.round((rsvpd / totalInvites) * 100) : 0}%`} sub={`${formatNumber(rsvpd)} of ${formatNumber(totalInvites)} responded`} />;
+      return <StatBody blue icon={Grid3x3} label="RSVPs" value={`${totalInvites ? Math.round((rsvpd / totalInvites) * 100) : 0}%`} sub={`${formatNumber(rsvpd)} of ${formatNumber(totalInvites)} responded`} />;
     case "website":
       return <StatBody icon={Globe} label="Website" value={wedding.site_published ? "Live" : "Draft"} sub={`/w/${wedding.slug ?? "-"}`} />;
     case "budget":
-      return <StatBody icon={Wallet} label="Budget" value={formatMoney(budgetSpent, budgetCurrency)} sub={wedding.budget_limit != null ? `of ${formatMoney(wedding.budget_limit, budgetCurrency)}` : "spent so far"} />;
+      return <StatBody blue icon={Wallet} label="Budget" value={formatMoney(budgetSpent, budgetCurrency)} sub={wedding.budget_limit != null ? `of ${formatMoney(wedding.budget_limit, budgetCurrency)}` : "spent so far"} />;
     case "menu":
-      return <StatBody icon={Utensils} label="Menu" value={formatNumber(menuItems)} sub={`across ${formatNumber(menuSections)} section${menuSections === 1 ? "" : "s"}`} />;
+      return <StatBody blue icon={Utensils} label="Menu" value={formatNumber(menuItems)} sub={`across ${formatNumber(menuSections)} section${menuSections === 1 ? "" : "s"}`} />;
     case "seating":
-      return <StatBody icon={Armchair} label="Seating" value={formatNumber(seatingTables)} sub={`${seatingTables === 1 ? "table" : "tables"} · ${formatNumber(seatingSeated)} seated`} />;
+      return <StatBody blue icon={Armchair} label="Seating" value={formatNumber(seatingTables)} sub={`${seatingTables === 1 ? "table" : "tables"} · ${formatNumber(seatingSeated)} seated`} />;
     case "registry":
       return <StatBody icon={Gift} label="Registry" value={formatNumber(registryItems)} sub={hasRegistry ? "items added" : "not set up yet"} />;
+    // These three drop their description line and gain a top-right icon so
+    // they match the compact stat-tile footprint exactly (see FIXED_SMALL_TYPES).
     case "discover_venues":
       return (
         <>
-          <p className="text-[10px] uppercase tracking-widest text-clay">Discover</p>
-          <h3 className="font-serif text-2xl mt-1">Destination venues</h3>
-          <p className="mt-2 text-sm text-muted-foreground">Palaces, beach resorts, vineyards, hill retreats.</p>
-          <span className="mt-4 inline-flex items-center gap-1 text-sm text-clay uppercase tracking-widest">Browse venues <ArrowRight className="h-3 w-3" /></span>
+          <div className="flex items-center justify-between">
+            <span className="text-[10px] uppercase tracking-widest text-muted-foreground">Venues</span>
+            <MapPin className="h-4 w-4 text-cherry" />
+          </div>
+          <p className="mt-3 font-serif text-xl leading-snug text-cherry">Destination venues</p>
+          <span className="mt-2 inline-flex items-center gap-1 text-sm text-clay uppercase tracking-widest">Browse venues <ArrowRight className="h-3 w-3" /></span>
         </>
       );
     case "discover_vendors":
       return (
         <>
-          <p className="text-[10px] uppercase tracking-widest text-clay">Discover</p>
-          <h3 className="font-serif text-2xl mt-1">Vendors near your ceremonies</h3>
-          <p className="mt-2 text-sm text-muted-foreground">Planners, photographers, mehendi artists, florists.</p>
-          <span className="mt-4 inline-flex items-center gap-1 text-sm text-clay uppercase tracking-widest">Browse vendors <ArrowRight className="h-3 w-3" /></span>
+          <div className="flex items-center justify-between">
+            <span className="text-[10px] uppercase tracking-widest text-muted-foreground">Vendors</span>
+            <Store className="h-4 w-4 text-cherry" />
+          </div>
+          <p className="mt-3 font-serif text-xl leading-snug text-cherry">Vendors near you</p>
+          <span className="mt-2 inline-flex items-center gap-1 text-sm text-clay uppercase tracking-widest">Browse vendors <ArrowRight className="h-3 w-3" /></span>
         </>
       );
     case "whatsapp":
       return (
-        <div className="flex items-start justify-between gap-4 flex-wrap">
-          <div>
-            <p className="text-[10px] uppercase tracking-widest text-clay inline-flex items-center gap-1"><MessageCircle className="h-3 w-3" /> WhatsApp</p>
-            <h3 className="font-serif text-2xl mt-1">Automated guest messages</h3>
-            <p className="mt-2 text-sm text-muted-foreground max-w-xl">Save-the-dates, RSVP requests, T-7 reminders and thank-yous.</p>
+        <>
+          <div className="flex items-center justify-between">
+            <span className="text-[10px] uppercase tracking-widest text-muted-foreground">WhatsApp</span>
+            <MessageCircle className="h-4 w-4 text-cherry" />
           </div>
-          <span className="mt-4 inline-flex items-center gap-1 text-sm text-clay uppercase tracking-widest shrink-0">Open messaging <ArrowRight className="h-3 w-3" /></span>
-        </div>
+          <p className="mt-3 font-serif text-xl leading-snug text-cherry">Guest messages</p>
+          <span className="mt-2 inline-flex items-center gap-1 text-sm text-clay uppercase tracking-widest">Open messaging <ArrowRight className="h-3 w-3" /></span>
+        </>
       );
   }
 }
@@ -197,13 +212,15 @@ function SortableWidgetCard({ type, size, ctx, onRemove, onResize }: {
 }) {
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id: type });
   const meta = WIDGET_META[type];
-  const isWide = size === "full";
+  const isFixedSmall = FIXED_SMALL_TYPES.includes(type);
+  const effectiveSize = isFixedSmall ? "small" : size;
+  const isWide = effectiveSize === "full";
 
   return (
     <div
       ref={setNodeRef}
       style={{ transform: CSS.Transform.toString(transform), transition, opacity: isDragging ? 0.4 : 1 }}
-      className={cn(SPAN_CLASS[SIZE_SPAN[size]], "relative group")}
+      className={cn(SPAN_CLASS[SIZE_SPAN[effectiveSize]], "relative group")}
     >
       <Link
         to={widgetLink(type)}
@@ -233,12 +250,14 @@ function SortableWidgetCard({ type, size, ctx, onRemove, onResize }: {
           <GripVertical className="h-3.5 w-3.5" />
         </button>
       </div>
-      <ResizeHandle
-        cursor="cursor-pointer"
-        onClick={(e) => { e.preventDefault(); e.stopPropagation(); onResize(nextWidgetSize(size)); }}
-        title={`Resize (${size} → ${nextWidgetSize(size)})`}
-        className="absolute bottom-2 right-2 opacity-0 group-hover:opacity-100"
-      />
+      {!isFixedSmall && (
+        <ResizeHandle
+          cursor="cursor-pointer"
+          onClick={(e) => { e.preventDefault(); e.stopPropagation(); onResize(nextWidgetSize(size)); }}
+          title={`Resize (${size} → ${nextWidgetSize(size)})`}
+          className="absolute bottom-2 right-2 opacity-0 group-hover:opacity-100"
+        />
+      )}
     </div>
   );
 }
@@ -281,6 +300,9 @@ export function DashboardWidgetGrid({ layout, ctx, onLayoutChange }: {
   layout: DashboardLayoutEntry[]; ctx: WidgetContext; onLayoutChange: (next: DashboardLayoutEntry[]) => void;
 }) {
   const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 4 } }));
+  const gridRef = useRef<HTMLDivElement>(null);
+  // Hovering a workspace card leaves a trail of blue sparkles behind the pointer.
+  useEffect(() => (gridRef.current ? attachSparkleTrail(gridRef.current) : undefined), []);
   const activeIds = layout.map((e) => e.widgetId);
   const available = (Object.keys(WIDGET_META) as WidgetType[]).filter((t) => !activeIds.includes(t));
 
@@ -302,7 +324,7 @@ export function DashboardWidgetGrid({ layout, ctx, onLayoutChange }: {
     <section className="mt-8">
       <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={onDragEnd}>
         <SortableContext items={activeIds} strategy={rectSortingStrategy}>
-          <div className="grid md:grid-cols-2 xl:grid-cols-4 gap-4">
+          <div ref={gridRef} className="grid md:grid-cols-2 xl:grid-cols-4 gap-4">
             {layout.map((entry) => (
               <SortableWidgetCard
                 key={entry.widgetId}
