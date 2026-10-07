@@ -8,6 +8,11 @@ import { useGoogleFonts } from "@/lib/google-fonts";
 
 export const Route = createFileRoute("/w/$slug")({ component: WeddingSite });
 
+// Only the fields a visitor to the published site needs. The database only lets signed-out visitors
+// read these columns of a wedding (owner, budget, guest count and dashboard settings stay private),
+// so this list must match the column grant in supabase/migrations/20261007120000_tighten_anon_access.sql.
+const PUBLIC_WEDDING_COLUMNS = "id, partner_a, partner_b, slug, destination_city, destination_country, site_published, site_template_id, site_customization";
+
 function WeddingSite() {
   const { slug } = Route.useParams();
   const [wedding, setWedding] = useState<any>(null);
@@ -17,7 +22,7 @@ function WeddingSite() {
 
   useEffect(() => {
     (async () => {
-      const { data: w } = await supabase.from("weddings").select("*").eq("slug", slug).eq("site_published", true).maybeSingle();
+      const { data: w } = await supabase.from("weddings").select(PUBLIC_WEDDING_COLUMNS).eq("slug", slug).eq("site_published", true).maybeSingle();
       if (!w) { setLoading(false); return; }
       setWedding(w);
       const [{ data: ev }, { data: secs }] = await Promise.all([
