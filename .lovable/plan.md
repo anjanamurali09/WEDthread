@@ -1,1 +1,0 @@
-No code changes — this was a read-only query. Let me know what you'd like to do next (e.g., inspect this user's roles, wedding, or related records).

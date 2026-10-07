@@ -31,3 +31,8 @@ dist-ssr
 *.sln
 *.sw?
 supabase/.temp/
+
+# Local environment (keys live in .env locally and in the host's settings in production)
+.env
+.env.*
+!.env.example
