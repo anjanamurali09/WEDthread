@@ -89,13 +89,44 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
   errorComponent: ErrorComponent,
 });
 
+// Google Tag Manager (Google Analytics is configured inside Tag Manager). RootShell wraps every page, so
+// these two snippets, pasted exactly as Google provides them, are on every page of the site.
+const GTM_HEAD_SNIPPET = `<!-- Google Tag Manager -->
+<script>(function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start':
+new Date().getTime(),event:'gtm.js'});var f=d.getElementsByTagName(s)[0],
+j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
+'https://www.googletagmanager.com/gtm.js?id='+i+dl;f.parentNode.insertBefore(j,f);
+})(window,document,'script','dataLayer','GTM-M6N7QG3S');</script>
+<!-- End Google Tag Manager -->`;
+
+const GTM_BODY_SNIPPET = `<!-- Google Tag Manager (noscript) -->
+<noscript><iframe src="https://www.googletagmanager.com/ns.html?id=GTM-M6N7QG3S"
+height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
+<!-- End Google Tag Manager (noscript) -->`;
+
 function RootShell({ children }: { children: ReactNode }) {
   return (
     <html lang="en">
-      <head><HeadContent /></head>
-      <body>{children}<Scripts /></body>
+      <head>
+        {/* Tag Manager goes as high in <head> as possible: before everything else. */}
+        <GoogleTagManagerHead />
+        <HeadContent />
+      </head>
+      <body>
+        {/* ...and its noscript fallback immediately after the opening <body> tag. */}
+        <GoogleTagManagerBody />
+        {children}<Scripts />
+      </body>
     </html>
   );
+}
+
+// The snippets are raw HTML (comments and all), so they are inserted as-is rather than rebuilt in JSX.
+function GoogleTagManagerHead() {
+  return <script dangerouslySetInnerHTML={{ __html: GTM_HEAD_SNIPPET.replace(/^<!--.*-->\n<script>/, "").replace(/<\/script>\n<!--.*-->$/, "") }} />;
+}
+function GoogleTagManagerBody() {
+  return <noscript dangerouslySetInnerHTML={{ __html: GTM_BODY_SNIPPET.replace(/^<!--.*-->\n<noscript>/, "").replace(/<\/noscript>\n<!--.*-->$/, "") }} />;
 }
 
 function RootComponent() {
