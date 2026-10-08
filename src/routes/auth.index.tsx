@@ -5,7 +5,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/lib/toast";
 import { Logo } from "@/components/logo";
 import { ROLE_LANDING, type AppRole } from "@/hooks/use-active-role";
-import { resolveCoupleLanding } from "@/lib/wedding-hooks";
+import { getSessionUser } from "@/lib/session-user";
 import { ROLE_OPTIONS } from "@/lib/role-options";
 import { cn } from "@/lib/utils";
 import { ForgotPasswordForm } from "@/components/forgot-password-form";
@@ -140,24 +140,21 @@ export const Route = createFileRoute("/auth/")({
 });
 
 async function routeAfterSignIn(navigate: ReturnType<typeof useNavigate>) {
-  const { data: u } = await supabase.auth.getUser();
-  if (!u.user) return;
+  const user = await getSessionUser();
+  if (!user) return;
   const { data: roles } = await supabase
     .from("user_roles")
     .select("role")
-    .eq("user_id", u.user.id);
+    .eq("user_id", user.id);
   // Sign-in never asks for a role. If none exists, silently default to couple.
   let active = (roles?.[0]?.role as AppRole | undefined) ?? null;
   if (!active) {
-    await supabase.from("user_roles").insert({ user_id: u.user.id, role: "couple" });
+    await supabase.from("user_roles").insert({ user_id: user.id, role: "couple" });
     active = "couple";
   }
   window.localStorage.setItem("wedthread.activeRole", active);
-  if (active === "couple") {
-    navigate({ to: (await resolveCoupleLanding(u.user.id)) as any, replace: true });
-    return;
-  }
-  navigate({ to: ROLE_LANDING[active] as any, replace: true });
+  // Couples always land on the dashboard (it shows the setup popup if they have no wedding yet).
+  navigate({ to: (active === "couple" ? "/dashboard" : ROLE_LANDING[active]) as any, replace: true });
 }
 
 function AuthPage() {

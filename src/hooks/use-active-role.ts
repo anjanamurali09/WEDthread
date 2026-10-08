@@ -1,4 +1,5 @@
 import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { getSessionUser } from "@/lib/session-user";
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 
@@ -21,12 +22,12 @@ export function useMyRoles() {
   return useQuery({
     queryKey: ["my-roles"],
     queryFn: async (): Promise<AppRole[]> => {
-      const { data: u } = await supabase.auth.getUser();
-      if (!u.user) return [];
+      const user = await getSessionUser();
+      if (!user) return [];
       const { data } = await supabase
         .from("user_roles")
         .select("role")
-        .eq("user_id", u.user.id);
+        .eq("user_id", user.id);
       return (data ?? []).map((r) => r.role as AppRole);
     },
     staleTime: 60_000,

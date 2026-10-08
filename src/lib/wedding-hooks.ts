@@ -1,4 +1,5 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { getSessionUser } from "@/lib/session-user";
 import { supabase } from "@/integrations/supabase/client";
 import type { Tables } from "@/integrations/supabase/types";
 import { DEFAULT_FOOD_TAGS, DIET_COLOR, ALLERGY_COLOR } from "@/lib/dietary-tags";
@@ -24,8 +25,7 @@ export type GuestTag = Tables<"guest_tags">;
 export type FoodTag = Tables<"food_tags">;
 
 async function getUserId() {
-  const { data } = await supabase.auth.getUser();
-  return data.user?.id ?? null;
+  return (await getSessionUser())?.id ?? null;
 }
 
 // Single source of truth for "does this couple already have a wedding" used by every
@@ -42,10 +42,9 @@ export async function resolveCoupleLanding(_userId: string): Promise<"/dashboard
   return "/dashboard";
 }
 
-export function useCurrentWedding() {
-  return useQuery({
-    queryKey: ["current-wedding"],
-    queryFn: async (): Promise<Wedding | null> => {
+// Loads the wedding the signed-in person owns or collaborates on. Exported so the login guard can start it
+// early, in parallel with loading the page.
+export async function fetchCurrentWedding(): Promise<Wedding | null> {
       const uid = await getUserId();
       if (!uid) return null;
       // Finds a wedding the user owns OR collaborates on (matched by email) — a plain
@@ -62,7 +61,13 @@ export function useCurrentWedding() {
       }
       // With no wedding the function hands back an empty record, not null; treat that as "no wedding".
       return (data as { id?: string | null } | null)?.id ? data : null;
-    },
+}
+
+export function useCurrentWedding() {
+  return useQuery({
+    queryKey: ["current-wedding"],
+    queryFn: fetchCurrentWedding,
+    staleTime: 30_000,
   });
 }
 
