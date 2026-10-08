@@ -254,7 +254,7 @@ function AuthPage() {
 
           <form onSubmit={onEmail} className="mt-4 space-y-2.5">
             {mode === "signup" && (
-              <div>
+              <div className="mb-8">
                 <label className="text-xs uppercase tracking-widest text-muted-foreground">I'm signing up as</label>
                 <div className="mt-1 grid grid-cols-2 gap-2" role="radiogroup" aria-label="Account type">
                   {ROLE_OPTIONS.map(({ role: r, label, icon: Icon, comingSoon }) => (
