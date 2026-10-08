@@ -43,20 +43,21 @@ export function VenueCard({ venue, saved, onToggleSaved, compact }: {
       <div className="p-4">
         <p className="font-serif text-lg leading-snug">{v.legal_business_name}</p>
         {(v.city || v.country) && (
-          <p className="mt-1.5 flex items-center gap-1.5 text-xs text-muted-foreground">
-            <MapPin className="h-3 w-3 shrink-0" />
+          <p className="mt-1.5 flex items-start gap-1.5 text-xs text-muted-foreground">
+            <MapPin className="mt-[2px] h-3 w-3 shrink-0" />
             <span className="truncate">{v.city || v.country}</span>
           </p>
         )}
         {!compact && (v.capacity_min != null || v.capacity_max != null) && (
-          <p className="text-sm text-muted-foreground mt-1.5 flex items-center gap-3">
-            {v.capacity_min != null && <span className="inline-flex items-center gap-1"><Armchair className="h-3.5 w-3.5 shrink-0" /> {v.capacity_min}</span>}
-            {v.capacity_max != null && <span className="inline-flex items-center gap-1"><Users className="h-3.5 w-3.5 shrink-0" /> {v.capacity_max}</span>}
+          <p className="text-sm text-muted-foreground mt-1.5 flex items-start gap-3">
+            {v.capacity_min != null && <span className="inline-flex items-start gap-1"><Armchair className="mt-[3px] h-3.5 w-3.5 shrink-0" /> {v.capacity_min}</span>}
+            {v.capacity_max != null && <span className="inline-flex items-start gap-1"><Users className="mt-[3px] h-3.5 w-3.5 shrink-0" /> {v.capacity_max}</span>}
           </p>
         )}
         {!compact && v.type_of_space.length > 0 && (
-          <p className="text-sm text-muted-foreground mt-1.5">
-            <span className="inline-flex items-center gap-1"><Home className="h-3.5 w-3.5 shrink-0" /> {v.type_of_space.join(" • ")}</span>
+          <p className="text-sm text-muted-foreground mt-1.5 flex items-start gap-1">
+            <Home className="mt-[3px] h-3.5 w-3.5 shrink-0" />
+            <span className="min-w-0 truncate">{v.type_of_space.join(" • ")}</span>
           </p>
         )}
         {!compact && priceTierSymbol(v.price_range_min) && (

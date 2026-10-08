@@ -43,13 +43,14 @@ export function VendorServiceCard({ service, saved, onToggleSaved, compact }: {
       <div className="p-4">
         <p className="font-serif text-lg leading-snug truncate">{s.businessName}</p>
         {!compact && s.categoryNames.length > 0 && (
-          <p className="text-sm text-muted-foreground mt-1.5">
-            <span className="inline-flex items-center gap-1"><Tag className="h-3 w-3 shrink-0" /> {s.categoryNames.join(" • ")}</span>
+          <p className="text-sm text-muted-foreground mt-1.5 flex items-start gap-1">
+            <Tag className="mt-[4px] h-3 w-3 shrink-0" />
+            <span className="min-w-0 truncate">{s.categoryNames.join(" • ")}</span>
           </p>
         )}
         {location && (
-          <p className="mt-1.5 flex items-center gap-1.5 text-xs text-muted-foreground">
-            <MapPin className="h-3 w-3 shrink-0" />
+          <p className="mt-1.5 flex items-start gap-1.5 text-xs text-muted-foreground">
+            <MapPin className="mt-[2px] h-3 w-3 shrink-0" />
             <span className="truncate">{location}</span>
           </p>
         )}
