@@ -873,7 +873,7 @@ function Landing() {
       </section>
 
       {/* FAQ */}
-      <section id="faq" className="relative z-10 bg-[#FFE08A] px-6 md:px-12 pt-20 pb-24 scroll-mt-24 text-[#243746]">
+      <section id="faq" className="relative z-10 px-6 md:px-12 pt-20 pb-24 scroll-mt-24 text-[#243746]">
         <div className="text-center max-w-2xl mx-auto" data-reveal>
           <p className="text-sm uppercase tracking-[0.2em] text-[#243746]/70">Questions</p>
           <h2 className="mt-3 font-serif text-5xl md:text-6xl leading-[0.95] text-[#243746]">Everything you're wondering about.</h2>
@@ -890,7 +890,7 @@ function Landing() {
       </section>
 
       {/* CTA */}
-      <section className="relative z-10 mx-6 md:mx-12 mt-16 mb-16 rounded-[3rem] bg-[#FFE08A] text-[#243746] py-24 px-6 md:px-12 text-center overflow-hidden" data-reveal>
+      <section className="relative z-10 mx-6 md:mx-12 mb-16 rounded-[3rem] bg-[#FFE08A] text-[#243746] py-24 px-6 md:px-12 text-center overflow-hidden" data-reveal>
         <p className="relative text-sm uppercase tracking-[0.3em] text-[#243746]">FOR EVERY WEDDING, ANYWHERE</p>
         <h2 className="relative mt-4 font-serif text-5xl md:text-7xl max-w-3xl mx-auto leading-[0.95]">Your wedding, every ceremony, in one place.</h2>
         <button onClick={() => goSignup()}
