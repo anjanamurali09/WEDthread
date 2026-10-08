@@ -97,7 +97,7 @@ function AuthHeroPanel() {
 
   useEffect(() => {
     if (photos.length < 2) return;
-    const t = setInterval(() => setIndex((i) => (i + 1) % photos.length), 10000);
+    const t = setInterval(() => setIndex((i) => (i + 1) % photos.length), 15000);
     return () => clearInterval(t);
   }, [photos.length]);
 
@@ -105,8 +105,8 @@ function AuthHeroPanel() {
     <div className="hidden lg:block relative overflow-hidden bg-ink text-pearl">
       {photos.map((url, i) => (
         <img key={url} src={url} alt=""
-          className={cn("absolute inset-0 h-full w-full object-cover transition-opacity duration-1000 ease-out",
-            i === index ? "opacity-100" : "opacity-0")} />
+          className={cn("absolute inset-0 h-full w-full object-cover transition-[opacity,filter,transform] duration-[1800ms] ease-out motion-reduce:transition-none",
+            i === index ? "opacity-100 blur-0 scale-100" : "opacity-0 blur-sm scale-105")} />
       ))}
       <div className="absolute inset-0 bg-gradient-to-t from-ink/70 via-transparent to-ink/40" />
       <div className="relative flex h-full flex-col justify-between p-12">
@@ -256,8 +256,11 @@ function AuthPage() {
             {mode === "signup" && (
               <div className="mb-8">
                 <label className="text-xs uppercase tracking-widest text-muted-foreground">I'm signing up as</label>
-                <div className="mt-1 grid grid-cols-2 gap-2" role="radiogroup" aria-label="Account type">
-                  {ROLE_OPTIONS.map(({ role: r, label, icon: Icon, comingSoon }) => (
+                <div className="mt-1 grid grid-cols-[minmax(0,1fr)_minmax(0,1.3fr)] gap-2" role="radiogroup" aria-label="Account type">
+                  {/* Ways to sign up today on the left; the ones still to come on the right, with room for "Coming soon". */}
+                  {[ROLE_OPTIONS.filter((o) => !o.comingSoon), ROLE_OPTIONS.filter((o) => o.comingSoon)].map((group, g) => (
+                    <div key={g} className="space-y-2">
+                      {group.map(({ role: r, label, icon: Icon, comingSoon }) => (
                     <button key={r} type="button" role="radio" aria-checked={role === r} disabled={!!sentTo || comingSoon} onClick={() => setRole(r)} data-static
                       className={cn("flex w-full items-center gap-2 rounded-2xl border px-2.5 py-2 text-left transition-colors",
                         comingSoon ? "border-line bg-pearl opacity-60 cursor-not-allowed" : role === r ? "border-[#243746] bg-[#FFF7D6]" : "border-line bg-pearl hover:border-cherry")}>
@@ -265,6 +268,8 @@ function AuthPage() {
                       <span className="min-w-0 flex-1 text-[13px] font-medium leading-tight">{label}</span>
                       {comingSoon && <span className="shrink-0 rounded-full bg-[#FFE08A] px-1.5 py-px text-[10px] font-medium text-[#243746]">Coming soon</span>}
                     </button>
+                  ))}
+                    </div>
                   ))}
                 </div>
               </div>
