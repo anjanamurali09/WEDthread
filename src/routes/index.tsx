@@ -1,7 +1,7 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { track } from "@/lib/analytics";
 import { Children, useEffect, useRef, useState } from "react";
-import { Sparkles, ArrowRight, Globe2, MessageCircle, Star, CookingPot, BedDouble, Coffee, Luggage, Check, ChefHat, Wine, Flame, Droplet, MousePointer2, Bell, ChevronLeft, ChevronRight } from "lucide-react";
+import { Gem, ArrowRight, Globe2, MessageCircle, Star, CookingPot, BedDouble, Coffee, Luggage, Check, ChefHat, Wine, Flame, Droplet, MousePointer2, Bell, ChevronLeft, ChevronRight } from "lucide-react";
 import { LoginDialog } from "@/components/login-dialog";
 import { SiteFooter } from "@/components/site-footer";
 import { Logo } from "@/components/logo";
@@ -713,12 +713,13 @@ function LoadingScreen({ visible }: { visible: boolean }) {
         visible ? "opacity-100" : "opacity-0 pointer-events-none",
       )}>
       <div className="text-center">
-        <span className="inline-flex items-center gap-2">
-          <span className="grid h-9 w-9 place-items-center rounded-full bg-[#7FA8D6] text-[#FFF7D6]"><Sparkles className="h-4 w-4" /></span>
-          <Logo sizeClassName="text-3xl" />
-        </span>
-        <div className="mt-7 mx-auto h-7 w-7 rounded-full border-2 border-[#7FA8D6]/25 border-t-[#7FA8D6] animate-spin" />
-        <p className="mt-4 text-sm uppercase tracking-[0.25em] text-muted-foreground">Loading your wedding…</p>
+        <Logo sizeClassName="text-3xl" />
+        {/* A ring with a diamond on top: the band turns while the stone catches the light. */}
+        <div className="relative mx-auto mt-7 h-[46px] w-8" role="status" aria-label="Loading">
+          <Gem className="absolute left-1/2 top-0 h-[18px] w-[18px] -translate-x-1/2 fill-[#DCE9F7] stroke-[#7FA8D6] motion-safe:animate-pulse" strokeWidth={1.6} />
+          <div className="absolute bottom-0 left-0 h-8 w-8 rounded-full border-[3px] border-[#7FA8D6]/25 border-t-[#7FA8D6] motion-safe:animate-spin" />
+        </div>
+        <p className="mt-4 text-sm uppercase tracking-[0.25em] text-muted-foreground">Loading your wedding</p>
       </div>
     </div>
   );
