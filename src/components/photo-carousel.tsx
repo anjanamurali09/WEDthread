@@ -5,8 +5,11 @@ import { ChevronLeft, ChevronRight } from "lucide-react";
 // into that link's navigation, only change the active photo.
 export function PhotoCarousel({ photos, className }: { photos: string[]; className?: string }) {
   const [index, setIndex] = useState(0);
-  // Once the first photo is in, the rest download in the background so flipping through is instant.
+  // Only the first photo loads with the page (and only once the card is near the screen). The rest download as
+  // soon as someone hovers, touches or tabs onto the card, so flipping through is instant without every card
+  // pulling all its photos up front.
   const [warm, setWarm] = useState(false);
+  const warmUp = () => setWarm(true);
 
   const go = (e: React.MouseEvent, delta: number) => {
     e.preventDefault();
@@ -15,11 +18,10 @@ export function PhotoCarousel({ photos, className }: { photos: string[]; classNa
   };
 
   return (
-    <div className={className ?? "relative aspect-[4/3] bg-stone overflow-hidden"}>
+    <div className={className ?? "relative aspect-[4/3] bg-stone overflow-hidden"}
+      onPointerEnter={warmUp} onTouchStart={warmUp} onFocus={warmUp}>
       {photos.map((src, i) => (i === 0 || warm || i === index) && (
-        <img key={src} src={src} alt="" decoding="async"
-          ref={i === 0 ? (el) => { if (el?.complete) setWarm(true); } : undefined}
-          onLoad={i === 0 ? () => setWarm(true) : undefined}
+        <img key={src} src={src} alt="" decoding="async" loading={i === 0 ? "lazy" : "eager"}
           className={`absolute inset-0 h-full w-full object-cover transition-opacity duration-300 ${i === index ? "opacity-100" : "opacity-0"}`} />
       ))}
       {photos.length > 1 && (

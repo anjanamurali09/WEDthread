@@ -23,6 +23,8 @@ import { CookieBanner } from "@/components/cookie-banner";
 import appCss from "../styles.css?url";
 import { supabase } from "@/integrations/supabase/client";
 
+const TEMPLATE_FONTS_AFTER_LOAD = `window.addEventListener("load",function(){var l=document.createElement("link");l.rel="stylesheet";l.href="https://fonts.googleapis.com/css2?family=Instrument+Sans:ital,wght@0,400..700;1,400..700&family=Fraunces:ital,wght@0,400;1,400&family=Bodoni+Moda:ital,wght@0,700;1,700&family=Mrs+Saint+Delafield&display=swap";document.head.appendChild(l)});`;
+
 function NotFoundComponent() {
   return (
     <div className="flex min-h-screen items-center justify-center bg-background px-4">
@@ -84,9 +86,6 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
     ],
     links: [
       { rel: "stylesheet", href: appCss },
-      { rel: "preconnect", href: "https://fonts.googleapis.com" },
-      { rel: "preconnect", href: "https://fonts.gstatic.com", crossOrigin: "anonymous" },
-      { rel: "stylesheet", href: "https://fonts.googleapis.com/css2?family=Instrument+Sans:ital,wght@0,400..700;1,400..700&family=Fraunces:ital,wght@0,400;1,400&family=Bodoni+Moda:ital,wght@0,700;1,700&family=Mrs+Saint+Delafield&display=swap" },
       { rel: "icon", href: "/favicon.ico", sizes: "any" },
       { rel: "icon", href: "/favicon-32.png", type: "image/png", sizes: "32x32" },
       { rel: "icon", href: "/favicon-16.png", type: "image/png", sizes: "16x16" },
@@ -133,6 +132,8 @@ function RootShell({ children }: { children: ReactNode }) {
     <html lang="en">
       <head>
         <script dangerouslySetInnerHTML={{ __html: CONSENT_AND_TAG_MANAGER }} />
+        {/* Template fonts for couples' wedding websites. Added after the page has loaded so they never delay the first paint. */}
+        <script dangerouslySetInnerHTML={{ __html: TEMPLATE_FONTS_AFTER_LOAD }} />
         <HeadContent />
       </head>
       <body>

@@ -12,7 +12,7 @@ import { VenueCard, type VenueCardData } from "@/components/venue-card";
 import { VendorServiceCard, type VendorServiceCardData } from "@/components/vendor-service-card";
 import { useSavedListings } from "@/hooks/use-saved-listings";
 
-import heroImg from "@/assets/homepage-hero.png";
+import heroImg from "@/assets/homepage-hero.jpg";
 
 import venueBaliImg from "@/assets/venue-bali-room.jpg";
 import websiteCoupleImg from "@/assets/website-couple-priya-kevin.jpg";
@@ -353,7 +353,7 @@ export function FeatureVisual({ kind }: { kind: (typeof SHOWCASE_FEATURES)[numbe
               {[...REGISTRY_ITEMS, ...REGISTRY_ITEMS].map(({ n, p, icon: Icon, swatch, photo }, i) => (
                 <div key={i} className="w-[85px] shrink-0 paper-card bg-paper border border-line p-3 shadow-md flex flex-col items-center text-center">
                   <div className={cn("h-12 w-full rounded-lg grid place-items-center overflow-hidden", swatch)}>
-                    {photo ? <img src={photo} alt={n} className="w-full h-full object-cover" /> : <Icon className="h-5 w-5 text-[#FFF7D6]" />}
+                    {photo ? <img loading="lazy" decoding="async" src={photo} alt={n} className="w-full h-full object-cover" /> : <Icon className="h-5 w-5 text-[#FFF7D6]" />}
                   </div>
                   <p className="mt-2 text-xs leading-tight">{n}</p>
                   <p className="text-xs text-[#7FA8D6] font-medium">{p}</p>
@@ -383,7 +383,7 @@ export function FeatureVisual({ kind }: { kind: (typeof SHOWCASE_FEATURES)[numbe
         <div className="relative w-full max-w-[270px] h-[190px]">
           <div className="absolute left-1/2 top-2 -translate-x-1/2 w-[210px] paper-card bg-paper border border-line shadow-lg rotate-1 overflow-hidden">
             <div className="h-20 overflow-hidden">
-              <img src={venueBaliImg} alt="Villa Kirana, a Bali wedding venue" className="w-full h-full object-cover" />
+              <img loading="lazy" decoding="async" src={venueBaliImg} alt="Villa Kirana, a Bali wedding venue" className="w-full h-full object-cover" />
             </div>
             <div className="p-3">
               <p className="text-sm font-medium">Villa Kirana</p>
@@ -439,7 +439,7 @@ export function FeatureVisual({ kind }: { kind: (typeof SHOWCASE_FEATURES)[numbe
               <span className="text-xs text-muted-foreground truncate">priyaandkevin.com</span>
             </div>
             <div className="relative h-[120px]">
-              <img src={websiteCoupleImg} alt="Priya and Kevin" className="absolute inset-0 w-full h-full object-cover" />
+              <img loading="lazy" decoding="async" src={websiteCoupleImg} alt="Priya and Kevin" className="absolute inset-0 w-full h-full object-cover" />
               <div className="absolute inset-0 bg-gradient-to-t from-[#243746]/70 via-[#243746]/10 to-transparent" />
               <div className="absolute inset-x-0 bottom-0 pb-2.5 text-center">
                 <p className="font-serif text-2xl italic text-white leading-none">Priya & Kevin</p>
@@ -790,7 +790,7 @@ function Landing() {
           <div className="relative overflow-hidden shadow-2xl blob-2 group [mask-image:linear-gradient(to_top,black_78%,transparent_100%)] [-webkit-mask-image:linear-gradient(to_top,black_78%,transparent_100%)]">
             <img src={heroImg} alt="Bride and groom embraced beneath ivy-covered arches overlooking a lake at sunset"
               className="w-full h-[420px] object-cover object-bottom transition-transform duration-[1200ms] group-hover:scale-105"
-              width={1200} height={1500} loading="eager" decoding="async" />
+              width={912} height={1157} loading="eager" fetchPriority="high" decoding="async" />
             <div className="absolute inset-0 bg-gradient-to-t from-[#243746]/30 via-transparent to-transparent" />
           </div>
           <div className="hidden md:block absolute -bottom-6 -left-6 paper-card p-5 rotate-[-2deg] max-w-[260px] bg-paper transition-transform hover:rotate-0 hover:-translate-y-1">
@@ -863,7 +863,7 @@ function Landing() {
                 </div>
                 <p className="mt-4 text-sm text-[#243746] leading-relaxed flex-1">"{t.quote}"</p>
                 <div className="mt-5 flex items-center gap-3">
-                  <img src={t.photo} alt={t.name} className="h-16 w-16 shrink-0 rounded-full object-cover" />
+                  <img loading="lazy" decoding="async" src={t.photo} alt={t.name} className="h-16 w-16 shrink-0 rounded-full object-cover" />
                   <div className="min-w-0">
                     <p className="text-sm font-medium truncate">{t.name}</p>
                     <p className="text-sm text-muted-foreground truncate">{t.loc}</p>

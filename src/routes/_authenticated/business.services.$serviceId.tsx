@@ -1,4 +1,5 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
+import { preparePhotoForUpload } from "@/lib/prepare-upload";
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { AppShell } from "@/components/app-shell";
@@ -130,9 +131,10 @@ function ServiceFormPage() {
   const uploadMedia = async (files: FileList | null, mediaType: "photo" | "video") => {
     if (!files || files.length === 0 || isNew || !businessId) return;
     setUploadingMedia(mediaType);
-    for (const file of Array.from(files)) {
+    for (const original of Array.from(files)) {
+      const file = mediaType === "photo" ? await preparePhotoForUpload(original) : original;
       const path = `${businessId}/${Date.now()}-${file.name}`;
-      const { error: uploadError } = await supabase.storage.from("business-media").upload(path, file);
+      const { error: uploadError } = await supabase.storage.from("business-media").upload(path, file, { cacheControl: "31536000" });
       if (uploadError) { toast.error(uploadError.message); continue; }
       const { data } = supabase.storage.from("business-media").getPublicUrl(path);
       const { data: row, error: insertError } = await supabase
