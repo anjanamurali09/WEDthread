@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
-import { Loader2, TriangleAlert } from "lucide-react";
+import { Loader2 } from "lucide-react";
 
 // Destructive, cascading, irreversible — requires typing the exact name
 // back (not just a yes/no click) before the button even becomes clickable.
@@ -37,19 +37,17 @@ export function DeleteWorkspaceDialog({ open, onOpenChange, title, description, 
     <Dialog open={open} onOpenChange={close}>
       <DialogContent className="max-w-md">
         <DialogHeader>
-          <DialogTitle className="inline-flex items-center gap-2 text-cherry">
-            <TriangleAlert className="h-5 w-5" /> {title}
-          </DialogTitle>
+          <DialogTitle className="text-cherry">{title}</DialogTitle>
         </DialogHeader>
 
         <p className="text-sm text-muted-foreground">{description}</p>
 
-        <label className="block mt-2">
+        <label className="mt-5 block">
           <span className="text-sm uppercase tracking-widest text-muted-foreground">
             Type <span className="font-medium normal-case text-ink">{confirmWith}</span> to confirm
           </span>
           <input value={typed} onChange={(e) => setTyped(e.target.value)} autoFocus
-            className="mt-1 w-full rounded-2xl border border-line bg-paper px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-cherry" />
+            className="mt-3 w-full rounded-2xl border border-line bg-paper px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-cherry" />
         </label>
 
         <DialogFooter>

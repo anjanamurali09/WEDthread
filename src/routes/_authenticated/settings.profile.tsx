@@ -69,6 +69,7 @@ function ProfileSettingsPage() {
 
   return (
     <AppShell title="Profile" subtitle="The core details of your wedding. Who's getting married, where, and roughly how many guests.">
+      <CentredOnPage>
       <SettingsRow title="Profile">
         {isLoading ? (
           <p className="px-8 py-6 text-sm text-muted-foreground">Loading…</p>
@@ -101,10 +102,29 @@ function ProfileSettingsPage() {
         <SettingsRow title="Integrations"><IntegrationsSection weddingId={wedding.id} /></SettingsRow>
       )}
       {wedding && userId && wedding.owner_id === userId && (
-        <SettingsRow title="Danger zone" danger><DangerZoneSection wedding={wedding} /></SettingsRow>
+        <SettingsRow title="Delete wedding" danger><DangerZoneSection wedding={wedding} /></SettingsRow>
       )}
+      </CentredOnPage>
     </AppShell>
   );
+}
+
+// The settings list should sit in the middle of the whole page. The page area beside the sidebar has its own
+// centre, which is to the right of the page centre by half the sidebar's width, so the list is nudged left by
+// that amount on screens wide enough for it to fit. Follows the sidebar when it collapses or expands.
+function CentredOnPage({ children }: { children: React.ReactNode }) {
+  const [shift, setShift] = useState(0);
+  useEffect(() => {
+    const aside = document.querySelector("aside");
+    const update = () => setShift(aside && window.innerWidth >= 1100 ? -Math.round(aside.getBoundingClientRect().width / 2) : 0);
+    update();
+    const ro = aside ? new ResizeObserver(update) : null;
+    if (aside && ro) ro.observe(aside);
+    window.addEventListener("resize", update);
+    return () => { ro?.disconnect(); window.removeEventListener("resize", update); };
+  }, []);
+  // `left` (not a transform) so popups opened from inside still position against the whole screen.
+  return <div style={{ position: "relative", left: shift, transition: "left 300ms ease-in-out" }}>{children}</div>;
 }
 
 // One collapsed line per settings area; clicking it opens the area underneath.
