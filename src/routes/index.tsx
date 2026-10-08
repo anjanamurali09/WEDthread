@@ -874,16 +874,16 @@ function Landing() {
       </section>
 
       {/* FAQ */}
-      <section id="faq" className="relative z-10 px-6 md:px-12 pt-20 pb-24 scroll-mt-24 text-[#243746]">
+      <section id="faq" className="relative z-10 px-6 md:px-12 pt-12 pb-24 scroll-mt-24">
         <div className="text-center max-w-2xl mx-auto" data-reveal>
-          <p className="text-sm uppercase tracking-[0.2em] text-[#243746]/70">Questions</p>
-          <h2 className="mt-3 font-serif text-5xl md:text-6xl leading-[0.95] text-[#243746]">Everything you're wondering about.</h2>
+          <p className="text-sm uppercase tracking-[0.2em] text-[#7FA8D6]">Questions</p>
+          <h2 className="mt-3 font-serif text-5xl md:text-6xl leading-[0.95]">Everything you're wondering about.</h2>
         </div>
         <Accordion type="single" collapsible className="mt-12 grid items-start gap-3 lg:grid-cols-2">
           {FAQS.map((f, i) => (
             <AccordionItem key={f.q} value={`item-${i}`} data-reveal style={{ transitionDelay: `${i * 60}ms` }}
-              className="rounded-3xl bg-[#FFF7D6] border border-[#243746]/10 px-6 border-b-0 text-[#243746]">
-              <AccordionTrigger data-static className="font-sans text-lg font-medium text-[#243746] hover:no-underline py-5">{f.q}</AccordionTrigger>
+              className="rounded-3xl bg-paper border border-line/60 px-6 border-b-0">
+              <AccordionTrigger data-static className="font-sans text-lg font-medium hover:no-underline py-5">{f.q}</AccordionTrigger>
               <AccordionContent className="text-[#243746] leading-relaxed">{f.a}</AccordionContent>
             </AccordionItem>
           ))}
