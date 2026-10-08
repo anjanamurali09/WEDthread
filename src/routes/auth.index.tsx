@@ -228,12 +228,12 @@ function AuthPage() {
     <div className="min-h-screen grid lg:grid-cols-2 bg-pearl text-ink">
       <AuthHeroPanel />
 
-      <div className="flex flex-col justify-center p-8 md:p-16">
+      <div className="flex flex-col justify-center px-8 py-6 md:px-16 md:py-6">
         <div className="max-w-md w-full mx-auto">
-          <h1 className="font-serif text-4xl">
+          <h1 className="font-serif text-3xl">
             {mode === "signup" ? "Create your account" : mode === "forgot" ? "Reset your password" : "Welcome back"}
           </h1>
-          <p className="mt-2 text-sm text-muted-foreground">
+          <p className="mt-1 text-sm text-muted-foreground">
             {mode === "signup"
               ? "Choose how you'll use WedThread, then sign up with your email."
               : mode === "forgot"
@@ -248,16 +248,16 @@ function AuthPage() {
             <p className="mt-6 rounded-2xl bg-[#FFF7D6] px-4 py-3 text-sm text-[#243746]">Your email is verified. Sign in to continue.</p>
           )}
 
-          <form onSubmit={onEmail} className="mt-8 space-y-4">
+          <form onSubmit={onEmail} className="mt-5 space-y-3">
             {mode === "signup" && (
               <div>
                 <label className="text-sm uppercase tracking-widest text-muted-foreground">I'm signing up as</label>
-                <div className="mt-2 space-y-2" role="radiogroup" aria-label="Account type">
+                <div className="mt-1.5 space-y-1.5" role="radiogroup" aria-label="Account type">
                   {ROLE_OPTIONS.map(({ role: r, label, desc, icon: Icon }) => (
                     <button key={r} type="button" role="radio" aria-checked={role === r} disabled={!!sentTo} onClick={() => setRole(r)} data-static
-                      className={cn("flex w-full items-center gap-3 rounded-2xl border px-4 py-3 text-left transition-colors",
+                      className={cn("flex w-full items-center gap-3 rounded-2xl border px-4 py-2 text-left transition-colors",
                         role === r ? "border-[#243746] bg-[#FFF7D6]" : "border-line bg-pearl hover:border-cherry")}>
-                      <span className="grid h-9 w-9 shrink-0 place-items-center rounded-xl bg-wine-soft text-wine"><Icon className="h-4 w-4" /></span>
+                      <span className="grid h-8 w-8 shrink-0 place-items-center rounded-xl bg-wine-soft text-wine"><Icon className="h-4 w-4" /></span>
                       <span className="min-w-0">
                         <span className="block text-sm font-medium">{label}</span>
                         <span className="block text-xs text-muted-foreground">{desc}</span>
@@ -270,19 +270,19 @@ function AuthPage() {
             <div>
               <label className="text-sm uppercase tracking-widest text-muted-foreground">Email</label>
               <input required type="email" value={email} onChange={(e) => setEmail(e.target.value)} readOnly={!!sentTo}
-                className="mt-1 w-full rounded-2xl border border-line bg-pearl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-cherry" />
+                className="mt-1 w-full rounded-2xl border border-line bg-pearl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-cherry" />
             </div>
             <div>
               <label className="text-sm uppercase tracking-widest text-muted-foreground">Password</label>
               <input required type="password" minLength={6} value={password} onChange={(e) => setPassword(e.target.value)}
-                className="mt-1 w-full rounded-2xl border border-line bg-pearl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-cherry" />
+                className="mt-1 w-full rounded-2xl border border-line bg-pearl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-cherry" />
             </div>
             {mode === "signin" && (
               <div className="text-right -mt-1">
                 <button type="button" onClick={() => setMode("forgot")} className="text-sm text-cherry underline underline-offset-4">Forgot password?</button>
               </div>
             )}
-            <button disabled={loading || !!sentTo || (mode === "signup" && !role)} className="w-full rounded-full bg-cherry text-pearl py-3 text-sm font-medium hover:bg-wine disabled:opacity-60 transition-colors">
+            <button disabled={loading || !!sentTo || (mode === "signup" && !role)} className="w-full rounded-full bg-cherry text-pearl py-2.5 text-sm font-medium hover:bg-wine disabled:opacity-60 transition-colors">
               {loading ? "Please wait…" : sentTo ? "Verify your email" : mode === "signup" ? "Create account" : "Sign in"}
             </button>
             {mode === "signup" && sentTo && (
@@ -298,7 +298,7 @@ function AuthPage() {
             )}
           </form>
 
-          <p className="mt-6 text-sm text-center text-muted-foreground">
+          <p className="mt-4 text-sm text-center text-muted-foreground">
             {mode === "signup" ? "Already have an account?" : "New here?"}{" "}
             <button onClick={() => setMode(mode === "signup" ? "signin" : "signup")} className="text-cherry underline underline-offset-4">
               {mode === "signup" ? "Sign in" : "Create an account"}
