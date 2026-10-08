@@ -591,7 +591,7 @@ function RealListingsPreview() {
       const { data: venueBiz } = await supabase
         .from("businesses").select("id,legal_business_name,verification_status,city,country")
         .eq("business_type", "venue").eq("verification_status", "verified")
-        .order("created_at", { ascending: false }).limit(12);
+        .order("created_at", { ascending: false }).limit(40);
       if (venueBiz && venueBiz.length > 0) {
         const ids = venueBiz.map((b) => b.id);
         const [{ data: details }, { data: media }] = await Promise.all([
@@ -605,7 +605,7 @@ function RealListingsPreview() {
           list.push(m.url);
           photosByBiz.set(m.business_id, list);
         }
-        setVenues(venueBiz.map((b) => {
+        const cards = venueBiz.map((b) => {
           const d = detailsByBiz.get(b.id);
           return {
             id: b.id, legal_business_name: b.legal_business_name, verified: b.verification_status === "verified",
@@ -614,7 +614,12 @@ function RealListingsPreview() {
             type_of_space: d?.type_of_space ?? [], price_range_min: d?.price_range_min ?? null,
             photos: photosByBiz.get(b.id) ?? [],
           };
-        }));
+        });
+        // Listings with the full set of details (capacity, type of space, price) come first, newest first within
+        // each group; the row shows the first twelve.
+        const completeness = (v: (typeof cards)[number]) =>
+          Number(v.capacity_min != null || v.capacity_max != null) + Number(v.type_of_space.length > 0) + Number(v.price_range_min != null);
+        setVenues(cards.map((v, i) => ({ v, i })).sort((a, b) => completeness(b.v) - completeness(a.v) || a.i - b.i).map(({ v }) => v).slice(0, 12));
       }
 
       const { data: svcRows } = await supabase
