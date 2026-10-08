@@ -500,3 +500,17 @@ input.note-check:checked::after {
   margin-left: 1.5rem;
 }
 
+
+
+/* The cookie in the consent banner: a little wiggle every few seconds, a bigger bounce on hover. */
+@keyframes cookie-wobble {
+  0%, 52%, 100% { transform: rotate(0deg) translateY(0) scale(1); }
+  8%  { transform: rotate(-14deg) translateY(-4px) scale(1.06); }
+  16% { transform: rotate(12deg) translateY(0) scale(1); }
+  24% { transform: rotate(-8deg) translateY(-2px) scale(1.03); }
+  32% { transform: rotate(6deg) translateY(0) scale(1); }
+  40% { transform: rotate(-3deg) translateY(0) scale(1); }
+}
+.cookie-wobble { transform-origin: 50% 85%; animation: cookie-wobble 3.6s ease-in-out infinite; }
+.cookie-wobble:hover { animation-duration: 1.2s; }
+@media (prefers-reduced-motion: reduce) { .cookie-wobble { animation: none; } }
