@@ -16,7 +16,7 @@ export default defineConfig(({ command }) => ({
     viteReact(),
     tailwindcss(),
     // Only needed to package the server for deployment, not while developing.
-    command === "build" ? nitro({ preset: "cloudflare-module", cloudflare: { deployConfig: true, nodeCompat: true, wrangler: { name: "wedthread", keep_vars: true } } }) : null,
+    command === "build" ? nitro({ preset: "cloudflare-module", cloudflare: { deployConfig: true, nodeCompat: true, wrangler: { name: "wedthread", keep_vars: true, workers_dev: false, preview_urls: false } } }) : null,
   ],
   resolve: {
     dedupe: ["react", "react-dom", "@tanstack/react-router", "@tanstack/react-query", "@tanstack/react-start"],
