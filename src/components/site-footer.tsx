@@ -1,11 +1,16 @@
 import { Link } from "@tanstack/react-router";
 import { track } from "@/lib/analytics";
-import { ArrowRight } from "lucide-react";
+import { ArrowRight, Instagram } from "lucide-react";
 import { Logo } from "@/components/logo";
 import { openCookieSettings } from "@/lib/cookie-consent";
 
 // Where "Contact" goes. Change this one line to switch the public contact address.
 export const CONTACT_EMAIL = "owen@wedthread.co";
+
+// Social profiles shown as icons in the bottom bar. To add TikTok later, add a line here with its icon and address.
+const SOCIALS = [
+  { name: "Instagram", href: "https://www.instagram.com/wed.thread/", Icon: Instagram },
+];
 
 const linkClass = "text-sm text-[#243746] hover:text-[#7FA8D6] transition-colors";
 
@@ -62,7 +67,15 @@ export function SiteFooter() {
           <a href={`mailto:${CONTACT_EMAIL}`} data-static className="hover:text-[#243746] transition-colors">Contact</a>
           <button type="button" data-static onClick={openCookieSettings} className="hover:text-[#243746] transition-colors">Cookie settings</button>
         </div>
-        <span>© {new Date().getFullYear()} WedThread. All rights reserved.</span>
+        <div className="flex flex-wrap items-center gap-x-6 gap-y-2">
+          <div className="flex items-center gap-4">
+            {SOCIALS.map(({ name, href, Icon }) => (
+              <a key={name} href={href} target="_blank" rel="noopener noreferrer" aria-label={`WedThread on ${name}`} data-static
+                className="text-[#243746] hover:text-[#7FA8D6] transition-colors"><Icon className="h-5 w-5" /></a>
+            ))}
+          </div>
+          <span>© {new Date().getFullYear()} WedThread. All rights reserved.</span>
+        </div>
       </div>
     </footer>
   );
