@@ -30,6 +30,8 @@ const HERO_CACHE_KEY = "wedthread.auth-hero-photos";
 function useAuthHeroPhotos() {
   const [photos, setPhotos] = useState<string[]>([]);
   useEffect(() => {
+    // The photo panel only exists on wide screens; on phones don't download anything for it.
+    if (!window.matchMedia("(min-width: 1024px)").matches) return;
     let cancelled = false;
     let usedCache = false;
     // 1. Straight away: whatever worked last time (already in the browser's image cache).
@@ -45,15 +47,15 @@ function useAuthHeroPhotos() {
         .eq("media_type", "photo")
         .eq("businesses.verification_status", "verified")
         .order("created_at", { ascending: false })
-        .limit(40);
+        .limit(16);
       if (cancelled || !data) return;
       const urls = data.map((r) => r.url);
       for (let i = urls.length - 1; i > 0; i--) {
         const j = Math.floor(Math.random() * (i + 1));
         [urls[i], urls[j]] = [urls[j], urls[i]];
       }
-      // 2. Check every candidate in parallel. Only genuinely high-resolution photos are used (the panel is huge
-      //    on a retina screen); anything smaller is skipped rather than stretched. Each photo that passes is
+      // 2. Check every candidate in parallel. Photos smaller than 1000px on their short side are skipped rather
+      //    than stretched. Each photo that passes is
       //    shown immediately; the verified set replaces the remembered one at the end.
       const passed: string[] = [];
       let settled = 0;
@@ -80,7 +82,7 @@ function useAuthHeroPhotos() {
           if (settled === urls.length) finish();
         };
         const timer = setTimeout(() => settle(false), 8000);
-        img.onload = () => { clearTimeout(timer); settle(img.naturalWidth >= 1800 && img.naturalHeight >= 1100); };
+        img.onload = () => { clearTimeout(timer); settle(Math.min(img.naturalWidth, img.naturalHeight) >= 1000); };
         img.onerror = () => { clearTimeout(timer); settle(false); };
         img.src = url;
       });
