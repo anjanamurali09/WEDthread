@@ -533,13 +533,14 @@ function BecomePartnerCard() {
 // width (page width minus the side margins), less the 16px gaps between cards.
 const SIX_ACROSS = "w-[78%] sm:w-[calc((100%-16px)/2)] md:w-[calc((100%-32px)/3)] lg:w-[calc((100%-48px)/4)] xl:w-[calc((100%-80px)/6)]";
 
-const CTA_TONE_STYLES: Record<"cherry" | "sage" | "pearl", { wrap: string; eyebrow: string; button: string }> = {
+const CTA_TONE_STYLES: Record<"cherry" | "sage" | "pearl" | "ink", { wrap: string; eyebrow: string; button: string }> = {
   cherry: { wrap: "bg-[#FFE08A] text-[#243746]", eyebrow: "text-[#243746]/70", button: "bg-[#243746] text-[#FFF7D6] hover:bg-[#7FA8D6] hover:text-[#243746]" },
   sage: { wrap: "bg-[#7FA8D6] text-[#FFF7D6]", eyebrow: "text-[#FFF2B2]", button: "bg-[#FFF7D6] text-[#243746] hover:bg-[#FFE08A] hover:text-[#243746]" },
+  ink: { wrap: "bg-[#243746] text-[#FFF7D6]", eyebrow: "text-[#FFE08A]", button: "bg-[#FFE08A] text-[#243746] hover:bg-[#FFF7D6] hover:text-[#243746]" },
   pearl: { wrap: "bg-paper text-[#243746] border border-[#FFE08A]", eyebrow: "text-[#7FA8D6]", button: "bg-[#243746] text-[#FFF7D6] hover:bg-[#FFE08A] hover:text-[#243746]" },
 };
 
-function CompactCta({ headline, onClick, tone = "cherry" }: { headline: string; onClick: () => void; tone?: "cherry" | "sage" | "pearl" }) {
+function CompactCta({ headline, onClick, tone = "cherry", cta = "Start planning for free" }: { headline: string; onClick: () => void; tone?: "cherry" | "sage" | "pearl" | "ink"; cta?: string }) {
   const s = CTA_TONE_STYLES[tone];
   return (
     <div className={cn("relative rounded-[2.5rem] py-12 px-6 md:px-12 text-center overflow-hidden", s.wrap)} data-reveal>
@@ -547,7 +548,7 @@ function CompactCta({ headline, onClick, tone = "cherry" }: { headline: string; 
       <h3 className="relative mt-3 font-serif text-3xl md:text-4xl max-w-xl mx-auto leading-tight">{headline}</h3>
       <button onClick={onClick}
         className={cn("relative mt-6 inline-flex items-center gap-2 rounded-full px-6 py-3 text-sm font-medium transition-all hover:rounded-2xl hover:gap-3", s.button)}>
-        Start planning for free <ArrowRight className="h-4 w-4" />
+        {cta} <ArrowRight className="h-4 w-4" />
       </button>
     </div>
   );
@@ -868,20 +869,20 @@ function Landing() {
 
       {/* Mid CTA */}
       <section className="relative z-10 px-6 md:px-12 py-16">
-        <CompactCta headline={MID_CTA_HEADLINES[1]} tone="pearl" onClick={() => goSignup()} />
+        <CompactCta headline={MID_CTA_HEADLINES[1]} tone="ink" cta="Wedding venues and vendors" onClick={() => navigate({ to: "/venue" })} />
       </section>
 
       {/* FAQ */}
-      <section id="faq" className="relative z-10 px-6 md:px-12 pt-12 pb-24 scroll-mt-24">
+      <section id="faq" className="relative z-10 bg-[#FFE08A] px-6 md:px-12 pt-20 pb-24 scroll-mt-24 text-[#243746]">
         <div className="text-center max-w-2xl mx-auto" data-reveal>
-          <p className="text-sm uppercase tracking-[0.2em] text-[#7FA8D6]">Questions</p>
-          <h2 className="mt-3 font-serif text-5xl md:text-6xl leading-[0.95]">Everything you're wondering about.</h2>
+          <p className="text-sm uppercase tracking-[0.2em] text-[#243746]/70">Questions</p>
+          <h2 className="mt-3 font-serif text-5xl md:text-6xl leading-[0.95] text-[#243746]">Everything you're wondering about.</h2>
         </div>
         <Accordion type="single" collapsible className="mt-12 grid items-start gap-3 lg:grid-cols-2">
           {FAQS.map((f, i) => (
             <AccordionItem key={f.q} value={`item-${i}`} data-reveal style={{ transitionDelay: `${i * 60}ms` }}
-              className="rounded-3xl bg-paper border border-line/60 px-6 border-b-0">
-              <AccordionTrigger data-static className="font-sans text-lg font-medium hover:no-underline py-5">{f.q}</AccordionTrigger>
+              className="rounded-3xl bg-[#FFF7D6] border border-[#243746]/10 px-6 border-b-0 text-[#243746]">
+              <AccordionTrigger data-static className="font-sans text-lg font-medium text-[#243746] hover:no-underline py-5">{f.q}</AccordionTrigger>
               <AccordionContent className="text-[#243746] leading-relaxed">{f.a}</AccordionContent>
             </AccordionItem>
           ))}
@@ -889,12 +890,12 @@ function Landing() {
       </section>
 
       {/* CTA */}
-      <section className="relative z-10 mx-6 md:mx-12 mb-16 rounded-[3rem] bg-[#FFE08A] text-[#243746] py-24 px-6 md:px-12 text-center overflow-hidden" data-reveal>
+      <section className="relative z-10 mx-6 md:mx-12 mt-16 mb-16 rounded-[3rem] bg-[#FFE08A] text-[#243746] py-24 px-6 md:px-12 text-center overflow-hidden" data-reveal>
         <p className="relative text-sm uppercase tracking-[0.3em] text-[#243746]">FOR EVERY WEDDING, ANYWHERE</p>
         <h2 className="relative mt-4 font-serif text-5xl md:text-7xl max-w-3xl mx-auto leading-[0.95]">Your wedding, every ceremony, in one place.</h2>
         <button onClick={() => goSignup()}
           className="relative mt-10 inline-flex items-center gap-2 rounded-full bg-[#243746] text-[#FFF7D6] px-8 py-4 text-sm font-medium transition-all hover:bg-[#FFF7D6] hover:text-[#243746] hover:rounded-2xl hover:gap-3">
-          Start planning for free <ArrowRight className="h-4 w-4" />
+          Plan your wedding <ArrowRight className="h-4 w-4" />
         </button>
       </section>
 
