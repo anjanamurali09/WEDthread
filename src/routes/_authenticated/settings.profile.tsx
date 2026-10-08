@@ -13,6 +13,7 @@ import { UserPlus, X, CreditCard, Plus, ChevronDown } from "lucide-react";
 import { IntegrationsSection } from "@/components/integrations-section";
 import { cn } from "@/lib/utils";
 import { useActiveRole } from "@/hooks/use-active-role";
+import { useSavedFeedback } from "@/hooks/use-saved-feedback";
 
 export const Route = createFileRoute("/_authenticated/settings/profile")({ component: ProfileSettingsPage });
 
@@ -70,6 +71,7 @@ function ProfileSettingsPage() {
   return (
     <AppShell title="Profile" subtitle="The core details of your wedding. Who's getting married, where, and roughly how many guests.">
       <CentredOnPage>
+      <SettingsRow title="Your details"><MyDetailsSection /></SettingsRow>
       <SettingsRow title="Profile">
         {isLoading ? (
           <p className="px-8 py-6 text-sm text-muted-foreground">Loading…</p>
@@ -139,6 +141,64 @@ function SettingsRow({ title, danger = false, children }: { title: string; dange
       </button>
       {open && <div className="border-t border-line/60">{children}</div>}
     </section>
+  );
+}
+
+// The signed-in person's own name and phone (separate from the couple's names on the wedding). Saved with the
+// account, and the full name is also the profile's display name used on forms like enquiries.
+function MyDetailsSection() {
+  const [loaded, setLoaded] = useState(false);
+  const [userId, setUserId] = useState<string | null>(null);
+  const [first, setFirst] = useState("");
+  const [last, setLast] = useState("");
+  const [phone, setPhone] = useState("");
+  const [saving, setSaving] = useState(false);
+  const feedback = useSavedFeedback();
+
+  useEffect(() => {
+    supabase.auth.getUser().then(({ data }) => {
+      const u = data.user;
+      const meta = (u?.user_metadata ?? {}) as Record<string, string | undefined>;
+      setUserId(u?.id ?? null);
+      setFirst(meta.first_name ?? "");
+      setLast(meta.last_name ?? "");
+      setPhone(meta.phone ?? "");
+      setLoaded(true);
+    });
+  }, []);
+
+  const submit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!userId) return;
+    setSaving(true);
+    const f = first.trim(), l = last.trim();
+    const fullName = `${f} ${l}`.trim();
+    const { error } = await supabase.auth.updateUser({ data: { first_name: f, last_name: l, full_name: fullName, phone: phone.trim() } });
+    if (!error && fullName) {
+      const { error: profileError } = await supabase.from("profiles").update({ display_name: fullName }).eq("user_id", userId);
+      if (profileError) { setSaving(false); feedback.markError(profileError.message); return; }
+    }
+    setSaving(false);
+    if (error) { feedback.markError(error.message); return; }
+    feedback.markSaved();
+  };
+
+  if (!loaded) return <p className="px-8 py-6 text-sm text-muted-foreground">Loading…</p>;
+  return (
+    <form onSubmit={submit} className="px-8 py-6 space-y-4">
+      <div className="grid md:grid-cols-2 gap-4">
+        <F label="First name" required value={first} onChange={setFirst} />
+        <F label="Last name" required value={last} onChange={setLast} />
+      </div>
+      <F label="Phone" type="tel" value={phone} onChange={setPhone} />
+      {feedback.status === "error" && <p className="text-sm text-cherry">{feedback.errorMessage ?? "Could not save."}</p>}
+      <div className="flex justify-end pt-2">
+        <button disabled={saving} className={cn("rounded-full px-6 py-2.5 text-sm disabled:opacity-60 cursor-pointer transition-colors",
+          feedback.status === "saved" ? "bg-[#FFE08A] text-[#243746]" : "bg-ink text-paper hover:bg-clay")}>
+          {saving ? "Saving…" : feedback.status === "saved" ? "Saved" : "Save changes"}
+        </button>
+      </div>
+    </form>
   );
 }
 
