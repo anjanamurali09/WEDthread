@@ -106,7 +106,7 @@ function PrivacyPage() {
 
           <Section title="Cookies and similar storage">
             <p>We use your browser's storage to keep you signed in and to remember simple preferences, such as a collapsed sidebar and your cookie choice. These are needed for the site to work, so they are always on.</p>
-            <p>Analytics cookies are different: Google Analytics, loaded through Google Tag Manager, uses them to tell visits apart and measure how the site is used. We only turn them on if you choose <strong>Accept analytics</strong> in the cookie banner. Until then nothing from Google is loaded. You can change your mind at any time with <strong>Cookie settings</strong> at the bottom of any page, and you can also block or delete cookies in your browser.</p>
+            <p>Analytics cookies are different: Google Analytics, loaded through Google Tag Manager, uses them to tell visits apart and measure how the site is used. We only turn them on if you choose <strong>Accept cookies</strong> in the cookie banner. Until then nothing from Google is loaded. You can change your mind at any time with <strong>Cookie settings</strong> at the bottom of any page, and you can also block or delete cookies in your browser.</p>
             <ul className="list-disc space-y-1 pl-5">
               <li><strong>Sign-in and preferences</strong> (essential): kept in your browser until you sign out or clear it.</li>
               <li><strong>Cookie choice</strong> (essential): remembers your answer to the banner.</li>
