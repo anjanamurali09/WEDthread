@@ -506,9 +506,9 @@ function ScrollRow({ title, cardClass, contained = false, children }: { title?: 
         {canScroll && (
           <>
             <button type="button" aria-label="Scroll left" tabIndex={edge.start ? -1 : 0} onClick={() => scrollBy(-1)} data-static
-              className={cn(arrow, "-left-3 md:-left-5", contained && "xl:-left-[3.25rem]", edge.start && hidden)}><ChevronLeft className="h-4 w-4" /></button>
+              className={cn(arrow, "-left-3 md:-left-5", contained && "xl:-left-[3.25rem] xl:border-transparent xl:bg-transparent xl:shadow-none xl:hover:bg-transparent xl:hover:text-[#7FA8D6]", edge.start && hidden)}><ChevronLeft className={cn("h-4 w-4", contained && "xl:h-7 xl:w-7")} strokeWidth={contained ? 1.5 : 2} /></button>
             <button type="button" aria-label="Scroll right" tabIndex={edge.end ? -1 : 0} onClick={() => scrollBy(1)} data-static
-              className={cn(arrow, "-right-3 md:-right-5", contained && "xl:-right-[3.25rem]", edge.end && hidden)}><ChevronRight className="h-4 w-4" /></button>
+              className={cn(arrow, "-right-3 md:-right-5", contained && "xl:-right-[3.25rem] xl:border-transparent xl:bg-transparent xl:shadow-none xl:hover:bg-transparent xl:hover:text-[#7FA8D6]", edge.end && hidden)}><ChevronRight className={cn("h-4 w-4", contained && "xl:h-7 xl:w-7")} strokeWidth={contained ? 1.5 : 2} /></button>
           </>
         )}
         <div ref={ref} className={cn("no-scrollbar flex gap-4 overflow-x-auto scroll-smooth snap-x snap-mandatory pb-2", !contained && "px-6 md:px-12 scroll-px-6 md:scroll-px-12")}>
