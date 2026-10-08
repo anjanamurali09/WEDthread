@@ -75,15 +75,16 @@ track("partner_cta_click", { location: "homepage_vendors_row" });  // card at th
 
 ## Setting up in Tag Manager (container GTM-M6N7QG3S)
 
-Everything below is done once in tagmanager.google.com, then **Submit** and **Publish**.
+Everything below is done once in tagmanager.google.com. Build it in the workspace, push the site change, then **Submit** and **Publish** straight after the deploy (publishing earlier would count visits twice for a few minutes).
 
 1. **Variables**: create a *Data Layer Variable* for each detail: `method`, `account_type`, `has_destination`,
    `guest_count_estimate`, `item_type`, `guest_count`, `response`, `location` (the variable name is the same word).
 2. **Trigger "All app events"**: type *Custom Event*, event name matches RegEx
    `^(sign_up|login|wedding_created|website_published|registry_item_added|guest_added|guests_imported|event_created|expense_added|rsvp_response|rsvp_submitted|enquiry_sent|viewing_requested|collaborator_invited|partner_cta_click)$`
 3. **Tag "GA4 - Configuration"**: type *Google tag*, tag ID `G-NFYMMPD7DC`, trigger *Initialization - All Pages*.
-   Leave "Page changes based on browser history events" on (this is what counts page views while people move
-   around the site without a full reload).
+   Page views while people move around the site without a full reload are counted by Google Analytics itself:
+   Admin → Data streams → your stream → Enhanced measurement → Page views → gear → keep "Page changes based on
+   browser history events" on.
 4. **Tag "GA4 - Events"**: type *Google Analytics: GA4 Event*, measurement ID `G-NFYMMPD7DC`, event name `{{Event}}`,
    trigger *All app events*. Under *Event parameters* add one row per variable above (parameter name = the same word,
    value = the variable).
