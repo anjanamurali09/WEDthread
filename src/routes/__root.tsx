@@ -98,9 +98,9 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
   errorComponent: ErrorComponent,
 });
 
-// The Google tag (Google Analytics) and Google Tag Manager must not run before the visitor has agreed, so this inline
-// script (first thing in <head>) sets Google Consent Mode to "denied", and only if the visitor accepted on an
-// earlier visit does it grant analytics and run Google's snippet. Everyone else is asked by the cookie banner,
+// Google Tag Manager (which carries the Google Analytics tag) must not run before the visitor has agreed, so this
+// inline script (first thing in <head>) sets Google Consent Mode to "denied", and only if the visitor accepted on
+// an earlier visit does it grant analytics and run Google's Tag Manager snippet. Everyone else is asked by the cookie banner,
 // which loads Tag Manager the moment they accept (see lib/cookie-consent.ts). No Tag Manager noscript fallback
 // is included: it would load Google for visitors who had no chance to say no.
 const CONSENT_AND_TAG_MANAGER = `
@@ -112,13 +112,6 @@ const CONSENT_AND_TAG_MANAGER = `
   try { var c = JSON.parse(localStorage.getItem('wedthread.cookie-consent') || 'null'); granted = !!(c && c.analytics); } catch (e) {}
   if (!granted) return;
   gtag('consent','update',{analytics_storage:'granted'});
-  // Google tag (gtag.js) for Google Analytics: one copy per page, exactly as Google provides it.
-  window.__gaLoaded = true;
-  var ga = document.createElement('script'); ga.async = true;
-  ga.src = 'https://www.googletagmanager.com/gtag/js?id=G-NFYMMPD7DC';
-  document.head.appendChild(ga);
-  gtag('js', new Date());
-  gtag('config', 'G-NFYMMPD7DC');
   window.__gtmLoaded = true;
   (function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start':
   new Date().getTime(),event:'gtm.js'});var f=d.getElementsByTagName(s)[0],

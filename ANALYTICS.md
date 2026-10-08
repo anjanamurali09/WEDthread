@@ -1,25 +1,25 @@
 # Analytics events
 
-WEDthread reports 15 events to Google Analytics 4 (measurement ID `G-NFYMMPD7DC`) through the Google tag (gtag.js).
+WEDthread reports 15 events to Google Analytics 4 (measurement ID `G-NFYMMPD7DC`) through Google Tag Manager (container `GTM-M6N7QG3S`). Tag Manager is the only place Google tags live; there is no separate gtag.js on the site.
 They are sent only after a visitor accepts analytics cookies in the cookie banner. No event carries a name,
 email, phone number, guest detail or any free text.
 
 ## How it works
 
-- `src/lib/cookie-consent.ts`: stores the visitor's cookie choice, loads the Google tag (and Tag Manager) only after
-  they accept, and exports `gtag()`.
+- `src/lib/cookie-consent.ts`: stores the visitor's cookie choice and loads Tag Manager only after they accept.
 - `src/routes/__root.tsx`: sets Google Consent Mode to "denied" first thing in `<head>`; if the visitor already
-  accepted on an earlier visit it loads the Google tag straight away.
+  accepted on an earlier visit it loads Tag Manager straight away. (Tag Manager's own `<noscript>` iframe is left
+  out on purpose: it would contact Google for visitors who have not agreed.)
 - `src/lib/analytics.ts`: the one function used everywhere to report an event:
 
 ```ts
-import { gtag, readConsent } from "@/lib/cookie-consent";
+import { readConsent } from "@/lib/cookie-consent";
 
 type Params = Record<string, string | number | boolean | undefined>;
 
 export function track(event: string, params: Params = {}) {
   if (typeof window === "undefined" || !readConsent()?.analytics) return;
-  gtag("event", event, params);
+  (window.dataLayer = window.dataLayer || []).push({ event, ...params });
 }
 ```
 
@@ -30,7 +30,7 @@ import { track } from "@/lib/analytics";
 track("event_name", { some_detail: "value" });
 ```
 
-In Google Analytics the same call appears as `gtag('event', 'event_name', { some_detail: 'value' })`.
+In Tag Manager the same call arrives as a dataLayer push, `{ event: 'event_name', some_detail: 'value' }`, so each event is a Custom Event trigger and each detail is a Data Layer Variable.
 
 ## The 15 events
 
@@ -73,6 +73,23 @@ track("partner_cta_click", { location: "footer" });                // footer lin
 track("partner_cta_click", { location: "homepage_vendors_row" });  // card at the end of the vendors row
 ```
 
+## Setting up in Tag Manager (container GTM-M6N7QG3S)
+
+Everything below is done once in tagmanager.google.com, then **Submit** and **Publish**.
+
+1. **Variables**: create a *Data Layer Variable* for each detail: `method`, `account_type`, `has_destination`,
+   `guest_count_estimate`, `item_type`, `guest_count`, `response`, `location` (the variable name is the same word).
+2. **Trigger "All app events"**: type *Custom Event*, event name matches RegEx
+   `^(sign_up|login|wedding_created|website_published|registry_item_added|guest_added|guests_imported|event_created|expense_added|rsvp_response|rsvp_submitted|enquiry_sent|viewing_requested|collaborator_invited|partner_cta_click)$`
+3. **Tag "GA4 - Configuration"**: type *Google tag*, tag ID `G-NFYMMPD7DC`, trigger *Initialization - All Pages*.
+   Leave "Page changes based on browser history events" on (this is what counts page views while people move
+   around the site without a full reload).
+4. **Tag "GA4 - Events"**: type *Google Analytics: GA4 Event*, measurement ID `G-NFYMMPD7DC`, event name `{{Event}}`,
+   trigger *All app events*. Under *Event parameters* add one row per variable above (parameter name = the same word,
+   value = the variable).
+5. In **Admin, Consent settings** (Tag Manager), set the GA4 tags to require `analytics_storage`. The site only
+   loads Tag Manager after a visitor accepts, so this is a second safety net.
+
 ## Setting up in Google Analytics
 
 - **Key events** (Admin → Key events): `sign_up`, `wedding_created`, `website_published`, `enquiry_sent`,
@@ -80,10 +97,9 @@ track("partner_cta_click", { location: "homepage_vendors_row" });  // card at th
 - **Custom dimensions** (Admin → Custom definitions, scope: Event): `account_type`, `item_type`, `location`,
   `response`, `has_destination`.
 - **Custom metrics** (scope: Event): `guest_count`, `guest_count_estimate`.
-- Page views are collected by the Google tag's enhanced measurement (including moving between pages on the site).
 
 ## Rules
 
 - Never pass personal information (names, emails, phone numbers, guest details, free text) to `track()`.
-- Events are only sent after consent. Do not call `gtag` directly in app code; use `track()`.
-- Keep one Google tag per page. Do not also add a Google Analytics tag with the same ID inside Tag Manager.
+- Events are only sent after consent. Do not push to the dataLayer directly in app code; use `track()`.
+- Keep one Google tag per page: it lives in Tag Manager only. Do not add gtag.js to the site again.
