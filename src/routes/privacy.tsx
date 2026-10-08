@@ -5,8 +5,8 @@ import { SiteFooter, CONTACT_EMAIL } from "@/components/site-footer";
 export const Route = createFileRoute("/privacy")({
   head: () => ({
     meta: [
-      { title: "Privacy · WedThread" },
-      { name: "description", content: "How WedThread collects, uses and protects your information." },
+      { title: "Privacy · WEDthread" },
+      { name: "description", content: "How WEDthread collects, uses and protects your information." },
     ],
   }),
   component: PrivacyPage,
@@ -14,10 +14,10 @@ export const Route = createFileRoute("/privacy")({
 
 const UPDATED = "8 October 2026";
 
-// Fill these in with the legal details of the business that runs WedThread. Anything left empty is simply not
+// Fill these in with the legal details of the business that runs WEDthread. Anything left empty is simply not
 // shown, so the page never prints a blank or a placeholder.
 const CONTROLLER = {
-  legalName: "",          // e.g. "WedThread Ltd"
+  legalName: "",          // e.g. "WEDthread Ltd"
   address: "",            // registered or trading address
   registrationNumber: "", // company number, and ICO registration number if you have one
 };
@@ -51,13 +51,13 @@ function PrivacyPage() {
           <p className="mt-3 text-sm text-muted-foreground">Last updated {UPDATED}</p>
 
           <p className="mt-8 text-[15px] leading-relaxed text-[#243746]">
-            WedThread (www.wedthread.co) helps couples plan weddings and helps venues and vendors reach them. Planning a wedding
+            WEDthread (www.wedthread.co) helps couples plan weddings and helps venues and vendors reach them. Planning a wedding
             involves other people's details too, so we collect only what the service needs and try to be clear about what happens to it.
           </p>
 
           <Section title="Who we are">
             <p>
-              WedThread is run from the United Arab Emirates and is open to people around the world. We are responsible for the information described on this page (the "data controller").
+              WEDthread is run from the United Arab Emirates and is open to people around the world. We are responsible for the information described on this page (the "data controller").
               {CONTROLLER.legalName && <> We operate as <strong>{CONTROLLER.legalName}</strong>.</>}
               {CONTROLLER.address && <> Our address is {CONTROLLER.address}.</>}
               {CONTROLLER.registrationNumber && <> Registration: {CONTROLLER.registrationNumber}.</>}
@@ -77,7 +77,7 @@ function PrivacyPage() {
 
           <Section title="What we collect">
             <p><strong>Your account.</strong> Your email address, a password (stored only in scrambled form by our login provider), your name, and the role you choose (couple, planner, venue, vendor or seller).</p>
-            <p><strong>What you add.</strong> Wedding details, events, guest lists, RSVP answers, seating plans, menus, budget entries, notes, registry items, website content, photos and files you upload, and messages or enquiries you send through WedThread.</p>
+            <p><strong>What you add.</strong> Wedding details, events, guest lists, RSVP answers, seating plans, menus, budget entries, notes, registry items, website content, photos and files you upload, and messages or enquiries you send through WEDthread.</p>
             <p><strong>Guest information.</strong> If you add guests, you give us their names and any contact, dietary or allergy details you enter. We receive this from you, not from the guests. Guests who answer an RSVP link give us their answers directly.</p>
             <p><strong>Sensitive details.</strong> Dietary and allergy information can reveal health or religious beliefs. Only add what you need, and make sure your guests are happy for you to record it. Anyone can ask us to remove it.</p>
             <p><strong>Business listings.</strong> Venues and vendors give us business details, contact information, photos and verification documents (such as a licence or tax number). Tax numbers and documents are visible only to the owner and our team.</p>
@@ -88,7 +88,7 @@ function PrivacyPage() {
           <Section title="Why we use it, and our legal basis">
             <p>The laws that protect your information depend on where you live. For people in the UK and the EU we rely on the following legal bases.</p>
             <ul className="list-disc space-y-2 pl-5">
-              <li><strong>To provide WedThread to you</strong> (sign you in, save your plans, show your wedding website and registry, send the emails you ask for, pass enquiries between couples and businesses). Basis: it is needed to carry out our agreement with you.</li>
+              <li><strong>To provide WEDthread to you</strong> (sign you in, save your plans, show your wedding website and registry, send the emails you ask for, pass enquiries between couples and businesses). Basis: it is needed to carry out our agreement with you.</li>
               <li><strong>To keep the service safe and working</strong> (prevent misuse, review and verify business listings, fix problems). Basis: our legitimate interest in running a secure, reliable service.</li>
               <li><strong>To understand and improve how the site is used</strong>, through analytics cookies. Basis: your consent, which you can withdraw at any time.</li>
               <li><strong>To meet legal duties</strong>, such as keeping payment records or responding to lawful requests. Basis: legal obligation.</li>
@@ -100,7 +100,7 @@ function PrivacyPage() {
           <Section title="Who sees it">
             <p><strong>People you choose.</strong> Collaborators you invite can edit your wedding. Venues and vendors you contact see what you send them. Anyone with the link can view your wedding website or registry once you publish it, so share those links carefully.</p>
             <p><strong>The public.</strong> Approved venue and vendor listings, and the content of published wedding sites and public registries, are visible to anyone. Reviews you leave show only your first name.</p>
-            <p><strong>Service providers.</strong> We use trusted companies to run WedThread, and they handle data only for that purpose: Supabase (database, sign-in and file storage), Cloudflare (hosting and domain), Resend (email delivery), Stripe (payments), and Google (website analytics through Google Analytics and Tag Manager, and Google Sheets if you choose to connect it).</p>
+            <p><strong>Service providers.</strong> We use trusted companies to run WEDthread, and they handle data only for that purpose: Supabase (database, sign-in and file storage), Cloudflare (hosting and domain), Resend (email delivery), Stripe (payments), and Google (website analytics through Google Analytics and Tag Manager, and Google Sheets if you choose to connect it).</p>
             <p>We may also share information if the law requires it or to protect people's safety and the service.</p>
           </Section>
 
@@ -144,7 +144,7 @@ function PrivacyPage() {
           </Section>
 
           <Section title="Children">
-            <p>WedThread is meant for adults planning a wedding and is not directed at children under 16.</p>
+            <p>WEDthread is meant for adults planning a wedding and is not directed at children under 16.</p>
           </Section>
 
           <Section title="Changes">

@@ -1,7 +1,7 @@
 import { HeartHandshake, Building2, Store, ShoppingBag, ClipboardList } from "lucide-react";
 import type { AppRole } from "@/hooks/use-active-role";
 
-// The ways someone can use WedThread. Shared by the sign-up form (chosen before the verification email
+// The ways someone can use WEDthread. Shared by the sign-up form (chosen before the verification email
 // is sent) and the role page (used when adding another role later).
 // `comingSoon` options are shown but cannot be chosen yet. Remove the flag to open one up.
 export const ROLE_OPTIONS: { role: AppRole; label: string; desc: string; icon: any; comingSoon?: boolean }[] = [

@@ -93,7 +93,7 @@ export function VendorDashboard() {
 function StatusBanner({ status }: { status: string }) {
   const map: Record<string, { icon: any; cls: string; msg: string }> = {
     approved: { icon: CheckCircle2, cls: "bg-sage-soft text-ink", msg: "Your listing is live and visible to couples." },
-    pending:  { icon: Clock,        cls: "bg-blush-soft text-cherry", msg: "Submitted. A WedThread admin is reviewing your listing." },
+    pending:  { icon: Clock,        cls: "bg-blush-soft text-cherry", msg: "Submitted. A WEDthread admin is reviewing your listing." },
     rejected: { icon: XCircle,      cls: "bg-wine-soft text-wine", msg: "Your listing needs changes before it goes live." },
   };
   const s = map[status] ?? map.pending;

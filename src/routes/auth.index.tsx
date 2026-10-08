@@ -117,7 +117,7 @@ function AuthHeroPanel() {
             {HERO_SLIDES[index % HERO_SLIDES.length]}
           </h2>
           <p className="mt-4 text-sm text-[#4A7CAD] max-w-sm">
-            Couples, planners, venues, vendors, and sellers all live under one login. You'll choose how you'll use WedThread when you sign up.
+            Couples, planners, venues, vendors, and sellers all live under one login. You'll choose how you'll use WEDthread when you sign up.
           </p>
         </div>
       </div>
@@ -128,8 +128,8 @@ function AuthHeroPanel() {
 export const Route = createFileRoute("/auth/")({
   head: () => ({
     meta: [
-      { title: "Sign in or join WedThread" },
-      { name: "description", content: "Sign in or create your WedThread account." },
+      { title: "Sign in or join WEDthread" },
+      { name: "description", content: "Sign in or create your WEDthread account." },
     ],
   }),
   validateSearch: (s: Record<string, unknown>): { mode?: "signup" | "forgot"; verified?: boolean } => ({
@@ -197,7 +197,7 @@ function AuthPage() {
     setLoading(true);
     try {
       if (mode === "signup") {
-        if (!role) throw new Error("Choose how you'll use WedThread first.");
+        if (!role) throw new Error("Choose how you'll use WEDthread first.");
         const { data, error } = await supabase.auth.signUp({
           email: email.trim(), password,
           options: {
@@ -235,7 +235,7 @@ function AuthPage() {
           </h1>
           <p className="mt-1 text-sm text-muted-foreground">
             {mode === "signup"
-              ? "Choose how you'll use WedThread, then sign up with your email."
+              ? "Choose how you'll use WEDthread, then sign up with your email."
               : mode === "forgot"
                 ? "Enter your email and we'll send you a link to choose a new one."
                 : "Sign in to continue where you left off."}

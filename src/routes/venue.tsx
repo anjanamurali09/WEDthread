@@ -19,7 +19,7 @@ import { Search } from "lucide-react";
 export const Route = createFileRoute("/venue")({
   head: () => ({
     meta: [
-      { title: "Find a venue · WedThread" },
+      { title: "Find a venue · WEDthread" },
       { name: "description", content: "Browse wedding venues by space, capacity, and price." },
     ],
   }),

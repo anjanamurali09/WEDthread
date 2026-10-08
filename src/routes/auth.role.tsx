@@ -16,8 +16,8 @@ export const Route = createFileRoute("/auth/role")({
   validateSearch: searchSchema,
   head: () => ({
     meta: [
-      { title: "Choose your role · WedThread" },
-      { name: "description", content: "Tell us how you'll use WedThread." },
+      { title: "Choose your role · WEDthread" },
+      { name: "description", content: "Tell us how you'll use WEDthread." },
     ],
   }),
   component: RolePicker,
@@ -91,7 +91,7 @@ function RolePicker() {
             {add ? "Add another role" : "One more step"}
           </p>
           <h1 className="mt-2 font-serif text-4xl md:text-5xl leading-[1.05]">
-            {add ? "How else will you use WedThread?" : "How will you use WedThread?"}
+            {add ? "How else will you use WEDthread?" : "How will you use WEDthread?"}
           </h1>
           <p className="mt-3 text-sm text-muted-foreground">
             {add

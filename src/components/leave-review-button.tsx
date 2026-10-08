@@ -7,7 +7,7 @@ import { Star, Loader2 } from "lucide-react";
 type Eligibility = "checking" | "signed-out" | "no-wedding" | "eligible";
 
 // Any signed-in couple/planner with a wedding can review — no requirement to
-// have enquired through WedThread first, since plenty of couples will have
+// have enquired through WEDthread first, since plenty of couples will have
 // reached out or experienced a venue/vendor outside the platform. The RLS
 // policy on `reviews` enforces the same (wedding-access-only) check
 // independently, so this is a UX convenience, not the real gate.

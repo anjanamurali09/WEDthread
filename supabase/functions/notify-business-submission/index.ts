@@ -7,7 +7,7 @@
 //
 // Uses Resend (https://resend.com) — requires these Edge Function secrets:
 // RESEND_API_KEY, RESEND_FROM_EMAIL (must be a sender on a domain you've
-// verified in Resend, e.g. "WedThread <notifications@yourdomain.com>"), plus
+// verified in Resend, e.g. "WEDthread <notifications@yourdomain.com>"), plus
 // the standard SUPABASE_URL / SUPABASE_SERVICE_ROLE_KEY Supabase provides
 // automatically. No placeholder values are used — if the secrets aren't
 // set, this fails loudly (500) rather than pretending to send.
@@ -59,7 +59,7 @@ Deno.serve(async (req: Request) => {
     const noun = business.business_type === "venue" ? "venue" : "vendor";
 
     const html = `
-      <p>A new ${noun} has submitted their profile for review on WedThread:</p>
+      <p>A new ${noun} has submitted their profile for review on WEDthread:</p>
       <p><strong>${escapeHtml(business.legal_business_name)}</strong>${business.country ? ` - ${escapeHtml(business.country)}` : ""}</p>
       <p>${escapeHtml(business.business_description)}</p>
       <p><a href="${reviewUrl}">Review it →</a></p>

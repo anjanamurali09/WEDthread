@@ -100,7 +100,7 @@ export const SECTION_LIBRARY: SectionDef[] = [
 // panel color; `ink` is the readable text on it; `accent` is the accent for
 // buttons and small text; `soft` is the secondary section background.
 export const TEMPLATES: Template[] = [
-  { id: "pearl-wine", heroLayout: "left", preview: "/templates/photos/p45.jpg", previewFocus: "50% 30%", name: "Pearl & Wine", desc: "WedThread signature: pearl, cream, cherry.", layout: "photo-left", palette: { bg: "#FDFCF7", ink: "#1A1512", accent: "#E63950", soft: "#F7F1E3" }, fonts: { display: "Fraunces", body: "Instrument Sans" }, sections: ["hero", "story", "events", "gallery", "registry", "rsvp"] },
+  { id: "pearl-wine", heroLayout: "left", preview: "/templates/photos/p45.jpg", previewFocus: "50% 30%", name: "Pearl & Wine", desc: "WEDthread signature: pearl, cream, cherry.", layout: "photo-left", palette: { bg: "#FDFCF7", ink: "#1A1512", accent: "#E63950", soft: "#F7F1E3" }, fonts: { display: "Fraunces", body: "Instrument Sans" }, sections: ["hero", "story", "events", "gallery", "registry", "rsvp"] },
   {
     id: "garden-romance", heroLayout: "overlay", heroAlign: "right", preview: "/templates/photos/p43.jpg", previewFocus: "50% 45%", name: "Garden Romance", desc: "Lush greenery, warm blooms, and a quiet romantic hush.",
     layout: "editorial",

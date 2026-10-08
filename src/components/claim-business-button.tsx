@@ -72,7 +72,7 @@ export function ClaimBusinessButton({ businessId, businessName, compact }: { bus
             <div className="py-6 text-center">
               <CheckCircle2 className="h-8 w-8 mx-auto text-sage-deep" />
               <p className="mt-3 text-sm font-medium">Claim request sent</p>
-              <p className="mt-1 text-sm text-muted-foreground">The WedThread team will review it and get back to you.</p>
+              <p className="mt-1 text-sm text-muted-foreground">The WEDthread team will review it and get back to you.</p>
             </div>
           ) : (
             <>

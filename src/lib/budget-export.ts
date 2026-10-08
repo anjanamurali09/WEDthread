@@ -54,7 +54,7 @@ export async function exportBudgetExcel(input: BudgetExportInput) {
   const headers = [...EXPENSE_HEADERS, ...customColumns.map((c) => c.name)];
 
   const rows: (string | number)[][] = [
-    ["WedThread Budget Summary"],
+    ["WEDthread Budget Summary"],
     [],
     ["Total spent", formatMoney(totalSpent, currency)],
     ["Budget limit", budgetLimit != null ? formatMoney(budgetLimit, currency) : "No limit set"],

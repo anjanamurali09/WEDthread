@@ -31,7 +31,7 @@ export function whatsappUrl(
   id: string,
 ): string {
   const clean = phone.replace(/[^\d]/g, "");
-  const tag = `\n\nvia WedThread · ref:${kind}:${id}`;
+  const tag = `\n\nvia WEDthread · ref:${kind}:${id}`;
   const text = encodeURIComponent(message + tag);
   return `https://wa.me/${clean}?text=${text}`;
 }
@@ -49,5 +49,5 @@ export function buildLeadMessage(opts: {
   const where = [opts.city, opts.country].filter(Boolean).join(", ");
   const when = opts.date ? new Date(opts.date).toLocaleDateString(undefined, { month: "long", day: "numeric", year: "numeric" }) : "date TBD";
   const guests = opts.guests ? `~${opts.guests} guests` : "";
-  return `Hi ${opts.targetName}, ${who} found you on WedThread and we'd love to check availability.\nWedding: ${when}${where ? ` · ${where}` : ""}${guests ? ` · ${guests}` : ""}.`;
+  return `Hi ${opts.targetName}, ${who} found you on WEDthread and we'd love to check availability.\nWedding: ${when}${where ? ` · ${where}` : ""}${guests ? ` · ${guests}` : ""}.`;
 }

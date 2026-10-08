@@ -29,7 +29,7 @@ export function FeedbackDialog({ weddingId, onClose }: { weddingId: string | nul
           <div className="text-center py-4">
             <span className="grid h-12 w-12 mx-auto place-items-center rounded-full bg-sage-soft text-sage-deep"><Check className="h-5 w-5" /></span>
             <h3 className="mt-4 font-serif text-2xl">Thank you!</h3>
-            <p className="mt-2 text-sm text-muted-foreground">Your feedback helps us make WedThread better.</p>
+            <p className="mt-2 text-sm text-muted-foreground">Your feedback helps us make WEDthread better.</p>
             <button onClick={onClose} className="mt-6 rounded-full bg-ink text-paper px-6 py-2 text-sm hover:bg-clay cursor-pointer">Close</button>
           </div>
         ) : (

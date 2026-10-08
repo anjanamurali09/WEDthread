@@ -29,7 +29,7 @@ function LeadsPage() {
   };
 
   return (
-    <AppShell title="Leads" subtitle="Inquiries from couples who found your listing on WedThread.">
+    <AppShell title="Leads" subtitle="Inquiries from couples who found your listing on WEDthread.">
       <div className="flex flex-wrap gap-2 mb-6">
         <button onClick={() => setFilter("all")} className={`chip ${filter === "all" ? "chip-active" : ""}`}>All ({formatNumber(leads.length)})</button>
         {STATUSES.map((s) => (

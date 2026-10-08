@@ -260,7 +260,7 @@ export function RsvpPageBody({
         )
       )}
 
-      <p className="mt-10 text-center text-sm uppercase tracking-widest text-muted-foreground">Powered by WedThread</p>
+      <p className="mt-10 text-center text-sm uppercase tracking-widest text-muted-foreground">Powered by WEDthread</p>
     </div>
   );
 }

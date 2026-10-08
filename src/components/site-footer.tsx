@@ -70,11 +70,11 @@ export function SiteFooter() {
         <div className="flex flex-wrap items-center gap-x-6 gap-y-2">
           <div className="flex items-center gap-4">
             {SOCIALS.map(({ name, href, Icon }) => (
-              <a key={name} href={href} target="_blank" rel="noopener noreferrer" aria-label={`WedThread on ${name}`} data-static
+              <a key={name} href={href} target="_blank" rel="noopener noreferrer" aria-label={`WEDthread on ${name}`} data-static
                 className="text-[#243746] hover:text-[#7FA8D6] transition-colors"><Icon className="h-5 w-5" /></a>
             ))}
           </div>
-          <span>© {new Date().getFullYear()} WedThread. All rights reserved.</span>
+          <span>© {new Date().getFullYear()} WEDthread. All rights reserved.</span>
         </div>
       </div>
     </footer>

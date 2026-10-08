@@ -7,7 +7,7 @@ import { resolveCoupleLanding } from "@/lib/wedding-hooks";
 export const Route = createFileRoute("/auth/callback")({
   head: () => ({
     meta: [
-      { title: "Signing you in · WedThread" },
+      { title: "Signing you in · WEDthread" },
       { name: "robots", content: "noindex" },
     ],
   }),

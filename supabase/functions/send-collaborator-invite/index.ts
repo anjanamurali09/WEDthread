@@ -7,7 +7,7 @@
 // The collaborator row itself is created by the app (row-level security lets only the wedding's owner
 // insert it). This function then sends the email. It only sends when the caller is signed in, owns the
 // wedding, and has already added that exact email as a collaborator, so it can't be used to email
-// arbitrary people. Access itself is matched by email, so the person just needs a WedThread account
+// arbitrary people. Access itself is matched by email, so the person just needs a WEDthread account
 // (new or existing) with the invited address.
 //
 // Uses Resend — requires RESEND_API_KEY and RESEND_FROM_EMAIL (same secrets as the other email
@@ -67,7 +67,7 @@ Deno.serve(async (req: Request) => {
     const signIn = `${APP_URL}/auth`;
     const signUp = `${APP_URL}/auth?mode=signup`;
 
-    // New to WedThread: send Supabase's invitation. An existing account makes this fail, and we fall
+    // New to WEDthread: send Supabase's invitation. An existing account makes this fail, and we fall
     // through to the sign-in email below.
     const { error: inviteError } = await service.auth.admin.inviteUserByEmail(to, {
       redirectTo: `${APP_URL}/auth/reset?invited=1`,

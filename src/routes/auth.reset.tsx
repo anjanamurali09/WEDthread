@@ -6,7 +6,7 @@ import { Logo } from "@/components/logo";
 export const Route = createFileRoute("/auth/reset")({
   head: () => ({
     meta: [
-      { title: "Reset your password · WedThread" },
+      { title: "Reset your password · WEDthread" },
       { name: "robots", content: "noindex" },
     ],
   }),

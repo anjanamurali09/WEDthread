@@ -16,7 +16,7 @@ import { Search } from "lucide-react";
 export const Route = createFileRoute("/v")({
   head: () => ({
     meta: [
-      { title: "Find a vendor · WedThread" },
+      { title: "Find a vendor · WEDthread" },
       { name: "description", content: "Browse wedding vendors and their services." },
     ],
   }),

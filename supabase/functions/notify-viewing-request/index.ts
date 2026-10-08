@@ -71,7 +71,7 @@ Deno.serve(async (req: Request) => {
       <p>Preferred date: ${escapeHtml(preferred_date || "Not specified")}<br/>
       Preferred time: ${escapeHtml(preferred_time || "Not specified")}</p>
       ${message ? `<p>${escapeHtml(message)}</p>` : ""}
-      <p><a href="${messagesUrl}">Reply on WedThread →</a></p>
+      <p><a href="${messagesUrl}">Reply on WEDthread →</a></p>
     `;
 
     const res = await fetch("https://api.resend.com/emails", {

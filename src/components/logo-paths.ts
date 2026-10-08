@@ -1,4 +1,4 @@
-// GENERATED from the Didot Bold and Snell Roundhand letterforms: the WedThread wordmark drawn as fixed outlines,
+// GENERATED from the Didot Bold and Snell Roundhand letterforms: the WEDthread wordmark drawn as fixed outlines,
 // so it looks identical on every device (Mac, Windows, Android, iPhone). Do not edit by hand.
 // Units are font units (1000 per em): the box is 1293 tall, with the text baseline 969 down from the top.
 export const WORDMARK = {

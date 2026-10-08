@@ -68,7 +68,7 @@ Deno.serve(async (req: Request) => {
       : null;
 
     const html = `
-      <p>A friendly reminder from WedThread:</p>
+      <p>A friendly reminder from WEDthread:</p>
       <p><strong>${escapeHtml(exp.name)}</strong>: ${escapeHtml(amount)}${dueText ? ` is due on <strong>${escapeHtml(dueText)}</strong>` : " is waiting to be paid"}.</p>
       ${appUrl ? `<p><a href="${appUrl}/budget">Open your budget →</a></p>` : ""}
       <p style="color:#6b7a88;font-size:12px">You're getting this because you set a payment reminder on this expense. Mark it as paid in your budget and nothing more will be sent.</p>

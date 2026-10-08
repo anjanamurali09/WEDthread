@@ -51,7 +51,7 @@ export function AddRoleDialog({
         <div className="p-6 pb-4 border-b border-line/60">
           <DialogTitle className="font-serif text-2xl">Add another role</DialogTitle>
           <DialogDescription className="text-sm text-muted-foreground mt-1">
-            Pick another way to use WedThread. You can switch between roles anytime.
+            Pick another way to use WEDthread. You can switch between roles anytime.
           </DialogDescription>
         </div>
         <div className="p-4 space-y-2 max-h-[70vh] overflow-y-auto">

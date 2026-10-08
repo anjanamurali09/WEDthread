@@ -122,7 +122,7 @@ function BusinessDashboardPage() {
               {business.verification_status === "verified" ? <CheckCircle2 className="h-4 w-4" />
                 : business.verification_status === "rejected" ? <XCircle className="h-4 w-4" /> : <Clock className="h-4 w-4" />}
               {business.verification_status === "verified" ? "Verified"
-                : business.verification_status === "rejected" ? "Not approved. Contact us to resubmit" : "Submitted. A WedThread admin is reviewing your documents"}
+                : business.verification_status === "rejected" ? "Not approved. Contact us to resubmit" : "Submitted. A WEDthread admin is reviewing your documents"}
             </div>
             <h2 className="font-serif text-2xl mt-6">{business.legal_business_name}</h2>
             <p className="text-sm text-muted-foreground mt-2">{business.business_description}</p>

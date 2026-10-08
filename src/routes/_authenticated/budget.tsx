@@ -52,7 +52,7 @@ type ChartTheme = { name: string; colors: string[] };
 const CHART_THEMES: ChartTheme[] = [
   // The app's own palette (ink navy, cherry/sage blues, gold, a neutral
   // slate) rather than a generic web-safe color — the default, so charts
-  // read as WedThread's own by default.
+  // read as WEDthread's own by default.
   { name: "Brand", colors: ["#243746", "#7FA8D6", "#D9A03D", "#6B7A8F", "#4A7CAD", "#F5DBAE"] },
   { name: "Classic", colors: ["#22c55e", "#ef4444", "#3b82f6", "#f59e0b", "#a855f7", "#14b8a6"] },
   { name: "Ocean", colors: ["#3b82f6", "#0ea5e9", "#06b6d4", "#0284c7", "#38bdf8", "#075985"] },

@@ -154,19 +154,19 @@ const CULTURE_ITEMS = [
 ];
 
 const TESTIMONIALS = [
-  { quote: "We had four ceremonies across two continents and somehow WedThread made it feel like one wedding, not four separate headaches. Our families finally knew what was happening, when.", name: "Laura & John", loc: "Lake Como", photo: testimonialLauraJohnImg },
+  { quote: "We had four ceremonies across two continents and somehow WEDthread made it feel like one wedding, not four separate headaches. Our families finally knew what was happening, when.", name: "Laura & John", loc: "Lake Como", photo: testimonialLauraJohnImg },
   { quote: "Sending RSVPs over WhatsApp instead of a website nobody would click sounds small, but it's the reason we actually got responses back from grandparents.", name: "Zuri & Marcus", loc: "London", photo: testimonialZuriMarcusImg },
   { quote: "I built our seating chart on a plane. Drag, drop, done, allergy warnings and all. I still don't understand how it used to take people weeks.", name: "Wei & Jonathan", loc: "San Francisco", photo: testimonialWeiJonathanImg },
-  { quote: "Two cultures, two guest lists, one registry link we could actually share. WedThread is the only tool that didn't ask us to pick a side.", name: "Fatima & David", loc: "Dubai", photo: testimonialFatimaDavidImg },
-  { quote: "Between the Mehendi and the reception we had six events to track. WedThread is the only reason nothing slipped through the cracks.", name: "Alex & Kaavya", loc: "Austin → Udaipur", photo: testimonialKavyaAlexImg },
+  { quote: "Two cultures, two guest lists, one registry link we could actually share. WEDthread is the only tool that didn't ask us to pick a side.", name: "Fatima & David", loc: "Dubai", photo: testimonialFatimaDavidImg },
+  { quote: "Between the Mehendi and the reception we had six events to track. WEDthread is the only reason nothing slipped through the cracks.", name: "Alex & Kaavya", loc: "Austin → Udaipur", photo: testimonialKavyaAlexImg },
 ];
 
 const FAQS = [
-  { q: "Can I use WedThread for a single-day wedding?", a: "Of course, WedThread scales down as easily as it scales up. Whether you're planning one ceremony or six, you only add the events you're actually having." },
-  { q: "Is WedThread free to use?", a: "Yes, core planning tools, guest lists, RSVPs, seating, and your wedding website are free. Optional extras like premium vendor placements are available if you want them." },
+  { q: "Can I use WEDthread for a single-day wedding?", a: "Of course, WEDthread scales down as easily as it scales up. Whether you're planning one ceremony or six, you only add the events you're actually having." },
+  { q: "Is WEDthread free to use?", a: "Yes, core planning tools, guest lists, RSVPs, seating, and your wedding website are free. Optional extras like premium vendor placements are available if you want them." },
   { q: "Do my guests need to download an app?", a: "No. Guests RSVP through a simple link sent over WhatsApp or text, no account, no app, no password to forget." },
-  { q: "Can I track multiple ceremonies with different guest lists?", a: "Yes, add as many events as your celebration needs, tag each guest to the ones they're invited to, and WedThread keeps every list, RSVP, and seating chart organized under one wedding." },
-  { q: "Does WedThread work for destination weddings?", a: "It's built for them. Track travel details, filter vendors by the city you're actually getting married in, and keep guests across time zones updated automatically." },
+  { q: "Can I track multiple ceremonies with different guest lists?", a: "Yes, add as many events as your celebration needs, tag each guest to the ones they're invited to, and WEDthread keeps every list, RSVP, and seating chart organized under one wedding." },
+  { q: "Does WEDthread work for destination weddings?", a: "It's built for them. Track travel details, filter vendors by the city you're actually getting married in, and keep guests across time zones updated automatically." },
   { q: "How does WhatsApp RSVP work?", a: "We send your guests a personalized RSVP link over WhatsApp. They tap, answer your questions, and their response updates your guest list instantly, no spreadsheets, no chasing." },
 ];
 
