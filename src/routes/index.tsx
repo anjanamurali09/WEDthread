@@ -474,7 +474,7 @@ function FeatureCard({ feature, index }: { feature: (typeof SHOWCASE_FEATURES)[n
 // One line of cards that scrolls sideways, with arrows. Used for venues, vendors and reviews so every
 // section spans the same full width as the call-to-action bars. Each child is one card; `cardClass`
 // sets its width (about four across on a wide screen, fewer on smaller ones).
-function ScrollRow({ title, cardClass, children }: { title?: string; cardClass: string; children: React.ReactNode }) {
+function ScrollRow({ title, cardClass, contained = false, children }: { title?: string; cardClass: string; contained?: boolean; children: React.ReactNode }) {
   const ref = useRef<HTMLDivElement>(null);
   const [edge, setEdge] = useState({ start: true, end: true });
 
@@ -495,8 +495,8 @@ function ScrollRow({ title, cardClass, children }: { title?: string; cardClass: 
   return (
     // The row breaks out of the page margins so cards run edge to edge; its own padding lines the first
     // card up with the rest of the page, and the arrows and heading keep the page margins.
-    <div data-reveal className="-mx-6 md:-mx-12">
-      <div className="mb-3 flex items-center justify-between gap-4 px-6 md:px-12">
+    <div data-reveal className={contained ? "mx-auto max-w-6xl" : "-mx-6 md:-mx-12"}>
+      <div className={cn("mb-3 flex items-center justify-between gap-4", !contained && "px-6 md:px-12")}>
         <p className="text-sm uppercase tracking-widest text-[#7FA8D6]">{title}</p>
         {!(edge.start && edge.end) && (
           <div className="flex gap-2">
@@ -505,7 +505,7 @@ function ScrollRow({ title, cardClass, children }: { title?: string; cardClass: 
           </div>
         )}
       </div>
-      <div ref={ref} className="no-scrollbar flex gap-4 overflow-x-auto scroll-smooth snap-x snap-mandatory px-6 md:px-12 scroll-px-6 md:scroll-px-12 pb-2">
+      <div ref={ref} className={cn("no-scrollbar flex gap-4 overflow-x-auto scroll-smooth snap-x snap-mandatory pb-2", !contained && "px-6 md:px-12 scroll-px-6 md:scroll-px-12")}>
         {Children.toArray(children).map((c, i) => <div key={i} className={cn("shrink-0 snap-start [&>*]:h-full", cardClass)}>{c}</div>)}
       </div>
     </div>
@@ -516,10 +516,9 @@ function ScrollRow({ title, cardClass, children }: { title?: string; cardClass: 
 function BecomePartnerCard() {
   return (
     <Link to="/auth" search={{ mode: "signup" } as any} data-static onClick={() => track("partner_cta_click", { location: "homepage_vendors_row" })}
-      className="group flex min-h-[320px] flex-col justify-between rounded-2xl border border-[#FFE08A] bg-[#FFF7D6] p-6 text-[#243746] transition-colors hover:bg-[#FFE08A]">
+      className="group flex flex-col justify-between rounded-2xl border border-[#FFE08A] bg-[#FFF7D6] p-6 text-[#243746] transition-colors hover:bg-[#FFE08A]">
       <div>
-        <p className="text-xs uppercase tracking-[0.2em] text-[#4A7CAD]">For venues and vendors</p>
-        <h3 className="mt-3 font-serif text-3xl leading-tight">Become a partner</h3>
+        <h3 className="font-serif text-3xl leading-tight">Become a partner</h3>
         <p className="mt-3 text-sm leading-relaxed">List your venue or services and meet couples planning weddings around the world.</p>
       </div>
       <span className="mt-6 inline-flex items-center gap-2 text-sm font-medium">
@@ -531,16 +530,18 @@ function BecomePartnerCard() {
 
 // Card widths: six across on a wide screen, fewer on smaller ones. Percentages are of the row's content
 // width (page width minus the side margins), less the 16px gaps between cards.
+const THREE_ACROSS = "w-[78%] sm:w-[calc((100%-16px)/2)] lg:w-[calc((100%-32px)/3)]";
 const SIX_ACROSS = "w-[78%] sm:w-[calc((100%-16px)/2)] md:w-[calc((100%-32px)/3)] lg:w-[calc((100%-48px)/4)] xl:w-[calc((100%-80px)/6)]";
 
-const CTA_TONE_STYLES: Record<"cherry" | "sage" | "pearl" | "ink", { wrap: string; eyebrow: string; button: string }> = {
+const CTA_TONE_STYLES: Record<"cherry" | "sage" | "pearl" | "ink" | "soft", { wrap: string; eyebrow: string; button: string }> = {
   cherry: { wrap: "bg-[#FFE08A] text-[#243746]", eyebrow: "text-[#243746]/70", button: "bg-[#243746] text-[#FFF7D6] hover:bg-[#7FA8D6] hover:text-[#243746]" },
   sage: { wrap: "bg-[#7FA8D6] text-[#FFF7D6]", eyebrow: "text-[#FFF2B2]", button: "bg-[#FFF7D6] text-[#243746] hover:bg-[#FFE08A] hover:text-[#243746]" },
+  soft: { wrap: "bg-[#FFE08A]/45 text-[#243746]", eyebrow: "text-[#243746]/70", button: "bg-[#243746] text-[#FFF7D6] hover:bg-[#FFE08A] hover:text-[#243746]" },
   ink: { wrap: "bg-[#243746] text-[#FFF7D6]", eyebrow: "text-[#FFE08A]", button: "bg-[#FFE08A] text-[#243746] hover:bg-[#FFF7D6] hover:text-[#243746]" },
   pearl: { wrap: "bg-paper text-[#243746] border border-[#FFE08A]", eyebrow: "text-[#7FA8D6]", button: "bg-[#243746] text-[#FFF7D6] hover:bg-[#FFE08A] hover:text-[#243746]" },
 };
 
-function CompactCta({ headline, onClick, tone = "cherry", cta = "Start planning for free" }: { headline: string; onClick: () => void; tone?: "cherry" | "sage" | "pearl" | "ink"; cta?: string }) {
+function CompactCta({ headline, onClick, tone = "cherry", cta = "Start planning for free" }: { headline: string; onClick: () => void; tone?: "cherry" | "sage" | "pearl" | "ink" | "soft"; cta?: string }) {
   const s = CTA_TONE_STYLES[tone];
   return (
     <div className={cn("relative rounded-[2.5rem] py-12 px-6 md:px-12 text-center overflow-hidden", s.wrap)} data-reveal>
@@ -668,7 +669,7 @@ function RealListingsPreview() {
 
       {venues.length > 0 && (
         <div className="mt-10">
-          <ScrollRow title="Venues" cardClass={SIX_ACROSS}>
+          <ScrollRow title="Venues" cardClass={THREE_ACROSS} contained>
             {venues.map((v) => (
               <VenueCard key={v.id} venue={v} saved={saved.has(v.id)} onToggleSaved={handleToggleVenueSaved} compact />
             ))}
@@ -678,7 +679,7 @@ function RealListingsPreview() {
 
       {services.length > 0 && (
         <div className="mt-10">
-          <ScrollRow title="Vendors" cardClass={SIX_ACROSS}>
+          <ScrollRow title="Vendors" cardClass={THREE_ACROSS} contained>
             {services.map((s) => (
               <VendorServiceCard key={s.id} service={s} saved={saved.has(s.id)} onToggleSaved={handleToggleServiceSaved} compact />
             ))}
@@ -890,13 +891,8 @@ function Landing() {
       </section>
 
       {/* CTA */}
-      <section className="relative z-10 mx-6 md:mx-12 mb-16 rounded-[3rem] bg-[#FFE08A] text-[#243746] py-24 px-6 md:px-12 text-center overflow-hidden" data-reveal>
-        <p className="relative text-sm uppercase tracking-[0.3em] text-[#243746]">FOR EVERY WEDDING, ANYWHERE</p>
-        <h2 className="relative mt-4 font-serif text-5xl md:text-7xl max-w-3xl mx-auto leading-[0.95]">Your wedding, every ceremony, in one place.</h2>
-        <button onClick={() => goSignup()}
-          className="relative mt-10 inline-flex items-center gap-2 rounded-full bg-[#243746] text-[#FFF7D6] px-8 py-4 text-sm font-medium transition-all hover:bg-[#FFF7D6] hover:text-[#243746] hover:rounded-2xl hover:gap-3">
-          Plan your wedding <ArrowRight className="h-4 w-4" />
-        </button>
+      <section className="relative z-10 px-6 md:px-12 pb-16">
+        <CompactCta headline="Your wedding, every ceremony, in one place." tone="soft" cta="Plan your wedding" onClick={() => goSignup()} />
       </section>
 
       <SiteFooter />
