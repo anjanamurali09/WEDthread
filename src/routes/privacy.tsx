@@ -76,7 +76,7 @@ function PrivacyPage() {
           </Section>
 
           <Section title="What we collect">
-            <p><strong>Your account.</strong> Your email address, a password (stored only in scrambled form by our login provider), your name, and the role you choose (couple, planner, venue, vendor or seller).</p>
+            <p><strong>Your account.</strong> Your email address, a password (stored only in scrambled form by our login provider), your first and last name, a phone number if you choose to add one, and the role you choose (couple, planner, venue, vendor or seller).</p>
             <p><strong>What you add.</strong> Wedding details, events, guest lists, RSVP answers, seating plans, menus, budget entries, notes, registry items, website content, photos and files you upload, and messages or enquiries you send through WEDthread.</p>
             <p><strong>Guest information.</strong> If you add guests, you give us their names and any contact, dietary or allergy details you enter. We receive this from you, not from the guests. Guests who answer an RSVP link give us their answers directly.</p>
             <p><strong>Sensitive details.</strong> Dietary and allergy information can reveal health or religious beliefs. Only add what you need, and make sure your guests are happy for you to record it. Anyone can ask us to remove it.</p>

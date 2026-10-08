@@ -39,7 +39,7 @@ export function LeadDialog({
       const { data: u } = await supabase.auth.getUser();
       if (!u.user) return null;
       const { data: p } = await supabase.from("profiles").select("display_name").eq("user_id", u.user.id).maybeSingle();
-      return { email: u.user.email ?? "", display_name: p?.display_name ?? "" };
+      return { email: u.user.email ?? "", display_name: p?.display_name ?? "", phone: (u.user.user_metadata?.phone as string | undefined) ?? "" };
     },
   });
 
@@ -48,6 +48,7 @@ export function LeadDialog({
     if (!open || !target) return;
     setContactName(me?.display_name || [wedding?.partner_a, wedding?.partner_b].filter(Boolean).join(" & "));
     setContactEmail(me?.email || "");
+    setContactPhone(me?.phone || "");
     setEventDate("");
     setGuestCount(wedding?.est_guest_count ? String(wedding.est_guest_count) : "");
     setMessage(

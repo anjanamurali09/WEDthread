@@ -163,6 +163,9 @@ function AuthPage() {
   const [mode, setMode] = useState<"signin" | "signup" | "forgot">(search.mode ?? "signin");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [firstName, setFirstName] = useState("");
+  const [lastName, setLastName] = useState("");
+  const [phone, setPhone] = useState("");
   const [loading, setLoading] = useState(false);
   // Set once the sign-up went through but the email still has to be verified.
   const [role, setRole] = useState<AppRole | null>(null);
@@ -198,11 +201,13 @@ function AuthPage() {
     try {
       if (mode === "signup") {
         if (!role) throw new Error("Choose how you'll use WEDthread first.");
+        const first = firstName.trim(), last = lastName.trim();
         const { data, error } = await supabase.auth.signUp({
           email: email.trim(), password,
           options: {
-            // The role chosen above is saved with the account as it is created.
-            data: { signup_role: role },
+            // The role chosen above is saved with the account as it is created, with the name and phone.
+            // `full_name` becomes the profile's display name (the sign-up trigger reads it).
+            data: { signup_role: role, first_name: first, last_name: last, full_name: `${first} ${last}`, phone: phone.trim() || undefined },
             // The link in the email brings the person back to the sign-in page.
             emailRedirectTo: `${window.location.origin}/auth?verified=1`,
           },
@@ -229,7 +234,7 @@ function AuthPage() {
       <AuthHeroPanel />
 
       <div className="flex flex-col justify-center px-8 py-6 md:px-16 md:py-6">
-        <div className="max-w-md w-full mx-auto">
+        <div className={cn("w-full mx-auto", mode === "signup" ? "max-w-xl" : "max-w-md")}>
           <h1 className="font-serif text-3xl">
             {mode === "signup" ? "Create your account" : mode === "forgot" ? "Reset your password" : "Welcome back"}
           </h1>
@@ -268,10 +273,33 @@ function AuthPage() {
                 </div>
               </div>
             )}
-            <div>
-              <label className="text-sm uppercase tracking-widest text-muted-foreground">Email</label>
-              <input required type="email" value={email} onChange={(e) => setEmail(e.target.value)} readOnly={!!sentTo}
-                className="mt-1 w-full rounded-2xl border border-line bg-pearl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-cherry" />
+            {mode === "signup" && (
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="text-sm uppercase tracking-widest text-muted-foreground">First name</label>
+                  <input required autoComplete="given-name" value={firstName} onChange={(e) => setFirstName(e.target.value)} readOnly={!!sentTo}
+                    className="mt-1 w-full rounded-2xl border border-line bg-pearl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-cherry" />
+                </div>
+                <div>
+                  <label className="text-sm uppercase tracking-widest text-muted-foreground">Last name</label>
+                  <input required autoComplete="family-name" value={lastName} onChange={(e) => setLastName(e.target.value)} readOnly={!!sentTo}
+                    className="mt-1 w-full rounded-2xl border border-line bg-pearl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-cherry" />
+                </div>
+              </div>
+            )}
+            <div className={mode === "signup" ? "grid grid-cols-2 gap-3" : undefined}>
+              <div>
+                <label className="text-sm uppercase tracking-widest text-muted-foreground">Email</label>
+                <input required type="email" autoComplete="email" value={email} onChange={(e) => setEmail(e.target.value)} readOnly={!!sentTo}
+                  className="mt-1 w-full rounded-2xl border border-line bg-pearl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-cherry" />
+              </div>
+              {mode === "signup" && (
+                <div>
+                  <label className="text-sm uppercase tracking-widest text-muted-foreground">Phone <span className="normal-case tracking-normal">(optional)</span></label>
+                  <input type="tel" autoComplete="tel" value={phone} onChange={(e) => setPhone(e.target.value)} readOnly={!!sentTo}
+                    className="mt-1 w-full rounded-2xl border border-line bg-pearl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-cherry" />
+                </div>
+              )}
             </div>
             <div>
               <label className="text-sm uppercase tracking-widest text-muted-foreground">Password</label>
