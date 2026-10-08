@@ -9,5 +9,5 @@ export const ROLE_OPTIONS: { role: AppRole; label: string; desc: string; icon: a
   { role: "venue",   label: "List a venue",    desc: "Reach couples planning a destination wedding.",       icon: Building2 },
   { role: "vendor",  label: "List services",   desc: "Photographers, planners, mehendi artists, florists.", icon: Store },
   { role: "planner", label: "Planner",         desc: "Coordinate every couple you work with, side by side.", icon: ClipboardList, comingSoon: true },
-  { role: "seller",  label: "Sell items",      desc: "Resell décor, dresses, tableware after your day.",    icon: ShoppingBag, comingSoon: true },
+  { role: "seller",  label: "Buy and sell items", desc: "Buy and sell décor, dresses, tableware after the day.", icon: ShoppingBag, comingSoon: true },
 ];

@@ -238,13 +238,11 @@ function AuthPage() {
           <h1 className="font-serif text-3xl">
             {mode === "signup" ? "Create your account" : mode === "forgot" ? "Reset your password" : "Welcome back"}
           </h1>
-          <p className="mt-1 text-sm text-muted-foreground">
-            {mode === "signup"
-              ? "Choose how you'll use WEDthread, then sign up with your email."
-              : mode === "forgot"
+          {mode !== "signup" && <p className="mt-1 text-sm text-muted-foreground">
+            {mode === "forgot"
                 ? "Enter your email and we'll send you a link to choose a new one."
                 : "Sign in to continue where you left off."}
-          </p>
+          </p>}
 
           {mode === "forgot" ? (
             <div className="mt-8"><ForgotPasswordForm initialEmail={email} onBack={() => setMode("signin")} /></div>
@@ -253,19 +251,18 @@ function AuthPage() {
             <p className="mt-6 rounded-2xl bg-[#FFF7D6] px-4 py-3 text-sm text-[#243746]">Your email is verified. Sign in to continue.</p>
           )}
 
-          <form onSubmit={onEmail} className="mt-5 space-y-3">
+          <form onSubmit={onEmail} className="mt-4 space-y-2.5">
             {mode === "signup" && (
               <div>
-                <label className="text-sm uppercase tracking-widest text-muted-foreground">I'm signing up as</label>
-                <div className="mt-1.5 space-y-1.5" role="radiogroup" aria-label="Account type">
-                  {ROLE_OPTIONS.map(({ role: r, label, desc, icon: Icon, comingSoon }) => (
+                <label className="text-xs uppercase tracking-widest text-muted-foreground">I'm signing up as</label>
+                <div className="mt-1 space-y-1" role="radiogroup" aria-label="Account type">
+                  {ROLE_OPTIONS.map(({ role: r, label, icon: Icon, comingSoon }) => (
                     <button key={r} type="button" role="radio" aria-checked={role === r} disabled={!!sentTo || comingSoon} onClick={() => setRole(r)} data-static
-                      className={cn("flex w-full items-center gap-3 rounded-2xl border px-4 py-2 text-left transition-colors",
+                      className={cn("flex w-full items-center gap-3 rounded-2xl border px-3 py-1.5 text-left transition-colors",
                         comingSoon ? "border-line bg-pearl opacity-60 cursor-not-allowed" : role === r ? "border-[#243746] bg-[#FFF7D6]" : "border-line bg-pearl hover:border-cherry")}>
-                      <span className="grid h-8 w-8 shrink-0 place-items-center rounded-xl bg-wine-soft text-wine"><Icon className="h-4 w-4" /></span>
+                      <span className="grid h-7 w-7 shrink-0 place-items-center rounded-lg bg-wine-soft text-wine"><Icon className="h-3.5 w-3.5" /></span>
                       <span className="min-w-0">
                         <span className="block text-sm font-medium">{label}</span>
-                        <span className="block text-xs text-muted-foreground">{desc}</span>
                       </span>
                       {comingSoon && <span className="ml-auto shrink-0 rounded-full bg-[#FFE08A] px-2.5 py-0.5 text-xs font-medium text-[#243746]">Coming soon</span>}
                     </button>
@@ -276,35 +273,35 @@ function AuthPage() {
             {mode === "signup" && (
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="text-sm uppercase tracking-widest text-muted-foreground">First name</label>
+                  <label className="text-xs uppercase tracking-widest text-muted-foreground">First name</label>
                   <input required autoComplete="given-name" value={firstName} onChange={(e) => setFirstName(e.target.value)} readOnly={!!sentTo}
-                    className="mt-1 w-full rounded-2xl border border-line bg-pearl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-cherry" />
+                    className="mt-0.5 w-full rounded-xl border border-line bg-pearl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-cherry" />
                 </div>
                 <div>
-                  <label className="text-sm uppercase tracking-widest text-muted-foreground">Last name</label>
+                  <label className="text-xs uppercase tracking-widest text-muted-foreground">Last name</label>
                   <input required autoComplete="family-name" value={lastName} onChange={(e) => setLastName(e.target.value)} readOnly={!!sentTo}
-                    className="mt-1 w-full rounded-2xl border border-line bg-pearl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-cherry" />
+                    className="mt-0.5 w-full rounded-xl border border-line bg-pearl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-cherry" />
                 </div>
               </div>
             )}
             <div className={mode === "signup" ? "grid grid-cols-2 gap-3" : undefined}>
               <div>
-                <label className="text-sm uppercase tracking-widest text-muted-foreground">Email</label>
+                <label className="text-xs uppercase tracking-widest text-muted-foreground">Email</label>
                 <input required type="email" autoComplete="email" value={email} onChange={(e) => setEmail(e.target.value)} readOnly={!!sentTo}
-                  className="mt-1 w-full rounded-2xl border border-line bg-pearl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-cherry" />
+                  className="mt-0.5 w-full rounded-xl border border-line bg-pearl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-cherry" />
               </div>
               {mode === "signup" && (
                 <div>
-                  <label className="text-sm uppercase tracking-widest text-muted-foreground">Phone <span className="normal-case tracking-normal">(optional)</span></label>
+                  <label className="text-xs uppercase tracking-widest text-muted-foreground">Phone <span className="normal-case tracking-normal">(optional)</span></label>
                   <input type="tel" autoComplete="tel" value={phone} onChange={(e) => setPhone(e.target.value)} readOnly={!!sentTo}
-                    className="mt-1 w-full rounded-2xl border border-line bg-pearl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-cherry" />
+                    className="mt-0.5 w-full rounded-xl border border-line bg-pearl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-cherry" />
                 </div>
               )}
             </div>
             <div>
-              <label className="text-sm uppercase tracking-widest text-muted-foreground">Password</label>
+              <label className="text-xs uppercase tracking-widest text-muted-foreground">Password</label>
               <input required type="password" minLength={6} value={password} onChange={(e) => setPassword(e.target.value)}
-                className="mt-1 w-full rounded-2xl border border-line bg-pearl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-cherry" />
+                className="mt-0.5 w-full rounded-xl border border-line bg-pearl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-cherry" />
             </div>
             {mode === "signin" && (
               <div className="text-right -mt-1">
