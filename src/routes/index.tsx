@@ -764,7 +764,7 @@ function Landing() {
 
       {/* Hero */}
       <section className="relative z-10 px-6 md:px-12 pt-8 md:pt-16 pb-10 grid lg:grid-cols-12 gap-10 items-center">
-        <div className="lg:col-span-6" data-reveal>
+        <div className="lg:col-span-6">
           <p className="text-sm uppercase tracking-[0.2em] text-[#7FA8D6]">
             For every wedding, anywhere
           </p>
@@ -786,11 +786,11 @@ function Landing() {
           </div>
         </div>
 
-        <div className="lg:col-span-6 relative" data-reveal>
+        <div className="lg:col-span-6 relative">
           <div className="relative overflow-hidden shadow-2xl blob-2 group [mask-image:linear-gradient(to_top,black_78%,transparent_100%)] [-webkit-mask-image:linear-gradient(to_top,black_78%,transparent_100%)]">
             <img src={heroImg} alt="Bride and groom embraced beneath ivy-covered arches overlooking a lake at sunset"
               className="w-full h-[420px] object-cover object-bottom transition-transform duration-[1200ms] group-hover:scale-105"
-              width={912} height={1157} loading="eager" fetchPriority="high" decoding="async" />
+              width={702} height={890} loading="eager" fetchPriority="high" decoding="async" />
             <div className="absolute inset-0 bg-gradient-to-t from-[#243746]/30 via-transparent to-transparent" />
           </div>
           <div className="hidden md:block absolute -bottom-6 -left-6 paper-card p-5 rotate-[-2deg] max-w-[260px] bg-paper transition-transform hover:rotate-0 hover:-translate-y-1">

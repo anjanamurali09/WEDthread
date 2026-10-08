@@ -18,6 +18,8 @@ export default defineConfig(({ command }) => ({
     // Only needed to package the server for deployment, not while developing.
     command === "build" ? nitro({ preset: "cloudflare-module", cloudflare: { deployConfig: true, nodeCompat: true, wrangler: { name: "wedthread", keep_vars: true, workers_dev: false, preview_urls: false } } }) : null,
   ],
+  // Changes on every build; used by the server to key its cached homepage (see src/server.ts).
+  define: command === "build" ? { __BUILD_ID__: JSON.stringify(Date.now().toString(36)) } : {},
   resolve: {
     dedupe: ["react", "react-dom", "@tanstack/react-router", "@tanstack/react-query", "@tanstack/react-start"],
   },
