@@ -97,7 +97,7 @@ function AuthHeroPanel() {
 
   useEffect(() => {
     if (photos.length < 2) return;
-    const t = setInterval(() => setIndex((i) => (i + 1) % photos.length), 6000);
+    const t = setInterval(() => setIndex((i) => (i + 1) % photos.length), 10000);
     return () => clearInterval(t);
   }, [photos.length]);
 
