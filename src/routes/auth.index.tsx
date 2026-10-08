@@ -234,7 +234,7 @@ function AuthPage() {
     <div className="min-h-screen grid lg:grid-cols-2 bg-pearl text-ink">
       <AuthHeroPanel />
 
-      <div className="flex flex-col justify-center px-8 py-6 md:px-16 md:py-6">
+      <div className="flex flex-col justify-center px-8 py-6 md:px-10 md:py-6">
         <div className={cn("w-full mx-auto", mode === "signup" ? "max-w-xl" : "max-w-md")}>
           <h1 className="font-serif text-3xl">
             {mode === "signup" ? "Create your account" : mode === "forgot" ? "Reset your password" : "Welcome back"}
@@ -259,13 +259,11 @@ function AuthPage() {
                 <div className="mt-1 grid grid-cols-2 gap-2" role="radiogroup" aria-label="Account type">
                   {ROLE_OPTIONS.map(({ role: r, label, icon: Icon, comingSoon }) => (
                     <button key={r} type="button" role="radio" aria-checked={role === r} disabled={!!sentTo || comingSoon} onClick={() => setRole(r)} data-static
-                      className={cn("flex w-full items-center gap-3 rounded-2xl border px-3 py-2 text-left transition-colors",
+                      className={cn("flex w-full items-center gap-2 rounded-2xl border px-2.5 py-2 text-left transition-colors",
                         comingSoon ? "border-line bg-pearl opacity-60 cursor-not-allowed" : role === r ? "border-[#243746] bg-[#FFF7D6]" : "border-line bg-pearl hover:border-cherry")}>
-                      <span className="grid h-8 w-8 shrink-0 place-items-center rounded-lg bg-[#FFE08A] text-[#243746]"><Icon className="h-4 w-4" /></span>
-                      <span className="min-w-0">
-                        <span className="block text-sm font-medium">{label}</span>
-                        {comingSoon && <span className="mt-0.5 inline-block rounded-full bg-[#FFE08A] px-2 py-px text-[11px] font-medium text-[#243746]">Coming soon</span>}
-                      </span>
+                      <span className="grid h-7 w-7 shrink-0 place-items-center rounded-lg bg-[#FFE08A] text-[#243746]"><Icon className="h-3.5 w-3.5" /></span>
+                      <span className="min-w-0 flex-1 text-[13px] font-medium leading-tight">{label}</span>
+                      {comingSoon && <span className="shrink-0 rounded-full bg-[#FFE08A] px-1.5 py-px text-[10px] font-medium text-[#243746]">Coming soon</span>}
                     </button>
                   ))}
                 </div>
