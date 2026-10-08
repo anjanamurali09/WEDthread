@@ -514,3 +514,18 @@ input.note-check:checked::after {
 .cookie-wobble { transform-origin: 50% 85%; animation: cookie-wobble 3.6s ease-in-out infinite; }
 .cookie-wobble:hover { animation-duration: 1.2s; }
 @media (prefers-reduced-motion: reduce) { .cookie-wobble { animation: none; } }
+
+/* Cards in a sideways row ease in as they slide into view (browsers without scroll-driven animation just show them). */
+@keyframes scroll-row-in {
+  from { opacity: 0.5; transform: scale(0.96); }
+  to { opacity: 1; transform: scale(1); }
+}
+@supports (animation-timeline: view()) {
+  @media (prefers-reduced-motion: no-preference) {
+    .scroll-row-card {
+      animation: scroll-row-in linear both;
+      animation-timeline: view(inline);
+      animation-range: entry 0% entry 60%;
+    }
+  }
+}

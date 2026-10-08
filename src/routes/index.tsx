@@ -490,23 +490,29 @@ function ScrollRow({ title, cardClass, contained = false, children }: { title?: 
   }, [children]);
 
   const scrollBy = (dir: 1 | -1) => { const el = ref.current; if (el) el.scrollBy({ left: dir * el.clientWidth * 0.85, behavior: "smooth" }); };
-  const arrow = "grid h-9 w-9 place-items-center rounded-full border border-line bg-paper text-[#243746] transition-colors hover:bg-[#FFE08A] disabled:opacity-30 disabled:hover:bg-paper";
+  const arrow = "absolute top-1/2 z-10 grid h-10 w-10 -translate-y-1/2 place-items-center rounded-full border border-line bg-paper/95 text-[#243746] shadow-sm transition-all duration-300 hover:scale-105 hover:bg-[#FFE08A] motion-reduce:transition-none";
+  const hidden = "pointer-events-none scale-90 opacity-0";
+  const canScroll = !(edge.start && edge.end);
 
   return (
     // The row breaks out of the page margins so cards run edge to edge; its own padding lines the first
-    // card up with the rest of the page, and the arrows and heading keep the page margins.
+    // card up with the rest of the page. The arrows sit on the left and right of the cards.
     <div data-reveal className={contained ? "mx-auto max-w-6xl" : "-mx-6 md:-mx-12"}>
-      <div className={cn("mb-3 flex items-center justify-between gap-4", !contained && "px-6 md:px-12")}>
-        <p className="text-sm uppercase tracking-widest text-[#7FA8D6]">{title}</p>
-        {!(edge.start && edge.end) && (
-          <div className="flex gap-2">
-            <button type="button" aria-label="Scroll left" disabled={edge.start} onClick={() => scrollBy(-1)} data-static className={arrow}><ChevronLeft className="h-4 w-4" /></button>
-            <button type="button" aria-label="Scroll right" disabled={edge.end} onClick={() => scrollBy(1)} data-static className={arrow}><ChevronRight className="h-4 w-4" /></button>
-          </div>
+      {title && (
+        <p className={cn("mb-3 text-sm uppercase tracking-widest text-[#7FA8D6]", !contained && "px-6 md:px-12")}>{title}</p>
+      )}
+      <div className="relative">
+        {canScroll && (
+          <>
+            <button type="button" aria-label="Scroll left" tabIndex={edge.start ? -1 : 0} onClick={() => scrollBy(-1)} data-static
+              className={cn(arrow, "-left-3 md:-left-5", edge.start && hidden)}><ChevronLeft className="h-4 w-4" /></button>
+            <button type="button" aria-label="Scroll right" tabIndex={edge.end ? -1 : 0} onClick={() => scrollBy(1)} data-static
+              className={cn(arrow, "-right-3 md:-right-5", edge.end && hidden)}><ChevronRight className="h-4 w-4" /></button>
+          </>
         )}
-      </div>
-      <div ref={ref} className={cn("no-scrollbar flex gap-4 overflow-x-auto scroll-smooth snap-x snap-mandatory pb-2", !contained && "px-6 md:px-12 scroll-px-6 md:scroll-px-12")}>
-        {Children.toArray(children).map((c, i) => <div key={i} className={cn("shrink-0 snap-start [&>*]:h-full", cardClass)}>{c}</div>)}
+        <div ref={ref} className={cn("no-scrollbar flex gap-4 overflow-x-auto scroll-smooth snap-x snap-mandatory pb-2", !contained && "px-6 md:px-12 scroll-px-6 md:scroll-px-12")}>
+          {Children.toArray(children).map((c, i) => <div key={i} className={cn("scroll-row-card shrink-0 snap-start [&>*]:h-full", cardClass)}>{c}</div>)}
+        </div>
       </div>
     </div>
   );

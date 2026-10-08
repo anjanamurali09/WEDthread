@@ -5,6 +5,8 @@ import { ChevronLeft, ChevronRight } from "lucide-react";
 // into that link's navigation, only change the active photo.
 export function PhotoCarousel({ photos, className }: { photos: string[]; className?: string }) {
   const [index, setIndex] = useState(0);
+  // Once the first photo is in, the rest download in the background so flipping through is instant.
+  const [warm, setWarm] = useState(false);
 
   const go = (e: React.MouseEvent, delta: number) => {
     e.preventDefault();
@@ -14,7 +16,12 @@ export function PhotoCarousel({ photos, className }: { photos: string[]; classNa
 
   return (
     <div className={className ?? "relative aspect-[4/3] bg-stone overflow-hidden"}>
-      {photos.length > 0 && <img src={photos[index]} className="w-full h-full object-cover" alt="" />}
+      {photos.map((src, i) => (i === 0 || warm || i === index) && (
+        <img key={src} src={src} alt="" decoding="async"
+          ref={i === 0 ? (el) => { if (el?.complete) setWarm(true); } : undefined}
+          onLoad={i === 0 ? () => setWarm(true) : undefined}
+          className={`absolute inset-0 h-full w-full object-cover transition-opacity duration-300 ${i === index ? "opacity-100" : "opacity-0"}`} />
+      ))}
       {photos.length > 1 && (
         <>
           <button type="button" onClick={(e) => go(e, -1)} aria-label="Previous photo"
