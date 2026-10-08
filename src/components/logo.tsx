@@ -1,31 +1,32 @@
 import { cn } from "@/lib/utils";
+import { MARK, WORDMARK } from "@/components/logo-paths";
 
-// The WedThread wordmark: "WED" in bold Didot, "thread" in italic Snell Roundhand,
-// both the same font-size (the visual size difference between a caps serif and a
-// lowercase script at matched font-size is expected — that's how the reference mark
-// was drawn). Didot and Snell Roundhand are classic macOS system fonts, not
-// freely-licensed web fonts we can legally embed — declaring them first renders
-// correctly wherever they're actually installed (Mac/Safari), and falls back to the
-// closest freely-licensed Google Fonts equivalents (Bodoni Moda, Mrs Saint Delafield)
-// everywhere else, so the mark still reads as intentional rather than falling back
-// to a generic system serif/cursive.
-const DIDOT_STACK = '"Didot", "Bodoni Moda", "Didot LT STD", Georgia, serif';
-const SNELL_STACK = '"Snell Roundhand", "Mrs Saint Delafield", "Segoe Script", cursive';
-
+// The WedThread wordmark: "WED" in bold Didot, "thread" in Snell Roundhand script.
+//
+// It is drawn as fixed outlines (see logo-paths.ts), not typed as text. Didot and Snell Roundhand exist only
+// on Apple computers, so as text the logo looked different on Windows, Android and anywhere else; as a drawing
+// it is identical for everyone. It scales with the surrounding font size (the `sizeClassName` text classes) and
+// takes its colour from the text colour, so it works on light and dark backgrounds exactly as before.
 export function Logo({ className, sizeClassName = "text-2xl", style }: { className?: string; sizeClassName?: string; style?: React.CSSProperties }) {
   return (
-    <span className={cn("inline-flex items-baseline text-wine select-none", sizeClassName, className)} style={style}>
-      <span style={{ fontFamily: DIDOT_STACK, fontWeight: 700 }}>WED</span>
-      <span style={{ fontFamily: SNELL_STACK, fontStyle: "italic", fontWeight: 400 }}>thread</span>
+    <span className={cn("inline-flex items-baseline text-wine select-none", sizeClassName, className)} style={style} role="img" aria-label="WedThread">
+      <svg viewBox={WORDMARK.viewBox} fill="currentColor" aria-hidden="true" focusable="false"
+        style={{ width: `${WORDMARK.widthEm}em`, height: `${WORDMARK.heightEm}em`, verticalAlign: `${-WORDMARK.descentEm}em`, overflow: "visible" }}>
+        <path d={WORDMARK.wed} />
+        <path d={WORDMARK.thread} />
+      </svg>
     </span>
   );
 }
 
-// Sidebar-collapsed state: just the initial, same weight/face as the "WED" half.
+// Sidebar-collapsed state: just the initial, the same drawn "W" as the wordmark.
 export function LogoMark({ className, sizeClassName = "text-2xl" }: { className?: string; sizeClassName?: string }) {
   return (
-    <span className={cn("text-wine select-none", sizeClassName, className)} style={{ fontFamily: DIDOT_STACK, fontWeight: 700 }}>
-      W
+    <span className={cn("inline-flex items-baseline text-wine select-none", sizeClassName, className)} role="img" aria-label="WedThread">
+      <svg viewBox={MARK.viewBox} fill="currentColor" aria-hidden="true" focusable="false"
+        style={{ width: `${MARK.widthEm}em`, height: `${MARK.heightEm}em`, verticalAlign: `${-MARK.descentEm}em`, overflow: "visible" }}>
+        <path d={MARK.w} />
+      </svg>
     </span>
   );
 }

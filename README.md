@@ -179,6 +179,7 @@ runs only after the code that reads the VAT number from `business_private` is li
   `20261007120000_tighten_anon_access.sql`; a new table is not public unless a migration grants it.
 - The wedding website and its templates are driven by `src/lib/website-templates.ts` plus each wedding's
   `site_customization`; the public site and the editor preview share the same render code (`SiteShell`).
+- **The logo is drawn, not typed.** `src/components/logo.tsx` renders fixed outlines (`logo-paths.ts`, generated from the Didot and Snell Roundhand letterforms) so it looks identical on every device. Do not replace it with text in those fonts: they exist only on Apple computers. The app's main fonts (Poppins and Newsreader) are self-hosted through `@fontsource` for the same reason.
 - Images imported from `src/assets` are bundled and hashed. Do not reference remote or platform-specific asset paths.
 
 ---

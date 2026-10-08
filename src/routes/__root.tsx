@@ -1,4 +1,13 @@
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+// The app's two main fonts are served from the website itself (not Google), so every visitor gets exactly the
+// same type even if Google Fonts is slow, blocked or declined.
+import "@fontsource/poppins/400.css";
+import "@fontsource/poppins/400-italic.css";
+import "@fontsource/poppins/500.css";
+import "@fontsource/poppins/600.css";
+import "@fontsource/poppins/700.css";
+import "@fontsource/newsreader/400.css";
+import "@fontsource/newsreader/400-italic.css";
 import {
   Outlet,
   Link,
@@ -77,7 +86,7 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
       { rel: "stylesheet", href: appCss },
       { rel: "preconnect", href: "https://fonts.googleapis.com" },
       { rel: "preconnect", href: "https://fonts.gstatic.com", crossOrigin: "anonymous" },
-      { rel: "stylesheet", href: "https://fonts.googleapis.com/css2?family=Newsreader:ital,opsz,wght@0,6..72,400;1,6..72,400&family=Poppins:ital,wght@0,400;0,500;0,600;0,700;1,400&family=Instrument+Sans:ital,wght@0,400..700;1,400..700&family=Fraunces:ital,wght@0,400;1,400&family=Bodoni+Moda:ital,wght@0,700;1,700&family=Mrs+Saint+Delafield&display=swap" },
+      { rel: "stylesheet", href: "https://fonts.googleapis.com/css2?family=Instrument+Sans:ital,wght@0,400..700;1,400..700&family=Fraunces:ital,wght@0,400;1,400&family=Bodoni+Moda:ital,wght@0,700;1,700&family=Mrs+Saint+Delafield&display=swap" },
       { rel: "icon", href: "/favicon.ico", sizes: "any" },
       { rel: "icon", href: "/favicon-32.png", type: "image/png", sizes: "32x32" },
       { rel: "icon", href: "/favicon-16.png", type: "image/png", sizes: "16x16" },
