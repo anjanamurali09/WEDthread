@@ -1,17 +1,11 @@
 import { useState } from "react";
 import { Dialog, DialogContent, DialogTitle, DialogDescription } from "@/components/ui/dialog";
-import { HeartHandshake, Building2, Store, ShoppingBag, ClipboardList } from "lucide-react";
+import { ROLE_OPTIONS } from "@/lib/role-options";
 import { toast } from "@/lib/toast";
 import { useRouter } from "@tanstack/react-router";
 import { addRoleForCurrentUser, useActiveRole, type AppRole } from "@/hooks/use-active-role";
 
-const OPTIONS: { role: AppRole; label: string; desc: string; icon: any }[] = [
-  { role: "couple",  label: "Getting married", desc: "Plan ceremonies, guests, seating, and your website.", icon: HeartHandshake },
-  { role: "planner", label: "Planner",         desc: "Coordinate every couple you work with, side by side.", icon: ClipboardList },
-  { role: "venue",   label: "List a venue",    desc: "Reach couples planning a destination wedding.",       icon: Building2 },
-  { role: "vendor",  label: "List services",   desc: "Photographers, planners, mehendi artists, florists.", icon: Store },
-  { role: "seller",  label: "Sell items",      desc: "Resell décor, dresses, tableware after your day.",    icon: ShoppingBag },
-];
+const OPTIONS = ROLE_OPTIONS;
 
 export function AddRoleDialog({
   open,
@@ -61,13 +55,13 @@ export function AddRoleDialog({
           </DialogDescription>
         </div>
         <div className="p-4 space-y-2 max-h-[70vh] overflow-y-auto">
-          {OPTIONS.map(({ role, label, desc, icon: Icon }) => {
+          {OPTIONS.map(({ role, label, desc, icon: Icon, comingSoon }) => {
             const already = roles.includes(role);
             return (
               <button
                 key={role}
-                onClick={() => !already && pick(role)}
-                disabled={already || saving !== null}
+                onClick={() => !already && !comingSoon && pick(role)}
+                disabled={already || comingSoon || saving !== null}
                 className="w-full flex items-start gap-3 rounded-2xl border border-line bg-paper p-4 text-left hover:border-cherry hover:-translate-y-0.5 transition-all disabled:opacity-50 disabled:hover:translate-y-0 disabled:hover:border-line"
               >
                 <span className="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-wine-soft text-wine">
@@ -77,6 +71,7 @@ export function AddRoleDialog({
                   <p className="font-serif text-lg">{label}</p>
                   <p className="text-sm text-muted-foreground mt-0.5">{desc}</p>
                 </div>
+                {comingSoon && !already && <span className="shrink-0 self-center rounded-full bg-[#FFE08A] px-2.5 py-0.5 text-xs font-medium text-[#243746]">Coming soon</span>}
                 {already && <span className="text-[10px] uppercase tracking-widest text-muted-foreground self-center">Added</span>}
                 {saving === role && <span className="text-[10px] uppercase tracking-widest text-cherry self-center">Adding…</span>}
               </button>

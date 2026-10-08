@@ -100,12 +100,12 @@ function RolePicker() {
           </p>
 
           <div className="mt-8 space-y-3">
-            {OPTIONS.map(({ role, label, desc, icon: Icon }) => (
+            {OPTIONS.map(({ role, label, desc, icon: Icon, comingSoon }) => (
               <button
                 key={role}
                 onClick={() => pick(role)}
-                disabled={saving !== null}
-                className="w-full flex items-start gap-4 rounded-3xl border border-line bg-paper p-5 text-left hover:border-cherry hover:-translate-y-0.5 transition-all disabled:opacity-60"
+                disabled={saving !== null || comingSoon}
+                className="w-full flex items-start gap-4 rounded-3xl border border-line bg-paper p-5 text-left hover:border-cherry hover:-translate-y-0.5 transition-all disabled:opacity-60 disabled:hover:border-line disabled:hover:translate-y-0"
               >
                 <span className="grid h-11 w-11 shrink-0 place-items-center rounded-2xl bg-wine-soft text-wine">
                   <Icon className="h-5 w-5" />
@@ -114,6 +114,7 @@ function RolePicker() {
                   <p className="font-serif text-xl">{label}</p>
                   <p className="text-sm text-muted-foreground mt-0.5">{desc}</p>
                 </div>
+                {comingSoon && <span className="ml-auto self-center shrink-0 rounded-full bg-[#FFE08A] px-3 py-1 text-xs font-medium text-[#243746]">Coming soon</span>}
                 {saving === role && (
                   <span className="ml-auto text-sm text-cherry self-center">Setting up…</span>
                 )}

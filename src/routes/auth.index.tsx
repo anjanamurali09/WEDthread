@@ -253,15 +253,16 @@ function AuthPage() {
               <div>
                 <label className="text-sm uppercase tracking-widest text-muted-foreground">I'm signing up as</label>
                 <div className="mt-1.5 space-y-1.5" role="radiogroup" aria-label="Account type">
-                  {ROLE_OPTIONS.map(({ role: r, label, desc, icon: Icon }) => (
-                    <button key={r} type="button" role="radio" aria-checked={role === r} disabled={!!sentTo} onClick={() => setRole(r)} data-static
+                  {ROLE_OPTIONS.map(({ role: r, label, desc, icon: Icon, comingSoon }) => (
+                    <button key={r} type="button" role="radio" aria-checked={role === r} disabled={!!sentTo || comingSoon} onClick={() => setRole(r)} data-static
                       className={cn("flex w-full items-center gap-3 rounded-2xl border px-4 py-2 text-left transition-colors",
-                        role === r ? "border-[#243746] bg-[#FFF7D6]" : "border-line bg-pearl hover:border-cherry")}>
+                        comingSoon ? "border-line bg-pearl opacity-60 cursor-not-allowed" : role === r ? "border-[#243746] bg-[#FFF7D6]" : "border-line bg-pearl hover:border-cherry")}>
                       <span className="grid h-8 w-8 shrink-0 place-items-center rounded-xl bg-wine-soft text-wine"><Icon className="h-4 w-4" /></span>
                       <span className="min-w-0">
                         <span className="block text-sm font-medium">{label}</span>
                         <span className="block text-xs text-muted-foreground">{desc}</span>
                       </span>
+                      {comingSoon && <span className="ml-auto shrink-0 rounded-full bg-[#FFE08A] px-2.5 py-0.5 text-xs font-medium text-[#243746]">Coming soon</span>}
                     </button>
                   ))}
                 </div>
