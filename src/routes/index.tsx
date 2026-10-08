@@ -773,7 +773,7 @@ function Landing() {
             </button>
             <Link to="/venue"
               className="inline-flex items-center gap-2 rounded-full border border-[#7FA8D6] text-[#7FA8D6] px-6 py-3 text-sm transition-all hover:bg-[#7FA8D6] hover:text-[#FFF7D6] hover:rounded-2xl">
-              Browse destinations
+              Browse venues
             </Link>
           </div>
         </div>
