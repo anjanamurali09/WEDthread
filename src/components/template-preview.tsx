@@ -9,8 +9,8 @@ import type { Template } from "@/lib/website-templates";
 export function TemplatePreview({ t, names }: { t: Template; names: { a: string; b: string } }) {
   const { palette, fonts, layout } = t;
   const display: React.CSSProperties = { fontFamily: `"${fonts.display}", serif` };
-  const A = names.a || "Partner A";
-  const B = names.b || "Partner B";
+  const A = names.a || "Partner 1";
+  const B = names.b || "Partner 2";
 
   const box = "aspect-[4/3] w-full overflow-hidden relative";
 

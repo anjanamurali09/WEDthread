@@ -1,4 +1,5 @@
 import { Link, useNavigate } from "@tanstack/react-router";
+import { coupleName } from "@/lib/partner-names";
 import { useEffect, useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useCurrentWedding, useEvents, useGuests, useInvites, useExpenses, useInvalidateWedding } from "@/lib/wedding-hooks";
@@ -191,5 +192,5 @@ export function CoupleDashboard() {
 }
 
 export function coupleTitle(wedding: any) {
-  return `${wedding.partner_a} & ${wedding.partner_b}`;
+  return coupleName(wedding);
 }

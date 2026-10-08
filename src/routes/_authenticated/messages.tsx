@@ -1,4 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
+import { coupleName } from "@/lib/partner-names";
 import { useEffect, useRef, useState } from "react";
 import { AppShell } from "@/components/app-shell";
 import { useCurrentWedding, useGuests, useInvites, useInvalidateWedding } from "@/lib/wedding-hooks";
@@ -41,7 +42,7 @@ function waLink(guest: any, body: string) {
 // and {{rsvp_link}} are both genuinely per-recipient here: every send still goes through a
 // guest checklist that resolves each guest's own token link.
 function defaultTemplates(wedding: { partner_a: string; partner_b: string; destination_city: string | null; destination_country: string | null }) {
-  const partners = `${wedding.partner_a} & ${wedding.partner_b}`;
+  const partners = coupleName(wedding);
   const destination = [wedding.destination_city, wedding.destination_country].filter(Boolean).join(", ");
   return [
     { kind: "save_the_date", name: "Save the date", body: `Hi {{name}}! ${partners} are getting married in ${destination}, save the dates. Details coming soon 💌` },

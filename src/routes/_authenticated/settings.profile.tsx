@@ -75,8 +75,8 @@ function ProfileSettingsPage() {
         ) : (
         <form onSubmit={submit} className="px-8 py-6 space-y-4">
           <div className="grid md:grid-cols-2 gap-4">
-            <F label="Partner A" required value={form.partner_a} onChange={(v) => setField("partner_a", v)} />
-            <F label="Partner B" required value={form.partner_b} onChange={(v) => setField("partner_b", v)} />
+            <F label="Partner 1" required value={form.partner_a} onChange={(v) => setField("partner_a", v)} />
+            <F label="Partner 2" required value={form.partner_b} onChange={(v) => setField("partner_b", v)} />
           </div>
           <div className="grid md:grid-cols-2 gap-4">
             <F label="Destination city" value={form.destination_city} onChange={(v) => setField("destination_city", v)} />

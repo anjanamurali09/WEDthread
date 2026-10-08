@@ -1,4 +1,5 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
+import { coupleName, partnerOne, partnerTwo } from "@/lib/partner-names";
 import { createContext, useContext, useEffect, useMemo, useRef, useState } from "react";
 import { AppShell, SIDEBAR_COLLAPSED_KEY } from "@/components/app-shell";
 import { useCurrentWedding, useInvalidateWedding, useEvents, useWeddingPhotos } from "@/lib/wedding-hooks";
@@ -996,7 +997,7 @@ function SectionFields({ section, setField, events, weddingId }: { section: Sect
       );
     case "footer":
       return (
-        <div>{label("Footer text")}<input className={inp} placeholder="Partner A & Partner B" value={c.text ?? ""} onChange={(e) => setField("text", e.target.value)} /></div>
+        <div>{label("Footer text")}<input className={inp} placeholder="Partner 1 & Partner 2" value={c.text ?? ""} onChange={(e) => setField("text", e.target.value)} /></div>
       );
     case "text":
       return (
@@ -1533,7 +1534,7 @@ export function SiteShell({ wedding, sections, palette, template, events, layout
 }) {
   const monogram = (
     <p className="font-serif text-3xl text-center px-6" style={{ fontFamily: `"${template.fonts.display}", serif`, color: palette.artInk ?? palette.ink }}>
-      {wedding.partner_a} & {wedding.partner_b}
+      {coupleName(wedding)}
     </p>
   );
 
@@ -1832,7 +1833,7 @@ function SectionContent({ section, palette, template, wedding, events = [], supp
             }}>
               {c.names?.trim()
                 ? c.names
-                : <>{wedding.partner_a}<br /><span style={{ color: pal.accent }}>&</span><br />{wedding.partner_b}</>}
+                : <>{partnerOne(wedding)}<br /><span style={{ color: pal.accent }}>&</span><br />{partnerTwo(wedding)}</>}
             </h1>
             {c.tagline && <p className="mt-6 text-sm opacity-80">{c.tagline}</p>}
             {(c.showDate || c.showLocation || c.showCountdown || c.showRsvp) && (
@@ -1921,14 +1922,14 @@ function SectionContent({ section, palette, template, wedding, events = [], supp
           )}
           <div className="text-center">
             {c.tagline && <p className="text-[10px] uppercase tracking-[0.3em]" style={{ color: palette.accent }}>{c.tagline}</p>}
-            <p style={{ fontFamily: sectionFontFamily(c, displayFont) }} className="text-xl">{wedding.partner_a} & {wedding.partner_b}</p>
+            <p style={{ fontFamily: sectionFontFamily(c, displayFont) }} className="text-xl">{coupleName(wedding)}</p>
           </div>
         </section>
       );
     case "footer":
       return (
         <section className="px-6 py-8 text-center border-t" style={{ borderColor: palette.soft }}>
-          <p className="text-sm opacity-70">{c.text || `${wedding.partner_a} & ${wedding.partner_b}`}</p>
+          <p className="text-sm opacity-70">{c.text || coupleName(wedding)}</p>
         </section>
       );
     case "text": {

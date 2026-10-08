@@ -1,4 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
+import { coupleName } from "@/lib/partner-names";
 import { track } from "@/lib/analytics";
 import { useEffect, useState } from "react";
 import { AppShell } from "@/components/app-shell";
@@ -569,7 +570,7 @@ function RegistryLocaleButton({ country, currency, countryOptions, currencyOptio
 
 function ShareDialog({ url, wedding, onClose }: { url: string; wedding: any; onClose: () => void }) {
   const [copied, setCopied] = useState(false);
-  const message = `We've made a wedding registry! Take a look 💛\n${wedding.partner_a} & ${wedding.partner_b}\n${url}`;
+  const message = `We've made a wedding registry! Take a look 💛\n${coupleName(wedding)}\n${url}`;
   const waHref = `https://wa.me/?text=${encodeURIComponent(message)}`;
   const qrSrc = `https://api.qrserver.com/v1/create-qr-code/?size=280x280&data=${encodeURIComponent(url)}`;
 

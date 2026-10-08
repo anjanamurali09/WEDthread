@@ -1,4 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
+import { partnerOne, partnerTwo } from "@/lib/partner-names";
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { getTemplate } from "@/lib/website-templates";
@@ -72,7 +73,7 @@ function WeddingSite() {
         <section className="min-h-[92vh] flex flex-col items-center justify-center text-center px-6">
           <p className="text-sm uppercase tracking-[0.35em]" style={{ color: palette.accent }}>Together with their families</p>
           <h1 className="mt-8" style={{ fontFamily: `"${effectiveTemplate.fonts.display}", serif`, fontSize: "calc(clamp(3rem, 8vw, 6rem) * var(--site-scale, 1))", lineHeight: 0.95 }}>
-            {wedding.partner_a}<br /><span style={{ color: palette.accent }}>&</span><br />{wedding.partner_b}
+            {partnerOne(wedding)}<br /><span style={{ color: palette.accent }}>&</span><br />{partnerTwo(wedding)}
           </h1>
         </section>
       )}

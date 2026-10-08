@@ -58,9 +58,9 @@ export function CreateWeddingDialog() {
 
         <form onSubmit={submit} className="mt-6 space-y-4">
           <div className="grid gap-4 sm:grid-cols-2">
-            <label className="block"><span className={LABEL}>Partner A <span className="text-cherry">*</span></span>
+            <label className="block"><span className={LABEL}>Partner 1 <span className="text-cherry">*</span></span>
               <input required autoFocus value={form.partner_a} onChange={(e) => set("partner_a", e.target.value)} className={FIELD} /></label>
-            <label className="block"><span className={LABEL}>Partner B <span className="text-cherry">*</span></span>
+            <label className="block"><span className={LABEL}>Partner 2 <span className="text-cherry">*</span></span>
               <input required value={form.partner_b} onChange={(e) => set("partner_b", e.target.value)} className={FIELD} /></label>
           </div>
           <div className="grid gap-4 sm:grid-cols-2">

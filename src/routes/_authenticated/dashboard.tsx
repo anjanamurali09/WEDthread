@@ -1,4 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
+import { coupleName } from "@/lib/partner-names";
 import { AppShell } from "@/components/app-shell";
 import { useActiveRole } from "@/hooks/use-active-role";
 import { CoupleDashboard } from "@/components/dashboards/couple-dashboard";
@@ -39,7 +40,7 @@ function Dashboard() {
   if (!wedding) return <AppShell title="Welcome"><div /></AppShell>;
   return (
     <AppShell
-      title={wedding ? `${wedding.partner_a} & ${wedding.partner_b}` : "Your wedding"}
+      title={coupleName(wedding)}
       subtitle={wedding?.destination_city ? `${wedding.destination_city}${wedding.destination_country ? ", " + wedding.destination_country : ""} · ${wedding.est_guest_count != null ? formatNumber(wedding.est_guest_count) : "-"} guests estimated` : undefined}
     >
       <CoupleDashboard />

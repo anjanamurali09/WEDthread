@@ -1,4 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
+import { partnerOne, partnerTwo } from "@/lib/partner-names";
 import { track } from "@/lib/analytics";
 import { useEffect, useRef, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
@@ -131,7 +132,7 @@ function RsvpPage() {
   return (
     <div className="min-h-screen bg-paper py-14 px-6">
       <RsvpPageBody
-        partnerA={first.partner_a} partnerB={first.partner_b} guestName={first.guest_name}
+        partnerA={partnerOne(first)} partnerB={partnerTwo(first)} guestName={first.guest_name}
         attendanceQuestionText={first.attendance_question_text ?? DEFAULT_ATTENDANCE_TEXT}
         allowMaybe={first.attendance_allow_maybe ?? false}
         acceptLabel={first.attendance_accept_label} declineLabel={first.attendance_decline_label} maybeLabel={first.attendance_maybe_label}

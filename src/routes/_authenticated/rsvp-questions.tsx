@@ -1,4 +1,5 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
+import { partnerOne, partnerTwo } from "@/lib/partner-names";
 import { useEffect, useMemo, useState } from "react";
 import Papa from "papaparse";
 import { AppShell } from "@/components/app-shell";
@@ -407,7 +408,7 @@ function RsvpGuestPreview({ wedding, events, questions, onClose }: {
       </div>
       <div className="bg-paper py-14 px-6 min-h-[calc(100vh-48px)]">
         <RsvpPageBody
-          partnerA={wedding.partner_a} partnerB={wedding.partner_b} guestName="Guest Name"
+          partnerA={partnerOne(wedding)} partnerB={partnerTwo(wedding)} guestName="Guest Name"
           attendanceQuestionText={wedding.attendance_question_text || DEFAULT_ATTENDANCE_TEXT}
           allowMaybe={wedding.attendance_allow_maybe ?? false}
           acceptLabel={wedding.attendance_accept_label} declineLabel={wedding.attendance_decline_label} maybeLabel={wedding.attendance_maybe_label}

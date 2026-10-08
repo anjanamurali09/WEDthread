@@ -1,4 +1,5 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
+import { partnerOne, partnerTwo } from "@/lib/partner-names";
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Check, ExternalLink, Heart, Star, X } from "lucide-react";
@@ -113,7 +114,7 @@ function PublicRegistry() {
       <section className="max-w-5xl mx-auto px-6 pt-16 pb-12 text-center">
         <p className="text-sm uppercase tracking-[0.35em]" style={{ color: palette.accent }}>Wedding registry</p>
         <h1 className="mt-6" style={{ fontFamily: `"${fonts.display}", serif`, fontSize: "clamp(2.5rem, 6vw, 4.5rem)", lineHeight: 1 }}>
-          {wedding.partner_a} <span style={{ color: palette.accent }}>&</span> {wedding.partner_b}
+          {partnerOne(wedding)} <span style={{ color: palette.accent }}>&</span> {partnerTwo(wedding)}
         </h1>
         <p className="mt-6 max-w-xl mx-auto text-sm opacity-70 whitespace-pre-line">
           {custom.registryIntro || DEFAULT_REGISTRY_INTRO}

@@ -1,4 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
+import { coupleName } from "@/lib/partner-names";
 import { useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
@@ -37,7 +38,7 @@ function BusinessMessagesPage() {
         supabase.from("conversation_messages").select("conversation_id,body,created_at").in("conversation_id", convos.map((c) => c.id)).order("created_at", { ascending: false }),
         supabase.from("enquiries").select("conversation_id,status").in("conversation_id", convos.map((c) => c.id)),
       ]);
-      const nameById = new Map((weddings ?? []).map((w) => [w.id, `${w.partner_a} & ${w.partner_b}`]));
+      const nameById = new Map((weddings ?? []).map((w) => [w.id, coupleName(w)]));
       const previewByConvo = new Map<string, string>();
       for (const m of msgs ?? []) if (!previewByConvo.has(m.conversation_id)) previewByConvo.set(m.conversation_id, m.body);
       const newByConvo = new Set((enquiries ?? []).filter((e) => e.status === "new").map((e) => e.conversation_id));

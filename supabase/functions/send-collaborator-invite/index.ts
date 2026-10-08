@@ -60,8 +60,10 @@ Deno.serve(async (req: Request) => {
     if (!collaborator) return respond(404, { error: "Add this person as a collaborator first" });
 
     const { data: profile } = await service.from("profiles").select("display_name").eq("user_id", user.id).maybeSingle();
-    const inviter = profile?.display_name?.trim() || wedding.partner_a || "Someone";
-    const couple = `${wedding.partner_a} & ${wedding.partner_b}`;
+    const partnerOne = wedding.partner_a?.trim() || "Partner 1";
+    const partnerTwo = wedding.partner_b?.trim() || "Partner 2";
+    const inviter = profile?.display_name?.trim() || partnerOne;
+    const couple = `${partnerOne} & ${partnerTwo}`;
     const signIn = `${APP_URL}/auth`;
     const signUp = `${APP_URL}/auth?mode=signup`;
 

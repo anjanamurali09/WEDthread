@@ -63,7 +63,7 @@ Deno.serve(async (req: Request) => {
     const ownerEmail = ownerData?.user?.email;
     if (ownerError || !ownerEmail) return respond(200, { sent: false, reason: "no_owner_email" });
 
-    const coupleName = wedding ? `${wedding.partner_a} & ${wedding.partner_b}` : "A couple";
+    const coupleName = `${wedding?.partner_a?.trim() || "Partner 1"} & ${wedding?.partner_b?.trim() || "Partner 2"}`;
     const messagesUrl = `${APP_URL}/business/messages`;
 
     const html = `

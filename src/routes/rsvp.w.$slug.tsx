@@ -1,4 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
+import { partnerOne, partnerTwo } from "@/lib/partner-names";
 import { track } from "@/lib/analytics";
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
@@ -178,7 +179,7 @@ function RsvpOpenPage() {
           </div>
           <p className="text-center text-sm uppercase tracking-[0.25em] text-clay">You are invited to celebrate</p>
           <h1 className="mt-4 text-center font-serif text-4xl md:text-5xl leading-tight">
-            {first.partner_a} <span className="text-clay">&</span> {first.partner_b}
+            {partnerOne(first)} <span className="text-clay">&</span> {partnerTwo(first)}
           </h1>
           <p className="mt-4 text-center text-muted-foreground">What's your name?</p>
           <input value={name} onChange={(e) => setName(e.target.value)} placeholder="Full name" autoFocus
@@ -226,7 +227,7 @@ function RsvpOpenPage() {
   return (
     <div className="min-h-screen bg-paper py-14 px-6">
       <RsvpPageBody
-        partnerA={first.partner_a} partnerB={first.partner_b} guestName={name.trim()}
+        partnerA={partnerOne(first)} partnerB={partnerTwo(first)} guestName={name.trim()}
         attendanceQuestionText={first.attendance_question_text ?? DEFAULT_ATTENDANCE_TEXT}
         allowMaybe={first.attendance_allow_maybe ?? false}
         acceptLabel={first.attendance_accept_label} declineLabel={first.attendance_decline_label} maybeLabel={first.attendance_maybe_label}

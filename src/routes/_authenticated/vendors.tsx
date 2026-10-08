@@ -1,4 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
+import { partnerOne, partnerTwo } from "@/lib/partner-names";
 import { useMemo, useState } from "react";
 import { AppShell } from "@/components/app-shell";
 import { useQuery } from "@tanstack/react-query";
@@ -125,7 +126,7 @@ function VendorsPage() {
           {filtered.map((v: any) => {
             const priceLabel = v.price_tier ? "$".repeat(v.price_tier) : "";
             const waMsg = buildLeadMessage({
-              partnerA: wedding?.partner_a, partnerB: wedding?.partner_b,
+              partnerA: wedding ? partnerOne(wedding) : undefined, partnerB: wedding ? partnerTwo(wedding) : undefined,
               city: wedding?.destination_city, country: wedding?.destination_country,
               guests: wedding?.est_guest_count, targetName: v.business_name,
             });

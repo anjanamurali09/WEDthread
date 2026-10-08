@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { partnerOne } from "@/lib/partner-names";
 import { supabase } from "@/integrations/supabase/client";
 import { Star } from "lucide-react";
 
@@ -44,7 +45,7 @@ export function ReviewsSection({ businessId, refreshKey }: { businessId: string;
       const list = rows ?? [];
       if (list.length === 0) { setReviews([]); setLoading(false); return; }
       const { data: weddings } = await supabase.from("weddings").select("id,partner_a").in("id", list.map((r) => r.wedding_id));
-      const nameById = new Map((weddings ?? []).map((w) => [w.id, w.partner_a?.split(" ")[0] ?? "A couple"]));
+      const nameById = new Map((weddings ?? []).map((w) => [w.id, partnerOne(w).split(" ")[0]]));
       setReviews(list.map((r) => ({ ...r, reviewerName: nameById.get(r.wedding_id) ?? "A couple" })));
       setLoading(false);
     })();
