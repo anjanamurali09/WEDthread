@@ -111,11 +111,11 @@ function ProfileSettingsPage() {
 function SettingsRow({ title, danger = false, children }: { title: string; danger?: boolean; children: React.ReactNode }) {
   const [open, setOpen] = useState(false);
   return (
-    <section className="max-w-xl paper-card mt-3 overflow-hidden">
+    <section className="mx-auto mt-3 max-w-xl paper-card overflow-hidden">
       <button type="button" data-static aria-expanded={open} onClick={() => setOpen((v) => !v)}
-        className="flex w-full cursor-pointer items-center justify-between px-8 py-5 text-left">
-        <span className={cn("font-serif text-xl", danger && "text-cherry")}>{title}</span>
-        <ChevronDown className={cn("h-5 w-5 text-muted-foreground transition-transform", open && "rotate-180")} />
+        className="relative flex w-full cursor-pointer items-center justify-center px-12 py-5 text-center">
+        <span className={cn("font-sans text-lg font-medium", danger && "text-cherry")}>{title}</span>
+        <ChevronDown className={cn("absolute right-8 h-5 w-5 text-muted-foreground transition-transform", open && "rotate-180")} />
       </button>
       {open && <div className="border-t border-line/60">{children}</div>}
     </section>
@@ -137,10 +137,7 @@ function DangerZoneSection({ wedding }: { wedding: { id: string; partner_a: stri
 
   return (
     <div className="px-8 py-6">
-      <p className="text-sm text-muted-foreground">
-        Permanently deletes this wedding. Every event, guest, RSVP, seating chart, budget entry, message, and your wedding website. This can't be undone.
-        Your couple workspace itself stays on your account, so you can start planning a new wedding anytime.
-      </p>
+      <p className="text-sm text-muted-foreground">Permanently delete this wedding and everything in it.</p>
       <button type="button" onClick={() => setConfirmOpen(true)}
         className="mt-4 rounded-full border border-cherry text-cherry px-5 py-2.5 text-sm font-medium hover:bg-cherry hover:text-pearl cursor-pointer">
         Delete this wedding
@@ -181,10 +178,7 @@ function PaymentMethodsSection() {
   return (
     <div className="px-8 py-6 space-y-5">
       <div>
-        <p className="text-sm text-muted-foreground">
-          Entirely optional. Save a card ahead of time so future vendor enquiries go faster.
-          Nothing here is required to send an enquiry today.
-        </p>
+        <p className="text-sm text-muted-foreground">Optionally save a card to speed up vendor enquiries.</p>
       </div>
 
       {isLoading ? (
@@ -302,11 +296,7 @@ function CollaboratorsSection({ weddingId }: { weddingId: string }) {
   return (
     <div className="px-8 py-6 space-y-5">
       <div>
-        <p className="text-sm text-muted-foreground">
-          Give someone else full edit access to this wedding. Everything except deleting
-          the wedding itself or managing collaborators. They need a WedThread account with a
-          matching email; access starts as soon as they sign in.
-        </p>
+        <p className="text-sm text-muted-foreground">Invite someone to edit this wedding with you.</p>
       </div>
 
       <form onSubmit={invite} className="flex gap-2">

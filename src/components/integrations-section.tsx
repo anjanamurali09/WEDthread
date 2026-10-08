@@ -83,9 +83,7 @@ export function IntegrationsSection({ weddingId }: { weddingId: string }) {
 
   return (
     <section className="px-8 py-6">
-      <p className="text-sm text-muted-foreground">
-        Keep your guest list and budget in a Google Sheet that stays in sync with WEDthread. Edit in either place. Changes flow both ways, and everything is saved in WEDthread.
-      </p>
+      <p className="text-sm text-muted-foreground">Keep your guest list and budget in sync with a Google Sheet.</p>
 
       <div className="mt-5 flex items-center justify-between gap-3 rounded-2xl border border-line px-4 py-3">
         <div className="flex items-center gap-3 min-w-0">
