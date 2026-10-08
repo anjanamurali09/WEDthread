@@ -22,10 +22,26 @@ const HERO_SLIDES = [
 // Real photos already uploaded for approved venues/vendors, cycling behind
 // the headline: no stock imagery, just what's actually on the platform.
 //
-// Speed matters here: the panel is blue until a photo is ready. So the last set of photos that passed
-// the size check is remembered in the browser and shown at once on the next visit, and on a first visit
-// each photo is shown the moment it passes (not after every candidate has finished downloading).
-const HERO_CACHE_KEY = "wedthread.auth-hero-photos";
+// The panel is huge (and sharp screens double it), so only high-resolution photos are used; anything smaller
+// is skipped rather than stretched into a blur. Speed matters too: the panel is blue until a photo is ready,
+// so the last set that passed is remembered in the browser and shown at once on the next visit, and on a
+// first visit each photo is shown the moment it passes. Candidates are checked a few at a time and checking
+// stops as soon as there are enough, so visitors never download the whole library.
+const HERO_CACHE_KEY = "wedthread.auth-hero-photos-v2";
+const HERO_MIN_WIDTH = 1600;
+const HERO_MIN_HEIGHT = 1000;
+const HERO_WANTED = 6;
+const HERO_BATCH = 6;
+
+function isSharpEnough(url: string): Promise<boolean> {
+  return new Promise((resolve) => {
+    const img = new Image();
+    const timer = setTimeout(() => resolve(false), 8000);
+    img.onload = () => { clearTimeout(timer); resolve(img.naturalWidth >= HERO_MIN_WIDTH && img.naturalHeight >= HERO_MIN_HEIGHT); };
+    img.onerror = () => { clearTimeout(timer); resolve(false); };
+    img.src = url;
+  });
+}
 
 function useAuthHeroPhotos() {
   const [photos, setPhotos] = useState<string[]>([]);
@@ -37,7 +53,7 @@ function useAuthHeroPhotos() {
     // 1. Straight away: whatever worked last time (already in the browser's image cache).
     try {
       const cached = JSON.parse(localStorage.getItem(HERO_CACHE_KEY) || "[]");
-      if (Array.isArray(cached) && cached.length) { usedCache = true; setPhotos(cached.filter((u): u is string => typeof u === "string").slice(0, 6)); }
+      if (Array.isArray(cached) && cached.length) { usedCache = true; setPhotos(cached.filter((u): u is string => typeof u === "string").slice(0, HERO_WANTED)); }
     } catch { /* storage unavailable: just load fresh */ }
 
     (async () => {
@@ -47,45 +63,28 @@ function useAuthHeroPhotos() {
         .eq("media_type", "photo")
         .eq("businesses.verification_status", "verified")
         .order("created_at", { ascending: false })
-        .limit(16);
+        .limit(120);
       if (cancelled || !data) return;
       const urls = data.map((r) => r.url);
       for (let i = urls.length - 1; i > 0; i--) {
         const j = Math.floor(Math.random() * (i + 1));
         [urls[i], urls[j]] = [urls[j], urls[i]];
       }
-      // 2. Check every candidate in parallel. Photos smaller than 1000px on their short side are skipped rather
-      //    than stretched. Each photo that passes is
-      //    shown immediately; the verified set replaces the remembered one at the end.
+      // 2. Check a batch at a time; stop once there are enough sharp ones.
       const passed: string[] = [];
-      let settled = 0;
-      const finish = () => {
-        if (cancelled) return;
-        const finalSet = passed.slice(0, 6);
-        if (finalSet.length) {
-          setPhotos(finalSet);
-          try { localStorage.setItem(HERO_CACHE_KEY, JSON.stringify(finalSet)); } catch { /* ignore */ }
-        }
-      };
-      urls.forEach((url) => {
-        const img = new Image();
-        let done = false;
-        const settle = (ok: boolean) => {
-          if (done) return;
-          done = true;
-          if (ok && passed.length < 6) {
-            passed.push(url);
-            // First visit: add each photo as soon as it passes, so the first appears at once and the rotation can start.
-            if (!cancelled && !usedCache) setPhotos((prev) => (prev.includes(url) ? prev : [...prev, url].slice(0, 6)));
-          }
-          settled++;
-          if (settled === urls.length) finish();
-        };
-        const timer = setTimeout(() => settle(false), 8000);
-        img.onload = () => { clearTimeout(timer); settle(Math.min(img.naturalWidth, img.naturalHeight) >= 1000); };
-        img.onerror = () => { clearTimeout(timer); settle(false); };
-        img.src = url;
-      });
+      for (let start = 0; start < urls.length && passed.length < HERO_WANTED && !cancelled; start += HERO_BATCH) {
+        await Promise.all(urls.slice(start, start + HERO_BATCH).map(async (url) => {
+          if (!(await isSharpEnough(url)) || cancelled || passed.length >= HERO_WANTED) return;
+          passed.push(url);
+          // First visit: add each photo as soon as it passes, so the first appears at once and the rotation can start.
+          if (!usedCache) setPhotos((prev) => (prev.includes(url) ? prev : [...prev, url].slice(0, HERO_WANTED)));
+        }));
+      }
+      if (cancelled) return;
+      if (passed.length) {
+        setPhotos(passed);
+        try { localStorage.setItem(HERO_CACHE_KEY, JSON.stringify(passed)); } catch { /* ignore */ }
+      }
     })();
     return () => { cancelled = true; };
   }, []);
