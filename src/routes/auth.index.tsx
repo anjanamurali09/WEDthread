@@ -257,16 +257,16 @@ function AuthPage() {
             {mode === "signup" && (
               <div>
                 <label className="text-xs uppercase tracking-widest text-muted-foreground">I'm signing up as</label>
-                <div className="mt-1 space-y-1" role="radiogroup" aria-label="Account type">
+                <div className="mt-1 grid grid-cols-2 gap-2" role="radiogroup" aria-label="Account type">
                   {ROLE_OPTIONS.map(({ role: r, label, icon: Icon, comingSoon }) => (
                     <button key={r} type="button" role="radio" aria-checked={role === r} disabled={!!sentTo || comingSoon} onClick={() => setRole(r)} data-static
-                      className={cn("flex w-full items-center gap-3 rounded-2xl border px-3 py-1.5 text-left transition-colors",
+                      className={cn("flex w-full items-center gap-3 rounded-2xl border px-3 py-2 text-left transition-colors",
                         comingSoon ? "border-line bg-pearl opacity-60 cursor-not-allowed" : role === r ? "border-[#243746] bg-[#FFF7D6]" : "border-line bg-pearl hover:border-cherry")}>
-                      <span className="grid h-7 w-7 shrink-0 place-items-center rounded-lg bg-wine-soft text-wine"><Icon className="h-3.5 w-3.5" /></span>
+                      <span className="grid h-8 w-8 shrink-0 place-items-center rounded-lg bg-[#FFE08A] text-[#243746]"><Icon className="h-4 w-4" /></span>
                       <span className="min-w-0">
                         <span className="block text-sm font-medium">{label}</span>
+                        {comingSoon && <span className="mt-0.5 inline-block rounded-full bg-[#FFE08A] px-2 py-px text-[11px] font-medium text-[#243746]">Coming soon</span>}
                       </span>
-                      {comingSoon && <span className="ml-auto shrink-0 rounded-full bg-[#FFE08A] px-2.5 py-0.5 text-xs font-medium text-[#243746]">Coming soon</span>}
                     </button>
                   ))}
                 </div>
@@ -294,7 +294,7 @@ function AuthPage() {
               </div>
               {mode === "signup" && (
                 <div>
-                  <label className="text-xs uppercase tracking-widest text-muted-foreground">Phone <span className="normal-case tracking-normal">(optional)</span></label>
+                  <label className="text-xs uppercase tracking-widest text-muted-foreground">Phone <span className="normal-case tracking-normal">(Optional)</span></label>
                   <input type="tel" autoComplete="tel" value={phone} onChange={(e) => setPhone(e.target.value)} readOnly={!!sentTo}
                     className="mt-0.5 w-full rounded-xl border border-line bg-pearl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-cherry" />
                 </div>

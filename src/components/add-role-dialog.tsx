@@ -64,7 +64,7 @@ export function AddRoleDialog({
                 disabled={already || comingSoon || saving !== null}
                 className="w-full flex items-start gap-3 rounded-2xl border border-line bg-paper p-4 text-left hover:border-cherry hover:-translate-y-0.5 transition-all disabled:opacity-50 disabled:hover:translate-y-0 disabled:hover:border-line"
               >
-                <span className="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-wine-soft text-wine">
+                <span className="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-[#FFE08A] text-[#243746]">
                   <Icon className="h-4 w-4" />
                 </span>
                 <div className="min-w-0 flex-1">
