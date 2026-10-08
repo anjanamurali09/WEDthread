@@ -22,6 +22,13 @@ const CONTROLLER = {
   registrationNumber: "", // company number, and ICO registration number if you have one
 };
 
+// Legal representatives for people in the UK and the EU (a business based outside those places that offers its
+// service there normally has to appoint one). Fill in once appointed; empty entries are not shown.
+const REPRESENTATIVES = {
+  uk: "", // name and contact details of the UK representative
+  eu: "", // name and contact details of the EU representative
+};
+
 function Section({ title, children }: { title: string; children: React.ReactNode }) {
   return (
     <section className="mt-10">
@@ -50,12 +57,18 @@ function PrivacyPage() {
 
           <Section title="Who we are">
             <p>
-              WedThread is responsible for the information described on this page (the "data controller").
+              WedThread is run from the United Arab Emirates and is open to people around the world. We are responsible for the information described on this page (the "data controller").
               {CONTROLLER.legalName && <> We operate as <strong>{CONTROLLER.legalName}</strong>.</>}
               {CONTROLLER.address && <> Our address is {CONTROLLER.address}.</>}
               {CONTROLLER.registrationNumber && <> Registration: {CONTROLLER.registrationNumber}.</>}
               {" "}You can reach us at <a className={linkClass} href={`mailto:${CONTACT_EMAIL}`}>{CONTACT_EMAIL}</a>.
             </p>
+            {(REPRESENTATIVES.uk || REPRESENTATIVES.eu) && (
+              <p>
+                {REPRESENTATIVES.uk && <>Our representative in the United Kingdom: {REPRESENTATIVES.uk}. </>}
+                {REPRESENTATIVES.eu && <>Our representative in the European Union: {REPRESENTATIVES.eu}.</>}
+              </p>
+            )}
             <p>
               If you add other people's details (such as your wedding guests), you decide what to enter and why, so you are responsible for having a good
               reason to hold it. We keep that information safe and use it only to run the service for you.
@@ -73,12 +86,14 @@ function PrivacyPage() {
           </Section>
 
           <Section title="Why we use it, and our legal basis">
+            <p>The laws that protect your information depend on where you live. For people in the UK and the EU we rely on the following legal bases.</p>
             <ul className="list-disc space-y-2 pl-5">
               <li><strong>To provide WedThread to you</strong> (sign you in, save your plans, show your wedding website and registry, send the emails you ask for, pass enquiries between couples and businesses). Basis: it is needed to carry out our agreement with you.</li>
               <li><strong>To keep the service safe and working</strong> (prevent misuse, review and verify business listings, fix problems). Basis: our legitimate interest in running a secure, reliable service.</li>
               <li><strong>To understand and improve how the site is used</strong>, through analytics cookies. Basis: your consent, which you can withdraw at any time.</li>
               <li><strong>To meet legal duties</strong>, such as keeping payment records or responding to lawful requests. Basis: legal obligation.</li>
             </ul>
+            <p>For people in the United Arab Emirates, we handle your information in line with Federal Decree-Law No. 45 of 2021 on the Protection of Personal Data, usually with your consent or because it is needed to provide the service you asked for.</p>
             <p>We do not sell your personal information, and we do not make decisions about you using fully automated processing.</p>
           </Section>
 
@@ -117,7 +132,7 @@ function PrivacyPage() {
               <li>receive the information you gave us in a portable format;</li>
               <li>withdraw your consent at any time (for analytics, use Cookie settings).</li>
             </ul>
-            <p>Email us and we will reply within one month. If you are unhappy with how we handle your information, you can complain to the UK's Information Commissioner's Office (<a className={linkClass} href="https://ico.org.uk" target="_blank" rel="noopener noreferrer">ico.org.uk</a>) or to the data protection authority in your own country.</p>
+            <p>Email us and we will reply within one month. If you are unhappy with how we handle your information, you can complain to the UK's Information Commissioner's Office (<a className={linkClass} href="https://ico.org.uk" target="_blank" rel="noopener noreferrer">ico.org.uk</a>) to the data protection authority in your own country, or, if you are in the UAE, to the UAE Data Office.</p>
           </Section>
 
           <Section title="Security">
@@ -125,7 +140,7 @@ function PrivacyPage() {
           </Section>
 
           <Section title="Where data is processed">
-            <p>Some of our providers process data outside the UK and the European Economic Area. Where they do, we rely on approved safeguards, such as the UK International Data Transfer Addendum and the EU Standard Contractual Clauses, to protect it.</p>
+            <p>We are based in the United Arab Emirates, and our providers store and process information in several countries, which may be different from the one you live in. Where the law requires it, we use approved safeguards, such as the UK International Data Transfer Addendum and the EU Standard Contractual Clauses, to protect information about people in the UK and the European Economic Area when it is handled elsewhere.</p>
           </Section>
 
           <Section title="Children">
