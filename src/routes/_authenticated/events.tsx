@@ -579,52 +579,57 @@ function EventDialog({ event, onClose, onSave }: { event: Partial<Event>; onClos
     setSaving(false);
   };
 
+  const pickerClass = "px-3 py-2 text-xs [&_svg]:h-3.5 [&_svg]:w-3.5";
+  const labelClass = "block text-[10px] uppercase tracking-widest text-muted-foreground";
+
   return (
     <div className="fixed inset-0 z-50 bg-ink/40 flex items-center justify-center p-4" onClick={onClose}>
-      <div className="bg-paper rounded-3xl max-w-lg w-full p-8 max-h-[90vh] overflow-y-auto shadow-2xl border border-line" onClick={(e) => e.stopPropagation()}>
+      <div className="bg-paper rounded-3xl max-w-lg w-full p-5 max-h-[92vh] overflow-y-auto shadow-2xl border border-line" onClick={(e) => e.stopPropagation()}>
         <div className="flex items-start justify-between">
-          <h3 className="font-serif text-2xl">{event.id ? "Edit event" : "Add event"}</h3>
-          <button onClick={onClose} className="text-muted-foreground hover:text-ink cursor-pointer"><X className="h-4 w-4" /></button>
+          <h3 className="font-serif text-xl">{event.id ? "Edit event" : "Add event"}</h3>
+          <button onClick={onClose} aria-label="Close" className="text-muted-foreground hover:text-ink cursor-pointer"><X className="h-4 w-4" /></button>
         </div>
-        <form noValidate onSubmit={submit} className="mt-6 space-y-4">
+        <form noValidate onSubmit={submit} className="mt-3 space-y-2.5">
           <F label="Name of event" required value={form.name ?? ""} onChange={(v) => setField("name", v)} error={touched.name ? errors.name : undefined} />
-          <div>
-            <label className="block text-sm uppercase tracking-widest text-muted-foreground">Date</label>
-            <div className="mt-1">
-              <DatePicker value={form.event_date ?? ""} onChange={(v) => setField("event_date", v)} placeholder="Pick a date" />
-            </div>
-          </div>
-          <div className="grid grid-cols-2 gap-3">
+          <div className="grid grid-cols-3 gap-2">
             <div>
-              <label className="block text-sm uppercase tracking-widest text-muted-foreground">Start time</label>
+              <label className={labelClass}>Date</label>
               <div className="mt-1">
-                <TimePicker value={form.event_time ?? ""} onChange={(v) => setField("event_time", v)} />
+                <DatePicker value={form.event_date ?? ""} onChange={(v) => setField("event_date", v)} placeholder="Pick a date" displayFormat="MMM d, yyyy" className={pickerClass} />
               </div>
             </div>
             <div>
-              <label className="block text-sm uppercase tracking-widest text-muted-foreground">End time</label>
+              <label className={labelClass}>Start time</label>
               <div className="mt-1">
-                <TimePicker value={(form as any).event_end_time ?? ""} onChange={(v) => setField("event_end_time" as any, v)} />
+                <TimePicker value={form.event_time ?? ""} onChange={(v) => setField("event_time", v)} className={cn("rounded-xl bg-pearl", pickerClass)} />
+              </div>
+            </div>
+            <div>
+              <label className={labelClass}>End time</label>
+              <div className="mt-1">
+                <TimePicker value={(form as any).event_end_time ?? ""} onChange={(v) => setField("event_end_time" as any, v)} className={cn("rounded-xl bg-pearl", pickerClass)} />
               </div>
             </div>
           </div>
-          <F label="Venue name" value={form.venue_name ?? ""} onChange={(v) => setField("venue_name", v)} />
-          <F label="Address" value={form.address ?? ""} onChange={(v) => setField("address", v)} />
-          <div className="grid grid-cols-2 gap-3">
+          <div className="grid grid-cols-2 gap-2">
+            <F label="Venue name" value={form.venue_name ?? ""} onChange={(v) => setField("venue_name", v)} />
+            <F label="Address" value={form.address ?? ""} onChange={(v) => setField("address", v)} />
+          </div>
+          <div className="grid grid-cols-2 gap-2">
             <F label="City" value={form.city ?? ""} onChange={(v) => setField("city", v)} />
             <F label="Country" value={form.country ?? ""} onChange={(v) => setField("country", v)} />
           </div>
           <div>
-            <label className="text-sm uppercase tracking-widest text-muted-foreground">Description</label>
-            <textarea rows={3} value={form.description ?? ""} onChange={(e) => setField("description", e.target.value)}
-              className="mt-1 w-full rounded-2xl border border-line px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-clay bg-paper" />
+            <label className={labelClass}>Description</label>
+            <textarea rows={2} value={form.description ?? ""} onChange={(e) => setField("description", e.target.value)}
+              className="mt-1 w-full rounded-xl border border-line px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-clay bg-paper" />
           </div>
           <F label="Dress code" value={form.dress_code ?? ""} onChange={(v) => setField("dress_code", v)} />
 
-          <div className="pt-2">
-            <label className="text-sm uppercase tracking-widest text-muted-foreground">What does this event need?</label>
-            <p className="text-sm text-muted-foreground mt-1">Only these will show up on the event card.</p>
-            <div className="mt-3 flex flex-wrap gap-2">
+          <div className="pt-1">
+            <label className={labelClass}>What does this event need?</label>
+            <p className="mt-0.5 text-xs text-muted-foreground">Tap to choose. Only the ones you pick show up on the event card.</p>
+            <div className="mt-2 flex flex-wrap gap-1.5">
               {ALL_CATEGORIES.map((c) => {
                 const on = enabled.includes(c.key);
                 const Icon = c.icon;
@@ -632,22 +637,26 @@ function EventDialog({ event, onClose, onSave }: { event: Partial<Event>; onClos
                   <button
                     key={c.key}
                     type="button"
+                    role="checkbox"
+                    aria-checked={on}
                     onClick={() => toggleCat(c.key)}
                     className={cn(
-                      "inline-flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-sm transition-colors cursor-pointer",
-                      on ? "bg-ink text-paper border-ink" : "bg-paper text-ink border-line hover:bg-stone",
+                      "inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-xs transition-colors cursor-pointer",
+                      on
+                        ? "border border-solid border-ink bg-ink text-paper font-medium"
+                        : "border border-dashed border-ink/40 bg-transparent text-muted-foreground hover:border-ink/70 hover:text-ink",
                     )}
                   >
-                    <Icon className="h-3.5 w-3.5" /> {c.label}
+                    {on ? <Check className="h-3 w-3" /> : <Icon className="h-3 w-3" />} {c.label}
                   </button>
                 );
               })}
             </div>
           </div>
 
-          <div className="flex justify-end gap-2 pt-4">
-            <button type="button" onClick={onClose} className="rounded-full px-5 py-2 text-sm border border-line hover:bg-stone cursor-pointer">Cancel</button>
-            <button disabled={saving} className="rounded-full bg-ink text-paper px-6 py-2 text-sm hover:bg-clay disabled:opacity-60 cursor-pointer">{saving ? "Saving…" : "Save event"}</button>
+          <div className="flex justify-end gap-2 pt-2">
+            <button type="button" onClick={onClose} className="rounded-full px-4 py-1.5 text-sm border border-line hover:bg-stone cursor-pointer">Cancel</button>
+            <button disabled={saving} className="rounded-full bg-ink text-paper px-5 py-1.5 text-sm hover:bg-clay disabled:opacity-60 cursor-pointer">{saving ? "Saving…" : "Save event"}</button>
           </div>
         </form>
       </div>
@@ -798,13 +807,13 @@ function F({ label, value, onChange, type = "text", placeholder, required, error
 }) {
   return (
     <label className="block">
-      <span className="text-sm uppercase tracking-widest text-muted-foreground">
+      <span className="text-[10px] uppercase tracking-widest text-muted-foreground">
         {label} {required && <span className="text-cherry">*</span>}
       </span>
       <input
         type={type} required={required} value={value} onChange={(e) => onChange(e.target.value)} placeholder={placeholder}
         className={cn(
-          "mt-1 w-full rounded-2xl border px-4 py-3 text-sm focus:outline-none focus:ring-2 bg-paper transition-colors",
+          "mt-1 w-full rounded-xl border px-3 py-2 text-sm focus:outline-none focus:ring-2 bg-paper transition-colors",
           error ? "border-cherry focus:ring-cherry" : "border-line focus:ring-clay",
         )}
       />
