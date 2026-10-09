@@ -1,4 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
+import { noindexMeta } from "@/lib/seo";
 import { partnerOne, partnerTwo } from "@/lib/partner-names";
 import { track } from "@/lib/analytics";
 import { useEffect, useState } from "react";
@@ -13,7 +14,7 @@ import { RsvpPageBody, DEFAULT_ATTENDANCE_TEXT, type RsvpEventRow, type RsvpQues
 // submit we try to match them to an existing guest (creating one if nobody matches), then
 // persist through the same submit_rsvp/submit_rsvp_answer functions the per-guest page
 // uses, via a token resolved for that guest.
-export const Route = createFileRoute("/rsvp/w/$slug")({ component: RsvpOpenPage });
+export const Route = createFileRoute("/rsvp/w/$slug")({ head: () => ({ meta: noindexMeta }), component: RsvpOpenPage });
 
 type ContextRow = {
   wedding_id: string; partner_a: string; partner_b: string;

@@ -1,4 +1,5 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
+import { canonicalLink, SITE_URL, SITE_NAME, OG_IMAGE } from "@/lib/seo";
 import { track } from "@/lib/analytics";
 import { Children, useEffect, useRef, useState } from "react";
 import { Gem, ArrowRight, Globe2, MessageCircle, Star, CookingPot, BedDouble, Coffee, Luggage, Check, ChefHat, Wine, Flame, Droplet, MousePointer2, Bell, ChevronLeft, ChevronRight } from "lucide-react";
@@ -32,7 +33,22 @@ import testimonialWeiJonathanImg from "@/assets/testimonial-wei-jonathan.jpg";
 import testimonialFatimaDavidImg from "@/assets/testimonial-fatima-david.jpg";
 import testimonialKavyaAlexImg from "@/assets/testimonial-kavya-alex.jpg";
 
-export const Route = createFileRoute("/")({ component: Landing });
+const HOME_JSON_LD = JSON.stringify({
+  "@context": "https://schema.org",
+  "@graph": [
+    { "@type": "Organization", "@id": `${SITE_URL}/#org`, name: SITE_NAME, url: SITE_URL, logo: `${SITE_URL}/apple-touch-icon.png`,
+      sameAs: ["https://www.instagram.com/wed.thread/"] },
+    { "@type": "WebSite", "@id": `${SITE_URL}/#site`, url: SITE_URL, name: SITE_NAME, inLanguage: "en", publisher: { "@id": `${SITE_URL}/#org` } },
+  ],
+});
+
+export const Route = createFileRoute("/")({
+  head: () => ({
+    links: canonicalLink("/"),
+    scripts: [{ type: "application/ld+json", children: HOME_JSON_LD }],
+  }),
+  component: Landing,
+});
 
 export function useReveal() {
   const ref = useRef<HTMLElement | null>(null);

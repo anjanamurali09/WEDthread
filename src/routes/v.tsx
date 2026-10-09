@@ -1,4 +1,5 @@
 import { createFileRoute, useSearch } from "@tanstack/react-router";
+import { canonicalLink } from "@/lib/seo";
 import { useEffect, useMemo, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { PublicMarketingHeader } from "@/components/public-marketing-header";
@@ -25,6 +26,7 @@ export const Route = createFileRoute("/v")({
       { title: "Find a vendor · WEDthread" },
       { name: "description", content: "Browse wedding vendors and their services." },
     ],
+    links: canonicalLink("/v"),
   }),
   // ?group=photographers (from the icon row at the top) opens the page already filtered to that kind of vendor.
   validateSearch: (s: Record<string, unknown>): { group?: string } => ({

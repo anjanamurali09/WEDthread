@@ -1,4 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
+import { noindexMeta } from "@/lib/seo";
 import { partnerOne, partnerTwo } from "@/lib/partner-names";
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
@@ -7,7 +8,7 @@ import { SiteShell, SiteFooter, SiteBackdrop, decorFor, heroCoverOf, type PageLa
 import { SiteDecor } from "@/components/botanical-art";
 import { useGoogleFonts } from "@/lib/google-fonts";
 
-export const Route = createFileRoute("/w/$slug")({ component: WeddingSite });
+export const Route = createFileRoute("/w/$slug")({ head: () => ({ meta: noindexMeta }), component: WeddingSite });
 
 // Only the fields a visitor to the published site needs. The database only lets signed-out visitors
 // read these columns of a wedding (owner, budget, guest count and dashboard settings stay private),

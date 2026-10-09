@@ -1,11 +1,12 @@
 import { createFileRoute } from "@tanstack/react-router";
+import { noindexMeta } from "@/lib/seo";
 import { partnerOne, partnerTwo } from "@/lib/partner-names";
 import { track } from "@/lib/analytics";
 import { useEffect, useRef, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { RsvpPageBody, rsvpAnswerKey, DEFAULT_ATTENDANCE_TEXT, type RsvpEventRow, type RsvpQuestionRow, type RsvpSaveStatus, type RsvpMode } from "@/components/rsvp-form";
 
-export const Route = createFileRoute("/rsvp/$token")({ component: RsvpPage });
+export const Route = createFileRoute("/rsvp/$token")({ head: () => ({ meta: noindexMeta }), component: RsvpPage });
 
 type ContextRow = {
   guest_id: string; guest_name: string; wedding_id: string;

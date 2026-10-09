@@ -1,4 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
+import { canonicalLink } from "@/lib/seo";
 import { PublicMarketingHeader } from "@/components/public-marketing-header";
 import { SiteFooter, CONTACT_EMAIL } from "@/components/site-footer";
 
@@ -8,6 +9,7 @@ export const Route = createFileRoute("/privacy")({
       { title: "Privacy · WEDthread" },
       { name: "description", content: "How WEDthread collects, uses and protects your information." },
     ],
+    links: canonicalLink("/privacy"),
   }),
   component: PrivacyPage,
 });

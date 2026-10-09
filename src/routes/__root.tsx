@@ -20,6 +20,7 @@ import { useEffect, type ReactNode } from "react";
 import { ErrorBar } from "@/components/error-bar";
 import { CookieBanner } from "@/components/cookie-banner";
 
+import { OG_IMAGE, SITE_NAME } from "@/lib/seo";
 import appCss from "../styles.css?url";
 import { supabase } from "@/integrations/supabase/client";
 
@@ -76,13 +77,20 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
       { charSet: "utf-8" },
       { name: "viewport", content: "width=device-width, initial-scale=1" },
       { title: "WEDthread, Wedding planning for many cultures, many ceremonies" },
-      { name: "description", content: "The wedding platform built for multicultural and destination weddings. Multiple ceremonies, multiple cultures, one plan." },
+      { name: "description", content: "WEDthread is the wedding platform for multicultural and destination weddings: plan every ceremony, guest, RSVP, seat, budget and website in one place." },
       { name: "author", content: "WEDthread" },
       { name: "theme-color", content: "#FFFDF9" },
       { property: "og:title", content: "WEDthread, Wedding planning for many cultures, many ceremonies" },
       { property: "og:description", content: "Plan multiple ceremonies, invite guests across countries, seat them, and message them, all in one place." },
       { property: "og:type", content: "website" },
+      { property: "og:site_name", content: SITE_NAME },
+      { property: "og:locale", content: "en_GB" },
+      { property: "og:image", content: OG_IMAGE },
+      { property: "og:image:width", content: "1200" },
+      { property: "og:image:height", content: "630" },
+      { property: "og:image:alt", content: "WEDthread: for every wedding, anywhere" },
       { name: "twitter:card", content: "summary_large_image" },
+      { name: "twitter:image", content: OG_IMAGE },
     ],
     links: [
       { rel: "stylesheet", href: appCss },

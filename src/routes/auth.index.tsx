@@ -1,4 +1,5 @@
 import { createFileRoute, useNavigate, Link } from "@tanstack/react-router";
+import { noindexMeta } from "@/lib/seo";
 import { track } from "@/lib/analytics";
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
@@ -131,6 +132,7 @@ export const Route = createFileRoute("/auth/")({
     meta: [
       { title: "Sign in or join WEDthread" },
       { name: "description", content: "Sign in or create your WEDthread account." },
+      ...noindexMeta,
     ],
   }),
   validateSearch: (s: Record<string, unknown>): { mode?: "signup" | "forgot"; verified?: boolean } => ({

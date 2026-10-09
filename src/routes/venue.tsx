@@ -1,4 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
+import { canonicalLink } from "@/lib/seo";
 import { useEffect, useMemo, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { PublicMarketingHeader } from "@/components/public-marketing-header";
@@ -28,6 +29,7 @@ export const Route = createFileRoute("/venue")({
       { title: "Find a venue · WEDthread" },
       { name: "description", content: "Browse wedding venues by space, capacity, and price." },
     ],
+    links: canonicalLink("/venue"),
   }),
   component: VenueDirectory,
 });

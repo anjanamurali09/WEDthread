@@ -11,6 +11,7 @@
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as VenueRouteImport } from './routes/venue'
 import { Route as VRouteImport } from './routes/v'
+import { Route as SitemapDotxmlRouteImport } from './routes/sitemap[.]xml'
 import { Route as PrivacyRouteImport } from './routes/privacy'
 import { Route as AuthRouteImport } from './routes/auth'
 import { Route as AuthenticatedRouteRouteImport } from './routes/_authenticated/route'
@@ -70,6 +71,11 @@ const VenueRoute = VenueRouteImport.update({
 const VRoute = VRouteImport.update({
   id: '/v',
   path: '/v',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const SitemapDotxmlRoute = SitemapDotxmlRouteImport.update({
+  id: '/sitemap.xml',
+  path: '/sitemap.xml',
   getParentRoute: () => rootRouteImport,
 } as any)
 const PrivacyRoute = PrivacyRouteImport.update({
@@ -346,6 +352,7 @@ export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/auth': typeof AuthRouteWithChildren
   '/privacy': typeof PrivacyRoute
+  '/sitemap.xml': typeof SitemapDotxmlRoute
   '/v': typeof VRoute
   '/venue': typeof VenueRoute
   '/budget': typeof AuthenticatedBudgetRoute
@@ -398,6 +405,7 @@ export interface FileRoutesByFullPath {
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/privacy': typeof PrivacyRoute
+  '/sitemap.xml': typeof SitemapDotxmlRoute
   '/v': typeof VRoute
   '/venue': typeof VenueRoute
   '/budget': typeof AuthenticatedBudgetRoute
@@ -453,6 +461,7 @@ export interface FileRoutesById {
   '/_authenticated': typeof AuthenticatedRouteRouteWithChildren
   '/auth': typeof AuthRouteWithChildren
   '/privacy': typeof PrivacyRoute
+  '/sitemap.xml': typeof SitemapDotxmlRoute
   '/v': typeof VRoute
   '/venue': typeof VenueRoute
   '/_authenticated/budget': typeof AuthenticatedBudgetRoute
@@ -508,6 +517,7 @@ export interface FileRouteTypes {
     | '/'
     | '/auth'
     | '/privacy'
+    | '/sitemap.xml'
     | '/v'
     | '/venue'
     | '/budget'
@@ -560,6 +570,7 @@ export interface FileRouteTypes {
   to:
     | '/'
     | '/privacy'
+    | '/sitemap.xml'
     | '/v'
     | '/venue'
     | '/budget'
@@ -614,6 +625,7 @@ export interface FileRouteTypes {
     | '/_authenticated'
     | '/auth'
     | '/privacy'
+    | '/sitemap.xml'
     | '/v'
     | '/venue'
     | '/_authenticated/budget'
@@ -669,6 +681,7 @@ export interface RootRouteChildren {
   AuthenticatedRouteRoute: typeof AuthenticatedRouteRouteWithChildren
   AuthRoute: typeof AuthRouteWithChildren
   PrivacyRoute: typeof PrivacyRoute
+  SitemapDotxmlRoute: typeof SitemapDotxmlRoute
   VRoute: typeof VRoute
   VenueRoute: typeof VenueRoute
   FeaturesSlugRoute: typeof FeaturesSlugRoute
@@ -695,6 +708,13 @@ declare module '@tanstack/react-router' {
       path: '/v'
       fullPath: '/v'
       preLoaderRoute: typeof VRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/sitemap.xml': {
+      id: '/sitemap.xml'
+      path: '/sitemap.xml'
+      fullPath: '/sitemap.xml'
+      preLoaderRoute: typeof SitemapDotxmlRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/privacy': {
@@ -1155,6 +1175,7 @@ const rootRouteChildren: RootRouteChildren = {
   AuthenticatedRouteRoute: AuthenticatedRouteRouteWithChildren,
   AuthRoute: AuthRouteWithChildren,
   PrivacyRoute: PrivacyRoute,
+  SitemapDotxmlRoute: SitemapDotxmlRoute,
   VRoute: VRoute,
   VenueRoute: VenueRoute,
   FeaturesSlugRoute: FeaturesSlugRoute,

@@ -1,4 +1,5 @@
 import { createFileRoute, Outlet, redirect } from "@tanstack/react-router";
+import { noindexMeta } from "@/lib/seo";
 import { supabase } from "@/integrations/supabase/client";
 import { getSessionUser } from "@/lib/session-user";
 import { fetchCurrentWedding } from "@/lib/wedding-hooks";
@@ -7,6 +8,7 @@ import { fetchCurrentWedding } from "@/lib/wedding-hooks";
 const rolesConfirmed = new Set<string>();
 
 export const Route = createFileRoute("/_authenticated")({
+  head: () => ({ meta: noindexMeta }),
   ssr: false,
   beforeLoad: async ({ location, context }) => {
     // Read from the stored session: no network round trip on every page change. The database's row-level

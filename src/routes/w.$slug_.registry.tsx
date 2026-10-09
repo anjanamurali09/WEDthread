@@ -1,4 +1,5 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
+import { noindexMeta } from "@/lib/seo";
 import { partnerOne, partnerTwo } from "@/lib/partner-names";
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
@@ -16,6 +17,7 @@ import { DEFAULT_REGISTRY_INTRO } from "@/lib/registry-intro";
 // `?preview=1` is the couple looking at their own registry: it ignores the public/published switches
 // (their own login lets them read it) and turns the guest actions off.
 export const Route = createFileRoute("/w/$slug_/registry")({
+  head: () => ({ meta: noindexMeta }),
   component: PublicRegistry,
   validateSearch: (s: Record<string, unknown>): { preview?: boolean } => ({ preview: s.preview === 1 || s.preview === "1" || s.preview === true ? true : undefined }),
 });

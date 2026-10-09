@@ -1,4 +1,5 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
+import { canonicalLink } from "@/lib/seo";
 import { useState } from "react";
 import {
   ArrowRight, ArrowLeft, Users, Bell, Smartphone,
@@ -89,7 +90,19 @@ const FEATURE_PAGES: Record<string, {
   },
 };
 
-export const Route = createFileRoute("/features/$slug")({ component: FeaturePage });
+export const Route = createFileRoute("/features/$slug")({
+  head: ({ params }) => {
+    const feature = SHOWCASE_FEATURES.find((f) => f.slug === params.slug);
+    const page = FEATURE_PAGES[params.slug];
+    return {
+      meta: feature && page
+        ? [{ title: `${(feature as { title?: string }).title ?? page.headline} · WEDthread` }, { name: "description", content: page.sub }]
+        : [],
+      links: canonicalLink(`/features/${params.slug}`),
+    };
+  },
+  component: FeaturePage,
+});
 
 function FeaturePage() {
   const { slug } = Route.useParams();
