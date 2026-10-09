@@ -550,7 +550,9 @@ function ProgressRing({ pct }: { pct: number }) {
 function EventDialog({ event, onClose, onSave }: { event: Partial<Event>; onClose: () => void; onSave: (e: Partial<Event>) => Promise<void> }) {
   const [form, setForm] = useState<Partial<Event>>({ ...event });
   const [enabled, setEnabled] = useState<CatKey[]>(
-    ((event as any).enabled_categories as CatKey[] | undefined) ?? ALL_CATEGORIES.map((c) => c.key),
+    // A new event starts with nothing chosen so the couple picks what it needs; older events without a saved
+    // choice keep showing everything, as they always did.
+    ((event as any).enabled_categories as CatKey[] | undefined) ?? (event.id ? ALL_CATEGORIES.map((c) => c.key) : []),
   );
   const [saving, setSaving] = useState(false);
   const [touched, setTouched] = useState<Record<string, boolean>>({});
@@ -584,12 +586,14 @@ function EventDialog({ event, onClose, onSave }: { event: Partial<Event>; onClos
 
   return (
     <div className="fixed inset-0 z-50 bg-ink/40 flex items-center justify-center p-4" onClick={onClose}>
-      <div className="bg-paper rounded-3xl max-w-lg w-full p-5 max-h-[92vh] overflow-y-auto shadow-2xl border border-line" onClick={(e) => e.stopPropagation()}>
+      <div className="bg-paper rounded-3xl max-w-lg w-full p-5 max-h-[92vh] shadow-2xl border border-line" onClick={(e) => e.stopPropagation()}>
         <div className="flex items-start justify-between">
           <h3 className="font-serif text-xl">{event.id ? "Edit event" : "Add event"}</h3>
           <button onClick={onClose} aria-label="Close" className="text-muted-foreground hover:text-ink cursor-pointer"><X className="h-4 w-4" /></button>
         </div>
-        <form noValidate onSubmit={submit} className="mt-3 space-y-2.5">
+        <form noValidate onSubmit={submit} className="mt-3">
+          {/* The first fields (down to country) are always in view; the rest scrolls inside this area. */}
+          <div className="relative -mx-1 max-h-[min(16rem,52vh)] space-y-2.5 overflow-y-auto px-1 pb-1">
           <F label="Name of event" required value={form.name ?? ""} onChange={(v) => setField("name", v)} error={touched.name ? errors.name : undefined} />
           <div className="grid grid-cols-3 gap-2">
             <div>
@@ -654,7 +658,9 @@ function EventDialog({ event, onClose, onSave }: { event: Partial<Event>; onClos
             </div>
           </div>
 
-          <div className="flex justify-end gap-2 pt-2">
+          </div>
+
+          <div className="flex justify-end gap-2 pt-3">
             <button type="button" onClick={onClose} className="rounded-full px-4 py-1.5 text-sm border border-line hover:bg-stone cursor-pointer">Cancel</button>
             <button disabled={saving} className="rounded-full bg-ink text-paper px-5 py-1.5 text-sm hover:bg-clay disabled:opacity-60 cursor-pointer">{saving ? "Saving…" : "Save event"}</button>
           </div>

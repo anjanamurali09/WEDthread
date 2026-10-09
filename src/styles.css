@@ -592,3 +592,13 @@ input.note-check:checked::after {
     }
   }
 }
+
+/* Keyboard focus ring, selection colour and native control colour are all brand colours, so the browser's own
+   bright blue never shows up (focus outline, ticked checkboxes, radios, sliders, text selection, mobile tap flash). */
+:where(a, button, input, select, textarea, summary, [role="button"], [role="checkbox"], [role="radio"], [role="switch"], [role="tab"], [role="option"], [tabindex]:not([tabindex="-1"])):focus-visible {
+  outline: 2px solid #243746;
+  outline-offset: 2px;
+}
+:root { accent-color: #243746; }
+::selection { background: #FFE08A; color: #243746; }
+html { -webkit-tap-highlight-color: transparent; }
