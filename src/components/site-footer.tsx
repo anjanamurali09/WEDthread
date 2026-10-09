@@ -5,7 +5,7 @@ import { Logo } from "@/components/logo";
 import { openCookieSettings } from "@/lib/cookie-consent";
 
 // Where "Contact" goes. Change this one line to switch the public contact address.
-export const CONTACT_EMAIL = "owen@wedthread.co";
+export const CONTACT_EMAIL = "hello@wedthread.co";
 
 // Social profiles shown as icons in the bottom bar. To add TikTok later, add a line here with its icon and address.
 const SOCIALS = [

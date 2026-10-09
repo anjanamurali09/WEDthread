@@ -105,19 +105,19 @@ function AuthHeroPanel() {
     <div className="hidden lg:block relative overflow-hidden bg-ink text-pearl">
       {photos.map((url, i) => (
         <img key={url} src={url} alt=""
-          className={cn("absolute inset-0 h-full w-full object-cover transition-[opacity,filter,transform] duration-[1800ms] ease-out motion-reduce:transition-none",
-            i === index ? "opacity-100 blur-0 scale-100" : "opacity-0 blur-sm scale-105")} />
+          className={cn("absolute inset-0 h-full w-full object-cover transition-opacity duration-1000 ease-out",
+            i === index ? "opacity-100" : "opacity-0")} />
       ))}
       <div className="absolute inset-0 bg-gradient-to-t from-ink/70 via-transparent to-ink/40" />
       <div className="relative flex h-full flex-col justify-between p-12">
         <Link to="/" data-static className="flex items-center gap-2">
           <Logo className="text-pearl" />
         </Link>
-        <div className="max-w-xl rounded-3xl bg-white/95 p-8 shadow-lg text-ink">
-          <h2 className="font-serif text-4xl leading-tight text-balance text-[#243746]">
+        <div className="max-w-3xl rounded-3xl bg-white/95 px-8 py-6 shadow-lg text-ink">
+          <h2 className="font-serif text-3xl leading-tight text-balance text-[#243746]">
             {HERO_SLIDES[index % HERO_SLIDES.length]}
           </h2>
-          <p className="mt-4 text-sm text-[#4A7CAD] max-w-sm">
+          <p className="mt-3 text-sm text-[#4A7CAD]">
             Couples, planners, venues, vendors, and sellers all live under one login. You'll choose how you'll use WEDthread when you sign up.
           </p>
         </div>

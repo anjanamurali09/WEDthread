@@ -502,18 +502,81 @@ input.note-check:checked::after {
 
 
 
-/* The cookie in the consent banner: a little wiggle every few seconds, a bigger bounce on hover. */
-@keyframes cookie-wobble {
-  0%, 52%, 100% { transform: rotate(0deg) translateY(0) scale(1); }
-  8%  { transform: rotate(-14deg) translateY(-4px) scale(1.06); }
-  16% { transform: rotate(12deg) translateY(0) scale(1); }
-  24% { transform: rotate(-8deg) translateY(-2px) scale(1.03); }
-  32% { transform: rotate(6deg) translateY(0) scale(1); }
-  40% { transform: rotate(-3deg) translateY(0) scale(1); }
+/* The cookie in the consent banner gets eaten bite by bite, crumbs fall, and it starts over (7s loop). */
+@keyframes cookie-eat-body {
+  0%, 82% { transform: scale(1); opacity: 1; }
+  88% { transform: scale(0.55); opacity: 0; }
+  94% { transform: scale(0.55); opacity: 0; }
+  100% { transform: scale(1); opacity: 1; }
 }
-.cookie-wobble { transform-origin: 50% 85%; animation: cookie-wobble 3.6s ease-in-out infinite; }
-.cookie-wobble:hover { animation-duration: 1.2s; }
-@media (prefers-reduced-motion: reduce) { .cookie-wobble { animation: none; } }
+.cookie-eat-body { transform-box: view-box; transform-origin: 50% 52%; animation: cookie-eat-body 7s ease-in-out infinite; }
+.cookie-bite { transform-box: fill-box; transform-origin: center; transform: scale(0); }
+.cookie-crumb { opacity: 0; transform-box: fill-box; }
+@keyframes cookie-bite-1 {
+  0%, 14% { transform: scale(0); }
+  16% { transform: scale(1.12); }
+  17% { transform: scale(1); }
+  88% { transform: scale(1); }
+  89%, 100% { transform: scale(0); }
+}
+@keyframes cookie-crumb-1 {
+  0%, 14% { opacity: 0; transform: translate(0, 0); }
+  15% { opacity: 1; transform: translate(0, 0); }
+  25% { opacity: 0; transform: translate(var(--dx), 24px); }
+  100% { opacity: 0; transform: translate(var(--dx), 24px); }
+}
+.cookie-bite-1 { animation: cookie-bite-1 7s linear infinite; }
+.cookie-crumb-1 { animation: cookie-crumb-1 7s ease-in infinite; }
+@keyframes cookie-bite-2 {
+  0%, 32% { transform: scale(0); }
+  34% { transform: scale(1.12); }
+  35% { transform: scale(1); }
+  88% { transform: scale(1); }
+  89%, 100% { transform: scale(0); }
+}
+@keyframes cookie-crumb-2 {
+  0%, 32% { opacity: 0; transform: translate(0, 0); }
+  33% { opacity: 1; transform: translate(0, 0); }
+  43% { opacity: 0; transform: translate(var(--dx), 24px); }
+  100% { opacity: 0; transform: translate(var(--dx), 24px); }
+}
+.cookie-bite-2 { animation: cookie-bite-2 7s linear infinite; }
+.cookie-crumb-2 { animation: cookie-crumb-2 7s ease-in infinite; }
+@keyframes cookie-bite-3 {
+  0%, 50% { transform: scale(0); }
+  52% { transform: scale(1.12); }
+  53% { transform: scale(1); }
+  88% { transform: scale(1); }
+  89%, 100% { transform: scale(0); }
+}
+@keyframes cookie-crumb-3 {
+  0%, 50% { opacity: 0; transform: translate(0, 0); }
+  51% { opacity: 1; transform: translate(0, 0); }
+  61% { opacity: 0; transform: translate(var(--dx), 24px); }
+  100% { opacity: 0; transform: translate(var(--dx), 24px); }
+}
+.cookie-bite-3 { animation: cookie-bite-3 7s linear infinite; }
+.cookie-crumb-3 { animation: cookie-crumb-3 7s ease-in infinite; }
+@keyframes cookie-bite-4 {
+  0%, 68% { transform: scale(0); }
+  70% { transform: scale(1.12); }
+  71% { transform: scale(1); }
+  88% { transform: scale(1); }
+  89%, 100% { transform: scale(0); }
+}
+@keyframes cookie-crumb-4 {
+  0%, 68% { opacity: 0; transform: translate(0, 0); }
+  69% { opacity: 1; transform: translate(0, 0); }
+  79% { opacity: 0; transform: translate(var(--dx), 24px); }
+  100% { opacity: 0; transform: translate(var(--dx), 24px); }
+}
+.cookie-bite-4 { animation: cookie-bite-4 7s linear infinite; }
+.cookie-crumb-4 { animation: cookie-crumb-4 7s ease-in infinite; }
+@media (prefers-reduced-motion: reduce) {
+  .cookie-eat-body, .cookie-bite, .cookie-crumb { animation: none; }
+  .cookie-bite-1 { transform: scale(1); }
+  .cookie-crumb { display: none; }
+}
 
 /* Cards in a sideways row ease in as they slide into view (browsers without scroll-driven animation just show them). */
 @keyframes scroll-row-in {
