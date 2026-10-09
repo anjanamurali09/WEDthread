@@ -2441,6 +2441,7 @@ export type Database = {
           paid_by: string | null
           paid_date: string | null
           reminder_at: string | null
+          reminder_include_collaborators: boolean
           reminder_sent_at: string | null
           payment_method: string | null
           sort_order: number
@@ -2460,6 +2461,7 @@ export type Database = {
           paid_by?: string | null
           paid_date?: string | null
           reminder_at?: string | null
+          reminder_include_collaborators?: boolean
           reminder_sent_at?: string | null
           payment_method?: string | null
           sort_order?: number
@@ -2479,6 +2481,7 @@ export type Database = {
           paid_by?: string | null
           paid_date?: string | null
           reminder_at?: string | null
+          reminder_include_collaborators?: boolean
           reminder_sent_at?: string | null
           payment_method?: string | null
           sort_order?: number

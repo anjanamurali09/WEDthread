@@ -2,7 +2,8 @@
 //
 // Called every 15 minutes by pg_cron (see the schedule_payment_reminders migration). Each run picks up
 // expenses that are still pending, have a reminder_at in the past, and haven't been sent yet; emails the
-// wedding owner's registered address; then stamps reminder_sent_at so it only ever goes out once. A
+// wedding owner's registered address (and, when the reminder asks for it, every collaborator who has accepted
+// their invitation); then stamps reminder_sent_at so it only ever goes out once. A
 // failed send is left unstamped and retried on the next run.
 //
 // Uses Resend (https://resend.com) — requires RESEND_API_KEY and RESEND_FROM_EMAIL (same secrets as
@@ -36,7 +37,7 @@ Deno.serve(async (req: Request) => {
 
   const { data: due, error } = await service
     .from("expenses")
-    .select("id,name,amount,due_date,wedding_id,weddings(owner_id,partner_a,partner_b,budget_currency)")
+    .select("id,name,amount,due_date,wedding_id,reminder_include_collaborators,weddings(owner_id,partner_a,partner_b,budget_currency)")
     .eq("status", "pending")
     .is("reminder_sent_at", null)
     .not("reminder_at", "is", null)
@@ -57,8 +58,17 @@ Deno.serve(async (req: Request) => {
       const { data } = await service.auth.admin.getUserById(ownerId);
       emailCache.set(ownerId, data?.user?.email ?? null);
     }
-    const to = emailCache.get(ownerId);
-    if (!to) { skipped++; continue; }
+    const ownerEmail = emailCache.get(ownerId);
+    if (!ownerEmail) { skipped++; continue; }
+    const recipients = [ownerEmail];
+    if ((exp as any).reminder_include_collaborators) {
+      const { data: collabs } = await service
+        .from("wedding_collaborators").select("email").eq("wedding_id", exp.wedding_id).not("accepted_at", "is", null);
+      for (const c of collabs ?? []) {
+        const e = String(c.email ?? "").trim();
+        if (e && !recipients.some((r) => r.toLowerCase() === e.toLowerCase())) recipients.push(e);
+      }
+    }
 
     const currency = wedding.budget_currency || "USD";
     let amount = `${currency} ${Number(exp.amount).toLocaleString("en-US")}`;
@@ -77,7 +87,7 @@ Deno.serve(async (req: Request) => {
     const res = await fetch("https://api.resend.com/emails", {
       method: "POST",
       headers: { Authorization: `Bearer ${resendKey}`, "content-type": "application/json" },
-      body: JSON.stringify({ from: fromEmail, to: [to], subject: `Payment reminder: ${exp.name}`, html }),
+      body: JSON.stringify({ from: fromEmail, to: recipients, subject: `Payment reminder: ${exp.name}`, html }),
     });
     if (!res.ok) {
       failed++;

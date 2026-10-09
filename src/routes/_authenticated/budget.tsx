@@ -9,7 +9,7 @@ import {
 import { supabase } from "@/integrations/supabase/client";
 import { useQueryClient } from "@tanstack/react-query";
 import { toast } from "@/lib/toast";
-import { Plus, Trash2, Pencil, Check, X, Wallet, ChevronDown, Settings, SlidersHorizontal, Download, PieChart as PieChartIcon, BarChart3, Columns3, DollarSign } from "lucide-react";
+import { Plus, Trash2, Pencil, Bell, Check, X, Wallet, ChevronDown, Settings, SlidersHorizontal, Download, PieChart as PieChartIcon, BarChart3, Columns3, DollarSign } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { CustomColorButton } from "@/components/custom-color";
 import { DatePicker } from "@/components/ui/datepicker";
@@ -117,6 +117,7 @@ function normalizeExpenseForm(form: {
   name: string; amount: number; description: string; category: string; status: "pending" | "paid";
   event_id: string; paid_by: string; payment_method: string; paid_date: string; due_date: string; custom_fields: Record<string, unknown>;
   reminder_at?: string | null;
+  reminder_include_collaborators?: boolean;
 }) {
   return {
     name: form.name.trim(),
@@ -134,6 +135,8 @@ function normalizeExpenseForm(form: {
     // that has no reminder never depends on them.
     ...(form.reminder_at ? { reminder_at: form.reminder_at, reminder_sent_at: null }
       : form.reminder_at === null ? { reminder_at: null, reminder_sent_at: null } : {}),
+    // Same idea for "include collaborators": only written when it is being turned on, or turned off after having been on.
+    ...(form.reminder_include_collaborators !== undefined ? { reminder_include_collaborators: form.reminder_include_collaborators } : {}),
   };
 }
 
@@ -1032,6 +1035,18 @@ function ExpenseRow({ expense, events, customColumns, currency, money, visibleCo
         ))}
       </div>
       <EditableAmountBadge amount={expense.amount} currency={currency} money={money} onSave={(n) => onUpdateField({ amount: n })} />
+      {/* A fixed-width slot, so amounts stay lined up whether or not a row has a reminder. */}
+      <span className="flex w-4 shrink-0 justify-center">
+        {expense.reminder_at && !paid && (
+          <Bell className={cn("h-4 w-4", expense.reminder_sent_at ? "text-muted-foreground" : "text-ink")}
+            aria-label={expense.reminder_sent_at ? "Payment reminder sent" : "Payment reminder set"}
+            data-reminder={expense.reminder_sent_at ? "sent" : "scheduled"}>
+            <title>{expense.reminder_sent_at
+              ? "Payment reminder sent"
+              : `Reminder: ${new Date(expense.reminder_at).toLocaleString("en-US", { month: "short", day: "numeric", hour: "numeric", minute: "2-digit" })}${expense.reminder_include_collaborators ? " (collaborators included)" : ""}`}</title>
+          </Bell>
+        )}
+      </span>
       <div className="flex items-center gap-1 shrink-0">
         {visibleCols.status && (
           <button onClick={onToggleStatus}
@@ -1054,6 +1069,8 @@ type ExpenseFormValues = {
   event_id: string; paid_by: string; payment_method: string; paid_date: string; due_date: string; custom_fields: Record<string, unknown>;
   // undefined = leave the reminder as it is, a timestamp = (re)schedule it, null = remove it.
   reminder_at?: string | null;
+  // undefined = leave as it is.
+  reminder_include_collaborators?: boolean;
 };
 
 // Date helpers for the reminder's default send date (the day before the due date, but never in the past).
@@ -1108,6 +1125,7 @@ function ExpenseForm({ events, categories, customColumns, currency, onCreateCate
   const [reminderDate, setReminderDate] = useState(initialReminder ? toYmd(initialReminder) : "");
   const [reminderTime, setReminderTime] = useState(initialReminder ? `${String(initialReminder.getHours()).padStart(2, "0")}:${String(initialReminder.getMinutes()).padStart(2, "0")}` : DEFAULT_REMINDER_TIME);
   const [reminderTouched, setReminderTouched] = useState(!!initialReminder);
+  const [includeCollaborators, setIncludeCollaborators] = useState(!!initial?.reminder_include_collaborators);
   const [accountEmail, setAccountEmail] = useState("");
   useEffect(() => { supabase.auth.getUser().then(({ data }) => setAccountEmail(data.user?.email ?? "")); }, []);
   const reminderAvailable = status === "pending" && !!dateValue;
@@ -1148,14 +1166,20 @@ function ExpenseForm({ events, categories, customColumns, currency, onCreateCate
     } else if (initial?.reminder_at) {
       reminder_at = null;
     }
+    // Written only when it matters, so saving an expense never depends on the new column unless it is used.
+    const reminderStays = reminderAvailable && reminderOn && !!effectiveReminderDate;
+    const wasOn = !!initial?.reminder_include_collaborators;
+    const reminder_include_collaborators: boolean | undefined =
+      reminderStays ? (includeCollaborators || wasOn ? includeCollaborators : undefined) : (wasOn ? false : undefined);
     onSubmit({
       name, amount: evaluated, description, category, status, event_id: eventId, paid_by: paidBy, payment_method: paymentMethod,
       paid_date: status === "paid" ? dateValue : "", due_date: status === "pending" ? dateValue : "", custom_fields, reminder_at,
+      reminder_include_collaborators,
     });
     if (!initial) {
       setName(""); setAmount(""); setDescription(""); setCategory(""); setStatus("pending");
       setEventId(""); setPaidBy(""); setPaymentMethod("Card"); setDateValue(""); setCustomValues({});
-      setReminderOn(true); setReminderDate(""); setReminderTime(DEFAULT_REMINDER_TIME); setReminderTouched(false);
+      setReminderOn(true); setReminderDate(""); setReminderTime(DEFAULT_REMINDER_TIME); setReminderTouched(false); setIncludeCollaborators(false);
     }
   };
 
@@ -1213,6 +1237,12 @@ function ExpenseForm({ events, categories, customColumns, currency, onCreateCate
             <p className="mt-1.5 text-[11px] text-muted-foreground">
               Never miss a beat. We'll email {accountEmail ? <span className="text-ink">{accountEmail}</span> : "you"} when it's time to pay.
             </p>
+            {reminderOn && (
+              <label className="mt-2 flex cursor-pointer items-center gap-2 text-xs">
+                <input type="checkbox" checked={includeCollaborators} onChange={(e) => setIncludeCollaborators(e.target.checked)} className="h-3.5 w-3.5 accent-[#243746]" />
+                Include collaborators
+              </label>
+            )}
             {reminderOn && (
               <div className="mt-2 grid grid-cols-2 gap-1.5">
                 <div>
