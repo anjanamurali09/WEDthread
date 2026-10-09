@@ -8,6 +8,7 @@ import {
 } from "@/lib/wedding-hooks";
 import { supabase } from "@/integrations/supabase/client";
 import { useQueryClient } from "@tanstack/react-query";
+import { usePersistedState } from "@/hooks/use-persisted-state";
 import { toast } from "@/lib/toast";
 import { Plus, Trash2, Pencil, Bell, Check, X, Wallet, ChevronDown, Settings, SlidersHorizontal, Download, PieChart as PieChartIcon, BarChart3, Columns3, DollarSign } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -267,6 +268,7 @@ function FilterChip({ label, value, options, onChange }: { label: string; value:
 }
 
 type VisibleCols = { category: boolean; description: boolean; event: boolean; paidBy: boolean; status: boolean };
+const DEFAULT_VISIBLE_COLS: VisibleCols = { category: true, description: true, event: true, paidBy: true, status: true };
 const COLUMN_TOGGLES: { key: keyof VisibleCols; label: string }[] = [
   { key: "category", label: "Category" },
   { key: "description", label: "Description" },
@@ -505,7 +507,15 @@ function BudgetPage() {
   const [filterEvent, setFilterEvent] = useState("");
   const [filterStatus, setFilterStatus] = useState("");
   const [customFilters, setCustomFilters] = useState<Record<string, string>>({});
-  const [visibleCols, setVisibleCols] = useState<VisibleCols>({ category: true, description: true, event: true, paidBy: true, status: true });
+  // Which columns are shown is remembered in this browser, so a refresh keeps the last choice.
+  const [visibleCols, setVisibleCols] = usePersistedState<VisibleCols>("wedthread_budget_cols", DEFAULT_VISIBLE_COLS, (raw) => {
+    const r = (raw ?? {}) as Partial<Record<keyof VisibleCols, unknown>>;
+    return {
+      category: r.category !== false, description: r.description !== false, event: r.event !== false,
+      paidBy: r.paidBy !== false, status: r.status !== false,
+    };
+  });
+  const [reminderExpense, setReminderExpense] = useState<Expense | null>(null);
   const [editingExpense, setEditingExpense] = useState<Expense | null>(null);
 
   const currency = wedding?.budget_currency ?? "USD";
@@ -623,7 +633,7 @@ function BudgetPage() {
   // refetch round-trip — that round-trip is what made toggling Paid/Pending (and any
   // other inline edit) visibly lag; only falls back to a real refetch if the write
   // itself fails, to pull the row back in sync with the server.
-  const updateExpenseField = async (id: string, patch: Partial<Pick<Expense, "name" | "description" | "category" | "status" | "amount" | "event_id" | "paid_by" | "payment_method" | "paid_date" | "due_date" | "custom_fields">>) => {
+  const updateExpenseField = async (id: string, patch: Partial<Pick<Expense, "name" | "description" | "category" | "status" | "amount" | "event_id" | "paid_by" | "payment_method" | "paid_date" | "due_date" | "custom_fields" | "reminder_at" | "reminder_sent_at" | "reminder_include_collaborators">>) => {
     qc.setQueryData<Expense[]>(["expenses", wedding?.id], (old) => old?.map((e) => (e.id === id ? { ...e, ...patch } : e)));
     const { error } = await supabase.from("expenses").update(patch).eq("id", id);
     if (error) { toast.error(error.message); invalidateExpenses(); }
@@ -825,7 +835,7 @@ function BudgetPage() {
                 <ExpenseRow key={exp.id} expense={exp} events={events} visibleCols={visibleCols}
                   customColumns={customColumns} currency={currency} money={money}
                   onToggleStatus={() => toggleStatus(exp)} onDelete={() => deleteExpense(exp.id)}
-                  onEdit={() => setEditingExpense(exp)}
+                  onEdit={() => setEditingExpense(exp)} onEditReminder={() => setReminderExpense(exp)}
                   onUpdateField={(patch) => updateExpenseField(exp.id, patch)} />
               ))}
             </div>
@@ -846,6 +856,12 @@ function BudgetPage() {
 
       {settingsOpen && (
         <BudgetSettingsDialog wedding={wedding} categories={categories} customColumns={customColumns} events={events} onClose={() => setSettingsOpen(false)} />
+      )}
+
+      {reminderExpense && (
+        <ReminderDialog expense={reminderExpense}
+          onSave={(patch) => { updateExpenseField(reminderExpense.id, patch); setReminderExpense(null); }}
+          onClose={() => setReminderExpense(null)} />
       )}
 
       {editingExpense && (
@@ -1008,10 +1024,10 @@ function EditableAmountBadge({ amount, currency, money, onSave }: {
   );
 }
 
-function ExpenseRow({ expense, events, customColumns, currency, money, visibleCols, onToggleStatus, onDelete, onEdit, onUpdateField }: {
+function ExpenseRow({ expense, events, customColumns, currency, money, visibleCols, onToggleStatus, onDelete, onEdit, onEditReminder, onUpdateField }: {
   expense: Expense; events: { id: string; name: string }[]; customColumns: BudgetCustomColumn[]; currency: string; money: (n: number) => string;
   visibleCols: VisibleCols;
-  onToggleStatus: () => void; onDelete: () => void; onEdit: () => void;
+  onToggleStatus: () => void; onDelete: () => void; onEdit: () => void; onEditReminder: () => void;
   onUpdateField: (patch: Partial<Pick<Expense, "amount" | "event_id" | "paid_by" | "payment_method" | "paid_date" | "due_date">>) => void;
 }) {
   const paid = expense.status === "paid";
@@ -1036,15 +1052,15 @@ function ExpenseRow({ expense, events, customColumns, currency, money, visibleCo
       </div>
       <EditableAmountBadge amount={expense.amount} currency={currency} money={money} onSave={(n) => onUpdateField({ amount: n })} />
       {/* A fixed-width slot, so amounts stay lined up whether or not a row has a reminder. */}
-      <span className="flex w-4 shrink-0 justify-center">
+      <span className="flex w-5 shrink-0 justify-center">
         {expense.reminder_at && !paid && (
-          <Bell className={cn("h-4 w-4", expense.reminder_sent_at ? "text-muted-foreground" : "text-ink")}
-            aria-label={expense.reminder_sent_at ? "Payment reminder sent" : "Payment reminder set"}
-            data-reminder={expense.reminder_sent_at ? "sent" : "scheduled"}>
-            <title>{expense.reminder_sent_at
-              ? "Payment reminder sent"
-              : `Reminder: ${new Date(expense.reminder_at).toLocaleString("en-US", { month: "short", day: "numeric", hour: "numeric", minute: "2-digit" })}${expense.reminder_include_collaborators ? " (collaborators included)" : ""}`}</title>
-          </Bell>
+          <button type="button" onClick={onEditReminder} data-reminder={expense.reminder_sent_at ? "sent" : "scheduled"}
+            aria-label="Edit payment reminder" className="cursor-pointer rounded-full p-0.5 hover:bg-stone"
+            title={expense.reminder_sent_at
+              ? "Payment reminder sent. Click to change it"
+              : `Reminder: ${new Date(expense.reminder_at).toLocaleString("en-US", { month: "short", day: "numeric", hour: "numeric", minute: "2-digit" })}${expense.reminder_include_collaborators ? " (collaborators included)" : ""}. Click to change it`}>
+            <Bell className={cn("h-4 w-4", expense.reminder_sent_at ? "text-muted-foreground" : "text-ink")} />
+          </button>
         )}
       </span>
       <div className="flex items-center gap-1 shrink-0">
@@ -1308,6 +1324,64 @@ function AddExpenseForm({ onAdd, ...props }: {
   onAdd: (form: ExpenseFormValues) => void;
 }) {
   return <ExpenseForm {...props} onSubmit={onAdd} />;
+}
+
+// Opened from the bell on an expense row: changes just the payment reminder (when it is sent, and whether
+// collaborators get it too), or removes it.
+function ReminderDialog({ expense, onSave, onClose }: {
+  expense: Expense;
+  onSave: (patch: { reminder_at: string | null; reminder_sent_at: null; reminder_include_collaborators?: boolean }) => void;
+  onClose: () => void;
+}) {
+  const current = expense.reminder_at ? new Date(expense.reminder_at) : new Date();
+  const [date, setDate] = useState(toYmd(current));
+  const [time, setTime] = useState(`${String(current.getHours()).padStart(2, "0")}:${String(current.getMinutes()).padStart(2, "0")}`);
+  const [include, setInclude] = useState(!!expense.reminder_include_collaborators);
+  const wasInclude = !!expense.reminder_include_collaborators;
+
+  const save = () => {
+    if (!date) return;
+    onSave({
+      reminder_at: new Date(`${date}T${time}:00`).toISOString(), reminder_sent_at: null,
+      // Only written when it matters, so this never depends on the column unless it is used.
+      ...(include || wasInclude ? { reminder_include_collaborators: include } : {}),
+    });
+  };
+  const remove = () => onSave({ reminder_at: null, reminder_sent_at: null, ...(wasInclude ? { reminder_include_collaborators: false } : {}) });
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-ink/40 p-4" onClick={onClose}>
+      <div role="dialog" aria-label="Payment reminder" className="w-full max-w-sm rounded-3xl bg-paper p-6" onClick={(e) => e.stopPropagation()}>
+        <div className="flex items-start justify-between">
+          <div>
+            <h3 className="font-serif text-xl">Payment reminder</h3>
+            <p className="mt-0.5 text-xs text-muted-foreground">{expense.name}</p>
+          </div>
+          <button onClick={onClose} aria-label="Close" className="cursor-pointer text-muted-foreground hover:text-ink"><X className="h-4 w-4" /></button>
+        </div>
+        <div className="mt-4 grid grid-cols-2 gap-2">
+          <div>
+            <span className="text-[10px] uppercase tracking-widest text-muted-foreground">Send date</span>
+            <DatePicker value={date} onChange={setDate} placeholder="Send date" displayFormat="MMM d" className="mt-1 px-3 py-2 text-xs [&_svg]:h-3.5 [&_svg]:w-3.5" />
+          </div>
+          <div>
+            <span className="text-[10px] uppercase tracking-widest text-muted-foreground">Send time</span>
+            <TimePicker value={time} onChange={setTime} className="mt-1 rounded-xl bg-pearl px-3 py-2 text-xs [&_svg]:h-3.5 [&_svg]:w-3.5" />
+          </div>
+        </div>
+        <label className="mt-3 flex cursor-pointer items-center gap-2 text-xs">
+          <input type="checkbox" checked={include} onChange={(e) => setInclude(e.target.checked)} className="h-3.5 w-3.5 accent-[#243746]" />
+          Include collaborators
+        </label>
+        <div className="mt-5 flex items-center justify-between gap-3">
+          <button type="button" onClick={remove} className="cursor-pointer text-xs text-cherry underline underline-offset-4">Remove reminder</button>
+          <button type="button" onClick={save} className="inline-flex cursor-pointer items-center gap-1.5 rounded-full bg-ink px-5 py-2 text-xs text-paper hover:bg-clay">
+            <Check className="h-3.5 w-3.5" /> Save reminder
+          </button>
+        </div>
+      </div>
+    </div>
+  );
 }
 
 function EditExpenseDialog({ expense, events, categories, customColumns, currency, onCreateCategory, onSave, onClose }: {
