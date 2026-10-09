@@ -1,4 +1,4 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, useSearch } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { PublicMarketingHeader } from "@/components/public-marketing-header";
@@ -12,6 +12,12 @@ import { useVendorCategories } from "@/hooks/use-vendor-categories";
 import { LoginDialog } from "@/components/login-dialog";
 import { SearchableMultiSelect } from "@/components/searchable-multi-select";
 import { Search } from "lucide-react";
+import { ScrollRow, THREE_ACROSS } from "@/components/scroll-row";
+import { MarketCategoryStrip } from "@/components/market-category-strip";
+import { MarketHero, MarketTile } from "@/components/market-hero";
+import { VendorQuiz, type VendorAnswers } from "@/components/market-quiz";
+import { PlacePicker, inPlace, useMarketPlace } from "@/lib/market-place";
+import { VENDOR_GROUPS, categoryIdsForGroup, inGroup } from "@/lib/vendor-groups";
 
 export const Route = createFileRoute("/v")({
   head: () => ({
@@ -19,6 +25,10 @@ export const Route = createFileRoute("/v")({
       { title: "Find a vendor · WEDthread" },
       { name: "description", content: "Browse wedding vendors and their services." },
     ],
+  }),
+  // ?group=photographers (from the icon row at the top) opens the page already filtered to that kind of vendor.
+  validateSearch: (s: Record<string, unknown>): { group?: string } => ({
+    ...(typeof s.group === "string" && VENDOR_GROUPS.some((g) => g.key === s.group) ? { group: s.group } : {}),
   }),
   component: VendorDirectory,
 });
@@ -47,6 +57,9 @@ export function VendorDirectoryContent({ embedded = false }: { embedded?: boolea
   const [countries, setCountries] = useState<string[]>([]);
   const { signedIn, saved, toggle } = useSavedListings();
   const [authOpen, setAuthOpen] = useState(false);
+  const [quizOpen, setQuizOpen] = useState(false);
+  const [city, setCity] = useState("");
+  const group = (useSearch({ strict: false }) as { group?: string }).group;
 
   const handleToggleSaved = (service: VendorServiceCardData) => {
     if (!signedIn) { setAuthOpen(true); return; }
@@ -56,7 +69,7 @@ export function VendorDirectoryContent({ embedded = false }: { embedded?: boolea
   useEffect(() => {
     (async () => {
       const { data: cats } = await supabase.from("vendor_categories").select("id,name");
-      const { data: rows } = await supabase.from("vendor_services").select("id,business_id,category_ids,price_range_min,price_range_max").eq("status", "active");
+      const { data: rows } = await supabase.from("vendor_services").select("id,business_id,category_ids,price_range_min,price_range_max").eq("status", "active").order("created_at", { ascending: false });
       const svc = rows ?? [];
       if (svc.length === 0) { setServices([]); setLoading(false); return; }
 
@@ -111,6 +124,43 @@ export function VendorDirectoryContent({ embedded = false }: { embedded?: boolea
     })();
   }, []);
 
+  // Opening the page from an icon (or switching icons) filters to that group.
+  useEffect(() => {
+    if (categories.length === 0) return;
+    setCategoryIds(group ? categoryIdsForGroup(categories, group) : []);
+  }, [group, categories]);
+
+  const cities = useMemo(() => Array.from(new Set(services.map((s) => s.city).filter((c): c is string => !!c))).sort(), [services]);
+  const { place, setPlace } = useMarketPlace(cities, countries);
+
+  const popular = useMemo(() => {
+    const score = (s: ServiceRow) => Number(s.categoryNames.length > 0) + Number(s.photos.length > 0) + Number(s.price_range_min != null);
+    return services.map((s, i) => ({ s, i })).filter(({ s }) => inPlace(place, s.city ?? null, s.country ?? null))
+      .sort((a, b) => score(b.s) - score(a.s) || a.i - b.i).map(({ s }) => s).slice(0, 12);
+  }, [services, place]);
+
+  const groupTiles = useMemo(() => VENDOR_GROUPS.flatMap((g) => {
+    const s = services.find((x) => inPlace(place, x.city ?? null, x.country ?? null) && inGroup(x.categoryNames, g.key) && x.photos.length > 0);
+    return s ? [{ key: g.key, label: g.label, photo: s.photos[0] }] : [];
+  }), [services, place]);
+
+  const heroPhoto = popular.find((s) => s.photos.length > 0)?.photos[0];
+  const availableGroups = useMemo(() => VENDOR_GROUPS.filter((g) => services.some((s) => inGroup(s.categoryNames, g.key))).map((g) => g.key), [services]);
+
+  const showResults = (extra?: () => void) => {
+    setCity(place?.kind === "city" ? place.name : "");
+    setCountry(place?.kind === "country" ? place.name : "");
+    extra?.();
+    setTimeout(() => document.getElementById("all-vendors")?.scrollIntoView({ behavior: "smooth", block: "start" }), 50);
+  };
+
+  const applyQuiz = (a: VendorAnswers) => showResults(() => {
+    setCategoryIds(Array.from(new Set(a.groups.flatMap((k) => categoryIdsForGroup(categories, k)))));
+    setPriceTiers(a.tiers);
+  });
+
+  const placePicker = <PlacePicker place={place} onChange={setPlace} cities={cities} countries={countries} />;
+
   const filtered = useMemo(() => {
     const selectedNames = categoryIds.map((id) => categories.find((c) => c.value === id)?.label).filter((n): n is string => !!n);
     return services.filter((s) => {
@@ -121,23 +171,58 @@ export function VendorDirectoryContent({ embedded = false }: { embedded?: boolea
         if (tierIdx === -1 || !priceTiers.includes(String(tierIdx))) return false;
       }
       if (country && s.country !== country) return false;
+      if (city && s.city !== city) return false;
       const q = search.trim().toLowerCase();
       if (q && !s.businessName.toLowerCase().includes(q) && !s.categoryNames.some((n) => n.toLowerCase().includes(q))
         && !(s.city ?? "").toLowerCase().includes(q) && !(s.country ?? "").toLowerCase().includes(q)) return false;
       return true;
     });
-  }, [services, categoryIds, categories, priceTiers, country, search]);
+  }, [services, categoryIds, categories, priceTiers, country, city, search]);
 
   return (
-    <div className={embedded ? undefined : "px-6 md:px-12 py-12"}>
+    <div className={embedded ? undefined : "px-6 md:px-12 py-8"}>
       {!embedded && (
         <>
-          <p className="text-sm uppercase tracking-[0.2em] text-cherry">Vendors</p>
-          <h1 className="mt-2 font-serif text-4xl md:text-5xl">Find a vendor for your wedding.</h1>
+          <MarketCategoryStrip active={group ?? null} />
+          <MarketHero
+            title={<>Find the perfect vendor in <br />{placePicker}</>}
+            photo={heroPhoto}
+            primaryLabel="See vendors"
+            onPrimary={() => showResults()}
+            onQuiz={() => setQuizOpen(true)}
+          />
+
+          {popular.length > 0 && (
+            <div className="mt-14">
+              <ScrollRow cardClass={THREE_ACROSS}
+                heading={<>Most popular vendors in {place ? place.name : "all locations"}</>}
+                action={<button type="button" onClick={() => showResults()} data-static className="shrink-0 rounded-full bg-[#243746] px-5 py-2 text-sm font-medium text-[#FFF7D6] transition-colors hover:bg-[#FFE08A] hover:text-[#243746]">View all</button>}>
+                {popular.map((s) => (
+                  <VendorServiceCard key={s.id} service={s} saved={saved.has(s.id)} onToggleSaved={handleToggleSaved} />
+                ))}
+              </ScrollRow>
+            </div>
+          )}
+
+          {groupTiles.length > 0 && (
+            <div className="mt-14">
+              <ScrollRow cardClass="w-[44%] sm:w-[calc((100%-32px)/3)] lg:w-[calc((100%-64px)/5)]"
+                heading={<>Explore vendors by type in {place ? place.name : "all locations"}</>}
+                action={<button type="button" onClick={() => showResults()} data-static className="shrink-0 rounded-full bg-[#243746] px-5 py-2 text-sm font-medium text-[#FFF7D6] transition-colors hover:bg-[#FFE08A] hover:text-[#243746]">View all</button>}>
+                {groupTiles.map((t) => (
+                  <MarketTile key={t.key} label={t.label} photo={t.photo} onClick={() => showResults(() => { setCategoryIds(categoryIdsForGroup(categories, t.key)); setPriceTiers([]); })} />
+                ))}
+              </ScrollRow>
+            </div>
+          )}
+
+          <h2 id="all-vendors" className="mt-16 scroll-mt-28 font-serif text-2xl text-[#243746] md:text-3xl">All vendors</h2>
+
+          <VendorQuiz open={quizOpen} onOpenChange={setQuizOpen} photo={heroPhoto} availableGroups={availableGroups} onApply={applyQuiz} />
         </>
       )}
 
-      <div className={embedded ? "lg:grid lg:grid-cols-[220px_1fr] lg:gap-8 lg:items-start" : "mt-8 lg:grid lg:grid-cols-[220px_1fr] lg:gap-8 lg:items-start"}>
+      <div className={embedded ? "lg:grid lg:grid-cols-[220px_1fr] lg:gap-8 lg:items-start" : "mt-6 lg:grid lg:grid-cols-[220px_1fr] lg:gap-8 lg:items-start"}>
         {/* Filters live in a persistent left sidebar on wider screens
             (stacked above the grid on narrower ones) — same layout as the
             venue marketplace (venue.tsx). */}
@@ -151,6 +236,8 @@ export function VendorDirectoryContent({ embedded = false }: { embedded?: boolea
             options={categories} />
           <MultiSelectDropdown selected={priceTiers} onChange={setPriceTiers} placeholder="Price range" className="w-full"
             options={PRICE_TIERS.map((t, i) => ({ value: String(i), label: t.symbol }))} />
+          <Dropdown value={city} onChange={setCity} placeholder="City" className="w-full" searchable
+            options={[{ value: "", label: "City" }, ...cities.map((c) => ({ value: c, label: c }))]} />
           <Dropdown value={country} onChange={setCountry} placeholder="Country" className="w-full" searchable
             options={[{ value: "", label: "Country" }, ...countries.map((c) => ({ value: c, label: c }))]} />
         </aside>

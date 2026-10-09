@@ -8,6 +8,7 @@ import { Logo } from "@/components/logo";
 import { Accordion, AccordionItem, AccordionTrigger, AccordionContent } from "@/components/ui/accordion";
 import { cn } from "@/lib/utils";
 import { supabase } from "@/integrations/supabase/client";
+import { ScrollRow, THREE_ACROSS } from "@/components/scroll-row";
 import { VenueCard, type VenueCardData } from "@/components/venue-card";
 import { VendorServiceCard, type VendorServiceCardData } from "@/components/vendor-service-card";
 import { useSavedListings } from "@/hooks/use-saved-listings";
@@ -471,54 +472,6 @@ function FeatureCard({ feature, index }: { feature: (typeof SHOWCASE_FEATURES)[n
   );
 }
 
-// One line of cards that scrolls sideways, with arrows. Used for venues, vendors and reviews so every
-// section spans the same full width as the call-to-action bars. Each child is one card; `cardClass`
-// sets its width (about four across on a wide screen, fewer on smaller ones).
-function ScrollRow({ title, cardClass, contained = false, children }: { title?: string; cardClass: string; contained?: boolean; children: React.ReactNode }) {
-  const ref = useRef<HTMLDivElement>(null);
-  const [edge, setEdge] = useState({ start: true, end: true });
-
-  useEffect(() => {
-    const el = ref.current;
-    if (!el) return;
-    const update = () => setEdge({ start: el.scrollLeft <= 2, end: el.scrollLeft + el.clientWidth >= el.scrollWidth - 2 });
-    update();
-    el.addEventListener("scroll", update, { passive: true });
-    window.addEventListener("resize", update);
-    const t = setTimeout(update, 600); // cards and photos finish loading after first paint
-    return () => { el.removeEventListener("scroll", update); window.removeEventListener("resize", update); clearTimeout(t); };
-  }, [children]);
-
-  // One card at a time (card width plus the 16px gap).
-  const scrollBy = (dir: 1 | -1) => { const el = ref.current; const card = el?.firstElementChild as HTMLElement | null; if (el && card) el.scrollBy({ left: dir * (card.offsetWidth + 16), behavior: "smooth" }); };
-  const arrow = "absolute top-1/2 z-10 grid h-10 w-10 -translate-y-1/2 place-items-center rounded-full border border-line bg-paper/95 text-[#243746] shadow-sm transition-all duration-300 hover:scale-105 hover:bg-[#FFE08A] motion-reduce:transition-none";
-  const hidden = "pointer-events-none scale-90 opacity-0";
-  const canScroll = !(edge.start && edge.end);
-
-  return (
-    // The row breaks out of the page margins so cards run edge to edge; its own padding lines the first
-    // card up with the rest of the page. The arrows sit on the left and right of the cards.
-    <div data-reveal className={contained ? "mx-auto max-w-6xl" : "-mx-6 md:-mx-12"}>
-      {title && (
-        <p className={cn("mb-3 text-sm uppercase tracking-widest text-[#7FA8D6]", !contained && "px-6 md:px-12")}>{title}</p>
-      )}
-      <div className="relative">
-        {canScroll && (
-          <>
-            <button type="button" aria-label="Scroll left" tabIndex={edge.start ? -1 : 0} onClick={() => scrollBy(-1)} data-static
-              className={cn(arrow, "-left-3 md:-left-5", contained && "xl:-left-[3.25rem] xl:border-transparent xl:bg-transparent xl:shadow-none xl:hover:bg-transparent xl:hover:text-[#7FA8D6]", edge.start && hidden)}><ChevronLeft className={cn("h-4 w-4", contained && "xl:h-7 xl:w-7")} strokeWidth={contained ? 1.5 : 2} /></button>
-            <button type="button" aria-label="Scroll right" tabIndex={edge.end ? -1 : 0} onClick={() => scrollBy(1)} data-static
-              className={cn(arrow, "-right-3 md:-right-5", contained && "xl:-right-[3.25rem] xl:border-transparent xl:bg-transparent xl:shadow-none xl:hover:bg-transparent xl:hover:text-[#7FA8D6]", edge.end && hidden)}><ChevronRight className={cn("h-4 w-4", contained && "xl:h-7 xl:w-7")} strokeWidth={contained ? 1.5 : 2} /></button>
-          </>
-        )}
-        <div ref={ref} className={cn("no-scrollbar flex gap-4 overflow-x-auto scroll-smooth snap-x snap-mandatory pb-2", !contained && "px-6 md:px-12 scroll-px-6 md:scroll-px-12")}>
-          {Children.toArray(children).map((c, i) => <div key={i} className={cn("scroll-row-card shrink-0 snap-start [&>*]:h-full", cardClass)}>{c}</div>)}
-        </div>
-      </div>
-    </div>
-  );
-}
-
 // The last card in the vendors row: invites businesses to list themselves.
 function BecomePartnerCard() {
   return (
@@ -537,7 +490,6 @@ function BecomePartnerCard() {
 
 // Card widths: six across on a wide screen, fewer on smaller ones. Percentages are of the row's content
 // width (page width minus the side margins), less the 16px gaps between cards.
-const THREE_ACROSS = "w-[78%] sm:w-[calc((100%-16px)/2)] lg:w-[calc((100%-32px)/3)]";
 const SIX_ACROSS = "w-[78%] sm:w-[calc((100%-16px)/2)] md:w-[calc((100%-32px)/3)] lg:w-[calc((100%-48px)/4)] xl:w-[calc((100%-80px)/6)]";
 
 const CTA_TONE_STYLES: Record<"cherry" | "sage" | "pearl" | "ink" | "soft", { wrap: string; eyebrow: string; button: string }> = {

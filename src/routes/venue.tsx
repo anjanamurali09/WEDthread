@@ -10,6 +10,12 @@ import { VenueCard } from "@/components/venue-card";
 import { useSavedListings } from "@/hooks/use-saved-listings";
 import { LoginDialog } from "@/components/login-dialog";
 import { Search } from "lucide-react";
+import { ScrollRow, THREE_ACROSS } from "@/components/scroll-row";
+import { MarketCategoryStrip } from "@/components/market-category-strip";
+import { MarketHero, MarketTile } from "@/components/market-hero";
+import { VenueQuiz, type VenueAnswers } from "@/components/market-quiz";
+import { PlacePicker, inPlace, useMarketPlace } from "@/lib/market-place";
+import { useCurrentWedding } from "@/lib/wedding-hooks";
 
 // Path is "/venue" (singular) — "/venues" is already the older, separate
 // marketplace system (src/routes/_authenticated/venues.tsx, the pre-Phase-1
@@ -59,6 +65,7 @@ export function VenueDirectoryContent({ embedded = false }: { embedded?: boolean
   const [search, setSearch] = useState("");
   const { signedIn, saved, toggle } = useSavedListings();
   const [authOpen, setAuthOpen] = useState(false);
+  const [quizOpen, setQuizOpen] = useState(false);
 
   const handleToggleSaved = (businessId: string) => {
     if (!signedIn) { setAuthOpen(true); return; }
@@ -69,7 +76,7 @@ export function VenueDirectoryContent({ embedded = false }: { embedded?: boolean
     (async () => {
       const { data: businesses } = await supabase
         .from("businesses").select("id,legal_business_name,verification_status,city,country")
-        .eq("business_type", "venue").eq("verification_status", "verified");
+        .eq("business_type", "venue").eq("verification_status", "verified").order("created_at", { ascending: false });
       const biz = businesses ?? [];
       if (biz.length === 0) { setVenues([]); setLoading(false); return; }
 
@@ -109,6 +116,42 @@ export function VenueDirectoryContent({ embedded = false }: { embedded?: boolean
     [venues],
   );
 
+  const { place, setPlace } = useMarketPlace(cities, countries);
+  const { data: wedding } = useCurrentWedding();
+
+  // "Popular" puts listings with the full set of details first (capacity, type of space, price), newest first
+  // within each group, for the chosen place.
+  const popular = useMemo(() => {
+    const score = (v: VenueRow) => Number(v.capacity_min != null || v.capacity_max != null) + Number(v.type_of_space.length > 0) + Number(v.price_range_min != null) + Number(v.photos.length > 0);
+    return venues.map((v, i) => ({ v, i })).filter(({ v }) => inPlace(place, v.city, v.country))
+      .sort((a, b) => score(b.v) - score(a.v) || a.i - b.i).map(({ v }) => v).slice(0, 12);
+  }, [venues, place]);
+
+  const styleTiles = useMemo(() => TYPE_OF_SPACE_OPTIONS.flatMap((t) => {
+    const v = venues.find((x) => inPlace(place, x.city, x.country) && x.type_of_space.includes(t) && x.photos.length > 0);
+    return v ? [{ type: t, photo: v.photos[0] }] : [];
+  }), [venues, place]);
+
+  const heroPhoto = popular.find((v) => v.photos.length > 0)?.photos[0];
+
+  const showResults = (extra?: () => void) => {
+    setCity(place?.kind === "city" ? place.name : "");
+    setCountry(place?.kind === "country" ? place.name : "");
+    extra?.();
+    setTimeout(() => document.getElementById("all-venues")?.scrollIntoView({ behavior: "smooth", block: "start" }), 50);
+  };
+
+  const applyQuiz = (a: VenueAnswers) => showResults(() => {
+    setTypeFilter(a.spaces);
+    setPriceTiers(a.tiers);
+    setGuestMin(a.guests ? String(a.guests) : "");
+    setGuestMax(a.guests ? String(a.guests) : "");
+  });
+
+  const placePicker = (
+    <PlacePicker place={place} onChange={setPlace} cities={cities} countries={countries} />
+  );
+
   const filtered = useMemo(() => {
     const gMin = guestMin.trim() ? Number(guestMin) : null;
     const gMax = guestMax.trim() ? Number(guestMax) : null;
@@ -138,15 +181,50 @@ export function VenueDirectoryContent({ embedded = false }: { embedded?: boolean
   }, [venues, typeFilter, guestMin, guestMax, priceTiers, city, country, search]);
 
   return (
-    <div className={embedded ? undefined : "px-6 md:px-12 py-12"}>
+    <div className={embedded ? undefined : "px-6 md:px-12 py-8"}>
       {!embedded && (
         <>
-          <p className="text-sm uppercase tracking-[0.2em] text-cherry">Venues</p>
-          <h1 className="mt-2 font-serif text-4xl md:text-5xl">Find a venue for your wedding.</h1>
+          <MarketCategoryStrip active="venues" />
+          <MarketHero
+            title={<>Find the perfect venue in <br />{placePicker}</>}
+            photo={heroPhoto}
+            primaryLabel="See venues"
+            onPrimary={() => showResults()}
+            onQuiz={() => setQuizOpen(true)}
+          />
+
+          {popular.length > 0 && (
+            <div className="mt-14">
+              <ScrollRow cardClass={THREE_ACROSS}
+                heading={<>Most popular venues in {place ? place.name : "all locations"}</>}
+                action={<button type="button" onClick={() => showResults()} data-static className="shrink-0 rounded-full bg-[#243746] px-5 py-2 text-sm font-medium text-[#FFF7D6] transition-colors hover:bg-[#FFE08A] hover:text-[#243746]">View all</button>}>
+                {popular.map((v) => (
+                  <VenueCard key={v.id} venue={v} saved={saved.has(v.id)} onToggleSaved={handleToggleSaved} />
+                ))}
+              </ScrollRow>
+            </div>
+          )}
+
+          {styleTiles.length > 0 && (
+            <div className="mt-14">
+              <ScrollRow cardClass="w-[44%] sm:w-[calc((100%-32px)/3)] lg:w-[calc((100%-64px)/5)]"
+                heading={<>Explore venues by style in {place ? place.name : "all locations"}</>}
+                action={<button type="button" onClick={() => showResults()} data-static className="shrink-0 rounded-full bg-[#243746] px-5 py-2 text-sm font-medium text-[#FFF7D6] transition-colors hover:bg-[#FFE08A] hover:text-[#243746]">View all</button>}>
+                {styleTiles.map((t) => (
+                  <MarketTile key={t.type} label={t.type} photo={t.photo} onClick={() => showResults(() => { setTypeFilter([t.type]); setPriceTiers([]); setGuestMin(""); setGuestMax(""); })} />
+                ))}
+              </ScrollRow>
+            </div>
+          )}
+
+          <h2 id="all-venues" className="mt-16 scroll-mt-28 font-serif text-2xl text-[#243746] md:text-3xl">All venues</h2>
+
+          <VenueQuiz open={quizOpen} onOpenChange={setQuizOpen} photo={heroPhoto} initialGuests={wedding?.est_guest_count ?? null}
+            spaceOptions={TYPE_OF_SPACE_OPTIONS} onApply={applyQuiz} />
         </>
       )}
 
-      <div className={embedded ? "lg:grid lg:grid-cols-[220px_1fr] lg:gap-8 lg:items-start" : "mt-8 lg:grid lg:grid-cols-[220px_1fr] lg:gap-8 lg:items-start"}>
+      <div className={embedded ? "lg:grid lg:grid-cols-[220px_1fr] lg:gap-8 lg:items-start" : "mt-6 lg:grid lg:grid-cols-[220px_1fr] lg:gap-8 lg:items-start"}>
         {/* Filters live in a persistent left sidebar on wider screens
             (stacked above the grid on narrower ones) — a single horizontal
             row left the rest of the page looking sparse, and a sidebar is
