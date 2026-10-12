@@ -23,5 +23,7 @@ export default defineConfig(({ command }) => ({
   resolve: {
     dedupe: ["react", "react-dom", "@tanstack/react-router", "@tanstack/react-query", "@tanstack/react-start"],
   },
+  // Small images stay separate files rather than being written into the page as text, which bloats the HTML.
+  build: { assetsInlineLimit: 0 },
   server: { host: true, port: 8080 },
 }));

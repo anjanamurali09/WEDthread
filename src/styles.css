@@ -602,3 +602,8 @@ input.note-check:checked::after {
 :root { accent-color: #243746; }
 ::selection { background: #FFE08A; color: #243746; }
 html { -webkit-tap-highlight-color: transparent; }
+
+/* Phones: stop the browser inflating text sizes on its own after rotating the screen. */
+@media (max-width: 640px) {
+  html { -webkit-text-size-adjust: 100%; text-size-adjust: 100%; }
+}

@@ -14,24 +14,24 @@ import { VenueCard, type VenueCardData } from "@/components/venue-card";
 import { VendorServiceCard, type VendorServiceCardData } from "@/components/vendor-service-card";
 import { useSavedListings } from "@/hooks/use-saved-listings";
 
-import heroImg from "@/assets/homepage-hero.jpg";
+import heroImg from "@/assets/homepage-hero.webp";
 
-import venueBaliImg from "@/assets/venue-bali-room.jpg";
-import websiteCoupleImg from "@/assets/website-couple-priya-kevin.jpg";
-import registryTowelsImg from "@/assets/registry-bath-towels-v2.jpg";
-import registryNespressoImg from "@/assets/registry-nespresso-v2.jpg";
-import registryDutchOvenImg from "@/assets/registry-dutch-oven-v2.jpg";
-import registryCottonSheetsImg from "@/assets/registry-cotton-sheets.jpg";
-import registryStandMixerImg from "@/assets/registry-stand-mixer.jpg";
-import registryWineGlassesImg from "@/assets/registry-wine-glasses.jpg";
-import registryWeekendBagImg from "@/assets/registry-weekend-bag.jpg";
-import registryCastIronImg from "@/assets/registry-cast-iron.jpg";
+import venueBaliImg from "@/assets/venue-bali-room.webp";
+import websiteCoupleImg from "@/assets/website-couple-priya-kevin.webp";
+import registryTowelsImg from "@/assets/registry-bath-towels-v2.webp";
+import registryNespressoImg from "@/assets/registry-nespresso-v2.webp";
+import registryDutchOvenImg from "@/assets/registry-dutch-oven-v2.webp";
+import registryCottonSheetsImg from "@/assets/registry-cotton-sheets.webp";
+import registryStandMixerImg from "@/assets/registry-stand-mixer.webp";
+import registryWineGlassesImg from "@/assets/registry-wine-glasses.webp";
+import registryWeekendBagImg from "@/assets/registry-weekend-bag.webp";
+import registryCastIronImg from "@/assets/registry-cast-iron.webp";
 
-import testimonialLauraJohnImg from "@/assets/testimonial-laura-john.jpg";
-import testimonialZuriMarcusImg from "@/assets/testimonial-zuri-marcus.jpg";
-import testimonialWeiJonathanImg from "@/assets/testimonial-wei-jonathan.jpg";
-import testimonialFatimaDavidImg from "@/assets/testimonial-fatima-david.jpg";
-import testimonialKavyaAlexImg from "@/assets/testimonial-kavya-alex.jpg";
+import testimonialLauraJohnImg from "@/assets/testimonial-laura-john.webp";
+import testimonialZuriMarcusImg from "@/assets/testimonial-zuri-marcus.webp";
+import testimonialWeiJonathanImg from "@/assets/testimonial-wei-jonathan.webp";
+import testimonialFatimaDavidImg from "@/assets/testimonial-fatima-david.webp";
+import testimonialKavyaAlexImg from "@/assets/testimonial-kavya-alex.webp";
 
 // Two plain structured-data blocks (who we are, and the website), each complete on its own.
 const ORGANIZATION_JSON_LD = JSON.stringify({

@@ -76,14 +76,23 @@ async function renderWithHomeCache(request: Request, env: unknown, ctx: unknown)
   return response;
 }
 
+// Tells browsers to use only secure connections to this site for the next year, and not to guess file types.
+function withSecurityHeaders(response: Response): Response {
+  if (response.status >= 300 && response.status < 400) return response;
+  const headers = new Headers(response.headers);
+  headers.set("strict-transport-security", "max-age=31536000");
+  headers.set("x-content-type-options", "nosniff");
+  return new Response(response.body, { status: response.status, statusText: response.statusText, headers });
+}
+
 export default {
   async fetch(request: Request, env: unknown, ctx: unknown) {
     try {
       const cached = await renderWithHomeCache(request, env, ctx);
-      if (cached) return cached;
+      if (cached) return withSecurityHeaders(cached);
       const handler = await getServerEntry();
       const response = await handler.fetch(request, env, ctx);
-      return await normalizeCatastrophicSsrResponse(response);
+      return withSecurityHeaders(await normalizeCatastrophicSsrResponse(response));
     } catch (error) {
       console.error(error);
       return new Response(renderErrorPage(), {
