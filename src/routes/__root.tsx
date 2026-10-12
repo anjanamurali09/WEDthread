@@ -82,11 +82,11 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
     meta: [
       { charSet: "utf-8" },
       { name: "viewport", content: "width=device-width, initial-scale=1" },
-      { title: "WEDthread, wedding planning for many cultures and ceremonies" },
+      { title: "WEDthread - Wedding Planning For Everyone" },
       { name: "description", content: "Plan every ceremony, guest, RSVP, seat and budget in one place. WEDthread is built for multicultural and destination weddings." },
       { name: "author", content: "WEDthread" },
       { name: "theme-color", content: "#FFFDF9" },
-      { property: "og:title", content: "WEDthread, wedding planning for many cultures and ceremonies" },
+      { property: "og:title", content: "WEDthread - Wedding Planning For Everyone" },
       { property: "og:description", content: "Plan every ceremony, guest, RSVP, seat and budget in one place. WEDthread is built for multicultural and destination weddings." },
       { property: "og:type", content: "website" },
       { property: "og:site_name", content: SITE_NAME },
