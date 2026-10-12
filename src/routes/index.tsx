@@ -33,19 +33,19 @@ import testimonialWeiJonathanImg from "@/assets/testimonial-wei-jonathan.jpg";
 import testimonialFatimaDavidImg from "@/assets/testimonial-fatima-david.jpg";
 import testimonialKavyaAlexImg from "@/assets/testimonial-kavya-alex.jpg";
 
-const HOME_JSON_LD = JSON.stringify({
-  "@context": "https://schema.org",
-  "@graph": [
-    { "@type": "Organization", "@id": `${SITE_URL}/#org`, name: SITE_NAME, url: SITE_URL, logo: `${SITE_URL}/apple-touch-icon.png`,
-      sameAs: ["https://www.instagram.com/wed.thread/"] },
-    { "@type": "WebSite", "@id": `${SITE_URL}/#site`, url: SITE_URL, name: SITE_NAME, inLanguage: "en", publisher: { "@id": `${SITE_URL}/#org` } },
-  ],
+// Two plain structured-data blocks (who we are, and the website), each complete on its own.
+const ORGANIZATION_JSON_LD = JSON.stringify({
+  "@context": "https://schema.org", "@type": "Organization", name: SITE_NAME, url: `${SITE_URL}/`,
+  logo: `${SITE_URL}/apple-touch-icon.png`, sameAs: ["https://www.instagram.com/wed.thread/"],
+});
+const WEBSITE_JSON_LD = JSON.stringify({
+  "@context": "https://schema.org", "@type": "WebSite", name: SITE_NAME, url: `${SITE_URL}/`, inLanguage: "en",
 });
 
 export const Route = createFileRoute("/")({
   head: () => ({
     links: canonicalLink("/"),
-    scripts: [{ type: "application/ld+json", children: HOME_JSON_LD }],
+    scripts: [{ type: "application/ld+json", children: ORGANIZATION_JSON_LD }, { type: "application/ld+json", children: WEBSITE_JSON_LD }],
   }),
   component: Landing,
 });

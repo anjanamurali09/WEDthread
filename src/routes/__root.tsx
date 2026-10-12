@@ -21,6 +21,12 @@ import { ErrorBar } from "@/components/error-bar";
 import { CookieBanner } from "@/components/cookie-banner";
 
 import { OG_IMAGE, SITE_NAME } from "@/lib/seo";
+import { LogoSprite } from "@/components/logo";
+// The first fonts the page needs are fetched straight away, so the text does not jump when they arrive.
+import newsreaderRegular from "@fontsource/newsreader/files/newsreader-latin-400-normal.woff2?url";
+import newsreaderItalic from "@fontsource/newsreader/files/newsreader-latin-400-italic.woff2?url";
+import poppinsRegular from "@fontsource/poppins/files/poppins-latin-400-normal.woff2?url";
+import poppinsMedium from "@fontsource/poppins/files/poppins-latin-500-normal.woff2?url";
 import appCss from "../styles.css?url";
 import { supabase } from "@/integrations/supabase/client";
 
@@ -76,12 +82,12 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
     meta: [
       { charSet: "utf-8" },
       { name: "viewport", content: "width=device-width, initial-scale=1" },
-      { title: "WEDthread, Wedding planning for many cultures, many ceremonies" },
-      { name: "description", content: "WEDthread is the wedding platform for multicultural and destination weddings: plan every ceremony, guest, RSVP, seat, budget and website in one place." },
+      { title: "WEDthread, wedding planning for many cultures and ceremonies" },
+      { name: "description", content: "Plan every ceremony, guest, RSVP, seat and budget in one place. WEDthread is built for multicultural and destination weddings." },
       { name: "author", content: "WEDthread" },
       { name: "theme-color", content: "#FFFDF9" },
-      { property: "og:title", content: "WEDthread, Wedding planning for many cultures, many ceremonies" },
-      { property: "og:description", content: "Plan multiple ceremonies, invite guests across countries, seat them, and message them, all in one place." },
+      { property: "og:title", content: "WEDthread, wedding planning for many cultures and ceremonies" },
+      { property: "og:description", content: "Plan every ceremony, guest, RSVP, seat and budget in one place. WEDthread is built for multicultural and destination weddings." },
       { property: "og:type", content: "website" },
       { property: "og:site_name", content: SITE_NAME },
       { property: "og:locale", content: "en_GB" },
@@ -94,6 +100,7 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
     ],
     links: [
       { rel: "stylesheet", href: appCss },
+      ...[newsreaderRegular, newsreaderItalic, poppinsRegular, poppinsMedium].map((href) => ({ rel: "preload", as: "font", type: "font/woff2", href, crossOrigin: "anonymous" as const })),
       { rel: "icon", href: "/favicon.ico", sizes: "any" },
       { rel: "icon", href: "/favicon-32.png", type: "image/png", sizes: "32x32" },
       { rel: "icon", href: "/favicon-16.png", type: "image/png", sizes: "16x16" },
@@ -138,6 +145,7 @@ function RootShell({ children }: { children: ReactNode }) {
         <HeadContent />
       </head>
       <body>
+        <LogoSprite />
         {children}<Scripts />
       </body>
     </html>

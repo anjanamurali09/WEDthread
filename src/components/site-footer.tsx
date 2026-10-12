@@ -12,7 +12,7 @@ const SOCIALS = [
   { name: "Instagram", href: "https://www.instagram.com/wed.thread/", Icon: Instagram },
 ];
 
-const linkClass = "text-sm text-[#243746] hover:text-[#7FA8D6] transition-colors";
+const linkClass = "inline-block py-1.5 text-sm text-[#243746] hover:text-[#7FA8D6] transition-colors";
 
 // The footer for every public page (homepage, marketplace, feature pages, privacy). Spans the same
 // full width as the rest of the page, between the standard side margins.
@@ -22,7 +22,7 @@ export function SiteFooter() {
       <div className="grid gap-10 px-6 py-14 md:px-12 sm:grid-cols-2 lg:grid-cols-4">
         <div>
           <h4 className="text-base font-medium text-[#243746]">About</h4>
-          <ul className="mt-5 space-y-3">
+          <ul className="mt-4 space-y-0.5">
             <li><Link to="/auth" search={{ mode: "signup" } as any} data-static className={linkClass} onClick={() => track("partner_cta_click", { location: "footer" })}>Become a partner</Link></li>
             <li><Link to="/venue" data-static className={linkClass}>Browse venues</Link></li>
             <li><Link to="/v" data-static className={linkClass}>Browse vendors</Link></li>
@@ -31,7 +31,7 @@ export function SiteFooter() {
 
         <div>
           <h4 className="text-base font-medium text-[#243746]">Advice and support</h4>
-          <ul className="mt-5 space-y-3">
+          <ul className="mt-4 space-y-0.5">
             <li><Link to="/" hash="faq" data-static className={linkClass}>FAQs</Link></li>
             <li><a href={`mailto:${CONTACT_EMAIL}`} data-static className={linkClass}>Contact us</a></li>
             <li><Link to="/privacy" data-static className={linkClass}>Privacy</Link></li>
@@ -41,7 +41,7 @@ export function SiteFooter() {
 
         <div>
           <h4 className="text-base font-medium text-[#243746]">Plan your wedding</h4>
-          <ul className="mt-5 space-y-3">
+          <ul className="mt-4 space-y-0.5">
             <li><Link to="/features/$slug" params={{ slug: "guest-list" }} data-static className={linkClass}>Guest list</Link></li>
             <li><Link to="/features/$slug" params={{ slug: "seating" }} data-static className={linkClass}>Seating</Link></li>
             <li><Link to="/features/$slug" params={{ slug: "rsvp-automation" }} data-static className={linkClass}>RSVPs</Link></li>
