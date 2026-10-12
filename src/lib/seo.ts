@@ -10,8 +10,8 @@ export const canonicalLink = (path: string) => {
   const href = `${SITE_URL}${path === "/" ? "" : path}`;
   return [
     { rel: "canonical", href },
-    { rel: "alternate", hrefLang: "en", href },
-    { rel: "alternate", hrefLang: "x-default", href },
+    { rel: "alternate", hreflang: "en", href },
+    { rel: "alternate", hreflang: "x-default", href },
   ];
 };
 
