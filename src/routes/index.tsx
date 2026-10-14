@@ -862,42 +862,6 @@ function Landing() {
         <CompactCta headline={MID_CTA_HEADLINES[1]} tone="ink" cta="Wedding venues and vendors" onClick={() => navigate({ to: "/venue" })} />
       </section>
 
-      {/* About: plain, useful text for people and search engines, with links into the feature pages */}
-      <section id="about" className="relative z-10 px-6 md:px-12 py-16 border-t border-line/60">
-        <div className="mx-auto max-w-5xl">
-          <h2 className="font-serif text-4xl md:text-5xl leading-[1.02] text-balance" data-reveal>Wedding planning for every kind of wedding</h2>
-          <p className="mt-6 max-w-3xl text-[17px] leading-relaxed" data-reveal>
-            WEDthread is a wedding planning platform for couples who want one calm place for everything: the guest list, RSVPs, seating chart, budget, registry and wedding website. It is built for weddings that do not fit a template, from a single ceremony to several days of celebrations with guests travelling in from different countries.
-          </p>
-          <div className="mt-10 grid gap-8 md:grid-cols-3">
-            <div data-reveal>
-              <h3 className="font-serif text-2xl">Guest list and RSVPs</h3>
-              <p className="mt-3 text-[15px] leading-relaxed">Add each guest once, invite them to the events they are coming to, and track replies as they arrive. Send RSVP links by WhatsApp or email and see who still needs a reminder.</p>
-              <Link to="/features/$slug" params={{ slug: "guest-list" }} className="mt-3 inline-block text-sm text-[#4A7CAD] underline underline-offset-4">Wedding guest list manager</Link>
-            </div>
-            <div data-reveal>
-              <h3 className="font-serif text-2xl">Budget and payments</h3>
-              <p className="mt-3 text-[15px] leading-relaxed">Set your total, log every cost by category and by event, and get an email reminder before a vendor payment is due. Export your budget to Excel or PDF whenever someone asks for the numbers.</p>
-              <Link to="/features/$slug" params={{ slug: "budgeting" }} className="mt-3 inline-block text-sm text-[#4A7CAD] underline underline-offset-4">Wedding budget planner</Link>
-            </div>
-            <div data-reveal>
-              <h3 className="font-serif text-2xl">Seating, registry and website</h3>
-              <p className="mt-3 text-[15px] leading-relaxed">Drag guests onto tables with warnings for full tables and allergies, build one registry from any store, and share a wedding website with your schedule, travel details and RSVP.</p>
-              <p className="mt-3 text-sm">
-                <Link to="/features/$slug" params={{ slug: "seating" }} className="text-[#4A7CAD] underline underline-offset-4">Seating chart maker</Link>
-                {" · "}
-                <Link to="/features/$slug" params={{ slug: "registry" }} className="text-[#4A7CAD] underline underline-offset-4">Wedding registry</Link>
-                {" · "}
-                <Link to="/features/$slug" params={{ slug: "website" }} className="text-[#4A7CAD] underline underline-offset-4">Wedding website</Link>
-              </p>
-            </div>
-          </div>
-          <p className="mt-10 max-w-3xl text-[15px] leading-relaxed" data-reveal>
-            Looking for somewhere to marry or people to book? Browse <Link to="/venue" className="text-[#4A7CAD] underline underline-offset-4">wedding venues</Link> by city, capacity, price and type of space, or find <Link to="/v" className="text-[#4A7CAD] underline underline-offset-4">wedding vendors</Link> such as photographers, planners, caterers and florists. Whether you are planning a destination wedding, a multicultural celebration or a small ceremony at home, WEDthread keeps every event, guest and payment in one plan, free to start.
-          </p>
-        </div>
-      </section>
-
       {/* FAQ */}
       <section id="faq" className="relative z-10 px-6 md:px-12 pt-12 pb-24 scroll-mt-24">
         <div className="text-center max-w-2xl mx-auto" data-reveal>
