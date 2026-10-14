@@ -86,7 +86,7 @@ export const FEATURE_CONTENT: Record<string, FeatureContent> = {
     ],
     different: {
       h2: "Built for multi-day and multicultural weddings",
-      body: "A wedding with a mehendi, a ceremony and a reception, or guests flying in from three countries, needs more than one list and one number. WEDthread was designed around that from the start.",
+      body: "A wedding with a ceremony, a cocktail hour and a reception, or guests flying in from three countries, needs more than one list and one number. WEDthread was designed around that from the start.",
       points: [
         "Different guest lists for each ceremony or celebration",
         "WhatsApp-first messaging for families who live on it",
@@ -160,7 +160,7 @@ export const FEATURE_CONTENT: Record<string, FeatureContent> = {
     ],
     different: {
       h2: "Built for weddings with more than one event",
-      body: "A mehendi, a ceremony and a reception each have their own costs. WEDthread lets you give every event its own allocation, so you can see the real cost of each celebration and not just one big total.",
+      body: "A ceremony, a cocktail hour and a reception each have their own costs. WEDthread lets you give every event its own allocation, so you can see the real cost of each celebration and not just one big total.",
       points: [
         "Budget by event as well as by category",
         "Seven currencies, including UAE dirham, pounds, euros and rupees",
@@ -543,7 +543,7 @@ export const FEATURE_CONTENT: Record<string, FeatureContent> = {
   "vendor-marketplace": {
     slug: "vendor-marketplace",
     metaTitle: "Wedding Vendors Marketplace | WEDthread",
-    metaDescription: "Find wedding photographers, planners, caterers, florists, mehendi artists and more. Browse vendors by category, location and budget, then enquire directly.",
+    metaDescription: "Find wedding photographers, planners, caterers, florists, DJs, makeup artists and more. Browse vendors by category, location and budget, then enquire directly.",
     eyebrow: "Wedding vendors",
     h1: "Wedding vendors for every tradition and budget",
     intro: "Find the photographers, planners, caterers, florists, DJs and makeup artists who will bring your wedding to life. Browse by category, location and budget, compare their work and get in touch in a few clicks.",
@@ -557,7 +557,7 @@ export const FEATURE_CONTENT: Record<string, FeatureContent> = {
       {
         h2: "Every kind of wedding vendor in one place",
         body: [
-          "Browse photographers and videographers, wedding planners, caterers, florists and decor, DJs and live music, makeup and hair, mehendi artists and more. Pick a category and see who is available where you are marrying.",
+          "Browse photographers and videographers, wedding planners, caterers, florists and decor, DJs and live music, makeup and hair, officiants and more. Pick a category and see who is available where you are marrying.",
         ],
         points: ["Photography and video", "Planning and coordination", "Catering and cake", "Music, florals, beauty and attire"],
       },
@@ -576,11 +576,11 @@ export const FEATURE_CONTENT: Record<string, FeatureContent> = {
         points: ["Enquiry from the vendor's page", "Details prefilled from your wedding", "Messages kept in one place", "Reply to enquiries in your account"],
       },
       {
-        h2: "Vendors who know your traditions",
+        h2: "Vendors for every kind of celebration",
         body: [
-          "A mehendi artist, a baraat band, a live painter, a priest or a tea ceremony host are not always easy to find. Browse vendors who work with the traditions your families are celebrating.",
+          "A live musician, a celebrant or a photographer who knows the schedule can be hard to find in a new city. Browse vendors who work in the place you are marrying.",
         ],
-        points: ["Vendors for many cultures and ceremonies", "Mehendi artists and live musicians", "Officiants for different traditions", "Local and destination vendors"],
+        points: ["Vendors for many styles of wedding", "Live musicians and DJs", "Celebrants and officiants", "Local and destination vendors"],
       },
     ],
     steps: [
@@ -600,7 +600,7 @@ export const FEATURE_CONTENT: Record<string, FeatureContent> = {
     },
     faqs: [
       { q: "How do I find wedding vendors?", a: "Choose a category such as photography or catering, filter by country and price tier, and look through each vendor's photos and services. Send an enquiry to the ones you like." },
-      { q: "What kinds of vendors can I find?", a: "Photographers, videographers, planners, caterers, florists and decor, DJs and live music, makeup and hair, mehendi artists, officiants, cake makers, transport and more." },
+      { q: "What kinds of vendors can I find?", a: "Photographers, videographers, planners, caterers, florists and decor, DJs and live music, makeup and hair, officiants, cake makers, transport and more." },
       { q: "Can I find vendors for a destination wedding?", a: "Yes. Browse vendors by city and country, wherever you plan to marry." },
       { q: "How do I contact a vendor?", a: "Send an enquiry from their page. Your wedding details are filled in for you." },
       { q: "Are vendors verified?", a: "Vendor listings are reviewed before they appear in the marketplace." },

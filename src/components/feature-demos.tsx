@@ -55,7 +55,7 @@ const CATS = [
 ];
 const EVENTS = [
   { name: "Ceremony", limit: 14000, spent: 9400 },
-  { name: "Mehendi", limit: 9000, spent: 3200 },
+  { name: "Cocktail hour", limit: 9000, spent: 3200 },
   { name: "Reception", limit: 22000, spent: 15300 },
 ];
 const ADDS = [
@@ -263,7 +263,7 @@ const ROWS = [
   { name: "Priya Rao", events: ["Ceremony", "Reception"], diet: "Vegetarian" },
   { name: "Marcus Hall", events: ["Reception"], diet: "" },
   { name: "Wei Zhang", events: ["Ceremony", "Reception"], diet: "Halal" },
-  { name: "Fatima Khan", events: ["Mehendi", "Reception"], diet: "Nut allergy" },
+  { name: "Fatima Khan", events: ["Cocktail hour", "Reception"], diet: "Nut allergy" },
   { name: "Laura Bianchi", events: ["Ceremony"], diet: "" },
   { name: "Zuri Okoro", events: ["Reception"], diet: "Vegan" },
 ];
@@ -274,7 +274,7 @@ export function GuestListDemo() {
   const [status, setStatus] = useState<Rsvp[]>(["attending", "pending", "attending", "pending", "declined", "pending"]);
   const [onlyPending, setOnlyPending] = useState(false);
   const [event, setEvent] = useState<string | null>(null);
-  const events = ["Ceremony", "Mehendi", "Reception"];
+  const events = ["Ceremony", "Cocktail hour", "Reception"];
   const shown = ROWS.map((r, i) => ({ ...r, i })).filter((r) => (!onlyPending || status[r.i] === "pending") && (!event || r.events.includes(event)));
   const count = (s: Rsvp) => status.filter((x) => x === s).length;
 
@@ -339,7 +339,7 @@ export function RsvpDemo() {
           </div>
           <div>
             <p className="text-xs uppercase tracking-widest text-muted-foreground">Event</p>
-            <div className="mt-2 flex flex-wrap gap-2">{["ceremony", "mehendi", "reception"].map((n) => <Chip key={n} on={event === n} onClick={() => setEvent(n)}>{n}</Chip>)}</div>
+            <div className="mt-2 flex flex-wrap gap-2">{["ceremony", "cocktail hour", "reception"].map((n) => <Chip key={n} on={event === n} onClick={() => setEvent(n)}>{n}</Chip>)}</div>
           </div>
         </div>
         <div className="rounded-2xl bg-[#EEF3F9] p-5">
@@ -493,7 +493,7 @@ export function VenuesDemo() {
 
 const VENDOR_SETS: Record<string, { name: string; city: string; tier: string; tags: string }[]> = {
   Photographers: [{ name: "Golden Hour Studio", city: "Dubai", tier: "$$$", tags: "Photography and film" }, { name: "Maya Lens", city: "London", tier: "$$", tags: "Photography" }, { name: "Frame and Light", city: "Tuscany", tier: "$$$$", tags: "Photography, drone" }],
-  Florists: [{ name: "Petal and Stem", city: "Dubai", tier: "$$", tags: "Florals and decor" }, { name: "The Marigold Co", city: "London", tier: "$$$", tags: "Mandap and florals" }, { name: "Wild Bloom", city: "Abu Dhabi", tier: "$$", tags: "Florals" }],
+  Florists: [{ name: "Petal and Stem", city: "Dubai", tier: "$$", tags: "Florals and decor" }, { name: "The Marigold Co", city: "London", tier: "$$$", tags: "Ceremony florals" }, { name: "Wild Bloom", city: "Abu Dhabi", tier: "$$", tags: "Florals" }],
   Planners: [{ name: "Everafter Events", city: "Dubai", tier: "$$$$", tags: "Full planning" }, { name: "Two Families Events", city: "London", tier: "$$$", tags: "Multicultural weddings" }, { name: "Day-of Done", city: "Tuscany", tier: "$$", tags: "Day-of coordination" }],
   Caterers: [{ name: "Saffron Table", city: "Dubai", tier: "$$$", tags: "South Asian, Arabic" }, { name: "Long Table Kitchen", city: "London", tier: "$$", tags: "Seasonal menus" }, { name: "Feast and Co", city: "Abu Dhabi", tier: "$$$$", tags: "Live stations" }],
 };
