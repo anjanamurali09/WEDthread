@@ -106,8 +106,8 @@ function FeaturePage() {
 
       <main>
         {/* Hero: text on the left, and the picture fills the whole right half of the section, edge to edge */}
-        <section className="grid lg:grid-cols-2">
-          <div className="px-6 md:px-12 pt-8 md:pt-10 pb-14 lg:py-14" data-reveal>
+        <section className="grid lg:min-h-[calc(100svh-5.5rem)] lg:grid-cols-2">
+          <div className="flex flex-col justify-center px-6 md:px-12 pt-8 md:pt-10 pb-14 lg:py-10" data-reveal>
             <nav aria-label="Breadcrumb" className="flex items-center gap-1.5 text-xs text-muted-foreground">
               <Link to="/" className="hover:text-[#7FA8D6]">Home</Link>
               <ChevronRight className="h-3 w-3" aria-hidden="true" />
@@ -130,13 +130,13 @@ function FeaturePage() {
             </div>
           </div>
           {page.hero ? (
-            <div className="relative min-h-[300px] lg:min-h-[560px]">
+            <div className="relative min-h-[300px]">
               <img src={page.hero.src} alt={page.hero.alt} width={page.hero.width} height={page.hero.height}
                 loading="eager" fetchPriority="high" decoding="async"
                 className="absolute inset-0 h-full w-full object-cover" />
             </div>
           ) : (
-            <div className={`relative min-h-[300px] lg:min-h-[560px] overflow-hidden ${feature.tint}`} aria-hidden="true">
+            <div className={`relative min-h-[300px] overflow-hidden ${feature.tint}`} aria-hidden="true">
               <FeatureVisual kind={feature.visual} />
             </div>
           )}
