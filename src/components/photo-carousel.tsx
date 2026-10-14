@@ -1,6 +1,8 @@
 import { useState } from "react";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 
+const MAX_DOTS = 5;
+
 // Sits inside a card that's itself a <Link> — arrow clicks must never bubble
 // into that link's navigation, only change the active photo.
 export function PhotoCarousel({ photos, className }: { photos: string[]; className?: string }) {
@@ -35,9 +37,12 @@ export function PhotoCarousel({ photos, className }: { photos: string[]; classNa
             <ChevronRight className="h-4 w-4" />
           </button>
           <div className="absolute bottom-2 inset-x-0 flex items-center justify-center gap-1">
-            {photos.map((_, i) => (
-              <span key={i} className={`h-1.5 w-1.5 rounded-full ${i === index ? "bg-paper" : "bg-paper/50"}`} />
-            ))}
+            {/* At most five dots, however many photos there are: they slide along as you move through the photos. */}
+            {Array.from({ length: Math.min(MAX_DOTS, photos.length) }, (_, k) => {
+              const first = Math.min(Math.max(index - Math.floor(MAX_DOTS / 2), 0), Math.max(photos.length - MAX_DOTS, 0));
+              const i = first + k;
+              return <span key={i} className={`h-1.5 w-1.5 rounded-full transition-colors ${i === index ? "bg-paper" : "bg-paper/50"}`} />;
+            })}
           </div>
         </>
       )}
