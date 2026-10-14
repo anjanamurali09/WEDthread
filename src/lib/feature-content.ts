@@ -3,6 +3,16 @@
 //
 // Everything stated here describes what WEDthread actually does today. When a feature changes, change it here.
 
+import budgetHero from "@/assets/features/budget-hero.webp";
+import budgetReminders from "@/assets/features/budget-reminders.webp";
+import seatingHero from "@/assets/features/seating-hero.webp";
+import seatingSeatGuests from "@/assets/features/seating-seat-guests.webp";
+import seatingShare from "@/assets/features/seating-share.webp";
+
+// A real photograph on a feature page. `alt` describes what is in it, for people using screen readers and for
+// search engines' image results.
+export type FeaturePhoto = { src: string; alt: string; width: number; height: number };
+
 export type FeatureContent = {
   slug: string;
   /** Under 60 characters including the brand, so Google shows it in full. */
@@ -13,7 +23,9 @@ export type FeatureContent = {
   h1: string;
   intro: string;
   heroBullets: string[];
-  blocks: { h2: string; body: string[]; points: string[] }[];
+  /** When set, the hero shows this photo and the animated preview moves into the first detail block. */
+  hero?: FeaturePhoto;
+  blocks: { h2: string; body: string[]; points: string[]; photo?: FeaturePhoto }[];
   steps: { title: string; body: string }[];
   different: { h2: string; body: string; points: string[] };
   faqs: { q: string; a: string }[];
@@ -600,3 +612,10 @@ export const FEATURE_CONTENT: Record<string, FeatureContent> = {
 };
 
 export const FEATURE_SLUGS_IN_ORDER = ["guest-list", "budgeting", "seating", "rsvp-automation", "registry", "website", "venues", "vendor-marketplace"];
+
+// Photos for the pages that have them so far.
+FEATURE_CONTENT.budgeting.hero = { src: budgetHero, width: 1100, height: 1100, alt: "A couple smiling together as they plan their wedding budget on a laptop in a sunny room" };
+FEATURE_CONTENT.budgeting.blocks[2].photo = { src: budgetReminders, width: 800, height: 800, alt: "A couple on a sofa going through papers and a laptop together, planning their payments" };
+FEATURE_CONTENT.seating.hero = { src: seatingHero, width: 1200, height: 800, alt: "Curved rows of white chairs set out for an outdoor wedding ceremony beside a lake" };
+FEATURE_CONTENT.seating.blocks[1].photo = { src: seatingSeatGuests, width: 900, height: 600, alt: "A wedding table with a numbered table sign, place cards, glasses and a flower centrepiece" };
+FEATURE_CONTENT.seating.blocks[3].photo = { src: seatingShare, width: 900, height: 601, alt: "Wooden chairs with sheepskin throws and a reserved sign, laid out for a wedding ceremony" };

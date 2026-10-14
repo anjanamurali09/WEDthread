@@ -117,9 +117,17 @@ function FeaturePage() {
                 </button>
               </div>
             </div>
-            <div className={`lg:col-span-6 relative overflow-hidden rounded-[2.5rem] h-[340px] md:h-[440px] ${feature.tint}`} data-reveal aria-hidden="true">
-              <FeatureVisual kind={feature.visual} />
-            </div>
+            {page.hero ? (
+              <div className="lg:col-span-6 overflow-hidden rounded-[2.5rem]" data-reveal>
+                <img src={page.hero.src} alt={page.hero.alt} width={page.hero.width} height={page.hero.height}
+                  loading="eager" fetchPriority="high" decoding="async"
+                  className="h-[340px] w-full object-cover md:h-[440px]" />
+              </div>
+            ) : (
+              <div className={`lg:col-span-6 relative overflow-hidden rounded-[2.5rem] h-[340px] md:h-[440px] ${feature.tint}`} data-reveal aria-hidden="true">
+                <FeatureVisual kind={feature.visual} />
+              </div>
+            )}
           </div>
         </section>
 
@@ -132,14 +140,26 @@ function FeaturePage() {
                   <h2 className="font-serif text-3xl md:text-4xl leading-tight text-balance">{b.h2}</h2>
                   {b.body.map((p) => <p key={p} className="mt-5 text-[15px] leading-relaxed">{p}</p>)}
                 </div>
-                <ul data-reveal className="space-y-3 rounded-3xl border border-line/70 bg-paper p-7 shadow-sm">
-                  {b.points.map((pt) => (
-                    <li key={pt} className="flex items-start gap-3 text-[15px]">
-                      <span className="mt-0.5 grid h-5 w-5 shrink-0 place-items-center rounded-full bg-[#FFE08A]"><Check className="h-3 w-3" aria-hidden="true" /></span>
-                      {pt}
-                    </li>
-                  ))}
-                </ul>
+                <div data-reveal className="space-y-5">
+                  {/* The animated preview, kept small, once a page uses a photograph in the hero. */}
+                  {page.hero && i === 0 && (
+                    <div className={`relative h-[190px] overflow-hidden rounded-3xl ${feature.tint}`} aria-hidden="true">
+                      <FeatureVisual kind={feature.visual} />
+                    </div>
+                  )}
+                  {b.photo && (
+                    <img src={b.photo.src} alt={b.photo.alt} width={b.photo.width} height={b.photo.height} loading="lazy" decoding="async"
+                      className="h-[220px] w-full rounded-3xl object-cover md:h-[260px]" />
+                  )}
+                  <ul className="space-y-3 rounded-3xl border border-line/70 bg-paper p-7 shadow-sm">
+                    {b.points.map((pt) => (
+                      <li key={pt} className="flex items-start gap-3 text-[15px]">
+                        <span className="mt-0.5 grid h-5 w-5 shrink-0 place-items-center rounded-full bg-[#FFE08A]"><Check className="h-3 w-3" aria-hidden="true" /></span>
+                        {pt}
+                      </li>
+                    ))}
+                  </ul>
+                </div>
               </div>
             </section>
           ))}
