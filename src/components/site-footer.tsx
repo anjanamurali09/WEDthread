@@ -43,6 +43,7 @@ export function SiteFooter() {
           <h4 className="text-base font-medium text-[#243746]">Plan your wedding</h4>
           <ul className="mt-4 space-y-0.5">
             <li><Link to="/features/$slug" params={{ slug: "guest-list" }} data-static className={linkClass}>Guest list</Link></li>
+            <li><Link to="/features/$slug" params={{ slug: "budgeting" }} data-static className={linkClass}>Budget</Link></li>
             <li><Link to="/features/$slug" params={{ slug: "seating" }} data-static className={linkClass}>Seating</Link></li>
             <li><Link to="/features/$slug" params={{ slug: "rsvp-automation" }} data-static className={linkClass}>RSVPs</Link></li>
             <li><Link to="/features/$slug" params={{ slug: "registry" }} data-static className={linkClass}>Registry</Link></li>

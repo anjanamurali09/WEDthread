@@ -1,108 +1,51 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { canonicalLink } from "@/lib/seo";
 import { useState } from "react";
-import {
-  ArrowRight, ArrowLeft, Users, Bell, Smartphone,
-  Armchair, ShieldCheck, Gift, Link2, Check, MessageCircle, Mail, Store, Package, Globe2,
-  Wallet, PieChart, Palette, MapPin, Star,
-} from "lucide-react";
+import { ArrowRight, ArrowLeft, Check, ChevronRight, ChevronDown } from "lucide-react";
 import { LoginDialog } from "@/components/login-dialog";
 import { SiteFooter } from "@/components/site-footer";
 import { Logo } from "@/components/logo";
 import { SHOWCASE_FEATURES, FeatureVisual, useReveal } from "@/routes/index";
+import { FEATURE_CONTENT } from "@/lib/feature-content";
+import { canonicalLink, SITE_URL } from "@/lib/seo";
+import { cn } from "@/lib/utils";
 
-const FEATURE_PAGES: Record<string, {
-  headline: string;
-  sub: string;
-  benefits: { icon: typeof Users; title: string; body: string }[];
-}> = {
-  "guest-list": {
-    headline: "Know exactly who's coming.",
-    sub: "One guest list, RSVPs collected over WhatsApp and email, no spreadsheets, no chasing.",
-    benefits: [
-      { icon: Users, title: "Smart guest lists", body: "First and last name, per-event invites, plus-ones, dietary tags, allergies, accessibility notes." },
-      { icon: Bell, title: "Real-time RSVPs", body: "Watch your guest count update the moment someone responds." },
-      { icon: Smartphone, title: "No app required", body: "Guests tap a link and reply, nothing to download, nothing to install." },
-    ],
-  },
-  seating: {
-    headline: "Every seat, thoughtfully placed.",
-    sub: "Drag-and-drop seating that makes sense, table by table.",
-    benefits: [
-      { icon: Armchair, title: "Visual seating canvas", body: "Drag tables, dance floor, bar. Round, square, rectangle, arranged exactly how you picture it." },
-      { icon: ShieldCheck, title: "Capacity & allergy warnings", body: "Get warned before a table's overfilled or an allergy's seated too close for comfort." },
-      { icon: Users, title: "Built on your real guest list", body: "Every seat pulls straight from your RSVPs, always in sync." },
-    ],
-  },
-  registry: {
-    headline: "Ask for exactly what you want.",
-    sub: "Paste any product link, we'll pull the photo, name, and price.",
-    benefits: [
-      { icon: Gift, title: "Any store, any country", body: "Link gifts from the retailers your guests actually shop at." },
-      { icon: Link2, title: "One link to share", body: "No more juggling five different registry sites." },
-      { icon: Check, title: "Track what's been bought", body: "Know what's claimed without guests spoiling the surprise." },
-    ],
-  },
-  "rsvp-automation": {
-    headline: "Meet guests where they already are.",
-    sub: "Save-the-dates and RSVP links, sent straight to WhatsApp and email.",
-    benefits: [
-      { icon: MessageCircle, title: "Save-the-date to thank-you", body: "Automated messages for every stage of the RSVP journey, timed for you." },
-      { icon: Users, title: "Personalized by name", body: "Templates greet every guest by name, for every event they're invited to." },
-      { icon: Mail, title: "WhatsApp and email", body: "Reach guests however they're most likely to actually respond." },
-    ],
-  },
-  "vendor-marketplace": {
-    headline: "Find the people who'll bring it to life.",
-    sub: "Browse trusted vendors for every tradition and budget.",
-    benefits: [
-      { icon: Store, title: "Every tradition covered", body: "Mehendi artists, live painters, caterers, and more, for every kind of celebration." },
-      { icon: Package, title: "Buy & sell marketplace", body: "Leftover décor, dresses, tableware. Buy from other couples, resell yours after the day." },
-      { icon: Star, title: "Trusted by real couples", body: "Browse reviews and photos from weddings just like yours." },
-    ],
-  },
-  venues: {
-    headline: "Find the perfect place to say I do.",
-    sub: "Browse venues for every ceremony, wherever you're actually getting married.",
-    benefits: [
-      { icon: MapPin, title: "Every destination", body: "Browse venues wherever you're getting married, not just your home city." },
-      { icon: Globe2, title: "Destination-first filtering", body: "Filtered by city, capacity, and the traditions you're planning for." },
-      { icon: Star, title: "Real reviews, real photos", body: "See exactly what you're booking, rated by couples who've been there." },
-    ],
-  },
-  budgeting: {
-    headline: "Track every dollar, before it's due.",
-    sub: "See exactly what's spent, what's left, and what's coming due, without a single spreadsheet.",
-    benefits: [
-      { icon: Wallet, title: "Real-time totals", body: "See exactly what's spent and what's left, updated the moment you log a cost." },
-      { icon: Bell, title: "Payment reminders", body: "Never miss a vendor deposit or final payment again." },
-      { icon: PieChart, title: "Smart breakdowns", body: "See where your money's really going, by category and by event." },
-    ],
-  },
-  website: {
-    headline: "A website that's actually you.",
-    sub: "A free, beautiful site for every ceremony, live in minutes, no design skills needed.",
-    benefits: [
-      { icon: Palette, title: "Designed for you", body: "Pick a template, add your story, and it's live in minutes." },
-      { icon: Globe2, title: "One link for everyone", body: "Share ceremony details, travel info, and RSVPs, all in one place." },
-      { icon: Smartphone, title: "Looks great everywhere", body: "Beautiful on phones, tablets, and desktops, no design skills needed." },
-    ],
-  },
-};
-
+// The search tags for a feature page: its own title and description, the address Google should use, and
+// structured data (breadcrumbs and the FAQ) that lets results show the page's structure.
 export const Route = createFileRoute("/features/$slug")({
   head: ({ params }) => {
-    const feature = SHOWCASE_FEATURES.find((f) => f.slug === params.slug);
-    const page = FEATURE_PAGES[params.slug];
+    const content = FEATURE_CONTENT[params.slug];
+    if (!content) return { links: canonicalLink(`/features/${params.slug}`) };
+    const url = `${SITE_URL}/features/${content.slug}`;
+    const breadcrumbs = {
+      "@context": "https://schema.org", "@type": "BreadcrumbList",
+      itemListElement: [
+        { "@type": "ListItem", position: 1, name: "Home", item: `${SITE_URL}/` },
+        { "@type": "ListItem", position: 2, name: content.eyebrow, item: url },
+      ],
+    };
+    const faq = {
+      "@context": "https://schema.org", "@type": "FAQPage",
+      mainEntity: content.faqs.map((f) => ({ "@type": "Question", name: f.q, acceptedAnswer: { "@type": "Answer", text: f.a } })),
+    };
     return {
-      meta: feature && page
-        ? [{ title: `${(feature as { title?: string }).title ?? page.headline} · WEDthread` }, { name: "description", content: page.sub }]
-        : [],
-      links: canonicalLink(`/features/${params.slug}`),
+      meta: [
+        { title: content.metaTitle },
+        { name: "description", content: content.metaDescription },
+        { property: "og:title", content: content.metaTitle },
+        { property: "og:description", content: content.metaDescription },
+        { property: "og:url", content: url },
+      ],
+      links: canonicalLink(`/features/${content.slug}`),
+      scripts: [
+        { type: "application/ld+json", children: JSON.stringify(breadcrumbs) },
+        { type: "application/ld+json", children: JSON.stringify(faq) },
+      ],
     };
   },
   component: FeaturePage,
 });
+
+const button = "inline-flex items-center gap-2 rounded-full bg-[#FFE08A] text-[#243746] px-6 py-3 text-sm font-medium transition-all hover:bg-[#243746] hover:text-[#FFF7D6] hover:rounded-2xl hover:gap-3";
 
 function FeaturePage() {
   const { slug } = Route.useParams();
@@ -110,7 +53,7 @@ function FeaturePage() {
   const [authOpen, setAuthOpen] = useState<false | "signin" | "signup">(false);
 
   const feature = SHOWCASE_FEATURES.find((f) => f.slug === slug);
-  const page = FEATURE_PAGES[slug];
+  const page = FEATURE_CONTENT[slug];
 
   if (!feature || !page) {
     return (
@@ -124,6 +67,12 @@ function FeaturePage() {
       </div>
     );
   }
+
+  const related = page.related.flatMap((s) => {
+    const f = SHOWCASE_FEATURES.find((x) => x.slug === s);
+    const c = FEATURE_CONTENT[s];
+    return f && c ? [{ slug: s, title: f.title, text: c.metaDescription.split(". ")[0].replace(/\.$/, "") + "." }] : [];
+  });
 
   return (
     <div ref={rootRef as any} className="min-h-screen bg-white text-[#243746]">
@@ -142,46 +91,139 @@ function FeaturePage() {
         </div>
       </header>
 
-      {/* Hero */}
-      <section className="relative px-6 md:px-12 pt-12 md:pt-20 pb-16 grid lg:grid-cols-12 gap-10 items-center">
-        <div className="lg:col-span-6" data-reveal>
-          <p className="text-sm uppercase tracking-[0.2em] text-[#7FA8D6]">{feature.eyebrow}</p>
-          <h1 className="mt-4 font-serif text-5xl md:text-6xl leading-[0.95] tracking-tight">{page.headline}</h1>
-          <p className="mt-6 text-lg text-[#243746] max-w-xl leading-relaxed">{page.sub}</p>
-          <div className="mt-8 flex flex-wrap gap-3">
-            <button onClick={() => setAuthOpen("signup")}
-              className="inline-flex items-center gap-2 rounded-full bg-[#FFE08A] text-[#243746] px-6 py-3 text-sm font-medium transition-all hover:bg-[#243746] hover:text-[#FFF7D6] hover:rounded-2xl hover:gap-3">
-              Start planning for free <ArrowRight className="h-4 w-4" />
-            </button>
-          </div>
-        </div>
-        <div className={`lg:col-span-6 relative overflow-hidden rounded-[2.5rem] h-[360px] md:h-[440px] ${feature.tint}`} data-reveal>
-          <FeatureVisual kind={feature.visual} />
-        </div>
-      </section>
-
-      {/* Benefits */}
-      <section className="relative px-6 md:px-12 py-16 border-t border-line/60">
-        <div className="grid sm:grid-cols-3 gap-8 max-w-5xl mx-auto">
-          {page.benefits.map(({ icon: Icon, title, body }) => (
-            <div key={title} data-reveal>
-              <span className="grid h-10 w-10 place-items-center rounded-full bg-[#FFF2B2] text-[#243746]"><Icon className="h-4 w-4" /></span>
-              <h3 className="mt-4 font-serif text-xl leading-tight">{title}</h3>
-              <p className="mt-2 text-sm text-[#243746] leading-relaxed">{body}</p>
+      <main>
+        {/* Hero */}
+        <section className="relative px-6 md:px-12 pt-8 md:pt-12 pb-16">
+          <nav aria-label="Breadcrumb" className="flex items-center gap-1.5 text-xs text-muted-foreground">
+            <Link to="/" className="hover:text-[#7FA8D6]">Home</Link>
+            <ChevronRight className="h-3 w-3" aria-hidden="true" />
+            <span aria-current="page" className="text-[#243746]">{page.eyebrow}</span>
+          </nav>
+          <div className="mt-8 grid lg:grid-cols-12 gap-10 items-center">
+            <div className="lg:col-span-6" data-reveal>
+              <p className="text-sm uppercase tracking-[0.2em] text-[#7FA8D6]">{page.eyebrow}</p>
+              <h1 className="mt-4 font-serif text-4xl md:text-5xl leading-[1.02] tracking-tight text-balance">{page.h1}</h1>
+              <p className="mt-6 text-lg text-[#243746] max-w-xl leading-relaxed">{page.intro}</p>
+              <ul className="mt-6 space-y-2.5 max-w-xl">
+                {page.heroBullets.map((b) => (
+                  <li key={b} className="flex items-start gap-2.5 text-[15px]">
+                    <Check className="mt-0.5 h-4 w-4 shrink-0 text-[#4A7CAD]" aria-hidden="true" /> {b}
+                  </li>
+                ))}
+              </ul>
+              <div className="mt-8 flex flex-wrap gap-3">
+                <button onClick={() => setAuthOpen("signup")} className={button}>
+                  Start planning for free <ArrowRight className="h-4 w-4" />
+                </button>
+              </div>
             </div>
+            <div className={`lg:col-span-6 relative overflow-hidden rounded-[2.5rem] h-[340px] md:h-[440px] ${feature.tint}`} data-reveal aria-hidden="true">
+              <FeatureVisual kind={feature.visual} />
+            </div>
+          </div>
+        </section>
+
+        {/* Detail blocks */}
+        <div className="border-t border-line/60">
+          {page.blocks.map((b, i) => (
+            <section key={b.h2} className={cn("px-6 md:px-12 py-14 md:py-20", i % 2 === 1 && "bg-[#FFF7D6]/50")}>
+              <div className={cn("mx-auto grid max-w-6xl items-center gap-10 lg:grid-cols-2 lg:gap-16", i % 2 === 1 && "lg:[&>*:first-child]:order-2")}>
+                <div data-reveal>
+                  <h2 className="font-serif text-3xl md:text-4xl leading-tight text-balance">{b.h2}</h2>
+                  {b.body.map((p) => <p key={p} className="mt-5 text-[15px] leading-relaxed">{p}</p>)}
+                </div>
+                <ul data-reveal className="space-y-3 rounded-3xl border border-line/70 bg-paper p-7 shadow-sm">
+                  {b.points.map((pt) => (
+                    <li key={pt} className="flex items-start gap-3 text-[15px]">
+                      <span className="mt-0.5 grid h-5 w-5 shrink-0 place-items-center rounded-full bg-[#FFE08A]"><Check className="h-3 w-3" aria-hidden="true" /></span>
+                      {pt}
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            </section>
           ))}
         </div>
-      </section>
 
-      {/* CTA */}
-      <section className="relative mx-6 md:mx-12 mb-16 rounded-[3rem] bg-[#FFE08A] text-[#243746] py-20 px-6 md:px-12 text-center overflow-hidden" data-reveal>
-        <p className="relative text-sm uppercase tracking-[0.3em] text-[#243746]">For every wedding, anywhere</p>
-        <h2 className="relative mt-4 font-serif text-4xl md:text-5xl max-w-2xl mx-auto leading-[0.95]">Ready to plan it your way?</h2>
-        <button onClick={() => setAuthOpen("signup")}
-          className="relative mt-8 inline-flex items-center gap-2 rounded-full bg-[#243746] text-[#FFF7D6] px-8 py-4 text-sm font-medium transition-all hover:bg-[#FFF7D6] hover:text-[#243746] hover:rounded-2xl hover:gap-3">
-          Start planning for free <ArrowRight className="h-4 w-4" />
-        </button>
-      </section>
+        {/* How it works */}
+        <section className="px-6 md:px-12 py-16 border-t border-line/60">
+          <div className="mx-auto max-w-5xl">
+            <h2 className="text-center font-serif text-3xl md:text-4xl" data-reveal>How it works</h2>
+            <ol className="mt-10 grid gap-8 md:grid-cols-3">
+              {page.steps.map((s, i) => (
+                <li key={s.title} data-reveal>
+                  <span className="grid h-10 w-10 place-items-center rounded-full bg-[#243746] font-serif text-lg text-[#FFF7D6]">{i + 1}</span>
+                  <h3 className="mt-4 font-serif text-xl leading-tight">{s.title}</h3>
+                  <p className="mt-2 text-sm leading-relaxed">{s.body}</p>
+                </li>
+              ))}
+            </ol>
+          </div>
+        </section>
+
+        {/* What makes it different */}
+        <section className="px-6 md:px-12 py-16">
+          <div className="mx-auto max-w-5xl rounded-[2.5rem] bg-[#FFE08A]/45 px-8 py-12 md:px-14" data-reveal>
+            <h2 className="font-serif text-3xl md:text-4xl leading-tight text-balance">{page.different.h2}</h2>
+            <p className="mt-5 max-w-2xl text-[15px] leading-relaxed">{page.different.body}</p>
+            <ul className="mt-7 grid gap-3 sm:grid-cols-2">
+              {page.different.points.map((pt) => (
+                <li key={pt} className="flex items-start gap-3 text-[15px]">
+                  <Check className="mt-0.5 h-4 w-4 shrink-0" aria-hidden="true" /> {pt}
+                </li>
+              ))}
+            </ul>
+          </div>
+        </section>
+
+        {/* FAQ */}
+        <section className="px-6 md:px-12 py-16 border-t border-line/60">
+          <div className="mx-auto max-w-3xl">
+            <h2 className="text-center font-serif text-3xl md:text-4xl" data-reveal>Frequently asked questions</h2>
+            {/* Plain <details> elements: the answers are in the page's HTML for search engines, and open without any script. */}
+            <div className="mt-8 space-y-2">
+              {page.faqs.map((f) => (
+                <details key={f.q} className="group rounded-2xl border border-line/60 bg-paper px-5 py-4 open:bg-[#FFF7D6]/40">
+                  <summary className="flex cursor-pointer list-none items-center justify-between gap-4 font-medium [&::-webkit-details-marker]:hidden">
+                    {f.q}
+                    <ChevronDown className="h-4 w-4 shrink-0 transition-transform group-open:rotate-180" aria-hidden="true" />
+                  </summary>
+                  <p className="mt-3 text-sm leading-relaxed">{f.a}</p>
+                </details>
+              ))}
+            </div>
+          </div>
+        </section>
+
+        {/* Related */}
+        {related.length > 0 && (
+          <section className="px-6 md:px-12 py-16 border-t border-line/60">
+            <div className="mx-auto max-w-5xl">
+              <h2 className="font-serif text-2xl md:text-3xl" data-reveal>Plan the rest of your wedding</h2>
+              <div className="mt-8 grid gap-5 md:grid-cols-3">
+                {related.map((r) => (
+                  <Link key={r.slug} to="/features/$slug" params={{ slug: r.slug }} data-static data-reveal
+                    className="group rounded-3xl border border-line/70 bg-paper p-6 transition-colors hover:bg-[#FFF7D6]">
+                    <h3 className="font-serif text-xl">{r.title}</h3>
+                    <p className="mt-2 text-sm leading-relaxed text-muted-foreground">{r.text}</p>
+                    <span className="mt-4 inline-flex items-center gap-1.5 text-sm text-[#4A7CAD] group-hover:gap-2.5 transition-all">Learn more <ArrowRight className="h-3.5 w-3.5" /></span>
+                  </Link>
+                ))}
+              </div>
+            </div>
+          </section>
+        )}
+
+        {/* CTA */}
+        <section className="relative mx-6 md:mx-12 mb-16 rounded-[3rem] bg-[#FFE08A] text-[#243746] py-20 px-6 md:px-12 text-center overflow-hidden" data-reveal>
+          <p className="relative text-sm uppercase tracking-[0.3em] text-[#243746]">For every wedding, anywhere</p>
+          <h2 className="relative mt-4 font-serif text-4xl md:text-5xl max-w-2xl mx-auto leading-[0.95]">Ready to plan it your way?</h2>
+          <button onClick={() => setAuthOpen("signup")}
+            className="relative mt-8 inline-flex items-center gap-2 rounded-full bg-[#243746] text-[#FFF7D6] px-8 py-4 text-sm font-medium transition-all hover:bg-[#FFF7D6] hover:text-[#243746] hover:rounded-2xl hover:gap-3">
+            Start planning for free <ArrowRight className="h-4 w-4" />
+          </button>
+        </section>
+      </main>
 
       <SiteFooter />
 
