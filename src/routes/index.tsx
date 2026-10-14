@@ -865,7 +865,7 @@ function Landing() {
       {/* About: plain, useful text for people and search engines, with links into the feature pages */}
       <section id="about" className="relative z-10 px-6 md:px-12 py-16 border-t border-line/60">
         <div className="mx-auto max-w-5xl">
-          <h2 className="font-serif text-4xl md:text-5xl leading-[1.02] text-balance" data-reveal>Wedding planning software for every kind of wedding</h2>
+          <h2 className="font-serif text-4xl md:text-5xl leading-[1.02] text-balance" data-reveal>Wedding planning for every kind of wedding</h2>
           <p className="mt-6 max-w-3xl text-[17px] leading-relaxed" data-reveal>
             WEDthread is a wedding planning platform for couples who want one calm place for everything: the guest list, RSVPs, seating chart, budget, registry and wedding website. It is built for weddings that do not fit a template, from a single ceremony to several days of celebrations with guests travelling in from different countries.
           </p>
