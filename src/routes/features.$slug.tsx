@@ -200,10 +200,10 @@ function FeaturePage() {
         <section className="px-6 md:px-12 py-16 border-t border-line/60">
           <div className="mx-auto max-w-3xl">
             <h2 className="text-center font-serif text-3xl md:text-4xl" data-reveal>Frequently asked questions</h2>
-            {/* Plain <details> elements: the answers are in the page's HTML for search engines, and open without any script. */}
+            {/* Plain <details> elements: the answers are in the page's HTML for search engines, and open without any script. Sharing one `name` makes them behave as a group: opening one closes the other. */}
             <div className="mt-8 space-y-2">
               {page.faqs.map((f) => (
-                <details key={f.q} className="group rounded-2xl border border-line/60 bg-paper px-5 py-4 open:bg-[#FFF7D6]/40">
+                <details key={f.q} name={`faq-${slug}`} className="group rounded-2xl border border-line/60 bg-paper px-5 py-4 open:bg-[#FFF7D6]/40">
                   <summary className="flex cursor-pointer list-none items-center justify-between gap-4 font-medium [&::-webkit-details-marker]:hidden">
                     {f.q}
                     <ChevronDown className="h-4 w-4 shrink-0 transition-transform group-open:rotate-180" aria-hidden="true" />
