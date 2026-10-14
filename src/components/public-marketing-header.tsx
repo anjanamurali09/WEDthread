@@ -32,7 +32,7 @@ export function PublicMarketingHeader({ sticky = true }: {
         </nav>
         <div className="flex items-center gap-3">
           <button onClick={() => setAuthOpen("signin")} className="text-sm text-[#243746] hover:text-[#7FA8D6] transition-colors hidden sm:inline">Sign in</button>
-          <button onClick={() => navigate({ to: "/auth", search: { mode: "signup" } as any })}
+          <button onClick={() => navigate({ to: "/signup" })}
             className="rounded-full bg-[#243746] text-[#FFF7D6] px-5 py-2 text-sm transition-all hover:bg-[#FFE08A] hover:text-[#243746] hover:rounded-2xl">
             Start planning
           </button>

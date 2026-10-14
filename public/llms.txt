@@ -1,0 +1,20 @@
+# WEDthread
+
+> WEDthread is a wedding planning platform for couples. It brings the guest list, RSVPs, seating chart, budget, registry and wedding website into one plan, and includes a directory of wedding venues and vendors. It is built for weddings of every size, culture and style, including destination weddings and weddings with several events.
+
+## What couples can do
+- Guest list and RSVP tracking, with per-event invitations and WhatsApp or email messages: https://www.wedthread.co/features/guest-list
+- Budget planning, expense tracking and payment reminders: https://www.wedthread.co/features/budgeting
+- Seating chart maker with drag and drop tables: https://www.wedthread.co/features/seating
+- Online RSVP by WhatsApp and email: https://www.wedthread.co/features/rsvp-automation
+- Wedding registry from any store, plus cash funds: https://www.wedthread.co/features/registry
+- Free wedding website builder: https://www.wedthread.co/features/website
+
+## Directories
+- Wedding venues by city, capacity, price and type of space: https://www.wedthread.co/venue
+- Wedding vendors by category, location and budget: https://www.wedthread.co/v
+
+## Other
+- Privacy policy: https://www.wedthread.co/privacy
+- Sitemap: https://www.wedthread.co/sitemap.xml
+- Contact: hello@wedthread.co

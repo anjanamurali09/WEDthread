@@ -33,7 +33,7 @@ export function VendorServiceCard({ service, saved, onToggleSaved, compact }: {
   const content = (
     <>
       <div className="relative">
-        <PhotoCarousel photos={s.photos} />
+        <PhotoCarousel photos={s.photos} alt={`${s.businessName}, ${s.categoryNames[0]?.toLowerCase() ?? "wedding vendor"}${s.city ? ` in ${s.city}` : ""}`} />
         <button type="button" onClick={(e) => { e.preventDefault(); e.stopPropagation(); onToggleSaved(s); }}
           aria-label={saved ? "Remove from saved" : "Save"} aria-pressed={saved}
           className="absolute right-3 top-3 grid h-8 w-8 place-items-center rounded-full bg-paper/90 shadow cursor-pointer">

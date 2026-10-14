@@ -33,7 +33,7 @@ export function VenueCard({ venue, saved, onToggleSaved, compact }: {
   return (
     <Link to={`/venue/${v.id}` as any} className="group paper-card overflow-hidden block hover:-translate-y-0.5 transition-transform">
       <div className="relative">
-        <PhotoCarousel photos={v.photos} />
+        <PhotoCarousel photos={v.photos} alt={`${v.legal_business_name}, wedding venue${v.city ? ` in ${v.city}` : ""}`} />
         <button type="button" onClick={(e) => { e.preventDefault(); e.stopPropagation(); onToggleSaved(v.id); }}
           aria-label={saved ? "Remove from saved" : "Save"} aria-pressed={saved}
           className="absolute right-3 top-3 grid h-8 w-8 place-items-center rounded-full bg-paper/90 shadow cursor-pointer">

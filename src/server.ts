@@ -87,6 +87,12 @@ function withSecurityHeaders(response: Response): Response {
 
 export default {
   async fetch(request: Request, env: unknown, ctx: unknown) {
+    // Anyone who types or follows an http:// address is sent to the secure https:// one.
+    const requested = new URL(request.url);
+    if (requested.protocol === "http:" && !["localhost", "127.0.0.1"].includes(requested.hostname)) {
+      requested.protocol = "https:";
+      return Response.redirect(requested.toString(), 301);
+    }
     try {
       const cached = await renderWithHomeCache(request, env, ctx);
       if (cached) return withSecurityHeaders(cached);

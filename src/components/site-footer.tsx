@@ -23,7 +23,7 @@ export function SiteFooter() {
         <div>
           <h4 className="text-base font-medium text-[#243746]">About</h4>
           <ul className="mt-4 space-y-0.5">
-            <li><Link to="/auth" search={{ mode: "signup" } as any} data-static className={linkClass} onClick={() => track("partner_cta_click", { location: "footer" })}>Become a partner</Link></li>
+            <li><Link to="/signup" data-static className={linkClass} onClick={() => track("partner_cta_click", { location: "footer" })}>Become a partner</Link></li>
             <li><Link to="/venue" data-static className={linkClass}>Browse venues</Link></li>
             <li><Link to="/v" data-static className={linkClass}>Browse vendors</Link></li>
           </ul>
@@ -55,7 +55,7 @@ export function SiteFooter() {
           <Logo sizeClassName="text-3xl" />
           <p className="mt-3 font-serif text-lg text-[#243746]">For every wedding, anywhere.</p>
           <div className="mt-6 space-y-3 text-sm font-medium text-[#243746]">
-            <Link to="/auth" search={{ mode: "signup" } as any} data-static className="flex items-center gap-1.5 hover:text-[#7FA8D6] transition-colors">Start planning <ArrowRight className="h-3.5 w-3.5" /></Link>
+            <Link to="/signup" data-static className="flex items-center gap-1.5 hover:text-[#7FA8D6] transition-colors">Start planning <ArrowRight className="h-3.5 w-3.5" /></Link>
             <Link to="/venue" data-static className="flex items-center gap-1.5 hover:text-[#7FA8D6] transition-colors">Find a venue <ArrowRight className="h-3.5 w-3.5" /></Link>
             <Link to="/v" data-static className="flex items-center gap-1.5 hover:text-[#7FA8D6] transition-colors">Find a vendor <ArrowRight className="h-3.5 w-3.5" /></Link>
           </div>

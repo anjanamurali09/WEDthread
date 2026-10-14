@@ -2,7 +2,7 @@ import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { canonicalLink, SITE_URL, SITE_NAME, OG_IMAGE } from "@/lib/seo";
 import { track } from "@/lib/analytics";
 import { Children, useEffect, useRef, useState } from "react";
-import { Gem, ArrowRight, Globe2, MessageCircle, Star, CookingPot, BedDouble, Coffee, Luggage, Check, ChefHat, Wine, Flame, Droplet, MousePointer2, Bell, ChevronLeft, ChevronRight } from "lucide-react";
+import { Gem, ChevronDown, ArrowRight, Globe2, MessageCircle, Star, CookingPot, BedDouble, Coffee, Luggage, Check, ChefHat, Wine, Flame, Droplet, MousePointer2, Bell, ChevronLeft, ChevronRight } from "lucide-react";
 import { LoginDialog } from "@/components/login-dialog";
 import { SiteFooter } from "@/components/site-footer";
 import { Logo } from "@/components/logo";
@@ -43,6 +43,7 @@ const WEBSITE_JSON_LD = JSON.stringify({
 });
 
 export const Route = createFileRoute("/")({
+  loader: () => loadHomeListings(),
   head: () => ({
     links: canonicalLink("/"),
     scripts: [{ type: "application/ld+json", children: ORGANIZATION_JSON_LD }, { type: "application/ld+json", children: WEBSITE_JSON_LD }],
@@ -188,14 +189,14 @@ const FAQS = [
 ];
 
 const REGISTRY_ITEMS = [
-  { n: "Le Creuset Dutch Oven", p: "$380", icon: CookingPot, swatch: "bg-[#A8C6E7]", photo: registryDutchOvenImg },
-  { n: "Egyptian Cotton Sheets", p: "$140", icon: BedDouble, swatch: "bg-[#A8C6E7]", photo: registryCottonSheetsImg },
+  { n: "Dutch oven", p: "$380", icon: CookingPot, swatch: "bg-[#A8C6E7]", photo: registryDutchOvenImg },
+  { n: "Cotton sheets", p: "$140", icon: BedDouble, swatch: "bg-[#A8C6E7]", photo: registryCottonSheetsImg },
   { n: "Nespresso Machine", p: "$210", icon: Coffee, swatch: "bg-[#A8C6E7]", photo: registryNespressoImg },
   { n: "Weekend Bags", p: "$95", icon: Luggage, swatch: "bg-[#A8C6E7]", photo: registryWeekendBagImg },
   { n: "Stand Mixer", p: "$320", icon: ChefHat, swatch: "bg-[#A8C6E7]", photo: registryStandMixerImg },
   { n: "Wine Glasses", p: "$120", icon: Wine, swatch: "bg-[#A8C6E7]", photo: registryWineGlassesImg },
-  { n: "Cast Iron Skillet", p: "$65", icon: Flame, swatch: "bg-[#A8C6E7]", photo: registryCastIronImg },
-  { n: "Bath Towel Set", p: "$95", icon: Droplet, swatch: "bg-[#A8C6E7]", photo: registryTowelsImg },
+  { n: "Cast iron pan", p: "$65", icon: Flame, swatch: "bg-[#A8C6E7]", photo: registryCastIronImg },
+  { n: "Bath towels", p: "$95", icon: Droplet, swatch: "bg-[#A8C6E7]", photo: registryTowelsImg },
 ];
 
 // Fixed 3-per-column grid (see the vendors block below) — each of the 6
@@ -371,7 +372,7 @@ export function FeatureVisual({ kind }: { kind: (typeof SHOWCASE_FEATURES)[numbe
               {[...REGISTRY_ITEMS, ...REGISTRY_ITEMS].map(({ n, p, icon: Icon, swatch, photo }, i) => (
                 <div key={i} className="w-[85px] shrink-0 paper-card bg-paper border border-line p-3 shadow-md flex flex-col items-center text-center">
                   <div className={cn("h-12 w-full rounded-lg grid place-items-center overflow-hidden", swatch)}>
-                    {photo ? <img loading="lazy" decoding="async" src={photo} alt={n} className="w-full h-full object-cover" /> : <Icon className="h-5 w-5 text-[#FFF7D6]" />}
+                    {photo ? <img loading="lazy" decoding="async" src={photo} alt="A gift on a wedding registry" className="w-full h-full object-cover" /> : <Icon className="h-5 w-5 text-[#FFF7D6]" />}
                   </div>
                   <p className="mt-2 text-xs leading-tight">{n}</p>
                   <p className="text-xs text-[#7FA8D6] font-medium">{p}</p>
@@ -492,7 +493,7 @@ function FeatureCard({ feature, index }: { feature: (typeof SHOWCASE_FEATURES)[n
 // The last card in the vendors row: invites businesses to list themselves.
 function BecomePartnerCard() {
   return (
-    <Link to="/auth" search={{ mode: "signup" } as any} data-static onClick={() => track("partner_cta_click", { location: "homepage_vendors_row" })}
+    <Link to="/signup" data-static onClick={() => track("partner_cta_click", { location: "homepage_vendors_row" })}
       className="group flex flex-col justify-between rounded-2xl border border-[#FFE08A] bg-[#FFF7D6] p-6 text-[#243746] transition-colors hover:bg-[#FFE08A]">
       <div>
         <h3 className="font-serif text-3xl leading-tight">Become a partner</h3>
@@ -531,32 +532,13 @@ function CompactCta({ headline, onClick, tone = "cherry", cta = "Start planning 
   );
 }
 
-// A real, live teaser of the marketplace — three actual venues and three
-// actual vendor services, each linking straight to its real public page.
-// Anyone can click in; useAnonViewGate (wired into the detail pages
-// themselves, not here) is what actually caps a signed-out visitor at 3
-// listing views before asking them to sign up, so this section doesn't need
-// its own click-counting logic. Reuses the exact same VenueCard/
-// VendorServiceCard as the marketplace pages (photo carousel, heart/save)
-// rather than a simplified duplicate, so the teaser behaves identically to
-// the real thing.
-function RealListingsPreview() {
-  const [venues, setVenues] = useState<VenueCardData[]>([]);
-  const [services, setServices] = useState<VendorServiceCardData[]>([]);
-  const { signedIn, saved, toggle } = useSavedListings();
-  const [authOpen, setAuthOpen] = useState(false);
-
-  const handleToggleVenueSaved = (businessId: string) => {
-    if (!signedIn) { setAuthOpen(true); return; }
-    toggle({ businessId });
-  };
-  const handleToggleServiceSaved = (service: VendorServiceCardData) => {
-    if (!signedIn) { setAuthOpen(true); return; }
-    toggle({ businessId: service.business_id, listingId: service.id });
-  };
-
-  useEffect(() => {
-    (async () => {
+// The venues and vendors shown on the homepage. Loaded on the server with the page (and kept for five minutes by
+// the edge cache), so search engines and AI tools read the real listings in the page itself instead of an empty
+// space that fills in later.
+async function loadHomeListings(): Promise<{ venues: VenueCardData[]; services: VendorServiceCardData[] }> {
+  let venues: VenueCardData[] = [];
+  let services: VendorServiceCardData[] = [];
+  try {
       const { data: venueBiz } = await supabase
         .from("businesses").select("id,legal_business_name,verification_status,city,country")
         .eq("business_type", "venue").eq("verification_status", "verified")
@@ -588,7 +570,7 @@ function RealListingsPreview() {
         // each group; the row shows the first twelve.
         const completeness = (v: (typeof cards)[number]) =>
           Number(v.capacity_min != null || v.capacity_max != null) + Number(v.type_of_space.length > 0) + Number(v.price_range_min != null);
-        setVenues(cards.map((v, i) => ({ v, i })).sort((a, b) => completeness(b.v) - completeness(a.v) || a.i - b.i).map(({ v }) => v).slice(0, 12));
+        venues = (cards.map((v, i) => ({ v, i })).sort((a, b) => completeness(b.v) - completeness(a.v) || a.i - b.i).map(({ v }) => v).slice(0, 12));
       }
 
       const { data: svcRows } = await supabase
@@ -625,7 +607,7 @@ function RealListingsPreview() {
           list.push(m.url);
           photosByBusiness.set(m.business_id, list);
         }
-        setServices(eligible.map((s) => {
+        services = (eligible.map((s) => {
           const b = bizById.get(s.business_id)!;
           return {
             id: s.id, business_id: s.business_id,
@@ -636,8 +618,33 @@ function RealListingsPreview() {
           };
         }));
       }
-    })();
-  }, []);
+  } catch { /* the homepage still works without the listings */ }
+  return { venues, services };
+}
+
+// A real, live teaser of the marketplace — three actual venues and three
+// actual vendor services, each linking straight to its real public page.
+// Anyone can click in; useAnonViewGate (wired into the detail pages
+// themselves, not here) is what actually caps a signed-out visitor at 3
+// listing views before asking them to sign up, so this section doesn't need
+// its own click-counting logic. Reuses the exact same VenueCard/
+// VendorServiceCard as the marketplace pages (photo carousel, heart/save)
+// rather than a simplified duplicate, so the teaser behaves identically to
+// the real thing.
+function RealListingsPreview() {
+  const { venues, services } = Route.useLoaderData();
+  const { signedIn, saved, toggle } = useSavedListings();
+  const [authOpen, setAuthOpen] = useState(false);
+
+  const handleToggleVenueSaved = (businessId: string) => {
+    if (!signedIn) { setAuthOpen(true); return; }
+    toggle({ businessId });
+  };
+  const handleToggleServiceSaved = (service: VendorServiceCardData) => {
+    if (!signedIn) { setAuthOpen(true); return; }
+    toggle({ businessId: service.business_id, listingId: service.id });
+  };
+
 
   if (venues.length === 0 && services.length === 0) return null;
 
@@ -699,12 +706,12 @@ function Landing() {
   const [authOpen, setAuthOpen] = useState<false | "signin" | "signup">(false);
   const navigate = useNavigate();
   // "Start planning" goes to the full sign-up page; only "Sign in" uses the small popup.
-  const goSignup = () => navigate({ to: "/auth", search: { mode: "signup" } as any });
+  const goSignup = () => navigate({ to: "/signup" });
   const [ready, setReady] = useState(false);
 
   useEffect(() => {
     let cancelled = false;
-    const fallback = setTimeout(() => { if (!cancelled) setReady(true); }, 1200);
+    const fallback = setTimeout(() => { if (!cancelled) setReady(true); }, 500);
     const fontsReady: Promise<unknown> = (document as any).fonts?.ready ?? Promise.resolve();
     fontsReady.then(() => {
       if (cancelled) return;
@@ -855,21 +862,60 @@ function Landing() {
         <CompactCta headline={MID_CTA_HEADLINES[1]} tone="ink" cta="Wedding venues and vendors" onClick={() => navigate({ to: "/venue" })} />
       </section>
 
+      {/* About: plain, useful text for people and search engines, with links into the feature pages */}
+      <section id="about" className="relative z-10 px-6 md:px-12 py-16 border-t border-line/60">
+        <div className="mx-auto max-w-5xl">
+          <h2 className="font-serif text-4xl md:text-5xl leading-[1.02] text-balance" data-reveal>Wedding planning software for every kind of wedding</h2>
+          <p className="mt-6 max-w-3xl text-[17px] leading-relaxed" data-reveal>
+            WEDthread is a wedding planning platform for couples who want one calm place for everything: the guest list, RSVPs, seating chart, budget, registry and wedding website. It is built for weddings that do not fit a template, from a single ceremony to several days of celebrations with guests travelling in from different countries.
+          </p>
+          <div className="mt-10 grid gap-8 md:grid-cols-3">
+            <div data-reveal>
+              <h3 className="font-serif text-2xl">Guest list and RSVPs</h3>
+              <p className="mt-3 text-[15px] leading-relaxed">Add each guest once, invite them to the events they are coming to, and track replies as they arrive. Send RSVP links by WhatsApp or email and see who still needs a reminder.</p>
+              <Link to="/features/$slug" params={{ slug: "guest-list" }} className="mt-3 inline-block text-sm text-[#4A7CAD] underline underline-offset-4">Wedding guest list manager</Link>
+            </div>
+            <div data-reveal>
+              <h3 className="font-serif text-2xl">Budget and payments</h3>
+              <p className="mt-3 text-[15px] leading-relaxed">Set your total, log every cost by category and by event, and get an email reminder before a vendor payment is due. Export your budget to Excel or PDF whenever someone asks for the numbers.</p>
+              <Link to="/features/$slug" params={{ slug: "budgeting" }} className="mt-3 inline-block text-sm text-[#4A7CAD] underline underline-offset-4">Wedding budget planner</Link>
+            </div>
+            <div data-reveal>
+              <h3 className="font-serif text-2xl">Seating, registry and website</h3>
+              <p className="mt-3 text-[15px] leading-relaxed">Drag guests onto tables with warnings for full tables and allergies, build one registry from any store, and share a wedding website with your schedule, travel details and RSVP.</p>
+              <p className="mt-3 text-sm">
+                <Link to="/features/$slug" params={{ slug: "seating" }} className="text-[#4A7CAD] underline underline-offset-4">Seating chart maker</Link>
+                {" · "}
+                <Link to="/features/$slug" params={{ slug: "registry" }} className="text-[#4A7CAD] underline underline-offset-4">Wedding registry</Link>
+                {" · "}
+                <Link to="/features/$slug" params={{ slug: "website" }} className="text-[#4A7CAD] underline underline-offset-4">Wedding website</Link>
+              </p>
+            </div>
+          </div>
+          <p className="mt-10 max-w-3xl text-[15px] leading-relaxed" data-reveal>
+            Looking for somewhere to marry or people to book? Browse <Link to="/venue" className="text-[#4A7CAD] underline underline-offset-4">wedding venues</Link> by city, capacity, price and type of space, or find <Link to="/v" className="text-[#4A7CAD] underline underline-offset-4">wedding vendors</Link> such as photographers, planners, caterers and florists. Whether you are planning a destination wedding, a multicultural celebration or a small ceremony at home, WEDthread keeps every event, guest and payment in one plan, free to start.
+          </p>
+        </div>
+      </section>
+
       {/* FAQ */}
       <section id="faq" className="relative z-10 px-6 md:px-12 pt-12 pb-24 scroll-mt-24">
         <div className="text-center max-w-2xl mx-auto" data-reveal>
           <p className="text-sm uppercase tracking-[0.2em] text-[#7FA8D6]">Questions</p>
           <h2 className="mt-3 font-serif text-5xl md:text-6xl leading-[0.95]">Everything you're wondering about.</h2>
         </div>
-        <Accordion type="single" collapsible className="mt-12 grid items-start gap-3 lg:grid-cols-2">
-          {FAQS.map((f, i) => (
-            <AccordionItem key={f.q} value={`item-${i}`} data-reveal style={{ transitionDelay: `${i * 60}ms` }}
-              className="rounded-3xl bg-paper border border-line/60 px-6 border-b-0">
-              <AccordionTrigger data-static className="font-sans text-lg font-medium hover:no-underline py-5">{f.q}</AccordionTrigger>
-              <AccordionContent className="text-[#243746] leading-relaxed">{f.a}</AccordionContent>
-            </AccordionItem>
+        {/* Plain <details>: every answer is in the page's HTML for search engines and AI tools, and opening one closes the other. */}
+        <div className="mx-auto mt-12 grid max-w-6xl items-start gap-3 lg:grid-cols-2">
+          {FAQS.map((f) => (
+            <details key={f.q} name="home-faq" data-reveal className="group rounded-3xl border border-line/60 bg-paper px-6 py-5 open:bg-[#FFF7D6]/40">
+              <summary className="flex cursor-pointer list-none items-center justify-between gap-4 font-sans text-lg font-medium [&::-webkit-details-marker]:hidden">
+                {f.q}
+                <ChevronDown className="h-4 w-4 shrink-0 transition-transform group-open:rotate-180" aria-hidden="true" />
+              </summary>
+              <p className="mt-3 leading-relaxed text-[#243746]">{f.a}</p>
+            </details>
           ))}
-        </Accordion>
+        </div>
       </section>
 
       {/* CTA */}
