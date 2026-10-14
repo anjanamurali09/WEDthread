@@ -216,12 +216,13 @@ const VENDOR_SLOTS: [string, string][] = [
 // rather than mechanical.
 const VENDOR_SLOT_ROTATIONS = [-3, 2, -4, 3, -2, 4];
 
-// Timed pop-in sequence: all 6 hidden, then slot 1 pops in, then 2, 3...
-// through 6 (staggered), a brief hold with all 6 visible, then all 6 fade
-// out together, then the next set (round) runs the same sequence.
+// Timed pop-in sequence: the first two bubbles are always there (so the card never looks empty), then the
+// other four pop in one after another, a brief hold with all 6 visible, then those four fade out while the
+// first two switch to the next set of names (round), and the sequence runs again.
+const ALWAYS_VISIBLE_PILLS = 2;
 function VendorPills() {
   const [round, setRound] = useState(0);
-  const [visibleCount, setVisibleCount] = useState(0);
+  const [visibleCount, setVisibleCount] = useState(ALWAYS_VISIBLE_PILLS);
 
   useEffect(() => {
     const STAGGER = 350;
@@ -233,17 +234,17 @@ function VendorPills() {
 
     function runRound() {
       if (cancelled) return;
-      setVisibleCount(0);
-      for (let i = 1; i <= 6; i++) {
-        timers.push(setTimeout(() => !cancelled && setVisibleCount(i), i * STAGGER));
+      setVisibleCount(ALWAYS_VISIBLE_PILLS);
+      for (let i = ALWAYS_VISIBLE_PILLS + 1; i <= 6; i++) {
+        timers.push(setTimeout(() => !cancelled && setVisibleCount(i), (i - ALWAYS_VISIBLE_PILLS) * STAGGER));
       }
-      const fadeAt = 6 * STAGGER + HOLD;
-      timers.push(setTimeout(() => !cancelled && setVisibleCount(0), fadeAt));
+      const fadeAt = (6 - ALWAYS_VISIBLE_PILLS) * STAGGER + HOLD;
       timers.push(setTimeout(() => {
         if (cancelled) return;
+        setVisibleCount(ALWAYS_VISIBLE_PILLS);
         setRound((r) => (r === 0 ? 1 : 0));
-        runRound();
-      }, fadeAt + FADE + GAP));
+      }, fadeAt));
+      timers.push(setTimeout(() => runRound(), fadeAt + FADE + GAP));
     }
     runRound();
     return () => { cancelled = true; timers.forEach(clearTimeout); };
