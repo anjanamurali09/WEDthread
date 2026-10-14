@@ -156,6 +156,17 @@ function RootComponent() {
   const { queryClient } = Route.useRouteContext();
   const router = useRouter();
 
+  // Remembers whether the last interaction was a mouse/touch or the keyboard. Clicking something never draws a focus
+  // box around it; pressing Tab still does, so the page stays usable without a mouse (see styles.css).
+  useEffect(() => {
+    const root = document.documentElement;
+    const pointer = () => { root.dataset.input = "pointer"; };
+    const keyboard = (e: KeyboardEvent) => { if (e.key === "Tab" || e.key.startsWith("Arrow")) delete root.dataset.input; };
+    window.addEventListener("pointerdown", pointer, true);
+    window.addEventListener("keydown", keyboard, true);
+    return () => { window.removeEventListener("pointerdown", pointer, true); window.removeEventListener("keydown", keyboard, true); };
+  }, []);
+
   useEffect(() => {
     const { data: sub } = supabase.auth.onAuthStateChange((event) => {
       if (event !== "SIGNED_IN" && event !== "SIGNED_OUT" && event !== "USER_UPDATED") return;

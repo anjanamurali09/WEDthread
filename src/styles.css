@@ -599,6 +599,8 @@ input.note-check:checked::after {
   outline: 2px solid #243746;
   outline-offset: 2px;
 }
+/* After a click or tap there is no focus box; it only appears when someone moves with the keyboard (Tab). */
+:root[data-input="pointer"] :focus-visible { outline: none; }
 :root { accent-color: #243746; }
 ::selection { background: #FFE08A; color: #243746; }
 html { -webkit-tap-highlight-color: transparent; }
