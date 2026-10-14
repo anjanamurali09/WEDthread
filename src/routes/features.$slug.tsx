@@ -1,12 +1,12 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { useState } from "react";
+import { Fragment, useState } from "react";
 import { ArrowRight, ArrowLeft, Check, ChevronRight, ChevronDown } from "lucide-react";
 import { LoginDialog } from "@/components/login-dialog";
 import { SiteFooter } from "@/components/site-footer";
 import { Logo } from "@/components/logo";
 import { SHOWCASE_FEATURES, FeatureVisual, useReveal } from "@/routes/index";
 import { FEATURE_CONTENT } from "@/lib/feature-content";
-import { FeatureDemo } from "@/components/feature-demos";
+import { FEATURE_DEMOS } from "@/components/feature-demos";
 import { canonicalLink, SITE_URL } from "@/lib/seo";
 import { cn } from "@/lib/utils";
 
@@ -46,6 +46,15 @@ export const Route = createFileRoute("/features/$slug")({
   component: FeaturePage,
 });
 
+// A tinted band holding one hands-on demo.
+function DemoSection({ children }: { children: React.ReactNode }) {
+  return (
+    <section className="border-t border-line/60 bg-[#FFF7D6]/50 px-6 py-14 md:px-12 md:py-20">
+      <div className="mx-auto max-w-5xl" data-reveal>{children}</div>
+    </section>
+  );
+}
+
 const button = "inline-flex items-center gap-2 rounded-full bg-[#FFE08A] text-[#243746] px-6 py-3 text-sm font-medium transition-all hover:bg-[#243746] hover:text-[#FFF7D6] hover:rounded-2xl hover:gap-3";
 
 function FeaturePage() {
@@ -68,6 +77,9 @@ function FeaturePage() {
       </div>
     );
   }
+
+  const demos = FEATURE_DEMOS[slug] ?? [];
+  const [Demo0, Demo1, Demo2] = [demos[0] ?? (() => null), demos[1] ?? (() => null), demos[2] ?? (() => null)];
 
   const related = page.related.flatMap((s) => {
     const f = SHOWCASE_FEATURES.find((x) => x.slug === s);
@@ -130,17 +142,14 @@ function FeaturePage() {
           )}
         </section>
 
-        {/* Hands-on demo */}
-        <section className="border-t border-line/60 bg-[#FFF7D6]/50 px-6 py-14 md:px-12 md:py-16" data-reveal>
-          <div className="mx-auto max-w-5xl">
-            <FeatureDemo slug={slug} />
-          </div>
-        </section>
+        {/* Hands-on demo, first of three */}
+        {demos[0] && <DemoSection><Demo0 /></DemoSection>}
 
         {/* Detail blocks */}
         <div className="border-t border-line/60">
           {page.blocks.map((b, i) => (
-            <section key={b.h2} className={cn("px-6 md:px-12 py-14 md:py-20", i % 2 === 1 && "bg-[#FFF7D6]/50")}>
+            <Fragment key={b.h2}>
+            <section className={cn("px-6 md:px-12 py-14 md:py-20", i % 2 === 1 && "bg-[#FFF7D6]/50")}>
               <div className={cn("mx-auto grid max-w-6xl items-center gap-10 lg:grid-cols-2 lg:gap-16", i % 2 === 1 && "lg:[&>*:first-child]:order-2")}>
                 <div data-reveal>
                   <h2 className="font-serif text-3xl md:text-4xl leading-tight text-balance">{b.h2}</h2>
@@ -162,6 +171,9 @@ function FeaturePage() {
                 </div>
               </div>
             </section>
+            {i === 1 && demos[1] && <DemoSection><Demo1 /></DemoSection>}
+            {i === 3 && demos[2] && <DemoSection><Demo2 /></DemoSection>}
+            </Fragment>
           ))}
         </div>
 
