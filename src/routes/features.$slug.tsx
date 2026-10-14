@@ -6,6 +6,7 @@ import { SiteFooter } from "@/components/site-footer";
 import { Logo } from "@/components/logo";
 import { SHOWCASE_FEATURES, FeatureVisual, useReveal } from "@/routes/index";
 import { FEATURE_CONTENT } from "@/lib/feature-content";
+import { FeatureDemo } from "@/components/feature-demos";
 import { canonicalLink, SITE_URL } from "@/lib/seo";
 import { cn } from "@/lib/utils";
 
@@ -129,6 +130,13 @@ function FeaturePage() {
           )}
         </section>
 
+        {/* Hands-on demo */}
+        <section className="border-t border-line/60 bg-[#FFF7D6]/50 px-6 py-14 md:px-12 md:py-16" data-reveal>
+          <div className="mx-auto max-w-5xl">
+            <FeatureDemo slug={slug} />
+          </div>
+        </section>
+
         {/* Detail blocks */}
         <div className="border-t border-line/60">
           {page.blocks.map((b, i) => (
@@ -139,12 +147,6 @@ function FeaturePage() {
                   {b.body.map((p) => <p key={p} className="mt-5 text-[15px] leading-relaxed">{p}</p>)}
                 </div>
                 <div data-reveal className="space-y-5">
-                  {/* The animated preview, kept small, once a page uses a photograph in the hero. */}
-                  {page.hero && i === 0 && (
-                    <div className={`relative h-[190px] overflow-hidden rounded-3xl ${feature.tint}`} aria-hidden="true">
-                      <FeatureVisual kind={feature.visual} />
-                    </div>
-                  )}
                   {b.photo && (
                     <img src={b.photo.src} alt={b.photo.alt} width={b.photo.width} height={b.photo.height} loading="lazy" decoding="async"
                       className="h-[220px] w-full object-cover md:h-[260px]" />
