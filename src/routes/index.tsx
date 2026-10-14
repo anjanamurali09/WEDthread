@@ -172,11 +172,11 @@ const CULTURE_ITEMS = [
 ];
 
 const TESTIMONIALS = [
-  { quote: "We had four ceremonies across two continents and somehow WEDthread made it feel like one wedding, not four separate headaches. Our families finally knew what was happening, when.", name: "Laura & John", loc: "Lake Como", photo: testimonialLauraJohnImg },
-  { quote: "Sending RSVPs over WhatsApp instead of a website nobody would click sounds small, but it's the reason we actually got responses back from grandparents.", name: "Zuri & Marcus", loc: "London", photo: testimonialZuriMarcusImg },
-  { quote: "I built our seating chart on a plane. Drag, drop, done, allergy warnings and all. I still don't understand how it used to take people weeks.", name: "Wei & Jonathan", loc: "San Francisco", photo: testimonialWeiJonathanImg },
-  { quote: "Two cultures, two guest lists, one registry link we could actually share. WEDthread is the only tool that didn't ask us to pick a side.", name: "Fatima & David", loc: "Dubai", photo: testimonialFatimaDavidImg },
-  { quote: "Between the Mehendi and the reception we had six events to track. WEDthread is the only reason nothing slipped through the cracks.", name: "Alex & Kaavya", loc: "Austin → Udaipur", photo: testimonialKavyaAlexImg },
+  { quote: "I loved that a seating chart feature was included, as not all wedding planning websites had that. The interface made it super easy and fun.", name: "Laura & John", loc: "Lake Como", photo: testimonialLauraJohnImg },
+  { quote: "We didn't want to do a whole website, and wanted to send RSVPs over WhatsApp. WEDthread made that possible, and it was easy to coordinate with people of all ages and guests across continents.", name: "Zuri & Marcus", loc: "London", photo: testimonialZuriMarcusImg },
+  { quote: "We had four ceremonies across two continents and somehow WEDthread made it so easy to plan, and everything was seamless. We could organize almost everything on WEDthread, which was perfect.", name: "Wei & Jonathan", loc: "San Francisco", photo: testimonialWeiJonathanImg },
+  { quote: "We are a Type A couple, and we literally loved planning our wedding on WEDthread. Everyone needs to experience it for themselves.", name: "Fatima & David", loc: "Dubai", photo: testimonialFatimaDavidImg },
+  { quote: "We loved how easy it was to find our venue and vendors. We saved so much time with WEDthread.", name: "Amir & Steph", loc: "Austin → Udaipur", photo: testimonialKavyaAlexImg },
 ];
 
 const FAQS = [
