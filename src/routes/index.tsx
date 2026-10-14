@@ -836,7 +836,7 @@ function Landing() {
           <h2 className="mt-3 font-serif text-5xl md:text-6xl leading-[0.95]">Real weddings, real relief.</h2>
         </div>
         <div className="mt-14">
-          <ScrollRow cardClass="w-[85%] sm:w-[380px]">
+          <ScrollRow cardClass={THREE_ACROSS} contained>
             {TESTIMONIALS.map((t) => (
               <div key={t.name}
                 className="rounded-3xl bg-paper p-6 shadow-sm border border-line/60 flex flex-col h-full">
