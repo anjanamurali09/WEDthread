@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { Bell, Check, Link2, Minus, Plus, RotateCcw } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -255,38 +255,119 @@ function dragCircle(e: React.DragEvent, text: string) {
   setTimeout(() => el.remove(), 0);
 }
 
-export function SeatingDragDemo() {
-  const [seats, setSeats] = useState<Record<string, string[]>>({ t1: [], t2: [], t3: [] });
-  const [picked, setPicked] = useState<string | null>(null);
-  const [selected, setSelected] = useState("t1");
-  const [colours, setColours] = useState(START_COLOURS);
-  const [message, setMessage] = useState("");
-  const seated = new Set(Object.values(seats).flat());
-  const unseated = GUESTS.filter((g) => !seated.has(g.id));
+type TableShape = "round" | "square" | "rect";
+type SeatPlan = "around" | "facing" | "oneside";
+const SEAT_COUNT = 6;
+const SEAT = 34;
+const TABLE_SIZE: Record<TableShape, { w: number; h: number }> = { round: { w: 124, h: 124 }, square: { w: 124, h: 124 }, rect: { w: 204, h: 96 } };
 
-  const seat = (guestId: string, tableId: string) => {
-    const t = TABLES.find((x) => x.id === tableId)!;
-    const g = GUESTS.find((x) => x.id === guestId);
-    if (!g) return;
-    if (seats[tableId].length >= t.cap) { setMessage(`${t.name} is full. Try another table.`); return; }
-    setSeats((p) => ({ ...Object.fromEntries(Object.entries(p).map(([k, v]) => [k, v.filter((x) => x !== guestId)])), [tableId]: [...p[tableId], guestId] }));
-    setPicked(null);
-    setSelected(tableId);
-    setMessage(g.note ? `${g.first} is at ${t.name}. ${g.note}: check the menu.` : "");
+// Where each of the six seats sits, as an offset from the centre of the table, for a shape and a seating style.
+function seatOffsets(shape: TableShape, plan: SeatPlan): { x: number; y: number }[] {
+  const { w, h } = TABLE_SIZE[shape];
+  const gap = SEAT / 2 + 6;
+  const out: { x: number; y: number }[] = [];
+  if (plan === "around") {
+    if (shape === "round") {
+      for (let i = 0; i < SEAT_COUNT; i++) { const a = (i / SEAT_COUNT) * 2 * Math.PI - Math.PI / 2; out.push({ x: Math.cos(a) * (w / 2 + gap), y: Math.sin(a) * (h / 2 + gap) }); }
+    } else {
+      const per = 2 * (w + h);
+      for (let i = 0; i < SEAT_COUNT; i++) {
+        let d = ((i + 0.5) / SEAT_COUNT) * per;
+        if (d < w) out.push({ x: -w / 2 + d, y: -h / 2 - gap });
+        else if ((d -= w) < h) out.push({ x: w / 2 + gap, y: -h / 2 + d });
+        else if ((d -= h) < w) out.push({ x: w / 2 - d, y: h / 2 + gap });
+        else { d -= w; out.push({ x: -w / 2 - gap, y: h / 2 - d }); }
+      }
+    }
+  } else if (plan === "facing") {
+    const xs = [-w / 3, 0, w / 3];
+    for (let i = 0; i < 3; i++) out.push({ x: shape === "round" ? -(w / 2 + gap) : xs[i], y: shape === "round" ? [-40, 0, 40][i] : -(h / 2 + gap) });
+    for (let i = 0; i < 3; i++) out.push({ x: shape === "round" ? w / 2 + gap : xs[i], y: shape === "round" ? [-40, 0, 40][i] : h / 2 + gap });
+  } else {
+    for (let i = 0; i < SEAT_COUNT; i++) {
+      if (shape === "round") { const a = Math.PI * (0.1 + (0.8 * i) / (SEAT_COUNT - 1)); out.push({ x: Math.cos(a) * (w / 2 + gap), y: Math.sin(a) * (h / 2 + gap) }); }
+      else out.push({ x: (i - (SEAT_COUNT - 1) / 2) * (SEAT + 4), y: h / 2 + gap });
+    }
+  }
+  return out;
+}
+
+const PLANS: { id: SeatPlan; label: string }[] = [{ id: "around", label: "Around the table" }, { id: "facing", label: "Facing each other" }, { id: "oneside", label: "One side" }];
+const SHAPE_CHOICES: { id: TableShape; label: string }[] = [{ id: "round", label: "Round" }, { id: "square", label: "Square" }, { id: "rect", label: "Rectangle" }];
+const CANVAS_H = 360;
+
+export function SeatingDragDemo() {
+  const [seats, setSeats] = useState<(string | null)[]>(Array(SEAT_COUNT).fill(null));
+  const [pickedGuest, setPickedGuest] = useState<string | null>(null);
+  const [pickedSeat, setPickedSeat] = useState<number | null>(null);
+  const [colour, setColour] = useState(START_COLOURS.t1);
+  const [shape, setShape] = useState<TableShape>("round");
+  const [plan, setPlan] = useState<SeatPlan>("around");
+  const [name, setName] = useState("Table 1");
+  const [pos, setPos] = useState({ x: 260, y: CANVAS_H / 2 }); // the centre of the table, in canvas pixels
+  const [message, setMessage] = useState("");
+  const canvas = useRef<HTMLDivElement>(null);
+  const seatedIds = new Set(seats.filter(Boolean) as string[]);
+  const unseated = GUESTS.filter((g) => !seatedIds.has(g.id));
+  const offsets = seatOffsets(shape, plan);
+  const { w, h } = TABLE_SIZE[shape];
+
+  const guest = (id: string | null) => GUESTS.find((g) => g.id === id) ?? null;
+  const note = (g: Guest | null) => (g?.note ? `${g.first} is at ${name || "the table"}. ${g.note}: check the menu.` : "");
+
+  // Put a guest in a seat, or move a seated guest to another seat (swapping if it is taken).
+  const place = (guestId: string, toSeat: number) => {
+    setSeats((prev) => {
+      const next = [...prev];
+      const from = next.indexOf(guestId);
+      const displaced = next[toSeat];
+      next[toSeat] = guestId;
+      if (from >= 0) next[from] = displaced;
+      return next;
+    });
+    setMessage(note(guest(guestId)));
+    setPickedGuest(null);
+    setPickedSeat(null);
   };
-  const unseat = (guestId: string) => setSeats((p) => Object.fromEntries(Object.entries(p).map(([k, v]) => [k, v.filter((x) => x !== guestId)])) as Record<string, string[]>);
+  const unseat = (guestId: string) => { setSeats((p) => p.map((x) => (x === guestId ? null : x))); setPickedSeat(null); setMessage(""); };
+
+  const clickSeat = (i: number) => {
+    if (pickedGuest) return place(pickedGuest, i);
+    if (pickedSeat !== null && seats[pickedSeat]) { if (pickedSeat === i) return setPickedSeat(null); return place(seats[pickedSeat]!, i); }
+    if (seats[i]) setPickedSeat(i);
+  };
+
+  // Moving the whole table: press on the table surface and drag; it stays inside the canvas, seats and all.
+  const drag = useRef<{ sx: number; sy: number; ox: number; oy: number } | null>(null);
+  const onDown = (e: React.PointerEvent) => { drag.current = { sx: e.clientX, sy: e.clientY, ox: pos.x, oy: pos.y }; (e.currentTarget as HTMLElement).setPointerCapture(e.pointerId); };
+  const onMove = (e: React.PointerEvent) => {
+    if (!drag.current || !canvas.current) return;
+    const width = canvas.current.clientWidth;
+    const mx = w / 2 + 44, my = h / 2 + 44;
+    const x = drag.current.ox + e.clientX - drag.current.sx, y = drag.current.oy + e.clientY - drag.current.sy;
+    setPos({ x: Math.min(Math.max(x, mx), Math.max(mx, width - mx)), y: Math.min(Math.max(y, my), CANVAS_H - my) });
+  };
+  const onUp = () => { drag.current = null; };
+
+  // Start the table in the middle of the canvas once its width is known.
+  useEffect(() => { if (canvas.current) setPos({ x: canvas.current.clientWidth / 2, y: CANVAS_H / 2 }); }, []);
+
+  const reset = () => { setSeats(Array(SEAT_COUNT).fill(null)); setPickedGuest(null); setPickedSeat(null); setColour(START_COLOURS.t1); setShape("round"); setPlan("around"); setName("Table 1"); setPos({ x: (canvas.current?.clientWidth ?? 520) / 2, y: CANVAS_H / 2 }); setMessage(""); };
+  const tableCls = shape === "round" ? "rounded-full" : "rounded-2xl";
 
   return (
-    <Frame title="Seat your guests" onReset={() => { setSeats({ t1: [], t2: [], t3: [] }); setPicked(null); setMessage(""); setColours(START_COLOURS); }}>
+    <Frame title="Seat your guests" onReset={reset}>
       <div className="grid gap-8 lg:grid-cols-[260px_1fr] lg:gap-12">
-        <ul className="flex flex-wrap gap-2 lg:flex-col lg:flex-nowrap">
-          {unseated.length === 0 && <li className="text-sm text-muted-foreground">Everyone is seated.</li>}
+        <ul onDragOver={(e) => e.preventDefault()} onDrop={(e) => { e.preventDefault(); const id = e.dataTransfer.getData("text/plain"); if (id) unseat(id); }}
+          onClick={() => { if (pickedSeat !== null && seats[pickedSeat]) unseat(seats[pickedSeat]!); }}
+          className="flex min-h-[80px] flex-wrap content-start gap-2 lg:flex-col lg:flex-nowrap">
+          {unseated.length === 0 && <li className="text-sm text-muted-foreground">Everyone is seated. Drag a guest back here to unseat them.</li>}
           {unseated.map((g) => (
             <li key={g.id}>
-              <button type="button" draggable onDragStart={(e) => { e.dataTransfer.setData("text/plain", g.id); setPicked(g.id); dragCircle(e, initials(g)); }}
-                onDragEnd={() => setPicked(null)} onClick={() => setPicked(picked === g.id ? null : g.id)} data-static
+              <button type="button" draggable onDragStart={(e) => { e.dataTransfer.setData("text/plain", g.id); setPickedGuest(g.id); dragCircle(e, initials(g)); }}
+                onDragEnd={() => setPickedGuest(null)} onClick={(e) => { e.stopPropagation(); setPickedSeat(null); setPickedGuest(pickedGuest === g.id ? null : g.id); }} data-static
                 className={cn("flex w-full cursor-grab items-center gap-2.5 rounded-xl border px-3 py-2 text-left text-sm active:cursor-grabbing",
-                  picked === g.id ? "border-[#243746] bg-[#FFF7D6]" : "border-line bg-paper hover:border-[#243746]")}>
+                  pickedGuest === g.id ? "border-[#243746] bg-[#FFF7D6]" : "border-line bg-paper hover:border-[#243746]")}>
                 <span className="grid h-7 w-7 place-items-center rounded-full bg-[#C9DAEE] text-[10px] font-semibold">{initials(g)}</span>
                 {g.first} {g.last}
                 {g.note && <span className="ml-auto rounded-full bg-[#F8E3B0] px-1.5 text-[10px]">{g.note}</span>}
@@ -294,33 +375,47 @@ export function SeatingDragDemo() {
             </li>
           ))}
         </ul>
+
         <div>
-          <div className="grid gap-4 rounded-2xl bg-[#EEF3F9] p-4 sm:grid-cols-3">
-            {TABLES.map((t) => (
-              <div key={t.id} onDragOver={(e) => e.preventDefault()} onDrop={(e) => { e.preventDefault(); seat(e.dataTransfer.getData("text/plain"), t.id); }}
-                onClick={() => (picked ? seat(picked, t.id) : setSelected(t.id))} role="button" tabIndex={0}
-                onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); if (picked) seat(picked, t.id); else setSelected(t.id); } }}
-                className={cn("flex min-h-[160px] cursor-pointer flex-col items-center justify-center gap-3 border-2 p-3 transition-colors",
-                  t.shape === "round" ? "rounded-[2rem]" : "rounded-xl", selected === t.id ? "border-[#243746]" : "border-transparent")}
-                style={{ background: colours[t.id] }}>
-                <span className="whitespace-nowrap text-xs font-medium">{t.name} <span className="text-muted-foreground">{seats[t.id].length}/{t.cap}</span></span>
-                <div className="flex min-h-[30px] flex-wrap justify-center gap-1.5">
-                  {seats[t.id].map((gid) => {
-                    const g = GUESTS.find((x) => x.id === gid)!;
-                    return <button key={gid} type="button" onClick={(e) => { e.stopPropagation(); unseat(gid); }} title={`${g.first} ${g.last}. Click to remove`} data-static
-                      className={cn("grid h-8 w-8 place-items-center rounded-full bg-paper text-[10px] font-semibold shadow-sm", g.note && "ring-2 ring-[#F2C94C]")}>{initials(g)}</button>;
-                  })}
-                  {Array.from({ length: t.cap - seats[t.id].length }, (_, i) => <span key={i} className="h-8 w-8 rounded-full border border-dashed border-[#243746]/35" />)}
+          <div ref={canvas} className="relative w-full select-none overflow-hidden rounded-2xl bg-[#EEF3F9]" style={{ height: CANVAS_H }}>
+            <div className="absolute" style={{ left: pos.x, top: pos.y, width: 0, height: 0 }}>
+              <div className="absolute" style={{ width: 0, height: 0 }}>
+                {/* the table: press and drag to move it around the canvas */}
+                <div onPointerDown={onDown} onPointerMove={onMove} onPointerUp={onUp} onPointerCancel={onUp}
+                  className={cn("absolute grid cursor-grab place-items-center shadow-sm transition-[width,height,border-radius] duration-300 active:cursor-grabbing", tableCls)}
+                  style={{ width: w, height: h, left: -w / 2, top: -h / 2, background: colour, touchAction: "none" }}>
+                  <input value={name} maxLength={14} aria-label="Table name" onChange={(e) => setName(e.target.value)} onPointerDown={(e) => e.stopPropagation()}
+                    className="w-24 bg-transparent text-center text-sm font-medium outline-none focus:underline" />
                 </div>
+                {offsets.map((o, i) => {
+                  const g = guest(seats[i]);
+                  const sel = pickedSeat === i;
+                  return (
+                    <div key={i} className="absolute transition-all duration-300" style={{ left: o.x - SEAT / 2, top: o.y - SEAT / 2, width: SEAT, height: SEAT }}
+                      onDragOver={(e) => e.preventDefault()} onDrop={(e) => { e.preventDefault(); const id = e.dataTransfer.getData("text/plain"); if (id) place(id, i); }}
+                      onClick={() => clickSeat(i)} role="button" tabIndex={0} aria-label={g ? `${g.first} ${g.last}, seat ${i + 1}` : `Empty seat ${i + 1}`}
+                      onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); clickSeat(i); } }}>
+                      {g ? (
+                        <span draggable onDragStart={(e) => { e.dataTransfer.setData("text/plain", g.id); dragCircle(e, initials(g)); }}
+                          className={cn("grid h-full w-full cursor-grab place-items-center rounded-full bg-paper text-[10px] font-semibold shadow-sm", g.note && "ring-2 ring-[#F2C94C]", sel && "ring-2 ring-[#243746]")}>{initials(g)}</span>
+                      ) : <span className={cn("block h-full w-full rounded-full border border-dashed bg-paper/40", pickedGuest || pickedSeat !== null ? "border-[#243746]" : "border-[#243746]/35")} />}
+                    </div>
+                  );
+                })}
               </div>
-            ))}
+            </div>
           </div>
-          <div className="mt-5 flex flex-wrap items-center gap-2">
-            <Label>Table colour</Label>
-            {TABLE_COLOURS.map((c) => (
-              <button key={c.name} type="button" aria-label={`${c.name} for ${TABLES.find((t) => t.id === selected)?.name}`} data-static onClick={() => setColours((p) => ({ ...p, [selected]: c.v }))}
-                className={cn("h-6 w-6 rounded-full border", colours[selected] === c.v ? "border-2 border-[#243746]" : "border-line")} style={{ background: c.v }} />
-            ))}
+
+          <div className="mt-6 space-y-4">
+            <div className="flex flex-wrap items-center gap-2">
+              <Label>Table colour</Label>
+              {TABLE_COLOURS.map((c) => (
+                <button key={c.name} type="button" aria-label={c.name} data-static onClick={() => setColour(c.v)}
+                  className={cn("h-6 w-6 rounded-full border", colour === c.v ? "border-2 border-[#243746]" : "border-line")} style={{ background: c.v }} />
+              ))}
+            </div>
+            <div className="flex flex-wrap items-center gap-2"><Label>Table shape</Label>{SHAPE_CHOICES.map((s) => <Chip key={s.id} on={shape === s.id} onClick={() => setShape(s.id)}>{s.label}</Chip>)}</div>
+            <div className="flex flex-wrap items-center gap-2"><Label>Seating</Label>{PLANS.map((p) => <Chip key={p.id} on={plan === p.id} onClick={() => setPlan(p.id)}>{p.label}</Chip>)}</div>
           </div>
           <p role="status" aria-live="polite" className="mt-4 min-h-[1.25rem] text-sm text-[#4A7CAD]">{message}</p>
         </div>
