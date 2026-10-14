@@ -92,43 +92,41 @@ function FeaturePage() {
       </header>
 
       <main>
-        {/* Hero */}
-        <section className="relative px-6 md:px-12 pt-8 md:pt-12 pb-16">
-          <nav aria-label="Breadcrumb" className="flex items-center gap-1.5 text-xs text-muted-foreground">
-            <Link to="/" className="hover:text-[#7FA8D6]">Home</Link>
-            <ChevronRight className="h-3 w-3" aria-hidden="true" />
-            <span aria-current="page" className="text-[#243746]">{page.eyebrow}</span>
-          </nav>
-          <div className="mt-8 grid lg:grid-cols-12 gap-10 items-center">
-            <div className="lg:col-span-6" data-reveal>
-              <p className="text-sm uppercase tracking-[0.2em] text-[#7FA8D6]">{page.eyebrow}</p>
-              <h1 className="mt-4 font-serif text-4xl md:text-5xl leading-[1.02] tracking-tight text-balance">{page.h1}</h1>
-              <p className="mt-6 text-lg text-[#243746] max-w-xl leading-relaxed">{page.intro}</p>
-              <ul className="mt-6 space-y-2.5 max-w-xl">
-                {page.heroBullets.map((b) => (
-                  <li key={b} className="flex items-start gap-2.5 text-[15px]">
-                    <Check className="mt-0.5 h-4 w-4 shrink-0 text-[#4A7CAD]" aria-hidden="true" /> {b}
-                  </li>
-                ))}
-              </ul>
-              <div className="mt-8 flex flex-wrap gap-3">
-                <button onClick={() => setAuthOpen("signup")} className={button}>
-                  Start planning for free <ArrowRight className="h-4 w-4" />
-                </button>
-              </div>
+        {/* Hero: text on the left, and the picture fills the whole right half of the section, edge to edge */}
+        <section className="grid lg:grid-cols-2">
+          <div className="px-6 md:px-12 pt-8 md:pt-10 pb-14 lg:py-14" data-reveal>
+            <nav aria-label="Breadcrumb" className="flex items-center gap-1.5 text-xs text-muted-foreground">
+              <Link to="/" className="hover:text-[#7FA8D6]">Home</Link>
+              <ChevronRight className="h-3 w-3" aria-hidden="true" />
+              <span aria-current="page" className="text-[#243746]">{page.eyebrow}</span>
+            </nav>
+            <p className="mt-10 text-sm uppercase tracking-[0.2em] text-[#7FA8D6]">{page.eyebrow}</p>
+            <h1 className="mt-4 font-serif text-4xl md:text-5xl leading-[1.02] tracking-tight text-balance">{page.h1}</h1>
+            <p className="mt-6 text-lg text-[#243746] max-w-xl leading-relaxed">{page.intro}</p>
+            <ul className="mt-6 space-y-2.5 max-w-xl">
+              {page.heroBullets.map((b) => (
+                <li key={b} className="flex items-start gap-2.5 text-[15px]">
+                  <Check className="mt-0.5 h-4 w-4 shrink-0 text-[#4A7CAD]" aria-hidden="true" /> {b}
+                </li>
+              ))}
+            </ul>
+            <div className="mt-8 flex flex-wrap gap-3">
+              <button onClick={() => setAuthOpen("signup")} className={button}>
+                Start planning for free <ArrowRight className="h-4 w-4" />
+              </button>
             </div>
-            {page.hero ? (
-              <div className="lg:col-span-6 overflow-hidden rounded-[2.5rem]" data-reveal>
-                <img src={page.hero.src} alt={page.hero.alt} width={page.hero.width} height={page.hero.height}
-                  loading="eager" fetchPriority="high" decoding="async"
-                  className="h-[340px] w-full object-cover md:h-[440px]" />
-              </div>
-            ) : (
-              <div className={`lg:col-span-6 relative overflow-hidden rounded-[2.5rem] h-[340px] md:h-[440px] ${feature.tint}`} data-reveal aria-hidden="true">
-                <FeatureVisual kind={feature.visual} />
-              </div>
-            )}
           </div>
+          {page.hero ? (
+            <div className="relative min-h-[300px] lg:min-h-[560px]">
+              <img src={page.hero.src} alt={page.hero.alt} width={page.hero.width} height={page.hero.height}
+                loading="eager" fetchPriority="high" decoding="async"
+                className="absolute inset-0 h-full w-full object-cover" />
+            </div>
+          ) : (
+            <div className={`relative min-h-[300px] lg:min-h-[560px] overflow-hidden ${feature.tint}`} aria-hidden="true">
+              <FeatureVisual kind={feature.visual} />
+            </div>
+          )}
         </section>
 
         {/* Detail blocks */}
@@ -149,7 +147,7 @@ function FeaturePage() {
                   )}
                   {b.photo && (
                     <img src={b.photo.src} alt={b.photo.alt} width={b.photo.width} height={b.photo.height} loading="lazy" decoding="async"
-                      className="h-[220px] w-full rounded-3xl object-cover md:h-[260px]" />
+                      className="h-[220px] w-full object-cover md:h-[260px]" />
                   )}
                   <ul className="space-y-3 rounded-3xl border border-line/70 bg-paper p-7 shadow-sm">
                     {b.points.map((pt) => (
