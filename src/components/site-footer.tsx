@@ -33,6 +33,7 @@ export function SiteFooter() {
           <h4 className="text-base font-medium text-[#243746]">Advice and support</h4>
           <ul className="mt-4 space-y-0.5">
             <li><Link to="/" hash="faq" data-static className={linkClass}>FAQs</Link></li>
+            <li><Link to="/blog" data-static className={linkClass}>Blog</Link></li>
             <li><a href={`mailto:${CONTACT_EMAIL}`} data-static className={linkClass}>Contact us</a></li>
             <li><Link to="/privacy" data-static className={linkClass}>Privacy</Link></li>
             <li><Link to="/auth" data-static className={linkClass}>Sign in</Link></li>

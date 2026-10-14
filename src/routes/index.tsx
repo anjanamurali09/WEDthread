@@ -10,6 +10,8 @@ import { Accordion, AccordionItem, AccordionTrigger, AccordionContent } from "@/
 import { cn } from "@/lib/utils";
 import { supabase } from "@/integrations/supabase/client";
 import { ScrollRow, THREE_ACROSS } from "@/components/scroll-row";
+import { BlogCard } from "@/components/blog-card";
+import { BLOG_POSTS } from "@/lib/blog-posts";
 import { VenueCard, type VenueCardData } from "@/components/venue-card";
 import { VendorServiceCard, type VendorServiceCardData } from "@/components/vendor-service-card";
 import { useSavedListings } from "@/hooks/use-saved-listings";
@@ -879,6 +881,24 @@ function Landing() {
               <p className="mt-3 leading-relaxed text-[#243746]">{f.a}</p>
             </details>
           ))}
+        </div>
+      </section>
+
+      {/* Blog */}
+      <section id="blog" className="relative z-10 border-t border-line/60 px-6 py-16 md:px-12">
+        <div className="mx-auto max-w-6xl">
+          <div className="flex flex-wrap items-end justify-between gap-4" data-reveal>
+            <div>
+              <p className="text-sm uppercase tracking-[0.2em] text-[#7FA8D6]">From the blog</p>
+              <h2 className="mt-3 font-serif text-4xl md:text-5xl leading-[1.02]">Wedding planning guides.</h2>
+            </div>
+            <Link to="/blog" data-static className="inline-flex items-center gap-2 rounded-full border border-[#243746] px-5 py-2.5 text-sm font-medium text-[#243746] transition-colors hover:bg-[#FFE08A]">
+              Read all articles <ArrowRight className="h-4 w-4" />
+            </Link>
+          </div>
+          <div className="mt-10 grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+            {BLOG_POSTS.map((p) => <div key={p.slug} data-reveal><BlogCard post={p} /></div>)}
+          </div>
         </div>
       </section>
 

@@ -1,10 +1,11 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { supabase } from "@/integrations/supabase/client";
 import { SITE_URL } from "@/lib/seo";
+import { BLOG_POSTS } from "@/lib/blog-posts";
 
 // The list of public pages for search engines: the main pages, the feature pages, and every approved venue and
 // vendor profile. Built on request, so new listings appear without anyone editing a file.
-const STATIC_PAGES = ["/", "/venue", "/v", "/privacy",
+const STATIC_PAGES = ["/", "/venue", "/v", "/privacy", "/blog", ...BLOG_POSTS.map((p) => `/blog/${p.slug}`),
   "/features/guest-list", "/features/venues", "/features/budgeting", "/features/website", "/features/vendor-marketplace",
   "/features/seating", "/features/rsvp-automation", "/features/registry"];
 

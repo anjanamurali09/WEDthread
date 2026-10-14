@@ -17,12 +17,14 @@ import { Route as PrivacyRouteImport } from './routes/privacy'
 import { Route as AuthRouteImport } from './routes/auth'
 import { Route as AuthenticatedRouteRouteImport } from './routes/_authenticated/route'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as BlogIndexRouteImport } from './routes/blog.index'
 import { Route as AuthIndexRouteImport } from './routes/auth.index'
 import { Route as WSlugRouteImport } from './routes/w.$slug'
 import { Route as VenueBusinessIdRouteImport } from './routes/venue_.$businessId'
 import { Route as VBusinessIdRouteImport } from './routes/v_.$businessId'
 import { Route as RsvpTokenRouteImport } from './routes/rsvp.$token'
 import { Route as FeaturesSlugRouteImport } from './routes/features.$slug'
+import { Route as BlogSlugRouteImport } from './routes/blog.$slug'
 import { Route as AuthRoleRouteImport } from './routes/auth.role'
 import { Route as AuthResetRouteImport } from './routes/auth.reset'
 import { Route as AuthCallbackRouteImport } from './routes/auth.callback'
@@ -103,6 +105,11 @@ const IndexRoute = IndexRouteImport.update({
   path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const BlogIndexRoute = BlogIndexRouteImport.update({
+  id: '/blog/',
+  path: '/blog/',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const AuthIndexRoute = AuthIndexRouteImport.update({
   id: '/',
   path: '/',
@@ -131,6 +138,11 @@ const RsvpTokenRoute = RsvpTokenRouteImport.update({
 const FeaturesSlugRoute = FeaturesSlugRouteImport.update({
   id: '/features/$slug',
   path: '/features/$slug',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const BlogSlugRoute = BlogSlugRouteImport.update({
+  id: '/blog/$slug',
+  path: '/blog/$slug',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AuthRoleRoute = AuthRoleRouteImport.update({
@@ -381,12 +393,14 @@ export interface FileRoutesByFullPath {
   '/auth/callback': typeof AuthCallbackRoute
   '/auth/reset': typeof AuthResetRoute
   '/auth/role': typeof AuthRoleRoute
+  '/blog/$slug': typeof BlogSlugRoute
   '/features/$slug': typeof FeaturesSlugRoute
   '/rsvp/$token': typeof RsvpTokenRoute
   '/v/$businessId': typeof VBusinessIdRoute
   '/venue/$businessId': typeof VenueBusinessIdRoute
   '/w/$slug': typeof WSlugRoute
   '/auth/': typeof AuthIndexRoute
+  '/blog/': typeof BlogIndexRoute
   '/admin/add-vendor': typeof AuthenticatedAdminAddVendorRoute
   '/admin/add-venue': typeof AuthenticatedAdminAddVenueRoute
   '/admin/claims': typeof AuthenticatedAdminClaimsRoute
@@ -435,12 +449,14 @@ export interface FileRoutesByTo {
   '/auth/callback': typeof AuthCallbackRoute
   '/auth/reset': typeof AuthResetRoute
   '/auth/role': typeof AuthRoleRoute
+  '/blog/$slug': typeof BlogSlugRoute
   '/features/$slug': typeof FeaturesSlugRoute
   '/rsvp/$token': typeof RsvpTokenRoute
   '/v/$businessId': typeof VBusinessIdRoute
   '/venue/$businessId': typeof VenueBusinessIdRoute
   '/w/$slug': typeof WSlugRoute
   '/auth': typeof AuthIndexRoute
+  '/blog': typeof BlogIndexRoute
   '/admin/add-vendor': typeof AuthenticatedAdminAddVendorRoute
   '/admin/add-venue': typeof AuthenticatedAdminAddVenueRoute
   '/admin/claims': typeof AuthenticatedAdminClaimsRoute
@@ -492,12 +508,14 @@ export interface FileRoutesById {
   '/auth/callback': typeof AuthCallbackRoute
   '/auth/reset': typeof AuthResetRoute
   '/auth/role': typeof AuthRoleRoute
+  '/blog/$slug': typeof BlogSlugRoute
   '/features/$slug': typeof FeaturesSlugRoute
   '/rsvp/$token': typeof RsvpTokenRoute
   '/v_/$businessId': typeof VBusinessIdRoute
   '/venue_/$businessId': typeof VenueBusinessIdRoute
   '/w/$slug': typeof WSlugRoute
   '/auth/': typeof AuthIndexRoute
+  '/blog/': typeof BlogIndexRoute
   '/_authenticated/admin/add-vendor': typeof AuthenticatedAdminAddVendorRoute
   '/_authenticated/admin/add-venue': typeof AuthenticatedAdminAddVenueRoute
   '/_authenticated/admin/claims': typeof AuthenticatedAdminClaimsRoute
@@ -549,12 +567,14 @@ export interface FileRouteTypes {
     | '/auth/callback'
     | '/auth/reset'
     | '/auth/role'
+    | '/blog/$slug'
     | '/features/$slug'
     | '/rsvp/$token'
     | '/v/$businessId'
     | '/venue/$businessId'
     | '/w/$slug'
     | '/auth/'
+    | '/blog/'
     | '/admin/add-vendor'
     | '/admin/add-venue'
     | '/admin/claims'
@@ -603,12 +623,14 @@ export interface FileRouteTypes {
     | '/auth/callback'
     | '/auth/reset'
     | '/auth/role'
+    | '/blog/$slug'
     | '/features/$slug'
     | '/rsvp/$token'
     | '/v/$businessId'
     | '/venue/$businessId'
     | '/w/$slug'
     | '/auth'
+    | '/blog'
     | '/admin/add-vendor'
     | '/admin/add-venue'
     | '/admin/claims'
@@ -659,12 +681,14 @@ export interface FileRouteTypes {
     | '/auth/callback'
     | '/auth/reset'
     | '/auth/role'
+    | '/blog/$slug'
     | '/features/$slug'
     | '/rsvp/$token'
     | '/v_/$businessId'
     | '/venue_/$businessId'
     | '/w/$slug'
     | '/auth/'
+    | '/blog/'
     | '/_authenticated/admin/add-vendor'
     | '/_authenticated/admin/add-venue'
     | '/_authenticated/admin/claims'
@@ -697,11 +721,13 @@ export interface RootRouteChildren {
   SitemapDotxmlRoute: typeof SitemapDotxmlRoute
   VRoute: typeof VRoute
   VenueRoute: typeof VenueRoute
+  BlogSlugRoute: typeof BlogSlugRoute
   FeaturesSlugRoute: typeof FeaturesSlugRoute
   RsvpTokenRoute: typeof RsvpTokenRoute
   VBusinessIdRoute: typeof VBusinessIdRoute
   VenueBusinessIdRoute: typeof VenueBusinessIdRoute
   WSlugRoute: typeof WSlugRoute
+  BlogIndexRoute: typeof BlogIndexRoute
   RsvpWSlugRoute: typeof RsvpWSlugRoute
   VBusinessIdServiceIdRoute: typeof VBusinessIdServiceIdRoute
   WSlugRegistryRoute: typeof WSlugRegistryRoute
@@ -765,6 +791,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/blog/': {
+      id: '/blog/'
+      path: '/blog'
+      fullPath: '/blog/'
+      preLoaderRoute: typeof BlogIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/auth/': {
       id: '/auth/'
       path: '/'
@@ -805,6 +838,13 @@ declare module '@tanstack/react-router' {
       path: '/features/$slug'
       fullPath: '/features/$slug'
       preLoaderRoute: typeof FeaturesSlugRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/blog/$slug': {
+      id: '/blog/$slug'
+      path: '/blog/$slug'
+      fullPath: '/blog/$slug'
+      preLoaderRoute: typeof BlogSlugRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/auth/role': {
@@ -1199,11 +1239,13 @@ const rootRouteChildren: RootRouteChildren = {
   SitemapDotxmlRoute: SitemapDotxmlRoute,
   VRoute: VRoute,
   VenueRoute: VenueRoute,
+  BlogSlugRoute: BlogSlugRoute,
   FeaturesSlugRoute: FeaturesSlugRoute,
   RsvpTokenRoute: RsvpTokenRoute,
   VBusinessIdRoute: VBusinessIdRoute,
   VenueBusinessIdRoute: VenueBusinessIdRoute,
   WSlugRoute: WSlugRoute,
+  BlogIndexRoute: BlogIndexRoute,
   RsvpWSlugRoute: RsvpWSlugRoute,
   VBusinessIdServiceIdRoute: VBusinessIdServiceIdRoute,
   WSlugRegistryRoute: WSlugRegistryRoute,
