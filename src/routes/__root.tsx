@@ -24,9 +24,7 @@ import { OG_IMAGE, SITE_NAME } from "@/lib/seo";
 import { LogoSprite } from "@/components/logo";
 // The first fonts the page needs are fetched straight away, so the text does not jump when they arrive.
 import newsreaderRegular from "@fontsource/newsreader/files/newsreader-latin-400-normal.woff2?url";
-import newsreaderItalic from "@fontsource/newsreader/files/newsreader-latin-400-italic.woff2?url";
 import poppinsRegular from "@fontsource/poppins/files/poppins-latin-400-normal.woff2?url";
-import poppinsMedium from "@fontsource/poppins/files/poppins-latin-500-normal.woff2?url";
 import appCss from "../styles.css?url";
 import { supabase } from "@/integrations/supabase/client";
 
@@ -100,7 +98,7 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
     ],
     links: [
       { rel: "stylesheet", href: appCss },
-      ...[newsreaderRegular, newsreaderItalic, poppinsRegular, poppinsMedium].map((href) => ({ rel: "preload", as: "font", type: "font/woff2", href, crossOrigin: "anonymous" as const })),
+      ...[newsreaderRegular, poppinsRegular].map((href) => ({ rel: "preload", as: "font", type: "font/woff2", href, crossOrigin: "anonymous" as const })),
       { rel: "icon", href: "/favicon.ico", sizes: "any" },
       { rel: "icon", href: "/favicon-32.png", type: "image/png", sizes: "32x32" },
       { rel: "icon", href: "/favicon-16.png", type: "image/png", sizes: "16x16" },

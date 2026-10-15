@@ -1,9 +1,9 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { canonicalLink, SITE_URL, SITE_NAME, OG_IMAGE } from "@/lib/seo";
 import { track } from "@/lib/analytics";
-import { Children, useEffect, useRef, useState } from "react";
+import { Children, Suspense, lazy, useEffect, useRef, useState } from "react";
 import { Gem, ChevronDown, ArrowRight, Globe2, MessageCircle, Star, CookingPot, BedDouble, Coffee, Luggage, Check, ChefHat, Wine, Flame, Droplet, MousePointer2, Bell, ChevronLeft, ChevronRight } from "lucide-react";
-import { LoginDialog } from "@/components/login-dialog";
+const LoginDialog = lazy(() => import("@/components/login-dialog").then((m) => ({ default: m.LoginDialog })));
 import { SiteFooter } from "@/components/site-footer";
 import { Logo } from "@/components/logo";
 import { Accordion, AccordionItem, AccordionTrigger, AccordionContent } from "@/components/ui/accordion";
@@ -17,6 +17,7 @@ import { VendorServiceCard, type VendorServiceCardData } from "@/components/vend
 import { useSavedListings } from "@/hooks/use-saved-listings";
 
 import heroImg from "@/assets/homepage-hero.webp";
+import heroSmImg from "@/assets/homepage-hero-sm.webp";
 
 import venueBaliImg from "@/assets/venue-bali-room.webp";
 import websiteCoupleImg from "@/assets/website-couple-priya-kevin.webp";
@@ -678,22 +679,20 @@ function RealListingsPreview() {
         </div>
       )}
 
-      <LoginDialog open={authOpen} onOpenChange={setAuthOpen} initialMode="signup" />
+      {authOpen && <Suspense fallback={null}><LoginDialog open={authOpen} onOpenChange={setAuthOpen} initialMode="signup" /></Suspense>}
     </section>
   );
 }
 
-function LoadingScreen({ visible }: { visible: boolean }) {
+// A short branded intro. It fades out on its own after a moment (pure CSS, see .home-loader), so it never waits on
+// scripts: on a slow phone the page underneath shows as soon as it is ready.
+function LoadingScreen() {
   return (
-    <div aria-hidden={!visible}
-      className={cn(
-        "fixed inset-0 z-[100] grid place-items-center bg-white transition-opacity duration-500",
-        visible ? "opacity-100" : "opacity-0 pointer-events-none",
-      )}>
+    <div aria-hidden="true" className="home-loader fixed inset-0 z-[100] grid place-items-center bg-white">
       <div className="text-center">
         <Logo sizeClassName="text-3xl" />
         {/* A ring with a diamond on top: the band turns while the stone catches the light. */}
-        <div className="relative mx-auto mt-7 h-[46px] w-8" role="status" aria-label="Loading">
+        <div className="relative mx-auto mt-7 h-[46px] w-8">
           <Gem className="absolute left-1/2 top-0 h-[18px] w-[18px] -translate-x-1/2 fill-[#DCE9F7] stroke-[#7FA8D6] motion-safe:animate-pulse" strokeWidth={1.6} />
           <div className="absolute bottom-0 left-0 h-8 w-8 rounded-full border-[3px] border-[#7FA8D6]/25 border-t-[#7FA8D6] motion-safe:animate-spin" />
         </div>
@@ -709,23 +708,10 @@ function Landing() {
   const navigate = useNavigate();
   // "Start planning" goes to the full sign-up page; only "Sign in" uses the small popup.
   const goSignup = () => navigate({ to: "/signup" });
-  const [ready, setReady] = useState(false);
-
-  useEffect(() => {
-    let cancelled = false;
-    const fallback = setTimeout(() => { if (!cancelled) setReady(true); }, 500);
-    const fontsReady: Promise<unknown> = (document as any).fonts?.ready ?? Promise.resolve();
-    fontsReady.then(() => {
-      if (cancelled) return;
-      clearTimeout(fallback);
-      requestAnimationFrame(() => setReady(true));
-    });
-    return () => { cancelled = true; clearTimeout(fallback); };
-  }, []);
 
   return (
     <div ref={rootRef as any} className="min-h-screen bg-white text-[#243746] overflow-hidden">
-      <LoadingScreen visible={!ready} />
+      <LoadingScreen />
 
       {/* Nav */}
       <header className="sticky top-0 z-20 bg-white/85 backdrop-blur-md border-b border-line/50 px-6 md:px-12 py-6 flex items-center justify-between">
@@ -747,7 +733,7 @@ function Landing() {
       </header>
 
       {/* Hero */}
-      <section className="relative z-10 px-6 md:px-12 pt-8 md:pt-16 pb-10 grid lg:grid-cols-12 gap-10 items-center">
+      <section className="relative z-10 mx-auto grid max-w-[1800px] items-center gap-10 px-6 pb-10 pt-8 md:px-12 md:pt-16 lg:min-h-[min(100svh-6rem,920px)] lg:grid-cols-12">
         <div className="lg:col-span-6">
           <p className="text-sm uppercase tracking-[0.2em] text-[#7FA8D6]">
             For every wedding, anywhere
@@ -770,10 +756,11 @@ function Landing() {
           </div>
         </div>
 
-        <div className="lg:col-span-6 relative">
+        <div className="lg:col-span-6 relative mx-auto w-full max-w-[640px] lg:ml-auto">
           <div className="relative overflow-hidden shadow-2xl blob-2 group [mask-image:linear-gradient(to_top,black_78%,transparent_100%)] [-webkit-mask-image:linear-gradient(to_top,black_78%,transparent_100%)]">
-            <img src={heroImg} alt="Bride and groom embraced beneath ivy-covered arches overlooking a lake at sunset"
-              className="w-full h-[420px] object-cover object-bottom transition-transform duration-[1200ms] group-hover:scale-105"
+            <img src={heroImg} srcSet={`${heroSmImg} 480w, ${heroImg} 702w`} sizes="(min-width: 1024px) 40vw, 100vw"
+              alt="Bride and groom embraced beneath ivy-covered arches overlooking a lake at sunset"
+              className="h-[420px] w-full object-cover object-bottom transition-transform duration-[1200ms] group-hover:scale-105 lg:h-[min(calc(100svh-9rem),720px)]"
               width={702} height={890} loading="eager" fetchPriority="high" decoding="async" />
             <div className="absolute inset-0 bg-gradient-to-t from-[#243746]/30 via-transparent to-transparent" />
           </div>
@@ -909,11 +896,11 @@ function Landing() {
 
       <SiteFooter />
 
-      <LoginDialog
-        open={!!authOpen}
-        onOpenChange={(v) => setAuthOpen(v ? (authOpen || "signin") : false)}
-        initialMode={authOpen || "signin"}
-      />
+      {authOpen && (
+        <Suspense fallback={null}>
+          <LoginDialog open onOpenChange={(v) => setAuthOpen(v ? (authOpen || "signin") : false)} initialMode={authOpen || "signin"} />
+        </Suspense>
+      )}
     </div>
   );
 }
