@@ -332,6 +332,47 @@ export type Database = {
           },
         ]
       }
+      business_subscriptions: {
+        Row: {
+          business_id: string
+          stripe_customer_id: string
+          stripe_subscription_id: string | null
+          status: string
+          current_period_end: string | null
+          cancel_at_period_end: boolean
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          business_id: string
+          stripe_customer_id: string
+          stripe_subscription_id?: string | null
+          status: string
+          current_period_end?: string | null
+          cancel_at_period_end?: boolean
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          business_id?: string
+          stripe_customer_id?: string
+          stripe_subscription_id?: string | null
+          status?: string
+          current_period_end?: string | null
+          cancel_at_period_end?: boolean
+          created_at?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "business_subscriptions_business_id_fkey"
+            columns: ["business_id"]
+            isOneToOne: true
+            referencedRelation: "businesses"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       business_suggestions: {
         Row: {
           id: string

@@ -10,14 +10,47 @@
 //    is a backstop for anything that changes status asynchronously later
 //    (e.g. a delayed payment method).
 //
+//  - checkout.session.completed / customer.subscription.*: the monthly venue and vendor subscription. The
+//    business is listed (verification_status = 'verified') while the subscription is active or past due, and
+//    goes back to 'pending' (unlisted) when it ends. Businesses that never subscribed are not touched.
+//
 // Requires these Edge Function secrets: STRIPE_SECRET_KEY,
 // STRIPE_WEBHOOK_SECRET, SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY.
 // Register this function's URL as a webhook endpoint in the Stripe
 // dashboard listening for: setup_intent.succeeded, payment_intent.succeeded,
-// payment_intent.payment_failed.
+// payment_intent.payment_failed, checkout.session.completed, customer.subscription.updated,
+// customer.subscription.deleted.
 
 import Stripe from "npm:stripe@17.4.0";
 import { createClient } from "npm:@supabase/supabase-js@2";
+
+// Records the subscription and lists or unlists the business to match it.
+async function syncSubscription(service: ReturnType<typeof createClient>, subscription: Stripe.Subscription, businessIdHint?: string | null) {
+  let businessId = businessIdHint ?? subscription.metadata?.business_id ?? null;
+  if (!businessId) {
+    const { data: row } = await service.from("business_subscriptions").select("business_id").eq("stripe_subscription_id", subscription.id).maybeSingle();
+    businessId = row?.business_id ?? null;
+  }
+  if (!businessId) return;
+
+  const customerId = typeof subscription.customer === "string" ? subscription.customer : subscription.customer.id;
+  await service.from("business_subscriptions").upsert({
+    business_id: businessId,
+    stripe_customer_id: customerId,
+    stripe_subscription_id: subscription.id,
+    status: subscription.status,
+    current_period_end: subscription.current_period_end ? new Date(subscription.current_period_end * 1000).toISOString() : null,
+    cancel_at_period_end: subscription.cancel_at_period_end,
+    updated_at: new Date().toISOString(),
+  }, { onConflict: "business_id" });
+
+  // A business an admin rejected stays rejected whatever happens with the payment.
+  if (["active", "trialing", "past_due"].includes(subscription.status)) {
+    await service.from("businesses").update({ verification_status: "verified" }).eq("id", businessId).eq("verification_status", "pending");
+  } else if (["canceled", "unpaid", "incomplete_expired"].includes(subscription.status)) {
+    await service.from("businesses").update({ verification_status: "pending" }).eq("id", businessId).eq("verification_status", "verified");
+  }
+}
 
 Deno.serve(async (req: Request) => {
   const stripeKey = Deno.env.get("STRIPE_SECRET_KEY");
@@ -67,6 +100,20 @@ Deno.serve(async (req: Request) => {
       case "payment_intent.payment_failed": {
         const intent = event.data.object as Stripe.PaymentIntent;
         await service.from("enquiry_charges").update({ status: "failed" }).eq("stripe_payment_intent_id", intent.id);
+        break;
+      }
+      case "checkout.session.completed": {
+        const session = event.data.object as Stripe.Checkout.Session;
+        if (session.mode === "subscription" && session.subscription) {
+          const subscriptionId = typeof session.subscription === "string" ? session.subscription : session.subscription.id;
+          const subscription = await stripe.subscriptions.retrieve(subscriptionId);
+          await syncSubscription(service, subscription, session.metadata?.business_id ?? session.client_reference_id);
+        }
+        break;
+      }
+      case "customer.subscription.updated":
+      case "customer.subscription.deleted": {
+        await syncSubscription(service, event.data.object as Stripe.Subscription);
         break;
       }
       default:

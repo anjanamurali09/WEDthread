@@ -10,6 +10,7 @@ import { TagListInput } from "@/components/tag-list-input";
 import { PriceTierPicker } from "@/components/price-tier-picker";
 import { SocialLinksFields, EMPTY_SOCIAL_LINKS, type SocialLinkValues } from "@/components/social-links";
 import { VendorLeadFormBuilder } from "@/components/vendor-lead-form-builder";
+import { LISTING_PRICE, startListingCheckout } from "@/lib/business-billing";
 
 type Document = { id: string; file_name: string; file_url: string };
 type Media = { id: string; media_type: "photo" | "video"; url: string };
@@ -226,7 +227,16 @@ export function BusinessSignupForm({ businessType = "vendor" as const }: { busin
           body: { business_id: businessId, origin: window.location.origin },
         }).catch((err) => console.error("notify-business-submission failed", err));
       }
-      toast.success("Business profile submitted for review.");
+      // Paying is what puts the listing live, so go straight to the payment page. If it can't open, the
+      // workspace shows a Subscribe button for the same thing.
+      if (businessId) {
+        try {
+          await startListingCheckout(businessId);
+          return;
+        } catch (err: any) {
+          toast.error(err.message ?? "Could not open the payment page");
+        }
+      }
       navigate({ to: "/business/dashboard" as any });
     } catch (err: any) {
       toast.error(err.message ?? "Could not finish setup");
@@ -397,6 +407,9 @@ export function BusinessSignupForm({ businessType = "vendor" as const }: { busin
                   </ul>
                 )}
               </div>
+              <p className="mt-6 text-sm text-muted-foreground">
+                {LISTING_PRICE[businessType]} a month, billed by Stripe. Your listing goes live as soon as you subscribe, and you can cancel any time.
+              </p>
               <div className="mt-4 flex items-center gap-3">
                 <button onClick={() => setStep(2)} className="inline-flex items-center gap-2 rounded-full border border-line px-6 py-3 text-sm hover:bg-cream cursor-pointer">
                   <ArrowLeft className="h-4 w-4" /> Back
@@ -409,7 +422,7 @@ export function BusinessSignupForm({ businessType = "vendor" as const }: { busin
                 ) : (
                   <button onClick={finish} disabled={saving}
                     className="inline-flex justify-center items-center gap-2 rounded-full bg-cherry text-pearl px-8 py-3.5 text-sm font-medium hover:bg-wine disabled:opacity-60 cursor-pointer">
-                    {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : "Finish"}
+                    {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : `Continue to payment`}
                   </button>
                 )}
               </div>
@@ -463,13 +476,16 @@ export function BusinessSignupForm({ businessType = "vendor" as const }: { busin
             <p className="mt-3 text-muted-foreground">This is the form a couple fills in when they enquire about your venue.</p>
             <div className="mt-10">
               <VendorLeadFormBuilder businessId={businessId} vendorServiceId={null} categoryId={null} />
+              <p className="mt-6 text-sm text-muted-foreground">
+                {LISTING_PRICE[businessType]} a month, billed by Stripe. Your listing goes live as soon as you subscribe, and you can cancel any time.
+              </p>
               <div className="mt-6 flex items-center gap-3">
                 <button onClick={() => setStep(4)} className="inline-flex items-center gap-2 rounded-full border border-line px-6 py-3 text-sm hover:bg-cream cursor-pointer">
                   <ArrowLeft className="h-4 w-4" /> Back
                 </button>
                 <button onClick={finish} disabled={saving}
                   className="inline-flex justify-center items-center gap-2 rounded-full bg-cherry text-pearl px-8 py-3.5 text-sm font-medium hover:bg-wine disabled:opacity-60 cursor-pointer">
-                  {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : "Finish"}
+                  {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : `Continue to payment`}
                 </button>
               </div>
             </div>

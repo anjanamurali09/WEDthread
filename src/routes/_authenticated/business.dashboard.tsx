@@ -3,9 +3,10 @@ import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { AppShell } from "@/components/app-shell";
 import { formatMoney } from "@/lib/currency";
-import { Clock, CheckCircle2, XCircle, Plus, Pencil, ExternalLink, Inbox, Building2 } from "lucide-react";
+import { Clock, CheckCircle2, XCircle, Plus, Pencil, ExternalLink, Inbox, Building2, Loader2 } from "lucide-react";
 import { toast } from "@/lib/toast";
 import { useActiveRole } from "@/hooks/use-active-role";
+import { LISTING_PRICE, openBillingPortal, startListingCheckout } from "@/lib/business-billing";
 
 export const Route = createFileRoute("/_authenticated/business/dashboard")({ component: BusinessDashboardPage });
 
@@ -15,6 +16,12 @@ type Business = {
   business_description: string;
   verification_status: "pending" | "verified" | "rejected";
   business_type: "vendor" | "venue";
+};
+
+type Subscription = {
+  status: string;
+  current_period_end: string | null;
+  cancel_at_period_end: boolean;
 };
 
 type VenueDetails = {
@@ -49,6 +56,10 @@ function BusinessDashboardPage() {
   const [venueDetails, setVenueDetails] = useState<VenueDetails | null>(null);
   const [newEnquiries, setNewEnquiries] = useState(0);
   const [loading, setLoading] = useState(true);
+  const [subscription, setSubscription] = useState<Subscription | null>(null);
+  const [billingBusy, setBillingBusy] = useState(false);
+  // Stripe sends people back here right after paying; the listing goes live a moment later, when Stripe tells us.
+  const [confirming, setConfirming] = useState(() => typeof window !== "undefined" && new URLSearchParams(window.location.search).has("subscribed"));
 
   // Vendor and venue businesses share this one workspace — which row to
   // load is whichever business_type matches the currently active workspace
@@ -64,6 +75,11 @@ function BusinessDashboardPage() {
       .maybeSingle();
     setBusiness(biz as Business | null);
     if (biz) {
+      const { data: sub } = await supabase
+        .from("business_subscriptions").select("status,current_period_end,cancel_at_period_end")
+        .eq("business_id", biz.id).maybeSingle();
+      setSubscription(sub);
+
       const { count } = await supabase.from("enquiries").select("id", { count: "exact", head: true }).eq("business_id", biz.id).eq("status", "new");
       setNewEnquiries(count ?? 0);
     }
@@ -95,6 +111,24 @@ function BusinessDashboardPage() {
 
   useEffect(() => { load(); }, [wantedType]);
 
+  // After paying, check again every couple of seconds (for up to 30) until the listing shows as live.
+  useEffect(() => {
+    if (!confirming) return;
+    if (business?.verification_status === "verified") { setConfirming(false); return; }
+    let tries = 0;
+    const timer = window.setInterval(() => {
+      tries += 1;
+      if (tries > 15) { window.clearInterval(timer); setConfirming(false); return; }
+      load();
+    }, 2000);
+    return () => window.clearInterval(timer);
+  }, [confirming, business?.verification_status]);
+
+  const runBilling = async (action: () => Promise<void>) => {
+    setBillingBusy(true);
+    try { await action(); } catch (err: any) { toast.error(err.message ?? "Could not open the payment page"); setBillingBusy(false); }
+  };
+
   const toggleStatus = async () => {
     if (!service) return;
     const next = service.status === "active" ? "inactive" : "active";
@@ -115,15 +149,44 @@ function BusinessDashboardPage() {
       ) : (
         <>
           <div className="paper-card p-6 md:p-8 max-w-2xl">
-            <div className={`inline-flex items-center gap-2 rounded-2xl px-4 py-3 text-sm ${
-              business.verification_status === "verified" ? "bg-sage-soft text-ink"
-                : business.verification_status === "rejected" ? "bg-wine-soft text-wine" : "bg-blush-soft text-cherry"
-            }`}>
-              {business.verification_status === "verified" ? <CheckCircle2 className="h-4 w-4" />
-                : business.verification_status === "rejected" ? <XCircle className="h-4 w-4" /> : <Clock className="h-4 w-4" />}
-              {business.verification_status === "verified" ? "Verified"
-                : business.verification_status === "rejected" ? "Not approved. Contact us to resubmit" : "Submitted. A WEDthread admin is reviewing your documents"}
-            </div>
+            {(() => {
+              const live = business.verification_status === "verified";
+              const rejected = business.verification_status === "rejected";
+              const waitingForPayment = !live && !rejected && confirming;
+              return (
+                <div className={`inline-flex items-center gap-2 rounded-2xl px-4 py-3 text-sm ${
+                  live ? "bg-sage-soft text-ink" : rejected ? "bg-wine-soft text-wine" : "bg-blush-soft text-cherry"
+                }`}>
+                  {live ? <CheckCircle2 className="h-4 w-4" /> : rejected ? <XCircle className="h-4 w-4" /> : waitingForPayment ? <Loader2 className="h-4 w-4 animate-spin" /> : <Clock className="h-4 w-4" />}
+                  {live ? (subscription ? "Live" : "Verified")
+                    : rejected ? "Not approved. Contact us to resubmit"
+                    : waitingForPayment ? "Confirming your payment. Your listing goes live in a moment"
+                    : "Not live yet. Subscribe to publish your listing"}
+                </div>
+              );
+            })()}
+            {business.verification_status === "pending" && !confirming && (
+              <div className="mt-4">
+                <button onClick={() => runBilling(() => startListingCheckout(business.id))} disabled={billingBusy}
+                  className="inline-flex items-center gap-2 rounded-full bg-cherry text-pearl px-6 py-3 text-sm font-medium hover:bg-wine disabled:opacity-60 cursor-pointer">
+                  {billingBusy ? <Loader2 className="h-4 w-4 animate-spin" /> : `Subscribe · ${LISTING_PRICE[business.business_type]} a month`}
+                </button>
+                <p className="mt-2 text-sm text-muted-foreground">Billed monthly by Stripe. Cancel any time.</p>
+              </div>
+            )}
+            {subscription && (
+              <p className="mt-4 text-sm text-muted-foreground">
+                {subscription.status === "past_due"
+                  ? "Your last payment didn't go through. Update your card to keep your listing live. "
+                  : subscription.status === "active" || subscription.status === "trialing"
+                    ? `${LISTING_PRICE[business.business_type]} a month. ${subscription.cancel_at_period_end ? "Ends" : "Renews"} ${subscription.current_period_end ? new Date(subscription.current_period_end).toLocaleDateString(undefined, { day: "numeric", month: "long", year: "numeric" }) : "soon"}. `
+                    : "Your subscription has ended. "}
+                <button onClick={() => runBilling(() => openBillingPortal(business.id))} disabled={billingBusy}
+                  className="text-cherry underline underline-offset-2 hover:text-wine disabled:opacity-60 cursor-pointer">
+                  Manage billing
+                </button>
+              </p>
+            )}
             <h2 className="font-serif text-2xl mt-6">{business.legal_business_name}</h2>
             <p className="text-sm text-muted-foreground mt-2">{business.business_description}</p>
             <div className="mt-4 flex flex-wrap items-center gap-4">
