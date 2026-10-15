@@ -61,13 +61,15 @@ async function renderWithHomeCache(request: Request, env: unknown, ctx: unknown)
 
   const handler = await getServerEntry();
   const response = await normalizeCatastrophicSsrResponse(await handler.fetch(request, env, ctx));
-  if (response.status === 200 && !response.headers.has("set-cookie") && (response.headers.get("content-type") ?? "").includes("text/html")) {
+  // A page that went out without its venue and vendor cards is not kept, so the next visit gets the full one.
+  const complete = response.status === 200 ? !(await response.clone().text()).includes("data-listings-pending") : false;
+  if (complete && !response.headers.has("set-cookie") && (response.headers.get("content-type") ?? "").includes("text/html")) {
     const stored = new Response(response.clone().body, response);
     stored.headers.set("cache-control", `public, max-age=${HOME_CACHE_SECONDS}`);
-    const waitUntil = (ctx as { waitUntil?: (p: Promise<unknown>) => void } | undefined)?.waitUntil;
+    const waitUntil = (globalThis as any).__waitUntil as ((p: Promise<unknown>) => void) | undefined;
     try {
       // Without a waitUntil the save would be cut off when the response is sent, so wait for it instead.
-      if (waitUntil) waitUntil.call(ctx, cache.put(key, stored));
+      if (waitUntil) waitUntil(cache.put(key, stored));
       else await cache.put(key, stored);
     } catch (error) {
       console.error("home cache save failed", error);
@@ -87,6 +89,11 @@ function withSecurityHeaders(response: Response): Response {
 
 export default {
   async fetch(request: Request, env: unknown, ctx: unknown) {
+    // Lets code deeper in the page (the homepage cards) keep working after the response has gone out.
+    // The platform hands it over on the request itself.
+    const platform = request as unknown as { waitUntil?: (p: Promise<unknown>) => void; runtime?: { cloudflare?: { context?: { waitUntil?: (p: Promise<unknown>) => void } } } };
+    const keepAlive = platform.waitUntil ?? platform.runtime?.cloudflare?.context?.waitUntil?.bind(platform.runtime.cloudflare.context);
+    (globalThis as any).__waitUntil = keepAlive;
     // Anyone who types or follows an http:// address is sent to the secure https:// one.
     const requested = new URL(request.url);
     if (requested.protocol === "http:" && !["localhost", "127.0.0.1"].includes(requested.hostname)) {

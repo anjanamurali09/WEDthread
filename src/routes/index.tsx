@@ -12,6 +12,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { ScrollRow, THREE_ACROSS } from "@/components/scroll-row";
 import { BlogCard } from "@/components/blog-card";
 import { BLOG_POSTS } from "@/lib/blog-posts";
+import { loadHomeListings } from "@/lib/home-listings";
 import { VenueCard, type VenueCardData } from "@/components/venue-card";
 import { VendorServiceCard, type VendorServiceCardData } from "@/components/vendor-service-card";
 import { useSavedListings } from "@/hooks/use-saved-listings";
@@ -535,107 +536,14 @@ function CompactCta({ headline, onClick, tone = "cherry", cta = "Start planning 
   );
 }
 
-// The venues and vendors shown on the homepage. Loaded on the server with the page (and kept for five minutes by
-// the edge cache), so search engines and AI tools read the real listings in the page itself instead of an empty
-// space that fills in later.
-async function loadHomeListings(): Promise<{ venues: VenueCardData[]; services: VendorServiceCardData[] }> {
-  let venues: VenueCardData[] = [];
-  let services: VendorServiceCardData[] = [];
-  try {
-      const { data: venueBiz } = await supabase
-        .from("businesses").select("id,legal_business_name,verification_status,city,country")
-        .eq("business_type", "venue").eq("verification_status", "verified")
-        .order("created_at", { ascending: false }).limit(40);
-      if (venueBiz && venueBiz.length > 0) {
-        const ids = venueBiz.map((b) => b.id);
-        const [{ data: details }, { data: media }] = await Promise.all([
-          supabase.from("venue_details").select("business_id,capacity_min,capacity_max,type_of_space,price_range_min").in("business_id", ids),
-          supabase.from("business_media").select("business_id,url,sort_order").in("business_id", ids).is("listing_id", null).eq("media_type", "photo").order("sort_order"),
-        ]);
-        const detailsByBiz = new Map((details ?? []).map((d) => [d.business_id, d]));
-        const photosByBiz = new Map<string, string[]>();
-        for (const m of media ?? []) {
-          const list = photosByBiz.get(m.business_id) ?? [];
-          list.push(m.url);
-          photosByBiz.set(m.business_id, list);
-        }
-        const cards = venueBiz.map((b) => {
-          const d = detailsByBiz.get(b.id);
-          return {
-            id: b.id, legal_business_name: b.legal_business_name, verified: b.verification_status === "verified",
-            city: b.city, country: b.country,
-            capacity_min: d?.capacity_min ?? null, capacity_max: d?.capacity_max ?? null,
-            type_of_space: d?.type_of_space ?? [], price_range_min: d?.price_range_min ?? null,
-            photos: photosByBiz.get(b.id) ?? [],
-          };
-        });
-        // Listings with the full set of details (capacity, type of space, price) come first, newest first within
-        // each group; the row shows the first twelve.
-        const completeness = (v: (typeof cards)[number]) =>
-          Number(v.capacity_min != null || v.capacity_max != null) + Number(v.type_of_space.length > 0) + Number(v.price_range_min != null);
-        venues = (cards.map((v, i) => ({ v, i })).sort((a, b) => completeness(b.v) - completeness(a.v) || a.i - b.i).map(({ v }) => v).slice(0, 12));
-      }
-
-      const { data: svcRows } = await supabase
-        .from("vendor_services").select("id,business_id,category_ids")
-        .eq("status", "active").order("created_at", { ascending: false }).limit(24);
-      if (svcRows && svcRows.length > 0) {
-        const bizIds = Array.from(new Set(svcRows.map((s) => s.business_id)));
-        const [{ data: biz }, { data: cats }] = await Promise.all([
-          supabase.from("businesses").select("id,legal_business_name,city,country").in("id", bizIds).eq("verification_status", "verified"),
-          supabase.from("vendor_categories").select("id,name"),
-        ]);
-        const bizById = new Map((biz ?? []).map((b) => [b.id, b]));
-        const catName = new Map((cats ?? []).map((c) => [c.id, c.name]));
-        const eligible = svcRows.filter((s) => bizById.has(s.business_id)).slice(0, 12);
-        const svcIds = eligible.map((s) => s.id);
-        const [{ data: media }, { data: bizMedia }] = await Promise.all([
-          svcIds.length > 0
-            ? supabase.from("business_media").select("listing_id,url,sort_order").in("listing_id", svcIds).eq("media_type", "photo").order("sort_order")
-            : Promise.resolve({ data: [] as { listing_id: string | null; url: string; sort_order: number }[] }),
-          // Falls back to the business's general photos when a service has
-          // none of its own (see v.tsx for why this can happen).
-          supabase.from("business_media").select("business_id,url,sort_order").in("business_id", bizIds).is("listing_id", null).eq("media_type", "photo").order("sort_order"),
-        ]);
-        const photosByService = new Map<string, string[]>();
-        for (const m of media ?? []) {
-          if (!m.listing_id) continue;
-          const list = photosByService.get(m.listing_id) ?? [];
-          list.push(m.url);
-          photosByService.set(m.listing_id, list);
-        }
-        const photosByBusiness = new Map<string, string[]>();
-        for (const m of bizMedia ?? []) {
-          const list = photosByBusiness.get(m.business_id) ?? [];
-          list.push(m.url);
-          photosByBusiness.set(m.business_id, list);
-        }
-        services = (eligible.map((s) => {
-          const b = bizById.get(s.business_id)!;
-          return {
-            id: s.id, business_id: s.business_id,
-            categoryNames: (s.category_ids ?? []).map((id: string) => catName.get(id)).filter((n): n is string => !!n),
-            city: b.city ?? null, country: b.country ?? null,
-            photos: photosByService.get(s.id) ?? photosByBusiness.get(s.business_id) ?? [],
-            businessName: b.legal_business_name, verified: true,
-          };
-        }));
-      }
-  } catch { /* the homepage still works without the listings */ }
-  return { venues, services };
-}
-
-// A real, live teaser of the marketplace — three actual venues and three
-// actual vendor services, each linking straight to its real public page.
-// Anyone can click in; useAnonViewGate (wired into the detail pages
-// themselves, not here) is what actually caps a signed-out visitor at 3
-// listing views before asking them to sign up, so this section doesn't need
-// its own click-counting logic. Reuses the exact same VenueCard/
-// VendorServiceCard as the marketplace pages (photo carousel, heart/save)
-// rather than a simplified duplicate, so the teaser behaves identically to
-// the real thing.
 function RealListingsPreview() {
-  const { venues, services } = Route.useLoaderData();
+  const loaded = Route.useLoaderData();
+  // If the server could not have the cards ready in time, the browser reads them itself.
+  const [late, setLate] = useState<typeof loaded | null>(null);
+  useEffect(() => {
+    if (loaded.pending || (loaded.venues.length === 0 && loaded.services.length === 0)) loadHomeListings().then(setLate).catch(() => undefined);
+  }, [loaded]);
+  const { venues, services } = late ?? loaded;
   const { signedIn, saved, toggle } = useSavedListings();
   const [authOpen, setAuthOpen] = useState(false);
 
@@ -649,7 +557,8 @@ function RealListingsPreview() {
   };
 
 
-  if (venues.length === 0 && services.length === 0) return null;
+  // Marks a page that went out without its cards, so the server does not keep that copy for other visitors.
+  if (venues.length === 0 && services.length === 0) return loaded.pending ? <div data-listings-pending hidden /> : null;
 
   return (
     <section className="relative z-10 py-10 px-6 md:px-12">
