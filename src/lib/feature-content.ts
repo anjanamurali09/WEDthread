@@ -8,6 +8,11 @@ import budgetReminders from "@/assets/features/budget-reminders.webp";
 import seatingHero from "@/assets/features/seating-hero.webp";
 import seatingSeatGuests from "@/assets/features/seating-seat-guests.webp";
 import seatingShare from "@/assets/features/seating-share.webp";
+import seatingPlaceCards from "@/assets/features/seating-place-cards.webp";
+import seatingCeremonyChairs from "@/assets/features/seating-ceremony-chairs.webp";
+import budgetRings from "@/assets/features/budget-rings.webp";
+import budgetShoes from "@/assets/features/budget-shoes.webp";
+import budgetFlowers from "@/assets/features/budget-flowers.webp";
 import guestListHero from "@/assets/features/guest-list-hero.webp";
 import rsvpHero from "@/assets/features/rsvp-hero.webp";
 import rsvpQuestions from "@/assets/features/rsvp-questions.webp";
@@ -41,6 +46,8 @@ export type FeatureContent = {
   heroBullets: string[];
   /** When set, the hero shows this photo and the animated preview moves into the first detail block. */
   hero?: FeaturePhoto;
+  /** More photos that fade in after the hero photo, one after another. */
+  heroMore?: FeaturePhoto[];
   blocks: { h2: string; body: string[]; points: string[]; photo?: FeaturePhoto }[];
   steps: { title: string; body: string }[];
   different: { h2: string; body: string; points: string[] };
@@ -656,3 +663,13 @@ FEATURE_CONTENT["vendor-marketplace"].hero = { src: vendorsHero, width: 1400, he
 FEATURE_CONTENT["vendor-marketplace"].blocks[0].photo = { src: vendorsCategories, width: 900, height: 556, alt: "A dish of white matchbook favours printed with a couple's initials and date in gold foil" };
 FEATURE_CONTENT["vendor-marketplace"].blocks[1].photo = { src: vendorsWork, width: 900, height: 600, alt: "A ceremony aisle lined with white hydrangeas, leading to a round wooden arch with flowers" };
 FEATURE_CONTENT["vendor-marketplace"].blocks[3].photo = { src: vendorsCelebrations, width: 900, height: 600, alt: "Rows of wooden wishing plaques hung on red cord at a shrine, covered in handwritten messages" };
+
+FEATURE_CONTENT.budgeting.heroMore = [
+  { src: budgetRings, width: 1400, height: 933, alt: "Two gold wedding rings tied with white satin ribbon on a cream ring pillow" },
+  { src: budgetShoes, width: 1400, height: 935, alt: "A groom's polished black shoes on the grass beside the lace edge of a bride's dress" },
+  { src: budgetFlowers, width: 1400, height: 933, alt: "A close-up of white hydrangea flowers" },
+];
+FEATURE_CONTENT.seating.heroMore = [
+  { src: seatingPlaceCards, width: 1400, height: 933, alt: "Handwritten place cards with fresh white roses, ivy and a blue velvet ribbon laid out on a table" },
+  { src: seatingCeremonyChairs, width: 1400, height: 933, alt: "Rows of white cross-back chairs facing a wooden arch with white hydrangeas on a gravel terrace" },
+];

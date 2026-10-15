@@ -1,11 +1,11 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { Fragment, useState } from "react";
+import { Fragment, useEffect, useState } from "react";
 import { ArrowRight, ArrowLeft, Check, ChevronRight, ChevronDown } from "lucide-react";
 import { LoginDialog } from "@/components/login-dialog";
 import { SiteFooter } from "@/components/site-footer";
 import { Logo } from "@/components/logo";
 import { SHOWCASE_FEATURES, FeatureVisual, useReveal } from "@/routes/index";
-import { FEATURE_CONTENT } from "@/lib/feature-content";
+import { FEATURE_CONTENT, type FeaturePhoto } from "@/lib/feature-content";
 import { FEATURE_DEMOS } from "@/components/feature-demos";
 import { canonicalLink, SITE_URL } from "@/lib/seo";
 import { cn } from "@/lib/utils";
@@ -45,6 +45,28 @@ export const Route = createFileRoute("/features/$slug")({
   },
   component: FeaturePage,
 });
+
+// The hero photo. When a page has more than one, they fade into each other every few seconds. Nothing moves for
+// people who have asked their device to reduce motion, and only the first photo is fetched up front.
+function HeroPhotos({ photos }: { photos: FeaturePhoto[] }) {
+  const [current, setCurrent] = useState(0);
+  useEffect(() => {
+    if (photos.length < 2 || window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+    const timer = window.setInterval(() => setCurrent((i) => (i + 1) % photos.length), 5000);
+    return () => window.clearInterval(timer);
+  }, [photos.length]);
+  return (
+    <>
+      {photos.map((p, i) => (
+        <img key={p.src} src={p.src} alt={p.alt} width={p.width} height={p.height}
+          loading={i === 0 ? "eager" : "lazy"} fetchPriority={i === 0 ? "high" : "auto"} decoding="async"
+          aria-hidden={i === current ? undefined : true}
+          className={cn("absolute inset-0 h-full w-full object-cover transition-opacity duration-[1400ms]", i === current ? "opacity-100" : "opacity-0")}
+          style={{ objectPosition: p.focus }} />
+      ))}
+    </>
+  );
+}
 
 // A tinted band holding one hands-on demo.
 function DemoSection({ children }: { children: React.ReactNode }) {
@@ -131,9 +153,7 @@ function FeaturePage() {
           </div>
           {page.hero ? (
             <div className="relative min-h-[300px]">
-              <img src={page.hero.src} alt={page.hero.alt} width={page.hero.width} height={page.hero.height}
-                loading="eager" fetchPriority="high" decoding="async"
-                className="absolute inset-0 h-full w-full object-cover" style={{ objectPosition: page.hero.focus }} />
+              <HeroPhotos photos={[page.hero, ...(page.heroMore ?? [])]} />
             </div>
           ) : (
             <div className={`relative min-h-[300px] overflow-hidden ${feature.tint}`} aria-hidden="true">
