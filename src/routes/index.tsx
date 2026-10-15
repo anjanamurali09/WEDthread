@@ -642,12 +642,12 @@ function Landing() {
       </header>
 
       {/* Hero */}
-      <section className="relative z-10 mx-auto grid max-w-[1800px] items-center gap-10 px-6 pb-10 pt-8 md:px-12 md:pt-16 lg:h-[calc(100svh-5.3rem)] lg:min-h-[34rem] lg:grid-cols-12 lg:grid-rows-1 lg:py-7">
+      <section className="relative z-10 grid items-center gap-10 px-6 pb-10 pt-8 md:px-12 md:pt-16 lg:h-[calc(100svh-5.3rem)] lg:min-h-[34rem] lg:grid-cols-12 lg:grid-rows-1 lg:py-10">
         <div className="lg:col-span-6">
           <p className="text-sm uppercase tracking-[0.2em] text-[#7FA8D6]">
             For every wedding, anywhere
           </p>
-          <h1 className="mt-6 font-serif text-6xl md:text-8xl lg:text-[min(9.5svh,calc((min(100vw,1800px)-8.5rem)/14.8))] leading-[0.9] tracking-tight">
+          <h1 className="mt-6 font-serif text-6xl md:text-8xl lg:text-[min(9.5svh,calc((100vw-8.5rem)/14.8))] leading-[0.9] tracking-tight">
             One place for every <span className="italic text-[#7FA8D6]">event</span> your wedding needs.
           </h1>
           <p className="mt-6 text-lg text-[#243746] max-w-xl leading-relaxed">
@@ -665,7 +665,7 @@ function Landing() {
           </div>
         </div>
 
-        <div className="relative mx-auto w-full max-w-[640px] lg:col-span-6 lg:ml-auto lg:h-full lg:w-auto lg:max-w-full lg:justify-self-end lg:aspect-[702/890]">
+        <div className="relative mx-auto w-full max-w-[640px] lg:col-span-6 lg:ml-auto lg:mr-0 lg:h-full lg:w-auto lg:max-w-full lg:justify-self-end lg:aspect-[702/890]">
           <div className="relative overflow-hidden shadow-2xl blob-2 group lg:h-full [mask-image:linear-gradient(to_top,black_78%,transparent_100%)] [-webkit-mask-image:linear-gradient(to_top,black_78%,transparent_100%)]">
             <img src={heroImg} srcSet={`${heroSmImg} 480w, ${heroImg} 702w`} sizes="(min-width: 1024px) 40vw, 100vw"
               alt="Bride and groom embraced beneath ivy-covered arches overlooking a lake at sunset"

@@ -133,7 +133,7 @@ function FeaturePage() {
             <div className="relative min-h-[300px]">
               <img src={page.hero.src} alt={page.hero.alt} width={page.hero.width} height={page.hero.height}
                 loading="eager" fetchPriority="high" decoding="async"
-                className="absolute inset-0 h-full w-full object-cover" />
+                className="absolute inset-0 h-full w-full object-cover" style={{ objectPosition: page.hero.focus }} />
             </div>
           ) : (
             <div className={`relative min-h-[300px] overflow-hidden ${feature.tint}`} aria-hidden="true">
@@ -158,7 +158,7 @@ function FeaturePage() {
                 <div data-reveal className="space-y-5">
                   {b.photo && (
                     <img src={b.photo.src} alt={b.photo.alt} width={b.photo.width} height={b.photo.height} loading="lazy" decoding="async"
-                      className="h-[220px] w-full object-cover md:h-[260px]" />
+                      className="h-[220px] w-full object-cover md:h-[260px]" style={{ objectPosition: b.photo.focus }} />
                   )}
                   <ul className="space-y-3 rounded-3xl border border-line/70 bg-paper p-7 shadow-sm">
                     {b.points.map((pt) => (

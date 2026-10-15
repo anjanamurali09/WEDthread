@@ -8,10 +8,26 @@ import budgetReminders from "@/assets/features/budget-reminders.webp";
 import seatingHero from "@/assets/features/seating-hero.webp";
 import seatingSeatGuests from "@/assets/features/seating-seat-guests.webp";
 import seatingShare from "@/assets/features/seating-share.webp";
+import guestListHero from "@/assets/features/guest-list-hero.webp";
+import rsvpHero from "@/assets/features/rsvp-hero.webp";
+import rsvpQuestions from "@/assets/features/rsvp-questions.webp";
+import registryHero from "@/assets/features/registry-hero.webp";
+import registryHoneymoon from "@/assets/features/registry-honeymoon.webp";
+import websiteHero from "@/assets/features/website-hero.webp";
+import websiteTravel from "@/assets/features/website-travel.webp";
+import venuesHero from "@/assets/features/venues-hero.webp";
+import venuesSearch from "@/assets/features/venues-search.webp";
+import venuesBooking from "@/assets/features/venues-booking.webp";
+import venuesCelebrations from "@/assets/features/venues-celebrations.webp";
+import vendorsHero from "@/assets/features/vendors-hero.webp";
+import vendorsCategories from "@/assets/features/vendors-categories.webp";
+import vendorsWork from "@/assets/features/vendors-work.webp";
+import vendorsCelebrations from "@/assets/features/vendors-celebrations.webp";
 
 // A real photograph on a feature page. `alt` describes what is in it, for people using screen readers and for
 // search engines' image results.
-export type FeaturePhoto = { src: string; alt: string; width: number; height: number };
+// `focus` is the part of the picture to keep when it is cropped to fit (a CSS object-position, centred by default).
+export type FeaturePhoto = { src: string; alt: string; width: number; height: number; focus?: string };
 
 export type FeatureContent = {
   slug: string;
@@ -619,3 +635,24 @@ FEATURE_CONTENT.budgeting.blocks[2].photo = { src: budgetReminders, width: 800, 
 FEATURE_CONTENT.seating.hero = { src: seatingHero, width: 1200, height: 800, alt: "Curved rows of white chairs set out for an outdoor wedding ceremony beside a lake" };
 FEATURE_CONTENT.seating.blocks[1].photo = { src: seatingSeatGuests, width: 900, height: 600, alt: "A wedding table with a numbered table sign, place cards, glasses and a flower centrepiece" };
 FEATURE_CONTENT.seating.blocks[3].photo = { src: seatingShare, width: 900, height: 601, alt: "Wooden chairs with sheepskin throws and a reserved sign, laid out for a wedding ceremony" };
+
+FEATURE_CONTENT["guest-list"].hero = { src: guestListHero, width: 1400, height: 933, alt: "A bride and groom holding hands on the grass, their shadows stretching in front of them" };
+
+FEATURE_CONTENT["rsvp-automation"].hero = { src: rsvpHero, width: 1400, height: 933, alt: "A wedding invitation suite with an RSVP card, a programme and a save the date, styled on grey linen with silk ribbon", focus: "40% 50%" };
+FEATURE_CONTENT["rsvp-automation"].blocks[3].photo = { src: rsvpQuestions, width: 900, height: 599, alt: "A blank cream card and envelope surrounded by olive leaves, ready to be written" };
+
+FEATURE_CONTENT.registry.hero = { src: registryHero, width: 1400, height: 935, alt: "Small wedding gifts wrapped in white paper and tied with green ribbon, laid out on a glass stand" };
+FEATURE_CONTENT.registry.blocks[1].photo = { src: registryHoneymoon, width: 900, height: 600, alt: "A couple holding hands on a white sand beach as the sun sets over the sea" };
+
+FEATURE_CONTENT.website.hero = { src: websiteHero, width: 1400, height: 933, alt: "A couple embracing on a wooden jetty on a mountain lake with rowing boats and snow-capped peaks behind them" };
+FEATURE_CONTENT.website.blocks[1].photo = { src: websiteTravel, width: 900, height: 600, alt: "A bride and groom holding clear umbrellas on a path between towering redwood trees", focus: "50% 70%" };
+
+FEATURE_CONTENT.venues.hero = { src: venuesHero, width: 1400, height: 1050, alt: "A grand honey-stone manor house with tall chimneys, set in a green garden under a blue sky", focus: "55% 50%" };
+FEATURE_CONTENT.venues.blocks[0].photo = { src: venuesSearch, width: 900, height: 600, alt: "A stone manor courtyard covered in ivy, with a clipped garden and a stone urn in front" };
+FEATURE_CONTENT.venues.blocks[1].photo = { src: venuesBooking, width: 900, height: 600, alt: "Rows of wooden cross-back chairs facing a wooden arch and white hydrangeas on a gravel terrace" };
+FEATURE_CONTENT.venues.blocks[3].photo = { src: venuesCelebrations, width: 900, height: 600, alt: "A couple dancing in a woodland clearing, the bride's white dress swirling around them" };
+
+FEATURE_CONTENT["vendor-marketplace"].hero = { src: vendorsHero, width: 1400, height: 930, alt: "Lace and satin wedding dresses with ribbon sashes hanging side by side" };
+FEATURE_CONTENT["vendor-marketplace"].blocks[0].photo = { src: vendorsCategories, width: 900, height: 556, alt: "A dish of white matchbook favours printed with a couple's initials and date in gold foil" };
+FEATURE_CONTENT["vendor-marketplace"].blocks[1].photo = { src: vendorsWork, width: 900, height: 600, alt: "A ceremony aisle lined with white hydrangeas, leading to a round wooden arch with flowers" };
+FEATURE_CONTENT["vendor-marketplace"].blocks[3].photo = { src: vendorsCelebrations, width: 900, height: 600, alt: "Rows of wooden wishing plaques hung on red cord at a shrine, covered in handwritten messages" };
