@@ -666,7 +666,7 @@ function Landing() {
         </div>
 
         <div className="lg:col-span-6 relative">
-          <div className="relative overflow-hidden shadow-2xl blob-2 group [mask-image:linear-gradient(to_top,black_78%,transparent_100%)] [-webkit-mask-image:linear-gradient(to_top,black_78%,transparent_100%)]">
+          <div className="relative overflow-hidden shadow-2xl blob-2 group [mask-image:linear-gradient(to_top,black_90%,rgb(0_0_0/0.45)_100%)] [-webkit-mask-image:linear-gradient(to_top,black_90%,rgb(0_0_0/0.45)_100%)]">
             <style dangerouslySetInnerHTML={{ __html: HERO_CSS }} />
             <div role="img" aria-label={HERO_ALT}
               className="hero-photo h-[420px] w-full bg-cover transition-transform duration-[1200ms] group-hover:scale-105" />
