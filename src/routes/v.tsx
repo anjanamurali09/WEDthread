@@ -273,7 +273,7 @@ export function VendorDirectoryContent({ embedded = false }: { embedded?: boolea
           <div className="relative">
             <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
             <input value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Search"
-              className="w-full rounded-2xl border border-line bg-paper pl-11 pr-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-clay" />
+              className="w-full rounded-2xl border border-line bg-pearl pl-11 pr-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-clay" />
           </div>
           <SearchableMultiSelect selected={categoryIds} onChange={setCategoryIds} placeholder="Category" className="w-full"
             options={categories} />

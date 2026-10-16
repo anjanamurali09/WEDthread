@@ -78,7 +78,7 @@ function VendorsPage() {
         <div className="relative w-56">
           <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
           <input value={q} onChange={(e) => setQ(e.target.value)} placeholder="Search"
-            className="w-full rounded-2xl border border-line bg-paper pl-11 pr-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-clay" />
+            className="w-full rounded-2xl border border-line bg-pearl pl-11 pr-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-clay" />
         </div>
         <Dropdown value={tier1Id} onChange={(v) => { setTier1Id(v); setTier2Id(""); }} placeholder="All categories" className="w-48"
           options={[{ value: "", label: "All categories" }, ...tier1.map((c) => ({ value: c.id, label: c.name }))]} />
