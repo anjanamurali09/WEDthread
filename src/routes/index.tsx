@@ -643,11 +643,11 @@ function Landing() {
 
       {/* Hero */}
       <section className="relative z-10 px-6 md:px-12 pt-8 md:pt-16 pb-10 grid lg:grid-cols-12 gap-10 items-center">
-        <div className="lg:col-span-6">
+        <div className="lg:col-span-6 lg:translate-y-5">
           <p className="text-sm uppercase tracking-[0.2em] text-[#7FA8D6]">
             For every wedding, anywhere
           </p>
-          <h1 className="mt-6 font-serif text-6xl md:text-8xl leading-[0.9] tracking-tight">
+          <h1 className="mt-6 font-serif text-6xl md:text-[3.75rem] lg:text-[4.5rem] leading-[0.9] tracking-tight">
             One place for every <span className="italic text-[#7FA8D6]">event</span> your wedding needs.
           </h1>
           <p className="mt-6 text-lg text-[#243746] max-w-xl leading-relaxed">
