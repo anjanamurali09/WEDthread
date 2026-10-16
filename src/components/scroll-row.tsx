@@ -18,6 +18,7 @@ export function ScrollRow({ title, heading, action, cardClass, contained = false
   children: React.ReactNode;
 }) {
   const ref = useRef<HTMLDivElement>(null);
+  const wrapRef = useRef<HTMLDivElement>(null);
   const [edge, setEdge] = useState({ start: true, end: true });
 
   useEffect(() => {
@@ -31,6 +32,19 @@ export function ScrollRow({ title, heading, action, cardClass, contained = false
     return () => { el.removeEventListener("scroll", update); window.removeEventListener("resize", update); clearTimeout(t); };
   }, [children]);
 
+  // The row fades in as it scrolls into view. It does this itself, so it also appears on pages that have no
+  // page-wide reveal (the venue and vendor pages), where it would otherwise stay invisible and leave a blank gap.
+  useEffect(() => {
+    const el = wrapRef.current;
+    if (!el) return;
+    const show = () => { el.dataset.visible = "true"; };
+    if (typeof IntersectionObserver === "undefined") { show(); return; }
+    const io = new IntersectionObserver((entries) => { if (entries.some((e) => e.isIntersecting)) { show(); io.disconnect(); } }, { threshold: 0, rootMargin: "0px 0px 200px 0px" });
+    io.observe(el);
+    const fallback = setTimeout(show, 1500);
+    return () => { io.disconnect(); clearTimeout(fallback); };
+  }, []);
+
   // One card at a time (card width plus the 16px gap).
   const scrollBy = (dir: 1 | -1) => { const el = ref.current; const card = el?.firstElementChild as HTMLElement | null; if (el && card) el.scrollBy({ left: dir * (card.offsetWidth + 16), behavior: "smooth" }); };
   const arrow = "absolute top-1/2 z-10 grid h-10 w-10 -translate-y-1/2 place-items-center rounded-full border border-line bg-paper/95 text-[#243746] shadow-sm transition-all duration-300 hover:scale-105 hover:bg-[#FFE08A] motion-reduce:transition-none";
@@ -40,7 +54,7 @@ export function ScrollRow({ title, heading, action, cardClass, contained = false
   return (
     // The row breaks out of the page margins so cards run edge to edge; its own padding lines the first
     // card up with the rest of the page. The arrows sit on the left and right of the cards.
-    <div data-reveal className={contained ? "mx-auto max-w-6xl" : "-mx-6 md:-mx-12"}>
+    <div ref={wrapRef} data-reveal className={contained ? "mx-auto max-w-6xl" : "-mx-6 md:-mx-12"}>
       {title && (
         <p className={cn("mb-3 text-sm uppercase tracking-widest text-[#7FA8D6]", !contained && "px-6 md:px-12")}>{title}</p>
       )}
