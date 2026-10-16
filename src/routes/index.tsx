@@ -642,7 +642,7 @@ function Landing() {
       </header>
 
       {/* Hero */}
-      <section className="relative z-10 grid items-center gap-10 px-6 pb-10 pt-8 md:px-12 md:pt-16 lg:h-[calc(100svh-5.3rem)] lg:min-h-[34rem] lg:grid-cols-12 lg:grid-rows-1 lg:py-10">
+      <section className="relative z-10 grid items-center gap-10 px-6 pb-10 pt-8 md:px-12 md:pt-16 lg:h-[calc(100svh-10.7rem)] lg:min-h-[30rem] lg:grid-cols-12 lg:grid-rows-1 lg:py-10">
         <div className="lg:col-span-6">
           <p className="text-sm uppercase tracking-[0.2em] text-[#7FA8D6]">
             For every wedding, anywhere
@@ -665,7 +665,7 @@ function Landing() {
           </div>
         </div>
 
-        <div className="relative mx-auto w-full max-w-[640px] lg:col-span-6 lg:ml-auto lg:mr-0 lg:h-full lg:w-auto lg:max-w-full lg:justify-self-end lg:aspect-[702/890]">
+        <div className="relative mx-auto w-full max-w-[640px] lg:col-span-6 lg:ml-auto lg:mr-0 lg:h-full lg:w-auto lg:max-w-full lg:justify-self-end lg:aspect-[11/12]">
           <div className="relative overflow-hidden shadow-2xl blob-2 group lg:h-full [mask-image:linear-gradient(to_top,black_78%,transparent_100%)] [-webkit-mask-image:linear-gradient(to_top,black_78%,transparent_100%)]">
             <img src={heroImg} srcSet={`${heroSmImg} 480w, ${heroImg} 702w`} sizes="(min-width: 1024px) 40vw, 100vw"
               alt="Bride and groom embraced beneath ivy-covered arches overlooking a lake at sunset"
@@ -694,7 +694,7 @@ function Landing() {
       </section>
 
       {/* Culture strip */}
-      <section id="how" className="relative z-10 bg-white py-10 px-6 md:px-12" data-reveal>
+      <section id="how" className="relative z-10 bg-white py-8 px-6 md:px-12" data-reveal>
         <div className="flex flex-nowrap items-center justify-center overflow-x-auto">
           {CULTURE_ITEMS.map((t, i) => (
             <span key={t} className="flex shrink-0 items-center whitespace-nowrap">
