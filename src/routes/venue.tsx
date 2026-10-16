@@ -12,7 +12,7 @@ import { useSavedListings } from "@/hooks/use-saved-listings";
 import { LoginDialog } from "@/components/login-dialog";
 import { Search } from "lucide-react";
 import { ScrollRow, THREE_ACROSS } from "@/components/scroll-row";
-import { MarketCategoryStrip } from "@/components/market-category-strip";
+import { VenueSpaceStrip } from "@/components/market-category-strip";
 import { MarketHero, MarketTile } from "@/components/market-hero";
 import { VenueQuiz, type VenueAnswers } from "@/components/market-quiz";
 import { PlacePicker, inPlace, useMarketPlace } from "@/lib/market-place";
@@ -186,7 +186,8 @@ export function VenueDirectoryContent({ embedded = false }: { embedded?: boolean
     <div className={embedded ? undefined : "px-6 md:px-12 py-8"}>
       {!embedded && (
         <>
-          <MarketCategoryStrip active="venues" />
+          <VenueSpaceStrip spaces={TYPE_OF_SPACE_OPTIONS} selected={typeFilter}
+            onToggle={(t) => showResults(() => { setTypeFilter(typeFilter.includes(t) ? typeFilter.filter((x) => x !== t) : [...typeFilter, t]); setPriceTiers([]); setGuestMin(""); setGuestMax(""); })} />
           <MarketHero
             title={<>Find the perfect venue in <br />{placePicker}</>}
             photo={heroPhoto}

@@ -4,7 +4,7 @@ export function MarketHero({ title, photo, primaryLabel, onPrimary, onQuiz }: {
   title: React.ReactNode; photo?: string; primaryLabel: string; onPrimary: () => void; onQuiz: () => void;
 }) {
   return (
-    <section className="mt-6 grid overflow-hidden rounded-3xl bg-[#FFF7D6] md:grid-cols-2">
+    <section className="relative z-10 mt-6 grid rounded-3xl bg-[#FFF7D6] md:grid-cols-2">
       <div className="flex flex-col justify-center gap-7 px-8 py-10 md:px-12 md:py-14">
         <h1 className="font-serif text-4xl leading-tight text-[#243746] md:text-5xl">{title}</h1>
         <div className="flex flex-wrap gap-3">
@@ -14,7 +14,7 @@ export function MarketHero({ title, photo, primaryLabel, onPrimary, onQuiz }: {
             className="rounded-full border border-[#243746] px-8 py-3 text-sm font-medium text-[#243746] transition-colors hover:bg-[#FFE08A]">Take our quiz</button>
         </div>
       </div>
-      <div className="relative hidden min-h-[300px] bg-[#FFE08A]/40 md:block">
+      <div className="relative hidden min-h-[300px] overflow-hidden rounded-r-3xl bg-[#FFE08A]/40 md:block">
         {photo && <img src={photo} alt="" className="absolute inset-0 h-full w-full object-cover" />}
       </div>
     </section>

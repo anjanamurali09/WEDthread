@@ -14,7 +14,7 @@ import { LoginDialog } from "@/components/login-dialog";
 import { SearchableMultiSelect } from "@/components/searchable-multi-select";
 import { Search } from "lucide-react";
 import { ScrollRow, THREE_ACROSS } from "@/components/scroll-row";
-import { MarketCategoryStrip } from "@/components/market-category-strip";
+import { VendorCategoryStrip } from "@/components/market-category-strip";
 import { MarketHero, MarketTile } from "@/components/market-hero";
 import { VendorQuiz, type VendorAnswers } from "@/components/market-quiz";
 import { PlacePicker, inPlace, useMarketPlace } from "@/lib/market-place";
@@ -185,7 +185,7 @@ export function VendorDirectoryContent({ embedded = false }: { embedded?: boolea
     <div className={embedded ? undefined : "px-6 md:px-12 py-8"}>
       {!embedded && (
         <>
-          <MarketCategoryStrip active={group ?? null} />
+          <VendorCategoryStrip active={group ?? null} />
           <MarketHero
             title={<>Find the perfect vendor in <br />{placePicker}</>}
             photo={heroPhoto}
