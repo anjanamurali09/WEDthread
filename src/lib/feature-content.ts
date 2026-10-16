@@ -28,6 +28,11 @@ import vendorsHero from "@/assets/features/vendors-hero.webp";
 import vendorsCategories from "@/assets/features/vendors-categories.webp";
 import vendorsWork from "@/assets/features/vendors-work.webp";
 import vendorsCelebrations from "@/assets/features/vendors-celebrations.webp";
+import guestListGathering from "@/assets/features/guest-list-gathering.webp";
+import guestListCelebrate from "@/assets/features/guest-list-celebrate.webp";
+import rsvpInvitations from "@/assets/features/rsvp-invitations.webp";
+import vendorsFlorals from "@/assets/features/vendors-florals.webp";
+import venuesBridalParty from "@/assets/features/venues-bridal-party.webp";
 
 // A real photograph on a feature page. `alt` describes what is in it, for people using screen readers and for
 // search engines' image results.
@@ -673,3 +678,9 @@ FEATURE_CONTENT.seating.heroMore = [
   { src: seatingPlaceCards, width: 1400, height: 933, alt: "Handwritten place cards with fresh white roses, ivy and a blue velvet ribbon laid out on a table" },
   { src: seatingCeremonyChairs, width: 1400, height: 933, alt: "Rows of white cross-back chairs facing a wooden arch with white hydrangeas on a gravel terrace" },
 ];
+
+FEATURE_CONTENT["guest-list"].blocks[0].photo = { src: guestListGathering, width: 900, height: 600, alt: "Wedding guests in colourful outfits mingling on a lawn with sofas, a bar and a villa behind them" };
+FEATURE_CONTENT["guest-list"].blocks[3].photo = { src: guestListCelebrate, width: 736, height: 491, alt: "A group of guests in sequinned outfits laughing and embracing at a wedding celebration" };
+FEATURE_CONTENT["rsvp-automation"].blocks[0].photo = { src: rsvpInvitations, width: 900, height: 600, alt: "Fan-shaped burgundy wedding invitations with tassels, printed in English and Arabic" };
+FEATURE_CONTENT["vendor-marketplace"].blocks[2].photo = { src: vendorsFlorals, width: 900, height: 600, alt: "Tall stems of tuberose flowers in brass pots, with banana leaves and fresh coconuts on a wooden table" };
+FEATURE_CONTENT.venues.blocks[2].photo = { src: venuesBridalParty, width: 800, height: 533, alt: "A bride and her bridesmaids in pastel satin dresses walking together through a sunny garden" };
