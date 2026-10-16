@@ -614,9 +614,3 @@ html { -webkit-tap-highlight-color: transparent; }
 @keyframes home-loader-out { to { opacity: 0; visibility: hidden; } }
 .home-loader { animation: home-loader-out 250ms ease-out 200ms forwards; pointer-events: none; }
 @media (prefers-reduced-motion: reduce) { .home-loader { animation-duration: 1ms; animation-delay: 150ms; } }
-
-/* Very large screens: everything is sized in rem, so raising the base size scales the whole site up evenly
-   instead of leaving a small page floating in a big window. */
-@media (min-width: 1680px) { html { font-size: 18px; } }
-@media (min-width: 1920px) { html { font-size: 20px; } }
-@media (min-width: 2400px) { html { font-size: 24px; } }

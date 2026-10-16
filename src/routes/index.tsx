@@ -642,7 +642,7 @@ function Landing() {
       </header>
 
       {/* Hero */}
-      <section className="relative z-10 mx-auto grid max-w-[1800px] items-center gap-10 px-6 pb-10 pt-8 md:px-12 md:pt-16 lg:min-h-[min(100svh-6rem,920px)] lg:grid-cols-12">
+      <section className="relative z-10 px-6 md:px-12 pt-8 md:pt-16 pb-10 grid lg:grid-cols-12 gap-10 items-center">
         <div className="lg:col-span-6">
           <p className="text-sm uppercase tracking-[0.2em] text-[#7FA8D6]">
             For every wedding, anywhere
@@ -665,15 +665,15 @@ function Landing() {
           </div>
         </div>
 
-        <div className="lg:col-span-6 relative mx-auto w-full max-w-[640px] lg:ml-auto">
+        <div className="lg:col-span-6 relative">
           <div className="relative overflow-hidden shadow-2xl blob-2 group [mask-image:linear-gradient(to_top,black_78%,transparent_100%)] [-webkit-mask-image:linear-gradient(to_top,black_78%,transparent_100%)]">
             <img src={heroImg} srcSet={`${heroSmImg} 480w, ${heroImg} 702w`} sizes="(min-width: 1024px) 40vw, 100vw"
               alt="Bride and groom embraced beneath ivy-covered arches overlooking a lake at sunset"
-              className="h-[420px] w-full object-cover object-bottom transition-transform duration-[1200ms] group-hover:scale-105 lg:h-[min(calc(100svh-9rem),720px)]"
+              className="h-[420px] w-full object-cover object-bottom transition-transform duration-[1200ms] group-hover:scale-105"
               width={702} height={890} loading="eager" fetchPriority="high" decoding="async" />
             <div className="absolute inset-0 bg-gradient-to-t from-[#243746]/30 via-transparent to-transparent" />
           </div>
-          <div className="hidden md:block absolute -bottom-6 -left-6 paper-card p-5 rotate-[-2deg] max-w-[16.5rem] bg-paper transition-transform hover:rotate-0 hover:-translate-y-1">
+          <div className="hidden md:block absolute -bottom-6 -left-6 paper-card p-5 rotate-[-2deg] max-w-[260px] bg-paper transition-transform hover:rotate-0 hover:-translate-y-1">
             <p className="text-[10px] uppercase tracking-widest text-[#7FA8D6]">The Rao–Beckett Wedding</p>
             <p className="font-serif text-xl mt-1">Lake Como · Nov 2026</p>
             <div className="mt-3 space-y-1.5 text-sm text-[#243746]">
@@ -683,7 +683,7 @@ function Landing() {
             </div>
             <p className="mt-3 text-sm text-[#7FA8D6]">Villa Balbiano, 100 guests</p>
           </div>
-          <div className="hidden md:flex absolute -top-4 -right-4 paper-card p-4 rotate-[2deg] bg-paper items-center gap-3 max-w-[15.5rem] transition-transform hover:rotate-0 hover:-translate-y-1">
+          <div className="hidden md:flex absolute -top-4 -right-4 paper-card p-4 rotate-[2deg] bg-paper items-center gap-3 max-w-[240px] transition-transform hover:rotate-0 hover:-translate-y-1">
             <span className="grid h-9 w-9 place-items-center rounded-full bg-[#A8C6E7]/40 text-[#243746]"><MessageCircle className="h-4 w-4" /></span>
             <div>
               <p className="text-sm font-medium">RSVP reminder sent</p>
