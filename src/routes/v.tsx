@@ -19,6 +19,7 @@ import { MarketHero, MarketTile } from "@/components/market-hero";
 import { VendorQuiz, type VendorAnswers } from "@/components/market-quiz";
 import { PlacePicker, inPlace, useMarketPlace } from "@/lib/market-place";
 import { VENDOR_GROUPS, categoryIdsForGroup, inGroup } from "@/lib/vendor-groups";
+import { groupLabel, stanceTiers, type Stance } from "@/lib/market-quiz-logic";
 
 export const Route = createFileRoute("/v")({
   head: () => ({
@@ -60,6 +61,8 @@ export function VendorDirectoryContent({ embedded = false }: { embedded?: boolea
   const { signedIn, saved, toggle } = useSavedListings();
   const [authOpen, setAuthOpen] = useState(false);
   const [quizOpen, setQuizOpen] = useState(false);
+  // What the quiz found out: what each partner would never compromise on, and where they would splurge or save.
+  const [quiz, setQuiz] = useState<null | { p1: string[]; p2: string[]; stance: Record<string, Stance> }>(null);
   const [city, setCity] = useState("");
   const group = (useSearch({ strict: false }) as { group?: string }).group;
 
@@ -156,10 +159,28 @@ export function VendorDirectoryContent({ embedded = false }: { embedded?: boolea
     setTimeout(() => document.getElementById("all-vendors")?.scrollIntoView({ behavior: "smooth", block: "start" }), 50);
   };
 
-  const applyQuiz = (a: VendorAnswers) => showResults(() => {
-    setCategoryIds(Array.from(new Set(a.groups.flatMap((k) => categoryIdsForGroup(categories, k)))));
-    setPriceTiers(a.tiers);
-  });
+  const applyQuiz = (a: VendorAnswers) => {
+    setQuiz({ p1: a.p1, p2: a.p2, stance: a.stance });
+    setCity(place?.kind === "city" ? place.name : "");
+    setCountry(place?.kind === "country" ? place.name : "");
+    setCategoryIds([]);
+    setPriceTiers([]);
+    setTimeout(() => document.getElementById("your-matches")?.scrollIntoView({ behavior: "smooth", block: "start" }), 50);
+  };
+
+  // One row per thing they picked: what both chose first, then what only one of them chose. Each row shows the
+  // vendors in the chosen place at the price level they said they would spend on it (unpriced ones stay).
+  const matchRows = useMemo(() => {
+    if (!quiz) return [];
+    const keys = [...quiz.p1.filter((k) => quiz.p2.includes(k)), ...quiz.p1.filter((k) => !quiz.p2.includes(k)), ...quiz.p2.filter((k) => !quiz.p1.includes(k))];
+    return keys.map((k) => {
+      const tiers = stanceTiers(quiz.stance[k]);
+      const list = services.filter((s) => inGroup(s.categoryNames, k) && inPlace(place, s.city ?? null, s.country ?? null)
+        && (s.price_range_min == null || tiers.includes(String(PRICE_TIERS.findIndex((t) => s.price_range_min! >= t.min && s.price_range_min! < t.max)))));
+      const who = quiz.p1.includes(k) && quiz.p2.includes(k) ? "you both picked this" : quiz.p1.includes(k) ? "Partner 1's pick" : "Partner 2's pick";
+      return { key: k, heading: `${groupLabel(k)} (${who})`, list };
+    });
+  }, [quiz, services, place]);
 
   const placePicker = <PlacePicker place={place} onChange={setPlace} cities={cities} countries={countries} />;
 
@@ -193,6 +214,26 @@ export function VendorDirectoryContent({ embedded = false }: { embedded?: boolea
             onPrimary={() => showResults()}
             onQuiz={() => setQuizOpen(true)}
           />
+
+          {quiz && (
+            <div id="your-matches" className="mt-14 scroll-mt-28">
+              <div className="mb-6 flex flex-wrap items-center justify-between gap-3">
+                <h2 className="font-serif text-2xl text-[#243746] md:text-3xl">Matched to you in {place ? place.name : "all locations"}</h2>
+                <button type="button" data-static onClick={() => setQuiz(null)}
+                  className="text-sm font-medium text-[#243746] underline underline-offset-4 hover:text-[#7FA8D6]">Clear my answers</button>
+              </div>
+              {matchRows.filter((r) => r.list.length > 0).map((r) => (
+                <div key={r.key} className="mb-10">
+                  <ScrollRow cardClass={THREE_ACROSS} heading={<>{r.heading}</>}>
+                    {r.list.map((s) => <VendorServiceCard key={s.id} service={s} saved={saved.has(s.id)} onToggleSaved={handleToggleSaved} />)}
+                  </ScrollRow>
+                </div>
+              ))}
+              {matchRows.every((r) => r.list.length === 0) && (
+                <p className="text-sm text-muted-foreground">No vendors here match those picks yet. Try clearing your answers, or a different place.</p>
+              )}
+            </div>
+          )}
 
           {popular.length > 0 && (
             <div className="mt-14">

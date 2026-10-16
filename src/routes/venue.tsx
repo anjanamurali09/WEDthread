@@ -16,6 +16,7 @@ import { VenueSpaceStrip } from "@/components/market-category-strip";
 import { MarketHero, MarketTile } from "@/components/market-hero";
 import { VenueQuiz, type VenueAnswers } from "@/components/market-quiz";
 import { PlacePicker, inPlace, useMarketPlace } from "@/lib/market-place";
+import { matchVenues, spacesForDates, spacesForSigns } from "@/lib/market-quiz-logic";
 import { useCurrentWedding } from "@/lib/wedding-hooks";
 
 // Path is "/venue" (singular) — "/venues" is already the older, separate
@@ -47,6 +48,7 @@ type VenueRow = {
   type_of_space: string[];
   price_range_min: number | null;
   price_range_max: number | null;
+  currency: string | null;
   photos: string[];
 };
 
@@ -68,6 +70,9 @@ export function VenueDirectoryContent({ embedded = false }: { embedded?: boolean
   const { signedIn, saved, toggle } = useSavedListings();
   const [authOpen, setAuthOpen] = useState(false);
   const [quizOpen, setQuizOpen] = useState(false);
+  // What the quiz found out: the kinds of space each partner pictures and the sun-sign nudge, plus the size and
+  // price level it worked out. Null until the quiz has been taken.
+  const [quiz, setQuiz] = useState<null | { p1: string[]; p2: string[]; nudge: string[]; guests: number | null; tiers: string[] }>(null);
 
   const handleToggleSaved = (businessId: string) => {
     if (!signedIn) { setAuthOpen(true); return; }
@@ -101,7 +106,7 @@ export function VenueDirectoryContent({ embedded = false }: { embedded?: boolean
           city: b.city, country: b.country,
           capacity_min: d?.capacity_min ?? null, capacity_max: d?.capacity_max ?? null,
           type_of_space: d?.type_of_space ?? [], price_range_min: d?.price_range_min ?? null,
-          price_range_max: d?.price_range_max ?? null,
+          price_range_max: d?.price_range_max ?? null, currency: d?.currency ?? null,
           photos: photosByBusiness.get(b.id) ?? [],
         };
       }));
@@ -143,12 +148,27 @@ export function VenueDirectoryContent({ embedded = false }: { embedded?: boolean
     setTimeout(() => document.getElementById("all-venues")?.scrollIntoView({ behavior: "smooth", block: "start" }), 50);
   };
 
-  const applyQuiz = (a: VenueAnswers) => showResults(() => {
-    setTypeFilter(a.spaces);
+  const applyQuiz = (a: VenueAnswers) => {
+    setQuiz({ p1: spacesForDates(a.p1), p2: spacesForDates(a.p2), nudge: spacesForSigns(a.signs), guests: a.guests, tiers: a.tiers });
+    setCity(place?.kind === "city" ? place.name : "");
+    setCountry(place?.kind === "country" ? place.name : "");
+    setTypeFilter([]);
     setPriceTiers(a.tiers);
     setGuestMin(a.guests ? String(a.guests) : "");
     setGuestMax(a.guests ? String(a.guests) : "");
-  });
+    setTimeout(() => document.getElementById("your-matches")?.scrollIntoView({ behavior: "smooth", block: "start" }), 50);
+  };
+
+  const spacePhotos = useMemo(() => {
+    const out: Record<string, string> = {};
+    for (const t of TYPE_OF_SPACE_OPTIONS) {
+      const v = venues.find((x) => x.type_of_space.includes(t) && x.photos.length > 0);
+      if (v) out[t] = v.photos[0];
+    }
+    return out;
+  }, [venues]);
+
+  const matches = useMemo(() => quiz ? matchVenues(venues, { place, ...quiz }) : null, [venues, place, quiz]);
 
   const placePicker = (
     <PlacePicker place={place} onChange={setPlace} cities={cities} countries={countries} />
@@ -196,6 +216,41 @@ export function VenueDirectoryContent({ embedded = false }: { embedded?: boolean
             onQuiz={() => setQuizOpen(true)}
           />
 
+          {quiz && matches && (
+            <div id="your-matches" className="mt-14 scroll-mt-28">
+              <div className="mb-6 flex flex-wrap items-center justify-between gap-3">
+                <h2 className="font-serif text-2xl text-[#243746] md:text-3xl">Matched to you in {place ? place.name : "all locations"}</h2>
+                <button type="button" data-static onClick={() => { setQuiz(null); setPriceTiers([]); setGuestMin(""); setGuestMax(""); }}
+                  className="text-sm font-medium text-[#243746] underline underline-offset-4 hover:text-[#7FA8D6]">Clear my answers</button>
+              </div>
+              {[
+                { key: "both", heading: "You'll both love these", list: matches.both },
+                { key: "p1", heading: "Closer to Partner 1's taste", list: matches.only1 },
+                { key: "p2", heading: "Closer to Partner 2's taste", list: matches.only2 },
+              ].filter((r) => r.list.length > 0).map((r) => (
+                <div key={r.key} className="mb-10">
+                  <ScrollRow cardClass={THREE_ACROSS} heading={<>{r.heading}</>}>
+                    {r.list.map((v) => <VenueCard key={v.id} venue={v} saved={saved.has(v.id)} onToggleSaved={handleToggleSaved} />)}
+                  </ScrollRow>
+                </div>
+              ))}
+              {matches.both.length + matches.only1.length + matches.only2.length === 0 && (
+                <div>
+                  <p className="mb-4 text-sm text-muted-foreground">
+                    {matches.fits.length > 0
+                      ? "No venues here are tagged with those styles yet. These fit your guest count and budget."
+                      : "No venues here fit all of that yet. Try clearing your answers, or a different place."}
+                  </p>
+                  {matches.fits.length > 0 && (
+                    <ScrollRow cardClass={THREE_ACROSS} heading={<>Venues that fit</>}>
+                      {matches.fits.map((v) => <VenueCard key={v.id} venue={v} saved={saved.has(v.id)} onToggleSaved={handleToggleSaved} />)}
+                    </ScrollRow>
+                  )}
+                </div>
+              )}
+            </div>
+          )}
+
           {popular.length > 0 && (
             <div className="mt-14">
               <ScrollRow cardClass={THREE_ACROSS}
@@ -223,7 +278,7 @@ export function VenueDirectoryContent({ embedded = false }: { embedded?: boolean
           <h2 id="all-venues" className="mt-16 scroll-mt-28 font-serif text-2xl text-[#243746] md:text-3xl">All venues</h2>
 
           <VenueQuiz open={quizOpen} onOpenChange={setQuizOpen} photo={heroPhoto} initialGuests={wedding?.est_guest_count ?? null}
-            spaceOptions={TYPE_OF_SPACE_OPTIONS} onApply={applyQuiz} />
+            venues={venues} place={place} spacePhotos={spacePhotos} onApply={applyQuiz} />
         </>
       )}
 
