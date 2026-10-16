@@ -19,6 +19,7 @@ import { MarketHero, MarketTile } from "@/components/market-hero";
 import { VendorQuiz, type VendorAnswers } from "@/components/market-quiz";
 import { PlacePicker, inPlace, useMarketPlace } from "@/lib/market-place";
 import { VENDOR_GROUPS, categoryIdsForGroup, inGroup } from "@/lib/vendor-groups";
+import { pickDistinctPhotos } from "@/lib/distinct-photos";
 import { groupLabel, stanceTiers, type Stance } from "@/lib/market-quiz-logic";
 
 export const Route = createFileRoute("/v")({
@@ -144,10 +145,11 @@ export function VendorDirectoryContent({ embedded = false }: { embedded?: boolea
       .sort((a, b) => score(b.s) - score(a.s) || a.i - b.i).map(({ s }) => s).slice(0, 12);
   }, [services, place]);
 
-  const groupTiles = useMemo(() => VENDOR_GROUPS.flatMap((g) => {
-    const s = services.find((x) => inPlace(place, x.city ?? null, x.country ?? null) && inGroup(x.categoryNames, g.key) && x.photos.length > 0);
-    return s ? [{ key: g.key, label: g.label, photo: s.photos[0] }] : [];
-  }), [services, place]);
+  const groupTiles = useMemo(() => {
+    const options = VENDOR_GROUPS.map((g) => services.filter((x) => inPlace(place, x.city ?? null, x.country ?? null) && inGroup(x.categoryNames, g.key) && x.photos.length > 0).map((x) => x.photos));
+    const photos = pickDistinctPhotos(options);
+    return VENDOR_GROUPS.flatMap((g, i) => photos[i] ? [{ key: g.key, label: g.label, photo: photos[i] as string }] : []);
+  }, [services, place]);
 
   const heroPhoto = popular.find((s) => s.photos.length > 0)?.photos[0];
   const availableGroups = useMemo(() => VENDOR_GROUPS.filter((g) => services.some((s) => inGroup(s.categoryNames, g.key))).map((g) => g.key), [services]);

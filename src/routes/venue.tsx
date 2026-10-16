@@ -16,6 +16,7 @@ import { VenueSpaceStrip } from "@/components/market-category-strip";
 import { MarketHero, MarketTile } from "@/components/market-hero";
 import { VenueQuiz, type VenueAnswers } from "@/components/market-quiz";
 import { PlacePicker, inPlace, useMarketPlace } from "@/lib/market-place";
+import { pickDistinctPhotos } from "@/lib/distinct-photos";
 import { matchVenues, spacesForDates, spacesForSigns } from "@/lib/market-quiz-logic";
 import { useCurrentWedding } from "@/lib/wedding-hooks";
 
@@ -134,10 +135,11 @@ export function VenueDirectoryContent({ embedded = false }: { embedded?: boolean
       .sort((a, b) => score(b.v) - score(a.v) || a.i - b.i).map(({ v }) => v).slice(0, 12);
   }, [venues, place]);
 
-  const styleTiles = useMemo(() => TYPE_OF_SPACE_OPTIONS.flatMap((t) => {
-    const v = venues.find((x) => inPlace(place, x.city, x.country) && x.type_of_space.includes(t) && x.photos.length > 0);
-    return v ? [{ type: t, photo: v.photos[0] }] : [];
-  }), [venues, place]);
+  const styleTiles = useMemo(() => {
+    const options = TYPE_OF_SPACE_OPTIONS.map((t) => venues.filter((x) => inPlace(place, x.city, x.country) && x.type_of_space.includes(t) && x.photos.length > 0).map((x) => x.photos));
+    const photos = pickDistinctPhotos(options);
+    return TYPE_OF_SPACE_OPTIONS.flatMap((t, i) => photos[i] ? [{ type: t, photo: photos[i] as string }] : []);
+  }, [venues, place]);
 
   const heroPhoto = popular.find((v) => v.photos.length > 0)?.photos[0];
 
@@ -160,11 +162,10 @@ export function VenueDirectoryContent({ embedded = false }: { embedded?: boolean
   };
 
   const spacePhotos = useMemo(() => {
+    const options = TYPE_OF_SPACE_OPTIONS.map((t) => venues.filter((x) => x.type_of_space.includes(t) && x.photos.length > 0).map((x) => x.photos));
+    const photos = pickDistinctPhotos(options);
     const out: Record<string, string> = {};
-    for (const t of TYPE_OF_SPACE_OPTIONS) {
-      const v = venues.find((x) => x.type_of_space.includes(t) && x.photos.length > 0);
-      if (v) out[t] = v.photos[0];
-    }
+    TYPE_OF_SPACE_OPTIONS.forEach((t, i) => { if (photos[i]) out[t] = photos[i] as string; });
     return out;
   }, [venues]);
 
