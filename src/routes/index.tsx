@@ -785,7 +785,7 @@ function Landing() {
           <div className="flex flex-wrap items-end justify-between gap-4" data-reveal>
             <div>
               <p className="text-sm uppercase tracking-[0.2em] text-[#7FA8D6]">From the blog</p>
-              <h2 className="mt-3 font-serif text-4xl md:text-5xl leading-[1.02]">Wedding planning guides.</h2>
+              <h2 className="mt-2 font-serif text-3xl md:text-4xl leading-[0.95]">Wedding planning guides.</h2>
             </div>
             <Link to="/blog" data-static className="inline-flex items-center gap-2 rounded-full border border-[#243746] px-5 py-2.5 text-sm font-medium text-[#243746] transition-colors hover:bg-[#FFE08A]">
               Read all articles <ArrowRight className="h-4 w-4" />

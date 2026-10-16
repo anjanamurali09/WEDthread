@@ -37,7 +37,7 @@ export const BLOG_POSTS: BlogPost[] = [
     category: "Planning",
     image: "/blog/wedding-planning-priorities.jpg",
     imageAlt: "A villa surrounded by gardens, with guests gathering at a wedding celebration on the lawn",
-    published: "2026-10-14",
+    published: "2026-10-01",
     related: ["wedding-budget-planning", "unique-wedding-ideas"],
     body: [
       { t: "p", text: "Planning a wedding feels like a hundred decisions at once. The trick is that they are not equal. A few early choices decide almost everything that follows: where you marry, how many people come, and how much you can spend. Get those right and the rest falls into place. This list puts the ten most important things in the order that usually works best." },
@@ -81,7 +81,7 @@ export const BLOG_POSTS: BlogPost[] = [
     category: "Budget",
     image: "/blog/wedding-budget-planning.jpg",
     imageAlt: "A couple smiling together as they plan their wedding budget",
-    published: "2026-10-14",
+    published: "2026-10-08",
     related: ["wedding-planning-priorities", "unique-wedding-ideas"],
     body: [
       { t: "p", text: "A wedding budget is not a restriction. It is a way of deciding what matters most to you before the bills arrive. Couples who plan their money early usually spend it better, argue about it less and avoid the surprise that comes when final invoices add up to more than expected. Here is a simple way to plan yours." },

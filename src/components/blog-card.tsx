@@ -9,7 +9,7 @@ export function BlogCard({ post }: { post: BlogPost }) {
       <img src={post.image} alt={post.imageAlt} width={1200} height={630} loading="lazy" decoding="async" className="aspect-[1200/630] w-full object-cover" />
       <div className="flex flex-1 flex-col p-6">
         <p className="text-xs uppercase tracking-[0.2em] text-[#4A7CAD]">{post.category}</p>
-        <h3 className="mt-3 font-serif text-2xl leading-tight text-balance">{post.title}</h3>
+        <h3 className="mt-3 font-serif text-2xl leading-tight text-balance md:min-h-[3.75em]">{post.title}</h3>
         <p className="mt-3 flex-1 text-sm leading-relaxed text-muted-foreground">{post.excerpt}</p>
         <p className="mt-5 flex items-center justify-between text-xs text-muted-foreground">
           <span>{formatPostDate(post.published)} · {readingMinutes(post)} min read</span>
