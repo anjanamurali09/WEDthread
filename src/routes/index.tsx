@@ -642,12 +642,12 @@ function Landing() {
       </header>
 
       {/* Hero */}
-      <section className="relative z-10 grid items-center gap-10 px-6 pb-10 pt-8 md:px-12 md:pt-16 lg:h-[calc(100svh-10.7rem)] lg:min-h-[30rem] lg:grid-cols-12 lg:grid-rows-1 lg:py-10">
+      <section className="relative z-10 mx-auto grid max-w-[1800px] items-center gap-10 px-6 pb-10 pt-8 md:px-12 md:pt-16 lg:min-h-[min(100svh-6rem,920px)] lg:grid-cols-12">
         <div className="lg:col-span-6">
           <p className="text-sm uppercase tracking-[0.2em] text-[#7FA8D6]">
             For every wedding, anywhere
           </p>
-          <h1 className="mt-6 font-serif text-6xl md:text-8xl lg:text-[min(9.5svh,calc((100vw-8.5rem)/14.8))] leading-[0.9] tracking-tight">
+          <h1 className="mt-6 font-serif text-6xl md:text-8xl leading-[0.9] tracking-tight">
             One place for every <span className="italic text-[#7FA8D6]">event</span> your wedding needs.
           </h1>
           <p className="mt-6 text-lg text-[#243746] max-w-xl leading-relaxed">
@@ -665,11 +665,11 @@ function Landing() {
           </div>
         </div>
 
-        <div className="relative mx-auto w-full max-w-[640px] lg:col-span-6 lg:ml-auto lg:mr-0 lg:h-full lg:w-auto lg:max-w-full lg:justify-self-end lg:aspect-[11/12]">
-          <div className="relative overflow-hidden shadow-2xl blob-2 group lg:h-full [mask-image:linear-gradient(to_top,black_78%,transparent_100%)] [-webkit-mask-image:linear-gradient(to_top,black_78%,transparent_100%)]">
+        <div className="lg:col-span-6 relative mx-auto w-full max-w-[640px] lg:ml-auto">
+          <div className="relative overflow-hidden shadow-2xl blob-2 group [mask-image:linear-gradient(to_top,black_78%,transparent_100%)] [-webkit-mask-image:linear-gradient(to_top,black_78%,transparent_100%)]">
             <img src={heroImg} srcSet={`${heroSmImg} 480w, ${heroImg} 702w`} sizes="(min-width: 1024px) 40vw, 100vw"
               alt="Bride and groom embraced beneath ivy-covered arches overlooking a lake at sunset"
-              className="h-[420px] w-full object-cover object-bottom transition-transform duration-[1200ms] group-hover:scale-105 lg:h-full"
+              className="h-[420px] w-full object-cover object-bottom transition-transform duration-[1200ms] group-hover:scale-105 lg:h-[min(calc(100svh-9rem),720px)]"
               width={702} height={890} loading="eager" fetchPriority="high" decoding="async" />
             <div className="absolute inset-0 bg-gradient-to-t from-[#243746]/30 via-transparent to-transparent" />
           </div>
@@ -694,7 +694,7 @@ function Landing() {
       </section>
 
       {/* Culture strip */}
-      <section id="how" className="relative z-10 bg-white py-8 px-6 md:px-12" data-reveal>
+      <section id="how" className="relative z-10 bg-white py-10 px-6 md:px-12" data-reveal>
         <div className="flex flex-nowrap items-center justify-center overflow-x-auto">
           {CULTURE_ITEMS.map((t, i) => (
             <span key={t} className="flex shrink-0 items-center whitespace-nowrap">
