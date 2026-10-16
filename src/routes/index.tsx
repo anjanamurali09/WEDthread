@@ -17,8 +17,7 @@ import { VenueCard, type VenueCardData } from "@/components/venue-card";
 import { VendorServiceCard, type VendorServiceCardData } from "@/components/vendor-service-card";
 import { useSavedListings } from "@/hooks/use-saved-listings";
 
-import heroImg from "@/assets/homepage-hero.webp";
-import heroSmImg from "@/assets/homepage-hero-sm.webp";
+import { HERO_ALT, HERO_CSS, HERO_SCRIPT, chooseHeroPhoto } from "@/lib/home-hero";
 
 import venueBaliImg from "@/assets/venue-bali-room.webp";
 import websiteCoupleImg from "@/assets/website-couple-priya-kevin.webp";
@@ -50,7 +49,7 @@ export const Route = createFileRoute("/")({
   loader: () => loadHomeListings(),
   head: () => ({
     links: canonicalLink("/"),
-    scripts: [{ type: "application/ld+json", children: ORGANIZATION_JSON_LD }, { type: "application/ld+json", children: WEBSITE_JSON_LD }],
+    scripts: [{ children: HERO_SCRIPT }, { type: "application/ld+json", children: ORGANIZATION_JSON_LD }, { type: "application/ld+json", children: WEBSITE_JSON_LD }],
   }),
   component: Landing,
 });
@@ -617,6 +616,7 @@ function Landing() {
   const navigate = useNavigate();
   // "Start planning" goes to the full sign-up page; only "Sign in" uses the small popup.
   const goSignup = () => navigate({ to: "/signup" });
+  useEffect(() => { chooseHeroPhoto(); }, []);
 
   return (
     <div ref={rootRef as any} className="min-h-screen bg-white text-[#243746] overflow-hidden">
@@ -667,21 +667,20 @@ function Landing() {
 
         <div className="lg:col-span-6 relative">
           <div className="relative overflow-hidden shadow-2xl blob-2 group [mask-image:linear-gradient(to_top,black_78%,transparent_100%)] [-webkit-mask-image:linear-gradient(to_top,black_78%,transparent_100%)]">
-            <img src={heroImg} srcSet={`${heroSmImg} 480w, ${heroImg} 702w`} sizes="(min-width: 1024px) 40vw, 100vw"
-              alt="Bride and groom embraced beneath ivy-covered arches overlooking a lake at sunset"
-              className="h-[420px] w-full object-cover object-bottom transition-transform duration-[1200ms] group-hover:scale-105"
-              width={702} height={890} loading="eager" fetchPriority="high" decoding="async" />
+            <style dangerouslySetInnerHTML={{ __html: HERO_CSS }} />
+            <div role="img" aria-label={HERO_ALT}
+              className="hero-photo h-[420px] w-full bg-cover transition-transform duration-[1200ms] group-hover:scale-105" />
             <div className="absolute inset-0 bg-gradient-to-t from-[#243746]/30 via-transparent to-transparent" />
           </div>
           <div className="hidden md:block absolute -bottom-6 -left-6 paper-card p-5 rotate-[-2deg] max-w-[260px] bg-paper transition-transform hover:rotate-0 hover:-translate-y-1">
             <p className="text-[10px] uppercase tracking-widest text-[#7FA8D6]">The Rao–Beckett Wedding</p>
-            <p className="font-serif text-xl mt-1">Lake Como · Nov 2026</p>
+            <p className="font-serif text-xl mt-1">Nov 2026 · 3 events</p>
             <div className="mt-3 space-y-1.5 text-sm text-[#243746]">
               <p>Nov 12 · Pool Party</p>
               <p>Nov 13 · Ceremony</p>
               <p>Nov 14 · Reception</p>
             </div>
-            <p className="mt-3 text-sm text-[#7FA8D6]">Villa Balbiano, 100 guests</p>
+            <p className="mt-3 text-sm text-[#7FA8D6]">100 guests over three days</p>
           </div>
           <div className="hidden md:flex absolute -top-4 -right-4 paper-card p-4 rotate-[2deg] bg-paper items-center gap-3 max-w-[240px] transition-transform hover:rotate-0 hover:-translate-y-1">
             <span className="grid h-9 w-9 place-items-center rounded-full bg-[#A8C6E7]/40 text-[#243746]"><MessageCircle className="h-4 w-4" /></span>
