@@ -1,4 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
+import { defaultFundPhoto } from "@/lib/fund-photos";
 import { preparePhotoForUpload } from "@/lib/prepare-upload";
 import { coupleName } from "@/lib/partner-names";
 import { track } from "@/lib/analytics";
@@ -11,7 +12,7 @@ import { toast } from "@/lib/toast";
 import { ExternalLink, Plus, Trash2, Globe2, Share2, Copy, Check, MessageCircle, X, Star, Eye, Loader2, ChevronDown, ImagePlus, Pencil } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Dropdown } from "@/components/dropdown";
-import { CURRENCIES, formatMoney, type CurrencyCode } from "@/lib/currency";
+import { formatAmountInput, CURRENCIES, formatMoney, type CurrencyCode } from "@/lib/currency";
 import { RetailerFallback } from "@/components/retailer-fallback";
 import { DEFAULT_REGISTRY_INTRO } from "@/lib/registry-intro";
 import { useSavedFeedback } from "@/hooks/use-saved-feedback";
@@ -378,8 +379,8 @@ function RegistryPage() {
                     </span>
                   )}
                   <div className="aspect-square overflow-hidden rounded-2xl bg-pearl">
-                    {it.image_url ? (
-                      <img src={it.image_url} alt={it.title} loading="lazy" className="w-full h-full object-cover" />
+                    {it.image_url || it.kind === "fund" ? (
+                      <img src={it.image_url || defaultFundPhoto(it.title)} alt={it.title} loading="lazy" className="w-full h-full object-cover" />
                     ) : (
                       <RetailerFallback productUrl={it.product_url} retailer={it.retailer}
                         iconClassName="h-10 w-10" textClassName="text-xs" />
@@ -484,7 +485,7 @@ function RegistryPage() {
               {!fund && <input placeholder="Store" value={form.retailer} onChange={(e) => setForm({ ...form, retailer: e.target.value })} className="rounded-2xl border border-line bg-pearl px-4 py-2.5 text-sm" />}
               <div className={cn("relative", fund && "col-span-2")}>
                 <span className="absolute left-3 top-1/2 -translate-y-1/2 text-sm text-muted-foreground pointer-events-none">{CURRENCIES[currencyCode].symbol}</span>
-                <input placeholder={fund ? "Amount (optional)" : "Price"} type="number" step="0.01" value={form.price} onChange={(e) => setForm({ ...form, price: e.target.value })} style={{ paddingLeft: 24 + CURRENCIES[currencyCode].symbol.length * 8 }} className="w-full rounded-2xl border border-line bg-pearl pr-3 py-2.5 text-sm" />
+                <input placeholder={fund ? "Amount (optional)" : "Price"} type="text" inputMode="decimal" value={formatAmountInput(form.price, currencyCode)} onChange={(e) => setForm({ ...form, price: e.target.value.replace(/[^\d.]/g, "") })} style={{ paddingLeft: 24 + CURRENCIES[currencyCode].symbol.length * 8 }} className="w-full rounded-2xl border border-line bg-pearl pr-3 py-2.5 text-sm" />
               </div>
             </div>
 

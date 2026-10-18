@@ -116,7 +116,7 @@ function WebsitePage() {
                 <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
                   <a href={url} target="_blank" rel="noreferrer" className="text-sm text-muted-foreground hover:text-wine inline-flex items-center gap-1">{url} <ExternalLink className="h-3 w-3" /></a>
                   {userId && wedding.owner_id === userId && (
-                    <button onClick={startEditSlug} className="text-sm text-cherry underline underline-offset-4 hover:text-ink">Change link</button>
+                    <button onClick={startEditSlug} className="inline-flex items-center gap-1.5 rounded-full border border-line px-3 py-1 text-sm text-ink hover:bg-stone cursor-pointer"><Pencil className="h-3 w-3" /> Edit link</button>
                   )}
                 </div>
               )}

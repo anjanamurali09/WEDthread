@@ -1,4 +1,5 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
+import { defaultFundPhoto } from "@/lib/fund-photos";
 import { noindexMeta } from "@/lib/seo";
 import { partnerOne, partnerTwo } from "@/lib/partner-names";
 import { useEffect, useState } from "react";
@@ -137,10 +138,8 @@ function PublicRegistry() {
               const bought = !!it.purchased_at;
               const photo = (
                 <div className="relative aspect-square overflow-hidden rounded-2xl" style={{ background: palette.soft }}>
-                  {it.image_url ? (
-                    <img src={it.image_url} alt={it.title} loading="lazy" className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
-                  ) : isFund ? (
-                    <div className="grid h-full w-full place-items-center"><Heart className="h-6 w-6 opacity-40" style={{ color: palette.accent }} /></div>
+                  {it.image_url || isFund ? (
+                    <img src={it.image_url || defaultFundPhoto(it.title)} alt={it.title} loading="lazy" className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
                   ) : (
                     <RetailerFallback productUrl={it.product_url} retailer={it.retailer}
                       iconClassName="h-8 w-8" textClassName="text-xs" />

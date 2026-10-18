@@ -1457,7 +1457,7 @@ function BudgetOnboarding({ onComplete }: {
         {hasBudget && (
           <div className="relative mt-2">
             <span className="absolute left-4 top-1/2 -translate-y-1/2 text-sm text-muted-foreground">{CURRENCIES[currency as CurrencyCode]?.symbol ?? "$"}</span>
-            <input autoFocus type="number" min={0} value={limit} onChange={(e) => setLimit(e.target.value)} placeholder="Total budget"
+            <input autoFocus type="text" inputMode="decimal" value={formatAmountInput(limit, currency)} onChange={(e) => setLimit(e.target.value.replace(/[^\d.]/g, ""))} placeholder="Total budget"
               className="w-full rounded-2xl border border-line bg-pearl pl-8 pr-4 py-2.5 text-sm tabular-nums focus:outline-none focus:ring-2 focus:ring-clay" />
           </div>
         )}
