@@ -195,7 +195,7 @@ function AuthPage() {
     if (!sentTo) return;
     setResendNote(null);
     const { error } = await supabase.auth.resend({ type: "signup", email: sentTo, options: { emailRedirectTo: `${window.location.origin}/auth?verified=1` } });
-    setResendNote(error ? error.message : "Sent again. It can take a minute to arrive.");
+    setResendNote(error ? error.message : "Sent again.");
   };
 
   const onEmail = async (e: React.FormEvent) => {
