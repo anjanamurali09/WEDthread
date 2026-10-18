@@ -1,7 +1,9 @@
 import { Link, useRouter, useLocation } from "@tanstack/react-router";
+import { GuidedTour, findTourTarget } from "@/components/guided-tour";
+import { WELCOME_TOUR, PAGE_TOURS, hasSeenTour, markTourSeen, type Tour } from "@/lib/tours";
 import { useCurrentWedding, useSignOut } from "@/lib/wedding-hooks";
 import { useIntegrationAutoSync } from "@/lib/integrations";
-import { CalendarDays, LayoutDashboard, Users, Armchair, MessageCircle, Globe, LogOut, Store, MapPin, Gift, ChevronDown, Plus, Inbox, ListChecks, Utensils, Wallet, PanelLeftClose, PanelLeftOpen, Settings, NotebookPen, Star, Search, ShieldCheck } from "lucide-react";
+import { CalendarDays, LayoutDashboard, Users, Armchair, MessageCircle, Globe, LogOut, Store, MapPin, Gift, ChevronDown, Plus, Inbox, ListChecks, Utensils, Wallet, PanelLeftClose, PanelLeftOpen, Compass, Settings, NotebookPen, Star, Search, ShieldCheck } from "lucide-react";
 import type { ReactNode } from "react";
 import { useEffect, useState } from "react";
 import { useActiveRole, type AppRole } from "@/hooks/use-active-role";
@@ -148,6 +150,33 @@ export function AppShell({ children, title, subtitle, actions, decor }: { childr
   useIntegrationAutoSync(wedding?.id);
   const [feedbackOpen, setFeedbackOpen] = useState(false);
 
+  // Guided tours (see lib/tours.ts): the welcome tour on the overview and a short one for each page, each shown the
+  // first time it is opened, and replayable from the Tour button. Only for couples and planners.
+  const tourEnabled = active === "couple" || active === "planner";
+  const [tour, setTour] = useState<Tour | null>(null);
+  const tourFor = (): Tour | null => (pathname === "/dashboard" ? WELCOME_TOUR : PAGE_TOURS[pathname] ?? null);
+  const startTour = (force: boolean) => {
+    const def = tourFor() ?? (force ? WELCOME_TOUR : null);
+    if (!def || (!force && hasSeenTour(def.id))) return false;
+    const steps = def.steps.filter((st) => !st.target || findTourTarget(st.target));
+    if (steps.length === 0) return false;
+    setTour({ id: def.id, steps });
+    return true;
+  };
+  useEffect(() => {
+    if (!tourEnabled || weddingLoading || !wedding) return;
+    const def = tourFor();
+    if (!def || hasSeenTour(def.id)) return;
+    // The page may still be loading its content, so look again a few times before giving up.
+    let tries = 0;
+    const timer = window.setInterval(() => {
+      tries += 1;
+      const present = def.steps.filter((st) => !st.target || findTourTarget(st.target)).length;
+      if (present === def.steps.length || tries >= 8) { window.clearInterval(timer); startTour(false); }
+    }, 700);
+    return () => window.clearInterval(timer);
+  }, [pathname, tourEnabled, weddingLoading, wedding?.id]); // eslint-disable-line react-hooks/exhaustive-deps
+
   const [prefCollapsed, setCollapsed] = useState(() => {
     try { return localStorage.getItem(SIDEBAR_COLLAPSED_KEY) === "1"; } catch { return false; }
   });
@@ -204,7 +233,7 @@ export function AppShell({ children, title, subtitle, actions, decor }: { childr
           {nav.map(({ to, label, icon: Icon }) => {
             const isActive = pathname === to || pathname.startsWith(to + "/");
             return (
-              <Link key={to} to={to as any} data-static title={collapsed ? label : undefined}
+              <Link key={to} to={to as any} data-static data-tour={`nav-${to.replace(/\//g, "-")}`} title={collapsed ? label : undefined}
                 className={`flex items-center gap-3 rounded-full px-4 py-2.5 text-sm transition-all ${collapsed ? "justify-center px-0" : ""} ${
                   isActive
                     ? "bg-wine text-cream font-medium shadow-md"
@@ -216,6 +245,7 @@ export function AppShell({ children, title, subtitle, actions, decor }: { childr
           })}
           {showDiscover && (<>
           {!collapsed && <p className="mt-6 px-3 pb-2 text-sm uppercase tracking-widest text-cherry">Discover</p>}
+          <div data-tour="discover">
           {discover.map(({ to, label, icon: Icon }) => {
             const isActive = pathname === to || pathname.startsWith(to + "/");
             return (
@@ -229,11 +259,12 @@ export function AppShell({ children, title, subtitle, actions, decor }: { childr
               </Link>
             );
           })}
+          </div>
           </>)}
         </nav>
         <div className="p-3 border-t border-line/60">
           {active && (
-            <Link to={SETTINGS_PATH[active] as any} data-static title={collapsed ? "Settings" : undefined}
+            <Link to={SETTINGS_PATH[active] as any} data-static data-tour="nav-settings" title={collapsed ? "Settings" : undefined}
               className={`flex items-center gap-3 rounded-full px-4 py-2.5 text-sm transition-all mb-1 ${collapsed ? "justify-center px-0" : ""} ${
                 pathname === SETTINGS_PATH[active] || pathname.startsWith(SETTINGS_PATH[active] + "/")
                   ? "bg-cherry text-pearl font-medium shadow-md"
@@ -241,6 +272,12 @@ export function AppShell({ children, title, subtitle, actions, decor }: { childr
               }`}>
               <Settings className="h-4 w-4 shrink-0" /> {!collapsed && "Settings"}
             </Link>
+          )}
+          {tourEnabled && (
+            <button data-static onClick={() => startTour(true)} title={collapsed ? "Tour" : "Replay the tour for this page"}
+              className={`flex w-full items-center gap-3 rounded-full px-4 py-2.5 text-sm mb-1 transition-all cursor-pointer ${collapsed ? "justify-center px-0" : ""} text-ink hover:bg-blush-soft/70 hover:text-cherry`}>
+              <Compass className="h-4 w-4 shrink-0" /> {!collapsed && "Tour"}
+            </button>
           )}
           {(active === "couple" || active === "planner") && (
             <button data-static onClick={() => setFeedbackOpen(true)} title={collapsed ? "Feedback" : undefined}
@@ -269,13 +306,14 @@ export function AppShell({ children, title, subtitle, actions, decor }: { childr
         {(title || actions) && (
           <header className="px-4 md:px-10 pt-8 md:pt-12 pb-6 flex flex-wrap items-end justify-between gap-4">
             <div>
-              {title && <h1 className="font-serif text-3xl md:text-5xl text-ink leading-[0.95]">{title}</h1>}
+              {title && <h1 data-tour="page-title" className="font-serif text-3xl md:text-5xl text-ink leading-[0.95]">{title}</h1>}
             </div>
             {actions}
           </header>
         )}
 
-        <div className="px-4 md:px-10 pb-16">{children}</div>
+        <div data-tour="page-body" className="px-4 md:px-10 pb-16">{children}</div>
+        {tour && <GuidedTour steps={tour.steps} onClose={() => { markTourSeen(tour.id); setTour(null); }} />}
       </main>
     </div>
   );
