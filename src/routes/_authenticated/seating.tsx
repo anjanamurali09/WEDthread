@@ -3,20 +3,22 @@ import { useEffect, useLayoutEffect, useMemo, useRef, useState, useCallback } fr
 import { createPortal } from "react-dom";
 import { CustomColorButton } from "@/components/custom-color";
 import {
-  DndContext, DragOverlay, closestCenter, PointerSensor, useSensor, useSensors,
-  useDraggable, useDroppable, type DragEndEvent, type DragStartEvent,
+  DndContext, DragOverlay, pointerWithin, closestCenter, PointerSensor, useSensor, useSensors, MeasuringStrategy,
+  useDraggable, useDroppable, type DragEndEvent, type DragStartEvent, type Modifier, type CollisionDetection,
 } from "@dnd-kit/core";
+import { getEventCoordinates } from "@dnd-kit/utilities";
 import { AppShell } from "@/components/app-shell";
 import { useCurrentWedding, useEvents, useGuests, useInvites } from "@/lib/wedding-hooks";
 import { supabase } from "@/integrations/supabase/client";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "@/lib/toast";
-import { Plus, X, Trash2, Circle, Square, RectangleHorizontal, Music, GlassWater, Mic, DoorOpen, Palette, Users, Armchair, Check, CalendarDays, Download, Settings, ZoomIn, ZoomOut, ArrowRight, ArrowDown, ArrowUp, ArrowLeft, Maximize2, Minimize2, SlidersHorizontal, Search, BoxSelect } from "lucide-react";
+import { Plus, X, Trash2, Circle, Square, RectangleHorizontal, Music, GlassWater, Mic, DoorOpen, Palette, Users, Armchair, Check, CalendarDays, Download, Settings, ZoomIn, ZoomOut, ArrowRight, ArrowDown, ArrowUp, ArrowLeft, Maximize2, Minimize2, SlidersHorizontal, Search, BoxSelect, RotateCw } from "lucide-react";
 import { OvalPhotoOrnament } from "@/components/photo-empty-state";
 import { ConfirmDialog } from "@/components/confirm-dialog";
 import { Dropdown } from "@/components/dropdown";
 import { Popover, PopoverTrigger, PopoverContent } from "@/components/ui/popover";
 import { ResizeHandle } from "@/components/resize-handle";
+import { FitLabel, TextFrame } from "@/components/fit-label";
 import { exportSeatingPdf } from "@/lib/seating-export";
 import {
   type ShapeKey, SHAPE_DEFAULT_SIZE, MIN_CHAIR_SIZE, MIN_CHAIR_FONT, type ChairTier, chairTierFor, abbreviateTableLabel, getInitials,
@@ -31,6 +33,28 @@ const AREA_SUGGESTIONS = ["Dance floor", "Bar", "Entrance", "Stage", "DJ booth",
 
 const DEFAULT_SHAPE_CAPACITY: Record<ShapeKey, number> = { round: 8, rect: 10, square: 4 };
 const SHAPE_LABELS: Record<ShapeKey, string> = { round: "Round", rect: "Rectangular", square: "Square" };
+
+// The little initials circle that follows the pointer while a guest is dragged is centred right on the pointer. Without
+// this it sits where the (much wider) name chip was, so the pointer ends up well away from the circle.
+const snapCenterToCursor: Modifier = ({ activatorEvent, draggingNodeRect, transform }) => {
+  if (draggingNodeRect && activatorEvent) {
+    const point = getEventCoordinates(activatorEvent);
+    if (!point) return transform;
+    return {
+      ...transform,
+      x: transform.x + point.x - draggingNodeRect.left - draggingNodeRect.width / 2,
+      y: transform.y + point.y - draggingNodeRect.top - draggingNodeRect.height / 2,
+    };
+  }
+  return transform;
+};
+
+// What is under the pointer wins; only when nothing is, the nearest centre does. Much less work per pointer move than
+// measuring the distance to every seat and table on the floor plan.
+const dropTarget: CollisionDetection = (args) => {
+  const within = pointerWithin(args);
+  return within.length > 0 ? within : closestCenter(args);
+};
 
 export const Route = createFileRoute("/_authenticated/seating")({
   component: SeatingPage,
@@ -538,7 +562,9 @@ function SeatingPage() {
       ) : (
       <DndContext
         sensors={sensors}
-        collisionDetection={closestCenter}
+        collisionDetection={dropTarget}
+        // Seat and table positions are measured once when a drag starts, not again on every move.
+        measuring={{ droppable: { strategy: MeasuringStrategy.BeforeDragging } }}
         onDragStart={(e: DragStartEvent) => setActiveGuestId(e.active.id as string)}
         onDragCancel={() => setActiveGuestId(null)}
         onDragEnd={handleGuestDrop}
@@ -648,7 +674,7 @@ function SeatingPage() {
         {/* Visible feedback that follows the cursor during a drag — previously nothing
             appeared until drop. Reused for both a fresh sidebar drag and repositioning an
             already-seated chip, same look either way. */}
-        <DragOverlay>
+        <DragOverlay modifiers={[snapCenterToCursor]} dropAnimation={null}>
           {activeGuestId && (() => {
             const g = guests.find((x: any) => x.id === activeGuestId);
             if (!g) return null;
@@ -922,22 +948,26 @@ function Toolbar({ floorColor, onFloor, onAddTable, onAddFixture, onOpenSettings
         })}
       </div>
       <ToolbarDivider beforePill />
-      <div className="relative shrink-0">
-        <button onClick={() => setColorOpen((o) => !o)} className="inline-flex items-center gap-1.5 rounded-full border border-neutral-300 px-2 py-1.5 text-xs hover:bg-stone cursor-pointer whitespace-nowrap">
-          <Palette className="h-3.5 w-3.5" /> Floor
-          <span className="inline-block h-4 w-4 rounded-full border border-neutral-300" style={{ background: floorColor }} />
-        </button>
-        {colorOpen && (
-          <div className="absolute z-30 top-full mt-2 p-2 rounded-2xl bg-paper border border-neutral-300 shadow-lg flex gap-1.5">
+      <Popover open={colorOpen} onOpenChange={setColorOpen}>
+        <PopoverTrigger asChild>
+          <button className="inline-flex items-center gap-1.5 rounded-full border border-neutral-300 px-2 py-1.5 text-xs hover:bg-stone cursor-pointer whitespace-nowrap shrink-0">
+            <Palette className="h-3.5 w-3.5" /> Floor
+            <span className="inline-block h-4 w-4 rounded-full border border-neutral-300" style={{ background: floorColor }} />
+          </button>
+        </PopoverTrigger>
+        {/* Opens in its own layer above the toolbar, which scrolls sideways and would otherwise cut it off. */}
+        <PopoverContent align="start" className="w-auto p-2.5 rounded-2xl border border-neutral-300 bg-paper shadow-lg">
+          <p className="mb-2 text-xs text-muted-foreground">Floor colour</p>
+          <div className="flex items-center gap-2">
             {FLOORS.map((c) => (
               <button key={c} onClick={() => { onFloor(c); setColorOpen(false); }}
-                className="h-6 w-6 rounded-full border border-neutral-300 cursor-pointer hover:scale-110 transition-transform"
-                style={{ background: c }} aria-label={c} />
+                className={cn("h-7 w-7 rounded-full border cursor-pointer hover:scale-110 transition-transform", floorColor === c ? "border-ink ring-2 ring-ink/30" : "border-neutral-300")}
+                style={{ background: c }} aria-label={`Floor colour ${c}`} />
             ))}
-            <CustomColorButton className="h-6 w-6" value={floorColor} active={!FLOORS.includes(floorColor)} onChange={onFloor} />
+            <CustomColorButton className="h-7 w-7" value={floorColor} active={!FLOORS.includes(floorColor)} onChange={onFloor} />
           </div>
-        )}
-      </div>
+        </PopoverContent>
+      </Popover>
       <button onClick={onOpenSettings} title="Floor areas & table defaults"
         className="inline-flex items-center gap-1.5 rounded-full border border-neutral-300 px-2 py-1.5 text-xs hover:bg-stone cursor-pointer whitespace-nowrap shrink-0">
         <Settings className="h-3.5 w-3.5" /> Settings
@@ -1620,8 +1650,15 @@ function TableNode({ table, seated, bounds, canvasRef, selected, onSelect, onUpd
           boxShadow: grouped ? GROUP_GLOW : "0 4px 14px rgba(26,21,18,0.12)",
         }}
       >
-        <p className={cn("font-sans font-medium leading-tight text-ink truncate max-w-full", labelSize)}>{displayLabel}</p>
-        {!noCapacity && <p className={cn("text-ink truncate max-w-full", subSize)}>{formatNumber(seated.length)}/{formatNumber(table.seats)}</p>}
+        {/* The label and seat count size themselves to the table, never cut off, and can be turned on their side. */}
+        <TextFrame width={isRound ? size.w * 0.72 : size.w - 20} height={isRound ? size.h * 0.6 : size.h - 16} rotation={table.rotation ?? 0}>
+          {({ w, h }) => (
+            <>
+              <FitLabel text={table.label} boxW={w} boxH={noCapacity ? h : h * 0.6} max={16} min={10} weight={500} className="text-ink" />
+              {!noCapacity && <FitLabel text={`${formatNumber(seated.length)}/${formatNumber(table.seats)}`} boxW={w} boxH={h * 0.36} max={14} min={9} weight={400} className="text-ink" />}
+            </>
+          )}
+        </TextFrame>
       </div>
 
       {selected && (
@@ -1670,6 +1707,8 @@ function TableNode({ table, seated, bounds, canvasRef, selected, onSelect, onUpd
                 })} />
               )}
               <ColorPicker value={table.mat_color ?? "#F5EEDC"} presets={TABLECLOTHS} onChange={(c) => onUpdate({ mat_color: c })} />
+              <button type="button" onClick={() => onUpdate({ rotation: ((table.rotation ?? 0) + 90) % 360 })} title="Turn the text a quarter turn"
+                className="p-1 rounded-full hover:bg-stone text-muted-foreground cursor-pointer shrink-0"><RotateCw className="h-3.5 w-3.5" /></button>
               <button onClick={onDelete} className="p-1 rounded-full hover:bg-stone text-muted-foreground cursor-pointer shrink-0">
                 <Trash2 className="h-3.5 w-3.5" />
               </button>
@@ -1825,7 +1864,7 @@ function FixtureNode({ fixture, bounds, canvasRef, selected, onSelect, onUpdate,
       className={`select-none cursor-move ${selected ? "z-20" : "z-0"}`}
     >
       <div
-        className={`w-full h-full flex items-center justify-center text-center text-sm font-medium tracking-wide uppercase transition-shadow ${isRound ? "px-4" : "px-2.5"} py-1.5 ${selected ? "ring-2 ring-ink" : ""}`}
+        className={`relative w-full h-full flex items-center justify-center text-center transition-shadow ${selected ? "ring-2 ring-ink" : ""}`}
         style={{
           background: fixture.color ?? "#EDE7DA",
           borderRadius: isRound ? "50%" : 8,
@@ -1834,7 +1873,9 @@ function FixtureNode({ fixture, bounds, canvasRef, selected, onSelect, onUpdate,
           boxShadow: grouped ? GROUP_GLOW : undefined,
         }}
       >
-        <span className="truncate max-w-full">{fixture.label}</span>
+        <TextFrame width={isRound ? size.w * 0.72 : size.w - 16} height={isRound ? size.h * 0.6 : size.h - 12} rotation={fixture.rotation ?? 0}>
+          {({ w, h }) => <FitLabel text={fixture.label ?? ""} boxW={w} boxH={h} max={14} min={9} weight={500} spacingEm={0.04} uppercase />}
+        </TextFrame>
       </div>
 
       {selected && (
@@ -1862,6 +1903,8 @@ function FixtureNode({ fixture, bounds, canvasRef, selected, onSelect, onUpdate,
               <ColorPicker value={fixture.color ?? "#EDE7DA"}
                 presets={["#3B2A1E", "#4C1D24", "#C7A96B", "#E9D8FD", "#2A3B36", "#FADADD"]}
                 onChange={(c) => onUpdate({ color: c })} />
+              <button type="button" onClick={() => onUpdate({ rotation: ((fixture.rotation ?? 0) + 90) % 360 })} title="Turn the text a quarter turn"
+                className="p-1 rounded-full hover:bg-stone text-muted-foreground cursor-pointer shrink-0"><RotateCw className="h-3.5 w-3.5" /></button>
               <button onClick={onDelete} className="p-1 rounded-full hover:bg-stone text-muted-foreground cursor-pointer">
                 <Trash2 className="h-3.5 w-3.5" />
               </button>
@@ -1920,8 +1963,10 @@ function AreaNode({ area, bounds, canvasRef, selected, onSelect, onUpdate, onDel
         className={`absolute inset-0 rounded-2xl border border-dashed ${selected ? "ring-2 ring-ink border-ink/40" : "border-ink/15"}`}
         style={{ background: area.color ?? AREA_COLORS[0], opacity: 0.4 }}
       />
-      <div className="absolute inset-0 flex items-center justify-center pointer-events-none px-3 py-2">
-        <span className="text-sm font-medium tracking-wide uppercase text-ink text-center truncate max-w-full">{area.label}</span>
+      <div className="absolute inset-0 pointer-events-none text-ink">
+        <TextFrame width={size.w - 20} height={size.h - 16} rotation={area.text_rotation ?? 0}>
+          {({ w, h }) => <FitLabel text={area.label ?? ""} boxW={w} boxH={h} max={18} min={9} weight={500} spacingEm={0.04} uppercase />}
+        </TextFrame>
       </div>
 
       {selected && (
@@ -1942,6 +1987,8 @@ function AreaNode({ area, bounds, canvasRef, selected, onSelect, onUpdate, onDel
                 className="w-16 text-sm bg-transparent border-b border-line focus:outline-none focus:border-clay"
               />
               <ColorPicker value={area.color ?? AREA_COLORS[0]} presets={AREA_COLORS} onChange={(c) => onUpdate({ color: c })} />
+              <button type="button" onClick={() => onUpdate({ text_rotation: ((area.text_rotation ?? 0) + 90) % 360 })} title="Turn the text a quarter turn"
+                className="p-1 rounded-full hover:bg-stone text-muted-foreground cursor-pointer shrink-0"><RotateCw className="h-3.5 w-3.5" /></button>
               <button onClick={onDelete} className="p-1 rounded-full hover:bg-stone text-muted-foreground cursor-pointer shrink-0">
                 <Trash2 className="h-3.5 w-3.5" />
               </button>
