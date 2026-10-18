@@ -1,3 +1,4 @@
+import * as React from "react";
 import { Clock, Check } from "lucide-react";
 
 import { cn } from "@/lib/utils";
@@ -28,8 +29,9 @@ const TIME_OPTIONS = Array.from({ length: 24 * 4 }, (_, i) => {
 });
 
 export function TimePicker({ value, onChange, placeholder = "Pick a time", className, disabled }: TimePickerProps) {
+  const [open, setOpen] = React.useState(false);
   return (
-    <Popover>
+    <Popover open={open} onOpenChange={setOpen}>
       <PopoverTrigger asChild>
         <Button
           type="button"
@@ -50,7 +52,9 @@ export function TimePicker({ value, onChange, placeholder = "Pick a time", class
           <button
             type="button"
             key={o.value}
-            onClick={() => onChange(o.value)}
+            // The list opens scrolled to the time already picked.
+            ref={value === o.value ? (el) => el?.scrollIntoView({ block: "center" }) : undefined}
+            onClick={() => { onChange(o.value); setOpen(false); }}
             className={cn(
               "w-full text-left px-3 py-2 text-sm rounded-xl hover:bg-blush-soft cursor-pointer flex items-center justify-between gap-2",
               value === o.value && "font-medium",

@@ -1,4 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
+import { preparePhotoForUpload } from "@/lib/prepare-upload";
 import { coupleName } from "@/lib/partner-names";
 import { track } from "@/lib/analytics";
 import { useEffect, useState } from "react";
@@ -194,9 +195,10 @@ function RegistryPage() {
   };
   const stopEdit = () => { setEditingId(null); setFund(null); setForm(BLANK_FORM); };
 
-  const uploadPhoto = async (file: File) => {
-    if (!wedding || !file.type.startsWith("image/")) return;
+  const uploadPhoto = async (original: File) => {
+    if (!wedding || !original.type.startsWith("image/")) return;
     setUploading(true);
+    const file = await preparePhotoForUpload(original);
     const ext = file.name.split(".").pop() || "png";
     const path = `${wedding.id}/registry/${Date.now()}.${ext}`;
     const { error } = await supabase.storage.from("wedding-assets").upload(path, file, { upsert: true });

@@ -1,4 +1,5 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
+import { preparePhotoForUpload } from "@/lib/prepare-upload";
 import { track } from "@/lib/analytics";
 import { useRef, useState } from "react";
 import { AppShell } from "@/components/app-shell";
@@ -184,8 +185,10 @@ function EventsPage() {
   // Reuses the same couple photo shown on the dashboard mindmap (wedding.
   // couple_photo_url) rather than a new field — one "this is us" photo for
   // the wedding, kept in sync wherever it appears, no new migration needed.
-  const uploadEventsPhoto = async (file: File) => {
+  const uploadEventsPhoto = async (original: File) => {
     if (!wedding) return;
+    // Phone photos are several MB; shrinking them first makes the upload much quicker.
+    const file = await preparePhotoForUpload(original);
     const ext = file.name.split(".").pop() || "jpg";
     const path = `${wedding.id}/couple-photo-${Date.now()}.${ext}`;
     const { error } = await supabase.storage.from("wedding-assets").upload(path, file, { upsert: true });
@@ -266,7 +269,7 @@ function EventsPage() {
                   the available space — a long event list or a long agenda shouldn't push
                   the other panes (or the photo) around. max-h, capped a touch taller than
                   before (14.5rem of headroom instead of 17rem). */}
-              <div className="lg:sticky lg:top-40 lg:max-h-[calc(100vh-14.5rem)] lg:overflow-y-auto lg:no-scrollbar lg:pr-1">
+              <div className="lg:sticky lg:top-40 lg:self-start lg:h-[min(638px,calc(100vh-14.5rem))] lg:overflow-y-auto lg:no-scrollbar">
                 <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={onDragEnd}>
                   <SortableContext items={events.map((e) => e.id)} strategy={verticalListSortingStrategy}>
                     <div className="grid gap-4">
@@ -429,7 +432,7 @@ function EventsPhotoPanel({ photoUrl, zoom, panX, panY, onUpload, onCropChange }
   };
 
   return (
-    <div className="mt-8 lg:mt-0 lg:sticky lg:top-40 lg:h-[calc(100vh-14.5rem)] lg:max-h-[638px] mx-auto lg:max-w-[380px] w-full">
+    <div className="mt-8 lg:mt-0 lg:sticky lg:top-40 lg:self-start lg:h-[min(638px,calc(100vh-14.5rem))] mx-auto lg:max-w-[380px] w-full">
       <div ref={frameRef} className="group relative aspect-[4/5] lg:aspect-auto lg:h-full rounded-3xl overflow-hidden border border-line bg-stone">
         <input ref={fileRef} type="file" accept="image/*" hidden onChange={(e) => { handleFile(e.target.files?.[0]); e.target.value = ""; }} />
         {photoUrl ? (
@@ -490,7 +493,7 @@ function AgendaPreview({ events }: { events: Event[] }) {
   const formatTime = (t: string | null | undefined) => t ? new Date(`2000-01-01T${t}`).toLocaleTimeString(undefined, { hour: "numeric", minute: "2-digit" }) : null;
 
   return (
-    <div className="rounded-3xl border border-line bg-paper p-8 mt-8 lg:mt-0 lg:sticky lg:top-40 lg:max-h-[calc(100vh-14.5rem)] flex flex-col">
+    <div className="rounded-3xl border border-line bg-paper p-8 mt-8 lg:mt-0 lg:sticky lg:top-40 lg:self-start lg:h-[min(638px,calc(100vh-14.5rem))] flex flex-col">
       <p className="text-sm uppercase tracking-widest text-muted-foreground shrink-0">Preview</p>
       <h2 className="font-serif text-3xl mt-1 shrink-0">Agenda</h2>
 

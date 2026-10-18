@@ -30,9 +30,10 @@ export function DatePicker({
   displayFormat = "PPP",
 }: DatePickerProps) {
   const date = value ? new Date(value + "T00:00:00") : undefined;
+  const [open, setOpen] = React.useState(false);
 
   return (
-    <Popover>
+    <Popover open={open} onOpenChange={setOpen}>
       <PopoverTrigger asChild>
         <Button
           variant="outline"
@@ -52,7 +53,9 @@ export function DatePicker({
         <Calendar
           mode="single"
           selected={date}
-          onSelect={(d) => onChange(d ? format(d, "yyyy-MM-dd") : "")}
+          onSelect={(d) => { onChange(d ? format(d, "yyyy-MM-dd") : ""); if (d) setOpen(false); }}
+          // Opens on the month of the date already picked.
+          defaultMonth={date}
           initialFocus
           className="p-3 pointer-events-auto"
         />

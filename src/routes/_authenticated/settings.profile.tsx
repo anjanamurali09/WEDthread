@@ -82,8 +82,8 @@ function ProfileSettingsPage() {
             <F label="Partner 2" required value={form.partner_b} onChange={(v) => setField("partner_b", v)} />
           </div>
           <div className="grid md:grid-cols-2 gap-4">
-            <F label="Destination city" value={form.destination_city} onChange={(v) => setField("destination_city", v)} />
-            <F label="Destination country" value={form.destination_country} onChange={(v) => setField("destination_country", v)} />
+            <F label="Wedding city" value={form.destination_city} onChange={(v) => setField("destination_city", v)} />
+            <F label="Wedding country" value={form.destination_country} onChange={(v) => setField("destination_country", v)} />
           </div>
           <F label="Estimated guest count" type="number" value={form.est_guest_count} onChange={(v) => setField("est_guest_count", v)} />
 

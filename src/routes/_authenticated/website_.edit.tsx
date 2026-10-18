@@ -1,4 +1,5 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
+import { preparePhotoForUpload } from "@/lib/prepare-upload";
 import { coupleName, partnerOne, partnerTwo } from "@/lib/partner-names";
 import { createContext, useContext, useEffect, useMemo, useRef, useState } from "react";
 import { AppShell, SIDEBAR_COLLAPSED_KEY } from "@/components/app-shell";
@@ -645,8 +646,9 @@ function SectionEditor({ section, weddingId, events, pageLayout, onChange }: {
   const setFocal = (x: number, y: number) =>
     onChange({ content: { ...section.content, focalX: x, focalY: y } });
 
-  const uploadImage = async (file: File) => {
+  const uploadImage = async (original: File) => {
     setUploading(true);
+    const file = await preparePhotoForUpload(original);
     const ext = file.name.split(".").pop() || "jpg";
     const path = `${weddingId}/website/${section.id}-${Date.now()}.${ext}`;
     const { error } = await supabase.storage.from("wedding-assets").upload(path, file, { upsert: true });
@@ -881,8 +883,8 @@ function GalleryEditor({ section, weddingId, setField }: { section: Section; wed
     const added: MediaItem[] = [];
     const list = Array.from(files);
     for (let i = 0; i < list.length; i++) {
-      const f = list[i];
       setBusy(`Uploading ${i + 1} of ${list.length}…`);
+      const f = await preparePhotoForUpload(list[i]);
       const ext = f.name.split(".").pop() || "jpg";
       const path = `${weddingId}/website/${section.id}-gallery-${Date.now()}-${i}.${ext}`;
       const { error: err } = await supabase.storage.from("wedding-assets").upload(path, f, { upsert: true });
@@ -1439,8 +1441,9 @@ function BackgroundPopover({ weddingId, bg, onChange, decoration, templateDecor,
   const [opacity, setOpacity] = useState(bg?.opacity ?? 100);
   const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
   useEffect(() => { setOpacity(bg?.opacity ?? 100); }, [bg?.opacity]);
-  const upload = async (file: File) => {
+  const upload = async (original: File) => {
     setUploading(true); setError(null);
+    const file = await preparePhotoForUpload(original);
     const ext = file.name.split(".").pop() || "png";
     const path = `${weddingId}/website/background-${Date.now()}.${ext}`;
     const { error: err } = await supabase.storage.from("wedding-assets").upload(path, file, { upsert: true });
