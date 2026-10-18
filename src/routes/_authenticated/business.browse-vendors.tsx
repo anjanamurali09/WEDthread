@@ -2,17 +2,18 @@ import { createFileRoute } from "@tanstack/react-router";
 import { AppShell } from "@/components/app-shell";
 import { VendorDirectoryContent } from "@/routes/v";
 
-export const Route = createFileRoute("/_authenticated/business/browse-vendors")({ component: BrowseVendorsPage });
+export const Route = createFileRoute("/_authenticated/business/browse-vendors")({
+  // ?group=photographers (from the icon row) opens the page filtered to that kind of vendor, as on the public page.
+  validateSearch: (s: Record<string, unknown>): { group?: string } => ({ ...(typeof s.group === "string" ? { group: s.group } : {}) }),
+  component: BrowseVendorsPage,
+});
 
-// Same filter/grid as the public /v marketplace — reused directly
-// (VendorDirectoryContent), not duplicated — just embedded inside the app
-// shell so the sidebar stays put. Cards link straight to the real public
-// listing page (/v/$businessId), same as business.browse-venues.tsx does
-// for venues — no separate inline detail view.
+// The full vendor marketplace, exactly as it looks before signing in (banner, quiz, type rows, filters), reused
+// directly rather than copied, inside the app shell so the sidebar stays put. Cards link to the real public listing page.
 function BrowseVendorsPage() {
   return (
-    <AppShell title="Browse vendors" subtitle="The same marketplace couples search. See how your own listing shows up alongside everyone else's.">
-      <VendorDirectoryContent embedded />
+    <AppShell>
+      <VendorDirectoryContent bare />
     </AppShell>
   );
 }

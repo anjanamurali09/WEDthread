@@ -4,14 +4,12 @@ import { VenueDirectoryContent } from "@/routes/venue";
 
 export const Route = createFileRoute("/_authenticated/business/browse-venues")({ component: BrowseVenuesPage });
 
-// Same filter/grid as the public /venue marketplace — reused directly
-// (VenueDirectoryContent), not duplicated — just embedded inside the app
-// shell so the sidebar stays put instead of navigating out to the bare
-// public page. Same pattern as business.browse-vendors.tsx.
+// The full venue marketplace, exactly as it looks before signing in (banner, quiz, style rows, filters), reused
+// directly rather than copied, inside the app shell so the sidebar stays put.
 function BrowseVenuesPage() {
   return (
-    <AppShell title="Browse venues" subtitle="The same marketplace couples search.">
-      <VenueDirectoryContent embedded />
+    <AppShell>
+      <VenueDirectoryContent bare />
     </AppShell>
   );
 }

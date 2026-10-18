@@ -33,8 +33,8 @@ function Strip({ items, active, label }: { items: StripItem[]; active: string[];
   );
 }
 
-export function VendorCategoryStrip({ active }: { active: string | null }) {
-  const items = VENDOR_GROUPS.map((g) => ({ key: g.key, label: g.label, icon: g.icon, to: "/v", search: { group: g.key } }));
+export function VendorCategoryStrip({ active, to = "/v" }: { active: string | null; to?: string }) {
+  const items = VENDOR_GROUPS.map((g) => ({ key: g.key, label: g.label, icon: g.icon, to, search: { group: g.key } }));
   return <Strip items={items} active={active ? [active] : []} label="Browse vendors by type" />;
 }
 

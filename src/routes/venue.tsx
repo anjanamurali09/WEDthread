@@ -58,7 +58,9 @@ type VenueRow = {
 // inside the app shell — same data, same component, just embedded without
 // the public page's own header/hero. Same pattern as v.tsx's
 // VendorDirectoryContent.
-export function VenueDirectoryContent({ embedded = false }: { embedded?: boolean }) {
+// `embedded` is the old stripped-down view (filters and grid only). `bare` is the full marketplace, exactly as it
+// looks before signing in, but without the page's own side padding, for placing inside the signed-in app.
+export function VenueDirectoryContent({ embedded = false, bare = false }: { embedded?: boolean; bare?: boolean }) {
   const [loading, setLoading] = useState(true);
   const [venues, setVenues] = useState<VenueRow[]>([]);
   const [typeFilter, setTypeFilter] = useState<string[]>([]);
@@ -204,7 +206,7 @@ export function VenueDirectoryContent({ embedded = false }: { embedded?: boolean
   }, [venues, typeFilter, guestMin, guestMax, priceTiers, city, country, search]);
 
   return (
-    <div className={embedded ? undefined : "px-6 md:px-12 py-8"}>
+    <div className={embedded || bare ? undefined : "px-6 md:px-12 py-8"}>
       {!embedded && (
         <>
           <VenueSpaceStrip spaces={TYPE_OF_SPACE_OPTIONS} selected={typeFilter}

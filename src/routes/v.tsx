@@ -50,7 +50,9 @@ type ServiceRow = VendorServiceCardData & { price_range_min: number | null; pric
 // same search/filter/grid inside the app shell — same data, same component,
 // just embedded without the public page's own header/hero. Same pattern as
 // venue.tsx's VenueDirectoryContent.
-export function VendorDirectoryContent({ embedded = false }: { embedded?: boolean }) {
+// `embedded` is the old stripped-down view (filters and grid only). `bare` is the full marketplace, exactly as it
+// looks before signing in, but without the page's own side padding, for placing inside the signed-in app.
+export function VendorDirectoryContent({ embedded = false, bare = false }: { embedded?: boolean; bare?: boolean }) {
   const [loading, setLoading] = useState(true);
   const { categories } = useVendorCategories();
   const [categoryIds, setCategoryIds] = useState<string[]>([]);
@@ -205,10 +207,10 @@ export function VendorDirectoryContent({ embedded = false }: { embedded?: boolea
   }, [services, categoryIds, categories, priceTiers, country, city, search]);
 
   return (
-    <div className={embedded ? undefined : "px-6 md:px-12 py-8"}>
+    <div className={embedded || bare ? undefined : "px-6 md:px-12 py-8"}>
       {!embedded && (
         <>
-          <VendorCategoryStrip active={group ?? null} />
+          <VendorCategoryStrip active={group ?? null} to={bare ? "/business/browse-vendors" : "/v"} />
           <MarketHero
             title={<>Find the perfect vendor in <br />{placePicker}</>}
             photo={heroPhoto}

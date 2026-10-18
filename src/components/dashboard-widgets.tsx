@@ -134,8 +134,8 @@ function widgetLink(type: WidgetType): any {
     case "menu": return "/menu";
     case "seating": return "/seating";
     case "registry": return "/registry";
-    case "discover_venues": return "/venues";
-    case "discover_vendors": return "/vendors";
+    case "discover_venues": return "/business/browse-venues";
+    case "discover_vendors": return "/business/browse-vendors";
     case "whatsapp": return "/messages";
   }
 }
