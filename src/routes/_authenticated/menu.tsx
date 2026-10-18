@@ -13,6 +13,9 @@ import { TagPicker, TagChip } from "@/components/tag-picker";
 import { ConfirmDialog } from "@/components/confirm-dialog";
 import { Dropdown } from "@/components/dropdown";
 import { exportMenuExcel, exportMenuPdf } from "@/lib/menu-export";
+import { usePersistedState } from "@/hooks/use-persisted-state";
+import { getTemplate } from "@/lib/website-templates";
+import { useGoogleFonts } from "@/lib/google-fonts";
 
 export const Route = createFileRoute("/_authenticated/menu")({
   component: MenuPage,
@@ -53,6 +56,11 @@ function MenuPage() {
   const { data: foodTags = [] } = useFoodTags(wedding?.id);
   const foodActions = useFoodTagActions(wedding?.id, foodTags);
   const foodCtx = useMemo<FoodTagsCtx>(() => ({ tags: foodTags, ...foodActions }), [foodTags, wedding?.id]); // eslint-disable-line
+  // The menu can wear the wedding website's colours and heading font (remembered per wedding in this browser).
+  const [useSiteTheme, setUseSiteTheme] = usePersistedState<boolean>(`wedthread.menu-theme.${wedding?.id ?? "none"}`, false);
+  const siteTemplate = getTemplate(wedding?.site_template_id);
+  const menuTheme = useSiteTheme ? { bg: siteTemplate.palette.bg, ink: siteTemplate.palette.ink, accent: siteTemplate.palette.accent, font: siteTemplate.fonts.display } : null;
+  useGoogleFonts(menuTheme ? [menuTheme.font] : []);
   const [newSectionName, setNewSectionName] = useState("");
   const [confirmDeleteSectionId, setConfirmDeleteSectionId] = useState<string | null>(null);
 
@@ -132,10 +140,22 @@ function MenuPage() {
           <Dropdown className="w-56" value={eventId} onChange={setEventId} placeholder="Choose an event"
             options={events.map((e) => ({ value: e.id, label: e.name }))} />
           {event && sections.length > 0 && (
-            <ExportMenu
-              onExportExcel={() => exportMenuExcel({ weddingLabel: wedding!.slug || wedding!.id, eventName: event.name, sections, items, foodTags })}
-              onExportPdf={() => exportMenuPdf({ weddingLabel: wedding!.slug || wedding!.id, eventName: event.name, sections, items, foodTags })}
-            />
+            <>
+              <button type="button" role="switch" aria-checked={useSiteTheme} onClick={() => setUseSiteTheme((v) => !v)}
+                title="Use your wedding website's colours and heading font for the menu preview and downloads"
+                className={cn("inline-flex items-center gap-2 rounded-full border px-4 py-2 text-sm cursor-pointer whitespace-nowrap transition-colors",
+                  useSiteTheme ? "border-ink bg-ink text-paper" : "border-line/70 bg-paper hover:bg-stone")}>
+                <span className="inline-flex -space-x-1">
+                  <span className="h-3 w-3 rounded-full border border-white" style={{ background: siteTemplate.palette.bg }} />
+                  <span className="h-3 w-3 rounded-full border border-white" style={{ background: siteTemplate.palette.ink }} />
+                </span>
+                Website theme
+              </button>
+              <ExportMenu
+                onExportExcel={() => exportMenuExcel({ theme: menuTheme, weddingLabel: wedding!.slug || wedding!.id, eventName: event.name, sections, items, foodTags })}
+                onExportPdf={() => exportMenuPdf({ theme: menuTheme, weddingLabel: wedding!.slug || wedding!.id, eventName: event.name, sections, items, foodTags })}
+              />
+            </>
           )}
         </div>
       }
@@ -178,7 +198,7 @@ function MenuPage() {
                 position:sticky's interaction with grid row sizing, and
                 means there's never a second, nested scrollbar to fight
                 with. */}
-            <MenuPreviewPanel eventName={event?.name} sections={sections} items={items} />
+            <MenuPreviewPanel eventName={event?.name} sections={sections} items={items} theme={menuTheme} />
 
             <div className="mt-8 lg:mt-0">
               <div className="grid gap-4">
@@ -266,40 +286,42 @@ function AddSectionRow({ className, buttonClassName, value, onChange, onSubmit }
 // the Events page's Agenda preview, grouped by section instead of by date,
 // so the couple can see how the printed/shared menu actually reads instead
 // of just the editing form.
-function MenuPreviewPanel({ eventName, sections, items }: {
+function MenuPreviewPanel({ eventName, sections, items, theme }: {
   eventName?: string; sections: { id: string; name: string }[]; items: MenuItem[];
+  theme?: { bg: string; ink: string; accent: string; font: string } | null;
 }) {
   const { tags: foodTags } = useContext(FoodTagsContext);
   const lookup = foodLookup(foodTags);
   const legend = legendFor(items.flatMap((it) => it.dietary_tags), foodTags);
 
   return (
-    <div className="rounded-3xl bg-ink text-paper p-8">
-      <h2 className="font-serif text-3xl">{eventName ? `${eventName} Menu` : "Menu"}</h2>
+    <div className={cn("rounded-3xl p-8", !theme && "bg-ink text-paper")}
+      style={theme ? { background: theme.bg, color: theme.ink, fontFamily: `"${theme.font}", serif`, border: `1px solid ${theme.ink}22` } : undefined}>
+      <h2 className="font-serif text-3xl" style={theme ? { fontFamily: `"${theme.font}", serif` } : undefined}>{eventName ? `${eventName} Menu` : "Menu"}</h2>
 
       <div className="mt-6 grid gap-6">
         {sections.length === 0 ? (
-          <p className="text-sm text-paper/70">Add a section to see it here.</p>
+          <p className="text-sm opacity-70">Add a section to see it here.</p>
         ) : (
           sections.map((s) => {
             const sectionItems = items.filter((i) => i.section_id === s.id);
             return (
               <div key={s.id}>
-                <p className="text-xs uppercase tracking-widest text-paper/60 border-b border-paper/20 pb-2 mb-4">{s.name}</p>
+                <p className="text-xs uppercase tracking-widest opacity-60 border-b border-current/20 pb-2 mb-4">{s.name}</p>
                 {sectionItems.length === 0 ? (
-                  <p className="text-sm text-paper/60 italic">Nothing added yet.</p>
+                  <p className="text-sm opacity-60 italic">Nothing added yet.</p>
                 ) : (
                   <div className="grid gap-4">
                     {sectionItems.map((it) => {
                       const { diet, allergens } = dishCodes(it.dietary_tags, lookup);
                       return (
                         <div key={it.id}>
-                          <p className="font-serif text-lg">
+                          <p className="font-serif text-lg" style={theme ? { fontFamily: `"${theme.font}", serif` } : undefined}>
                             {it.name}
-                            {diet.length > 0 && <span className="ml-1.5 font-sans text-sm text-paper/60 align-middle">({diet.join(", ")})</span>}
+                            {diet.length > 0 && <span className="ml-1.5 font-sans text-sm opacity-60 align-middle">({diet.join(", ")})</span>}
                             {allergens.length > 0 && <span className="ml-1.5 font-sans text-sm text-red-300 align-middle">({allergens.join(", ")})</span>}
                           </p>
-                          {it.description && <p className="text-sm text-paper/70 mt-0.5 leading-relaxed">{it.description}</p>}
+                          {it.description && <p className="text-sm opacity-70 mt-0.5 leading-relaxed">{it.description}</p>}
                         </div>
                       );
                     })}
@@ -312,7 +334,7 @@ function MenuPreviewPanel({ eventName, sections, items }: {
       </div>
 
       {legend.length > 0 && (
-        <p className="mt-4 pt-4 border-t border-paper/20 text-xs text-paper/60">
+        <p className="mt-4 pt-4 border-t border-current/20 text-xs opacity-60">
           {legend}
         </p>
       )}
@@ -452,16 +474,20 @@ function ItemForm({ initial, submitLabel, submitIcon: SubmitIcon, onSubmit, onCa
           className="rounded-xl border border-line bg-pearl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-clay" />
       </div>
       <div className="flex flex-wrap items-center gap-1.5">
-        {([["diet", "Add dietary tag"], ["allergy", "Add allergen"]] as const).map(([kind, label]) => (
+        {([["diet", "Add dietary tag"], ["allergy", "Add allergen"]] as const).map(([kind, label]) => {
+          const library = food.tags.filter((t) => t.kind === kind);
+          return (
           <TagPicker key={kind} triggerLabel={label}
-            library={food.tags.filter((t) => t.kind === kind)}
-            selected={tags}
+            library={library}
+            // Only the tags of this kind are counted, so picking an allergen does not also show on the dietary button.
+            selected={tags.filter((n) => library.some((t) => t.name === n))}
             onToggle={toggleTag}
             onCreate={(input) => food.create(kind, input)}
             onUpdate={food.update}
             onDelete={food.remove}
             autoSelectOnCreate={false} />
-        ))}
+          );
+        })}
         {tags.map((t) => {
           const ft = food.tags.find((x) => x.name === t);
           return <TagChip key={t} tag={ft ?? { name: t, color: "#6E9B72" }} onRemove={() => toggleTag(t)} />;
