@@ -106,6 +106,7 @@ function ProfileSettingsPage() {
       {wedding && userId && wedding.owner_id === userId && (
         <SettingsRow title="Delete wedding" danger><DangerZoneSection wedding={wedding} /></SettingsRow>
       )}
+      {userId && <SettingsRow title="Delete profile" danger><DeleteProfileSection /></SettingsRow>}
       </CentredOnPage>
     </AppShell>
   );
@@ -230,6 +231,42 @@ function DangerZoneSection({ wedding }: { wedding: { id: string; partner_a: stri
         description="This permanently deletes every event, guest, RSVP, seating chart, budget entry, message, and your wedding website. This can't be undone."
         confirmWith={weddingName}
         onConfirm={deleteWedding}
+      />
+    </div>
+  );
+}
+
+// Removes the whole account, separately from deleting a wedding. The person types their own email to confirm.
+function DeleteProfileSection() {
+  const navigate = useNavigate();
+  const [confirmOpen, setConfirmOpen] = useState(false);
+  const [email, setEmail] = useState<string>("");
+  useEffect(() => { supabase.auth.getUser().then(({ data }) => setEmail(data.user?.email ?? "")); }, []);
+
+  const deleteProfile = async () => {
+    const { data, error } = await supabase.functions.invoke<{ deleted?: boolean; error?: string }>("delete-account", { body: { confirm_email: email } });
+    let reason = data?.error ?? error?.message;
+    try { const body = await (error as { context?: Response } | null)?.context?.json?.(); if (body?.error) reason = body.error; } catch { /* keep generic */ }
+    if (error || !data?.deleted) { toast.error(reason ?? "Could not delete your profile. Please try again."); return; }
+    setConfirmOpen(false);
+    await supabase.auth.signOut({ scope: "local" });
+    navigate({ to: "/" });
+  };
+
+  return (
+    <div className="px-8 py-6">
+      <p className="text-sm text-muted-foreground">Permanently delete your account, including your sign-in and anything you own on WEDthread.</p>
+      <button type="button" onClick={() => setConfirmOpen(true)} disabled={!email}
+        className="mt-4 rounded-full border border-cherry text-cherry px-5 py-2.5 text-sm font-medium hover:bg-cherry hover:text-pearl cursor-pointer disabled:opacity-50">
+        Delete my profile
+      </button>
+      <DeleteWorkspaceDialog
+        open={confirmOpen}
+        onOpenChange={setConfirmOpen}
+        title="Delete your profile?"
+        description="This permanently deletes your account and every wedding, listing and saved item that belongs to it. You'll be signed out. This can't be undone."
+        confirmWith={email}
+        onConfirm={deleteProfile}
       />
     </div>
   );
