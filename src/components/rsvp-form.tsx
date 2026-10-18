@@ -1,5 +1,5 @@
 import { useMemo, useState } from "react";
-import { Check, X as XIcon, HelpCircle, MapPin, CalendarDays, Loader2, ChevronDown } from "lucide-react";
+import { Check, X as XIcon, HelpCircle, MapPin, CalendarDays, Loader2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Logo } from "@/components/logo";
 
@@ -144,12 +144,6 @@ export function RsvpPageBody({
                 disabled={submitted} onClick={() => respondAll("declined", 0)} icon={XIcon} label={declineLabel} />
               <SaveIndicator status={unifiedSaving ? "saving" : unifiedSaved ? "saved" : "idle"} />
             </div>
-            {unifiedStatus === "attending" && (
-              <div className="mt-4 flex items-center gap-3 text-sm text-muted-foreground">
-                Bringing:
-                <PlusOnesPicker value={unifiedPlusOnes} disabled={submitted} onChange={(n) => eventRows.forEach((r) => onRespond(r.event_id, "attending", n))} />
-              </div>
-            )}
           </div>
         )}
         {eventRows.map((r) => {
@@ -181,12 +175,6 @@ export function RsvpPageBody({
                     <SaveIndicator status={rsvpSaveStatus[r.event_id] ?? "idle"} />
                   </div>
 
-                  {r.current_status === "attending" && (
-                    <div className="mt-4 flex items-center gap-3 text-sm text-muted-foreground">
-                      Bringing:
-                      <PlusOnesPicker value={r.current_plus_ones} disabled={submitted} onChange={(n) => onRespond(r.event_id, "attending", n)} />
-                    </div>
-                  )}
                 </>
               )}
 
@@ -278,37 +266,6 @@ function RsvpBtn({ active, activeClass, disabled, onClick, icon: Icon, label }: 
       )}>
       <Icon className="h-4 w-4" /> {label}
     </button>
-  );
-}
-
-function PlusOnesPicker({ value, onChange, disabled }: { value: number; onChange: (n: number) => void; disabled?: boolean }) {
-  const [open, setOpen] = useState(false);
-  const label = (n: number) => (n === 0 ? "just me" : `+${n} guest${n === 1 ? "" : "s"}`);
-
-  return (
-    <div className="relative">
-      <button type="button" disabled={disabled} onClick={() => setOpen((v) => !v)}
-        className={cn(
-          "inline-flex items-center gap-1.5 rounded-full border border-line px-3 py-1 bg-paper text-sm transition-colors",
-          disabled ? "opacity-60 cursor-not-allowed" : "hover:bg-stone cursor-pointer",
-        )}>
-        {label(value)}
-        <ChevronDown className={cn("h-3 w-3 text-muted-foreground transition-transform", open && "rotate-180")} />
-      </button>
-      {open && (
-        <>
-          <div className="fixed inset-0 z-10" onClick={() => setOpen(false)} />
-          <div className="absolute left-0 top-full mt-2 z-20 min-w-[8rem] rounded-2xl border border-line bg-pearl shadow-lg p-1.5">
-            {[0, 1, 2, 3, 4].map((n) => (
-              <button key={n} type="button" onClick={() => { onChange(n); setOpen(false); }}
-                className={cn("w-full text-left px-3 py-2 text-sm rounded-xl hover:bg-blush-soft cursor-pointer", value === n && "font-medium")}>
-                {label(n)}
-              </button>
-            ))}
-          </div>
-        </>
-      )}
-    </div>
   );
 }
 

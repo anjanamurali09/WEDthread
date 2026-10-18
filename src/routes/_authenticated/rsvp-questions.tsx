@@ -1,6 +1,6 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { partnerOne, partnerTwo } from "@/lib/partner-names";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import Papa from "papaparse";
 import { AppShell } from "@/components/app-shell";
 import { useCurrentWedding, useEvents, useGuests, useInvites, useRsvpQuestions, useRsvpResponses, type RsvpQuestion, type Event, type Guest, type Wedding, type Invite } from "@/lib/wedding-hooks";
@@ -44,7 +44,8 @@ type QuickAddTemplate = { label: string; questionType: QuestionType; options?: s
 
 const QUICK_ADD_TEMPLATES: QuickAddTemplate[] = [
   { label: "Do you have any dietary restrictions we should know about?", questionType: "short_text" },
-  { label: "Which meal would you prefer?", questionType: "multiple_choice", options: ["Vegetarian", "Non-vegetarian", "Vegan"] },
+  { label: "Which meal would you prefer?", questionType: "multiple_choice", options: ["Option 1", "Option 2", "Option 3"] },
+  { label: "Are you bringing a plus one?", questionType: "yes_no", options: ["Yes", "No"] },
   { label: "Will you need transportation to the venue?", questionType: "yes_no", options: ["Yes", "No"] },
   { label: "Any song requests to get you on the dance floor?", questionType: "short_text" },
 ];
@@ -92,8 +93,8 @@ function buildPreviewEventRows(events: Event[], statusMap: Record<string, { stat
 function RsvpQuestionsPage() {
   const { data: wedding } = useCurrentWedding();
   const { data: events = [] } = useEvents(wedding?.id);
-  const { data: guests = [] } = useGuests(wedding?.id);
-  const { data: invites = [] } = useInvites(wedding?.id);
+  const { data: guests = [], isLoading: guestsLoading } = useGuests(wedding?.id);
+  const { data: invites = [], isLoading: invitesLoading } = useInvites(wedding?.id);
   const { data: questions = [], isLoading } = useRsvpQuestions(wedding?.id);
   const qc = useQueryClient();
   const [editing, setEditing] = useState<Partial<RsvpQuestion> | null>(null);
@@ -101,6 +102,25 @@ function RsvpQuestionsPage() {
   const [shareOpen, setShareOpen] = useState(false);
   const [responsesOpen, setResponsesOpen] = useState(false);
   const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
+  // Once guests have started replying, the page opens straight onto their responses, with a short note on how many
+  // there are (and how many are new since the last visit). The note goes away by itself after ten seconds.
+  const [notice, setNotice] = useState<string | null>(null);
+  const openedForResponses = useRef(false);
+  const responseCount = useMemo(() => summarizeGuestRsvps(guests.map((g) => g.id), invites).responded, [guests, invites]);
+
+  useEffect(() => {
+    if (!wedding || openedForResponses.current || guestsLoading || invitesLoading || responseCount === 0) return;
+    openedForResponses.current = true;
+    const key = `wedthread.rsvp-seen.${wedding.id}`;
+    let seen = 0;
+    try { seen = Number(localStorage.getItem(key) ?? 0) || 0; localStorage.setItem(key, String(responseCount)); } catch { /* storage unavailable */ }
+    const fresh = responseCount - seen;
+    const plural = (n: number) => `${n} response${n === 1 ? "" : "s"}`;
+    setNotice(fresh > 0 && seen > 0 ? `${plural(fresh)} since your last visit. ${plural(responseCount)} in total.` : `You have ${plural(responseCount)} so far.`);
+    setResponsesOpen(true);
+    const timer = window.setTimeout(() => setNotice(null), 10000);
+    return () => window.clearTimeout(timer);
+  }, [wedding, guestsLoading, invitesLoading, responseCount]);
 
   const invalidateQuestions = () => qc.invalidateQueries({ queryKey: ["rsvp-questions", wedding?.id] });
 
@@ -186,16 +206,15 @@ function RsvpQuestionsPage() {
         </div>
       }
     >
+      {notice && !responsesOpen && <p role="status" className="mb-3 rounded-2xl bg-[#FFF7D6] px-4 py-2.5 text-sm text-ink">{notice}</p>}
       {wedding && <AttendanceSettingsCard wedding={wedding} onUpdate={updateAttendanceSettings} />}
 
       {isLoading ? <p className="text-muted-foreground text-sm">Loading…</p> :
         questions.length === 0 ? (
-          <div className="rounded-3xl border border-dashed border-line p-16 text-center bg-paper">
+          <div className="rounded-3xl border border-dashed border-line px-8 py-8 text-center bg-paper">
             <p className="font-serif text-2xl">No questions yet</p>
-            <p className="mt-2 text-sm text-muted-foreground max-w-md mx-auto">
-              Meal choices, song requests, plus-one names, whatever helps you plan. Questions can apply to one ceremony, several, or all of them.
-            </p>
-            <button onClick={() => setEditing({})} className="mt-6 inline-flex items-center gap-2 rounded-full bg-ink text-paper px-5 py-2.5 text-sm hover:bg-clay cursor-pointer">
+            <p className="mt-1 text-sm text-muted-foreground max-w-md mx-auto">Meal choices, song requests, plus ones. Whatever helps you plan.</p>
+            <button onClick={() => setEditing({})} className="mt-4 inline-flex items-center gap-2 rounded-full bg-ink text-paper px-5 py-2.5 text-sm hover:bg-clay cursor-pointer">
               <Plus className="h-4 w-4" /> Add your first question
             </button>
           </div>
@@ -228,7 +247,7 @@ function RsvpQuestionsPage() {
         <ShareRsvpDialog wedding={wedding} guests={guests} onClose={() => setShareOpen(false)} />
       )}
       {responsesOpen && wedding && (
-        <RsvpResponsesView wedding={wedding} events={events} guests={guests} invites={invites} questions={questions} onClose={() => setResponsesOpen(false)} />
+        <RsvpResponsesView wedding={wedding} events={events} guests={guests} invites={invites} questions={questions} notice={notice} onClose={() => setResponsesOpen(false)} />
       )}
       {confirmDeleteId && (() => {
         const q = questions.find((qq) => qq.id === confirmDeleteId);
@@ -280,6 +299,10 @@ function AttendanceSettingsCard({ wedding, onUpdate }: {
     if (trimmed !== wedding.attendance_maybe_label) onUpdate({ attendance_maybe_label: trimmed });
   };
 
+  const modeBtn = (on: boolean) => cn("rounded-full border px-3.5 py-1.5 text-sm transition-colors cursor-pointer", on ? "border-ink bg-ink text-paper" : "border-line/70 hover:bg-stone");
+  const mode = wedding.rsvp_mode ?? "per_event";
+  const labelField = "mt-1 w-full rounded-lg border border-line/70 px-3 py-1.5 text-sm bg-pearl focus:outline-none focus:ring-2 focus:ring-sage-deep transition-colors";
+
   return (
     <div className="bg-paper rounded-md p-4 flex items-start gap-3 shadow-[inset_0_0_0_1px_rgb(0_0_0_/_0.06),0_1px_2px_rgb(0_0_0_/_0.03)] mb-3">
       <span className="grid h-9 w-9 shrink-0 place-items-center rounded-full bg-sage-soft text-sage-deep">
@@ -287,67 +310,37 @@ function AttendanceSettingsCard({ wedding, onUpdate }: {
       </span>
       <div className="min-w-0 flex-1">
         <p className="font-sans text-lg font-semibold">Attendance question</p>
-        <p className="text-sm text-muted-foreground mt-1">
-          Automatically asked for every event a guest is invited to, plus how many they're bringing. It's always included, not something you add below, but you can customize the wording.
-        </p>
         <input value={text} onChange={(e) => setText(e.target.value)} onBlur={commitText}
-          placeholder={DEFAULT_ATTENDANCE_TEXT}
-          className="mt-3 w-full rounded-lg border border-line/70 px-4 py-2.5 text-sm bg-pearl focus:outline-none focus:ring-2 focus:ring-sage-deep transition-colors" />
-        <p className="mt-1.5 text-sm text-muted-foreground">Use <code className="px-1 rounded bg-stone">{"{event}"}</code> to insert the event's name.</p>
-        <label className="mt-3 flex items-center gap-2 text-sm cursor-pointer select-none">
-          <input type="checkbox" checked={wedding.attendance_allow_maybe}
-            onChange={(e) => onUpdate({ attendance_allow_maybe: e.target.checked })}
-            className="h-3.5 w-3.5 accent-sage-deep cursor-pointer" />
-          Also show a "Maybe" option (Accept / Decline only by default)
-        </label>
+          placeholder={DEFAULT_ATTENDANCE_TEXT} aria-label="Attendance question wording"
+          className="mt-2 w-full rounded-lg border border-line/70 px-4 py-2 text-sm bg-pearl focus:outline-none focus:ring-2 focus:ring-sage-deep transition-colors" />
+        <p className="mt-1 text-xs text-muted-foreground">Use <code className="px-1 rounded bg-stone">{"{event}"}</code> for the event name.</p>
 
-        <div className="mt-4 pt-4 border-t border-line/60">
-          <p className="text-sm uppercase tracking-widest text-muted-foreground">How guests RSVP</p>
-          <div className="mt-2 grid grid-cols-2 gap-2">
-            <button type="button" onClick={() => onUpdate({ rsvp_mode: "per_event" })}
-              className={cn("text-left rounded-lg border px-3 py-2.5 text-sm transition-colors cursor-pointer",
-                (wedding.rsvp_mode ?? "per_event") === "per_event" ? "border-sage-deep bg-sage-soft/40" : "border-line/70 hover:bg-stone")}>
-              <span className="font-medium">Per event</span>
-              <span className="block text-sm text-muted-foreground mt-0.5">Guests respond separately to each event they're invited to.</span>
-            </button>
-            <button type="button" onClick={() => onUpdate({ rsvp_mode: "single" })}
-              className={cn("text-left rounded-lg border px-3 py-2.5 text-sm transition-colors cursor-pointer",
-                wedding.rsvp_mode === "single" ? "border-sage-deep bg-sage-soft/40" : "border-line/70 hover:bg-stone")}>
-              <span className="font-medium">One RSVP</span>
-              <span className="block text-sm text-muted-foreground mt-0.5">One overall response covers every event they're invited to.</span>
-            </button>
-          </div>
+        <div className="mt-3 flex flex-wrap items-center gap-2">
+          <button type="button" onClick={() => onUpdate({ rsvp_mode: "per_event" })} className={modeBtn(mode === "per_event")}>RSVP per event</button>
+          <button type="button" onClick={() => onUpdate({ rsvp_mode: "single" })} className={modeBtn(mode === "single")}>One RSVP for all</button>
+          <label className="ml-1 flex items-center gap-2 text-sm cursor-pointer select-none">
+            <input type="checkbox" checked={wedding.attendance_allow_maybe}
+              onChange={(e) => onUpdate({ attendance_allow_maybe: e.target.checked })}
+              className="h-3.5 w-3.5 accent-sage-deep cursor-pointer" />
+            Show "Maybe"
+          </label>
         </div>
 
-        <div className="mt-4 pt-4 border-t border-line/60">
-          <p className="text-sm uppercase tracking-widest text-muted-foreground">Button labels</p>
-          <div className={cn("mt-2 grid gap-3", wedding.attendance_allow_maybe ? "sm:grid-cols-3" : "sm:grid-cols-2")}>
+        <div className={cn("mt-3 grid gap-3", wedding.attendance_allow_maybe ? "sm:grid-cols-3" : "sm:grid-cols-2")}>
+          <label className="block">
+            <span className="text-xs text-muted-foreground">Accept button</span>
+            <input value={acceptLabel} onChange={(e) => setAcceptLabel(e.target.value)} onBlur={commitAcceptLabel} placeholder={DEFAULT_ACCEPT_LABEL} className={labelField} />
+          </label>
+          {wedding.attendance_allow_maybe && (
             <label className="block">
-              <span className="text-sm text-muted-foreground">Accept</span>
-              <input value={acceptLabel} onChange={(e) => setAcceptLabel(e.target.value)} onBlur={commitAcceptLabel}
-                placeholder={DEFAULT_ACCEPT_LABEL}
-                className="mt-1 w-full rounded-lg border border-line/70 px-3 py-2 text-sm bg-pearl focus:outline-none focus:ring-2 focus:ring-sage-deep transition-colors" />
+              <span className="text-xs text-muted-foreground">Maybe button</span>
+              <input value={maybeLabel} onChange={(e) => setMaybeLabel(e.target.value)} onBlur={commitMaybeLabel} placeholder={DEFAULT_MAYBE_LABEL} className={labelField} />
             </label>
-            {wedding.attendance_allow_maybe && (
-              <label className="block">
-                <span className="text-sm text-muted-foreground">Maybe</span>
-                <input value={maybeLabel} onChange={(e) => setMaybeLabel(e.target.value)} onBlur={commitMaybeLabel}
-                  placeholder={DEFAULT_MAYBE_LABEL}
-                  className="mt-1 w-full rounded-lg border border-line/70 px-3 py-2 text-sm bg-pearl focus:outline-none focus:ring-2 focus:ring-sage-deep transition-colors" />
-              </label>
-            )}
-            <label className="block">
-              <span className="text-sm text-muted-foreground">Decline</span>
-              <input value={declineLabel} onChange={(e) => setDeclineLabel(e.target.value)} onBlur={commitDeclineLabel}
-                placeholder={DEFAULT_DECLINE_LABEL}
-                className="mt-1 w-full rounded-lg border border-line/70 px-3 py-2 text-sm bg-pearl focus:outline-none focus:ring-2 focus:ring-sage-deep transition-colors" />
-            </label>
-          </div>
-        </div>
-
-        <div className="mt-3 flex flex-wrap items-center gap-1.5">
-          <span className="text-[10px] uppercase tracking-widest rounded-full bg-sage-soft px-2 py-0.5 text-ink">Every event</span>
-          <span className="text-[10px] uppercase tracking-widest rounded-full bg-stone px-2 py-0.5 text-muted-foreground">Built-in</span>
+          )}
+          <label className="block">
+            <span className="text-xs text-muted-foreground">Decline button</span>
+            <input value={declineLabel} onChange={(e) => setDeclineLabel(e.target.value)} onBlur={commitDeclineLabel} placeholder={DEFAULT_DECLINE_LABEL} className={labelField} />
+          </label>
         </div>
       </div>
     </div>
@@ -495,8 +488,8 @@ function ColorThemePicker({ theme, onChange, custom, onCustomChange }: { theme: 
 // keys answers by (see rsvpAnswerKey: question_id + event_id), so a question scoped
 // to three events genuinely has up to three independent answers per guest, and this
 // shows exactly that rather than collapsing them into one ambiguous cell.
-function RsvpResponsesView({ wedding, events, guests, invites, questions, onClose }: {
-  wedding: Wedding; events: Event[]; guests: Guest[]; invites: Invite[]; questions: RsvpQuestion[]; onClose: () => void;
+function RsvpResponsesView({ wedding, events, guests, invites, questions, notice, onClose }: {
+  wedding: Wedding; events: Event[]; guests: Guest[]; invites: Invite[]; questions: RsvpQuestion[]; notice?: string | null; onClose: () => void;
 }) {
   const { data: responses = [], isLoading } = useRsvpResponses(wedding.id);
   const [tab, setTab] = useState<ResponsesTab>("question");
@@ -687,6 +680,7 @@ function RsvpResponsesView({ wedding, events, guests, invites, questions, onClos
             <p className="text-sm text-muted-foreground mt-0.5">How RSVPs and questions are coming along.</p>
           </div>
         </div>
+        {notice && <p role="status" className="shrink-0 bg-[#FFF7D6] px-6 py-2.5 text-sm text-ink">{notice}</p>}
 
         {isLoading ? (
           <p className="p-6 text-sm text-muted-foreground">Loading…</p>
@@ -1105,8 +1099,10 @@ function QuestionDialog({ question, events, questions, onClose, onSave }: {
 
   const toggleEvent = (id: string) => {
     setForm((f) => {
-      const ids = f.event_ids ?? [];
-      return { ...f, event_ids: ids.includes(id) ? ids.filter((x) => x !== id) : [...ids, id] };
+      const current = (f.event_ids?.length ?? 0) === 0 ? events.map((e) => e.id) : (f.event_ids as string[]);
+      const next = current.includes(id) ? current.filter((x) => x !== id) : [...current, id];
+      if (next.length === 0) return f; // always asked for at least one event
+      return { ...f, event_ids: next.length === events.length ? [] : next };
     });
   };
 
@@ -1140,6 +1136,13 @@ function QuestionDialog({ question, events, questions, onClose, onSave }: {
   };
 
   const pillOff = "bg-pearl text-ink border-line/70 hover:bg-blush-soft/50";
+
+  // Which events this question is asked for. No events chosen means all of them. Every event shows as ticked by
+  // default, the same chip style as "What does this event need?" on the event sheet, and untick one to leave it out.
+  const effectiveEventIds = (form.event_ids?.length ?? 0) === 0 ? events.map((e) => e.id) : (form.event_ids as string[]);
+  const allEventsOn = (form.event_ids?.length ?? 0) === 0;
+  const chip = (on: boolean) => cn("inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-xs transition-colors cursor-pointer",
+    on ? "border border-solid border-ink bg-ink text-paper font-medium" : "border border-dashed border-ink/40 bg-transparent text-muted-foreground hover:border-ink/70 hover:text-ink");
 
   return (
     <div className="fixed inset-0 z-50 bg-ink/40 flex items-center justify-center p-4" onClick={onClose}>
@@ -1218,37 +1221,30 @@ function QuestionDialog({ question, events, questions, onClose, onSave }: {
           )}
 
           <div>
-            <span className="text-xs uppercase tracking-widest text-muted-foreground">Applies to</span>
-            <div className="mt-2 flex flex-wrap gap-2">
-              <button type="button" onClick={() => setField("event_ids", [])}
-                className={cn(
-                  "inline-flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-xs transition-colors cursor-pointer",
-                  (form.event_ids?.length ?? 0) === 0 ? "bg-sage-deep text-pearl border-sage-deep" : pillOff,
-                )}>
-                All events
-              </button>
+            <span className="text-xs uppercase tracking-widest text-muted-foreground">Asked for</span>
+            <div className="mt-2 flex flex-wrap gap-1.5">
+              {events.length > 1 && (
+                <button type="button" role="checkbox" aria-checked={allEventsOn} onClick={() => setField("event_ids", [])} className={chip(allEventsOn)}>
+                  {allEventsOn ? <Check className="h-3 w-3" /> : null} All events
+                </button>
+              )}
               {events.map((ev) => {
-                const on = (form.event_ids ?? []).includes(ev.id);
+                const on = effectiveEventIds.includes(ev.id);
                 return (
-                  <button key={ev.id} type="button" onClick={() => toggleEvent(ev.id)}
-                    className={cn(
-                      "inline-flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-xs transition-colors cursor-pointer",
-                      on ? "bg-sage-deep text-pearl border-sage-deep" : pillOff,
-                    )}>
-                    {ev.name}
+                  <button key={ev.id} type="button" role="checkbox" aria-checked={on} onClick={() => toggleEvent(ev.id)} className={chip(on)}>
+                    {on ? <Check className="h-3 w-3" /> : null} {ev.name}
                   </button>
                 );
               })}
             </div>
-            <p className="mt-1.5 text-xs text-muted-foreground">Pick one or more ceremonies, or leave on "All events."</p>
           </div>
 
           <div>
-            <span className="text-xs uppercase tracking-widest text-muted-foreground">Custom column (optional)</span>
+            <span className="text-xs uppercase tracking-widest text-muted-foreground">Guests column (optional)</span>
             <input value={form.guest_column_label ?? ""} onChange={(e) => setField("guest_column_label", e.target.value)}
               placeholder="e.g. Starter"
               className="mt-1 w-full rounded-2xl border border-line/70 px-4 py-3 text-xs focus:outline-none focus:ring-2 focus:ring-sage-deep bg-pearl transition-colors" />
-            <p className="mt-1.5 text-xs text-muted-foreground">Name it and each guest's answer shows up as its own column in Guests, right alongside phone and email. Leave blank to keep this question answer-log only.</p>
+            <p className="mt-1.5 text-xs text-muted-foreground">Each guest's answer shows as this column in Guests.</p>
           </div>
 
           <div>
