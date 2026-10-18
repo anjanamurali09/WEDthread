@@ -319,13 +319,13 @@ function AuthPage() {
             </button>
             {mode === "signup" && sentTo && (
               <div className="rounded-2xl bg-[#FFF7D6] px-4 py-3 text-sm text-[#243746]">
-                <p>Please check your email. We sent a verification link to <span className="font-medium">{sentTo}</span>. Click it to finish creating your account.</p>
-                <p className="mt-2 text-muted-foreground">Can't find it? Check your spam folder, or{" "}
-                  <button type="button" onClick={resendVerification} className="text-cherry underline underline-offset-4">send it again</button>
-                  {" "}or{" "}
-                  <button type="button" onClick={() => { setSentTo(null); setResendNote(null); }} className="text-cherry underline underline-offset-4">use a different email</button>.
+                <p>Check your email (and spam) for the link we sent to <span className="font-medium">{sentTo}</span>.</p>
+                <p className="mt-1 text-muted-foreground">
+                  <button type="button" onClick={resendVerification} className="text-cherry underline underline-offset-4">Send again</button>
+                  {" · "}
+                  <button type="button" onClick={() => { setSentTo(null); setResendNote(null); }} className="text-cherry underline underline-offset-4">Use a different email</button>
                 </p>
-                {resendNote && <p className="mt-2">{resendNote}</p>}
+                {resendNote && <p className="mt-1">{resendNote}</p>}
               </div>
             )}
           </form>

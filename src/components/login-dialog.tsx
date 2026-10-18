@@ -116,7 +116,7 @@ export function LoginDialog({
             </button>
             {mode === "signup" && sentTo && (
               <p className="rounded-2xl bg-[#FFF7D6] px-4 py-3 text-sm text-[#243746]">
-                Please check your email. We sent a verification link to <span className="font-medium">{sentTo}</span>. Click it to finish creating your account.
+                Check your email (and spam) for the link we sent to <span className="font-medium">{sentTo}</span>.
               </p>
             )}
           </form>
