@@ -7,6 +7,7 @@ import { useQueryClient } from "@tanstack/react-query";
 import { toast } from "@/lib/toast";
 import { Plus, Trash2, Check, Loader2, Bold, Strikethrough, List, ListOrdered, SquareCheckBig, ListIndentIncrease, ListIndentDecrease } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { usePersistedState } from "@/hooks/use-persisted-state";
 
 export const Route = createFileRoute("/_authenticated/notes")({ component: NotesPage });
 
@@ -214,6 +215,8 @@ function ToolbarButton({ icon: Icon, label, onClick }: { icon: any; label: strin
 function NoteEditor({ note, onSaved }: { note: Note; onSaved: () => void }) {
   const [title, setTitle] = useState(note.title ?? "");
   const [content, setContent] = useState(note.content);
+  // Ticked checklist items are crossed out unless this is switched off (remembered in this browser).
+  const [crossOutTicked, setCrossOutTicked] = usePersistedState<boolean>("wedthread.notes-cross-out", true);
   const [saving, setSaving] = useState(false);
   const [savedAt, setSavedAt] = useState<Date | null>(null);
   const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -223,8 +226,13 @@ function NoteEditor({ note, onSaved }: { note: Note; onSaved: () => void }) {
   // Tracks the latest typed values via ref (not just state) so the unmount-flush effect
   // below can read them without closing over stale values from whenever the component
   // first mounted.
+  // The note's HTML is read straight off the editor into a ref on every keystroke instead of into React state, so
+  // typing and the list/checklist buttons do not re-render the whole editor each time. `content` (state) catches up
+  // a moment later and only feeds the title placeholder.
+  const contentRef = useRef(note.content);
   const latestRef = useRef({ title, content });
-  latestRef.current = { title, content };
+  latestRef.current = { title, content: contentRef.current };
+  const syncTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const save = async (t: string, c: string) => {
     if (t === lastSaved.current.title && c === lastSaved.current.content) return;
@@ -270,9 +278,12 @@ function NoteEditor({ note, onSaved }: { note: Note; onSaved: () => void }) {
   }, []); // eslint-disable-line
 
   const readAndSave = () => {
-    const html = editorRef.current?.innerHTML ?? content;
-    setContent(html);
-    scheduleSave(title, html);
+    const html = editorRef.current?.innerHTML ?? contentRef.current;
+    contentRef.current = html;
+    latestRef.current = { title: latestRef.current.title, content: html };
+    if (syncTimer.current) clearTimeout(syncTimer.current);
+    syncTimer.current = setTimeout(() => setContent(html), 500);
+    scheduleSave(latestRef.current.title, html);
   };
 
   // execCommand acts on the current DOM selection inside editorRef; refocusing after
@@ -584,8 +595,8 @@ function NoteEditor({ note, onSaved }: { note: Note; onSaved: () => void }) {
       <div className="px-6 md:px-8 pt-6">
         <input
           value={title}
-          onChange={(e) => { setTitle(e.target.value); scheduleSave(e.target.value, content); }}
-          onBlur={() => save(title, content)}
+          onChange={(e) => { setTitle(e.target.value); scheduleSave(e.target.value, contentRef.current); }}
+          onBlur={() => save(title, contentRef.current)}
           placeholder={stripHtml(content).split("\n").find((l) => l.trim()) || "Title"}
           className="w-full font-serif text-2xl md:text-3xl bg-transparent focus:outline-none placeholder:text-ink/30"
         />
@@ -600,6 +611,12 @@ function NoteEditor({ note, onSaved }: { note: Note; onSaved: () => void }) {
         <div className="w-px h-5 bg-line mx-1.5" />
         <ToolbarButton icon={ListIndentDecrease} label="Outdent" onClick={() => exec("outdent")} />
         <ToolbarButton icon={ListIndentIncrease} label="Indent" onClick={() => exec("indent")} />
+        <div className="ml-auto" />
+        <button type="button" role="switch" aria-checked={crossOutTicked} onMouseDown={(e) => e.preventDefault()} onClick={() => setCrossOutTicked((v) => !v)}
+          title="Cross out an item's text when you tick it"
+          className={cn("inline-flex items-center gap-1.5 rounded-full border px-3 py-1 text-xs cursor-pointer transition-colors", crossOutTicked ? "border-ink bg-ink text-paper" : "border-line hover:bg-stone/60")}>
+          <Strikethrough className="h-3 w-3" /> Cross out ticked
+        </button>
       </div>
       <div
         ref={editorRef}
@@ -611,7 +628,7 @@ function NoteEditor({ note, onSaved }: { note: Note; onSaved: () => void }) {
         onPaste={handlePaste}
         onBlur={() => save(title, latestRef.current.content)}
         data-placeholder="Start writing…"
-        className="note-content flex-1 w-full mt-3 px-6 md:px-8 pb-6 focus:outline-none text-sm leading-relaxed text-ink"
+        className={cn("note-content flex-1 w-full mt-3 px-6 md:px-8 pb-6 focus:outline-none text-sm leading-relaxed text-ink", !crossOutTicked && "note-keep-ticked")}
       />
       <div className="px-6 md:px-8 py-3 border-t border-line/60 text-sm text-muted-foreground inline-flex items-center gap-1.5">
         {saving ? (
