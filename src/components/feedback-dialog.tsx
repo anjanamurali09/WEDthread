@@ -19,6 +19,8 @@ export function FeedbackDialog({ weddingId, onClose }: { weddingId: string | nul
     });
     setSubmitting(false);
     if (error) return toast.error(error.message);
+    // The team is emailed as well; this must never get in the way of the thank-you.
+    supabase.functions.invoke("notify-team", { body: { kind: "feedback", wedding_id: weddingId } }).catch((err) => console.error("notify-team failed", err));
     setSubmitted(true);
   };
 

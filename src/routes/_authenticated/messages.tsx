@@ -206,6 +206,8 @@ function MessagesPage() {
     if (!wedding) return;
     const { error } = await supabase.from("feature_waitlist" as any).insert({ wedding_id: wedding.id, feature: WHATSAPP_WAITLIST_FEATURE });
     if (error) return toast.error(error.message);
+    // The team is emailed too (owen@wedthread.co); this never gets in the way of joining.
+    supabase.functions.invoke("notify-team", { body: { kind: "waitlist", wedding_id: wedding.id } }).catch((err) => console.error("notify-team failed", err));
     qc.invalidateQueries({ queryKey: ["feature-waitlist", wedding.id, WHATSAPP_WAITLIST_FEATURE] });
   };
 

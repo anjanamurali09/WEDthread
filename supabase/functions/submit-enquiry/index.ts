@@ -8,9 +8,13 @@
 // immediately and the charge row is written with status='skipped', purely
 // for future record-keeping once real pricing ships.
 //
+// Every enquiry is also emailed to the venue or vendor, at the address they signed up with, with
+// hello@wedthread.co copied. The email never blocks or reverses the enquiry if it fails.
+//
 // Requires these Edge Function secrets: STRIPE_SECRET_KEY, SUPABASE_URL,
 // SUPABASE_ANON_KEY, SUPABASE_SERVICE_ROLE_KEY (the last three are provided
-// automatically in every Supabase project).
+// automatically in every Supabase project), plus RESEND_API_KEY and RESEND_FROM_EMAIL for the email
+// (the same secrets as the other email functions; without them the email is skipped).
 
 import Stripe from "npm:stripe@17.4.0";
 import { createClient } from "npm:@supabase/supabase-js@2";
@@ -20,6 +24,13 @@ const CORS_HEADERS = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
   "Access-Control-Allow-Methods": "POST, OPTIONS",
 };
+
+const TEAM_EMAIL = "hello@wedthread.co";
+const APP_URL = (Deno.env.get("APP_URL") ?? "https://www.wedthread.co").replace(/\/$/, "");
+
+function escapeHtml(s: string): string {
+  return s.replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]!));
+}
 
 function formatResponsesAsMessage(responses: Record<string, string>): string {
   const lines = Object.entries(responses)
@@ -126,6 +137,48 @@ Deno.serve(async (req: Request) => {
 
     const messageBody = formatResponsesAsMessage((submission.responses as Record<string, string>) ?? {});
 
+    // Emails the enquiry to the business at the address it signed up with (or its listed contact address),
+    // copying hello@wedthread.co. Replies go straight to the couple. Any failure is logged and ignored.
+    const emailBusiness = async () => {
+      try {
+        const resendKey = Deno.env.get("RESEND_API_KEY");
+        const fromEmail = Deno.env.get("RESEND_FROM_EMAIL");
+        if (!resendKey || !fromEmail) { console.error("Enquiry email skipped: RESEND_API_KEY / RESEND_FROM_EMAIL not configured"); return; }
+        const [{ data: business }, { data: weddingRow }] = await Promise.all([
+          service.from("businesses").select("legal_business_name,user_id,contact_email").eq("id", businessId).maybeSingle(),
+          service.from("weddings").select("partner_a,partner_b").eq("id", submission.wedding_id).maybeSingle(),
+        ]);
+        let to: string | null = null;
+        if (business?.user_id) {
+          const { data: owner } = await service.auth.admin.getUserById(business.user_id);
+          to = owner?.user?.email ?? null;
+        }
+        to = to ?? business?.contact_email ?? null;
+        const couple = `${weddingRow?.partner_a?.trim() || "A couple"} & ${weddingRow?.partner_b?.trim() || "their partner"}`;
+        const html = `
+          <p><strong>${escapeHtml(couple)}</strong> sent an enquiry about <strong>${escapeHtml(listingName)}</strong>.</p>
+          <p style="white-space:pre-line">${escapeHtml(messageBody)}</p>
+          <p>Reply to this email to answer them directly, or <a href="${APP_URL}/business/messages">reply on WEDthread</a>.</p>
+          ${to ? "" : "<p><em>No email address is on file for this business, so only the WEDthread team received this.</em></p>"}
+        `;
+        const res = await fetch("https://api.resend.com/emails", {
+          method: "POST",
+          headers: { Authorization: `Bearer ${resendKey}`, "content-type": "application/json" },
+          body: JSON.stringify({
+            from: fromEmail,
+            to: [to ?? TEAM_EMAIL],
+            ...(to && to.toLowerCase() !== TEAM_EMAIL ? { cc: [TEAM_EMAIL] } : {}),
+            ...(user.email ? { reply_to: user.email } : {}),
+            subject: `New enquiry: ${listingName}`,
+            html,
+          }),
+        });
+        if (!res.ok) console.error("Enquiry email failed:", await res.text());
+      } catch (err) {
+        console.error("Enquiry email failed:", err);
+      }
+    };
+
     const createEnquiryAndPostMessage = async (chargeStatus: "succeeded" | "skipped", stripePaymentIntentId: string | null) => {
       // Reuse the couple<->vendor conversation across every service/enquiry
       // between them, creating it on first contact.
@@ -169,6 +222,7 @@ Deno.serve(async (req: Request) => {
         body: `New enquiry: ${listingName}\n\n${messageBody}`,
       });
 
+      await emailBusiness();
       return { enquiryId: enquiry.id, conversationId };
     };
 
