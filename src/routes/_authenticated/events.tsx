@@ -267,9 +267,9 @@ function EventsPage() {
             <div className={cn("lg:grid lg:gap-8 lg:items-start mx-auto", showPhoto ? "lg:grid-cols-[3fr_3fr_3fr] max-w-[1400px]" : "lg:grid-cols-[1fr_1fr]")}>
               {/* Each pane sticky and scrolling on its own once it's actually taller than
                   the available space — a long event list or a long agenda shouldn't push
-                  the other panes (or the photo) around. max-h, capped a touch taller than
-                  before (14.5rem of headroom instead of 17rem). */}
-              <div className="lg:sticky lg:top-40 lg:self-start lg:h-[min(638px,calc(100vh-14.5rem))] lg:overflow-y-auto lg:no-scrollbar">
+                  the other panes (or the photo) around. Height follows the viewport (14.5rem of
+                  headroom, never under 30rem) so the panes fill tall screens. */}
+              <div className="lg:sticky lg:top-40 lg:self-start lg:h-[max(30rem,calc(100vh-14.5rem))] lg:overflow-y-auto lg:no-scrollbar">
                 <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={onDragEnd}>
                   <SortableContext items={events.map((e) => e.id)} strategy={verticalListSortingStrategy}>
                     <div className="grid gap-4">
@@ -432,7 +432,7 @@ function EventsPhotoPanel({ photoUrl, zoom, panX, panY, onUpload, onCropChange }
   };
 
   return (
-    <div className="mt-8 lg:mt-0 lg:sticky lg:top-40 lg:self-start lg:h-[min(638px,calc(100vh-14.5rem))] mx-auto lg:max-w-[380px] w-full">
+    <div className="mt-8 lg:mt-0 lg:sticky lg:top-40 lg:self-start lg:h-[max(30rem,calc(100vh-14.5rem))] mx-auto lg:max-w-[380px] w-full">
       <div ref={frameRef} className="group relative aspect-[4/5] lg:aspect-auto lg:h-full rounded-3xl overflow-hidden border border-line bg-stone">
         <input ref={fileRef} type="file" accept="image/*" hidden onChange={(e) => { handleFile(e.target.files?.[0]); e.target.value = ""; }} />
         {photoUrl ? (
@@ -493,7 +493,7 @@ function AgendaPreview({ events }: { events: Event[] }) {
   const formatTime = (t: string | null | undefined) => t ? new Date(`2000-01-01T${t}`).toLocaleTimeString(undefined, { hour: "numeric", minute: "2-digit" }) : null;
 
   return (
-    <div className="rounded-3xl border border-line bg-paper p-8 mt-8 lg:mt-0 lg:sticky lg:top-40 lg:self-start lg:h-[min(638px,calc(100vh-14.5rem))] flex flex-col">
+    <div className="rounded-3xl border border-line bg-paper p-8 mt-8 lg:mt-0 lg:sticky lg:top-40 lg:self-start lg:h-[max(30rem,calc(100vh-14.5rem))] flex flex-col">
       <p className="text-sm uppercase tracking-widest text-muted-foreground shrink-0">Preview</p>
       <h2 className="font-serif text-3xl mt-1 shrink-0">Agenda</h2>
 
