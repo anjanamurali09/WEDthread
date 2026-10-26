@@ -1655,8 +1655,8 @@ function TableNode({ table, seated, bounds, canvasRef, selected, onSelect, onUpd
         <TextFrame width={isRound ? size.w * 0.72 : size.w - 20} height={isRound ? size.h * 0.6 : size.h - 16} rotation={table.rotation ?? 0}>
           {({ w, h }) => (
             <>
-              <FitLabel text={table.label} boxW={w} boxH={noCapacity ? h : h * 0.6} max={16} min={10} weight={500} className="text-ink" />
-              {!noCapacity && <FitLabel text={`${formatNumber(seated.length)}/${formatNumber(table.seats)}`} boxW={w} boxH={h * 0.36} max={14} min={9} weight={400} className="text-ink" />}
+              <FitLabel text={table.label} boxW={w} boxH={noCapacity ? h : h * 0.6} max={12} min={10} weight={500} className="text-ink" />
+              {!noCapacity && <FitLabel text={`${formatNumber(seated.length)}/${formatNumber(table.seats)}`} boxW={w} boxH={h * 0.36} max={10} min={9} weight={400} className="text-ink" />}
             </>
           )}
         </TextFrame>
@@ -1677,7 +1677,7 @@ function TableNode({ table, seated, bounds, canvasRef, selected, onSelect, onUpd
               <input
                 defaultValue={table.label}
                 onBlur={(e) => e.target.value !== table.label && onUpdate({ label: e.target.value })}
-                className="w-16 text-sm bg-transparent border-b border-line focus:outline-none focus:border-clay"
+                className="w-28 text-sm bg-transparent border-b border-line focus:outline-none focus:border-clay"
               />
               <div className="flex items-center gap-1 text-sm">
                 <span className="text-muted-foreground">Seats</span>
@@ -1894,7 +1894,7 @@ function FixtureNode({ fixture, bounds, canvasRef, selected, onSelect, onUpdate,
               <input
                 defaultValue={fixture.label ?? ""}
                 onBlur={(e) => e.target.value !== fixture.label && onUpdate({ label: e.target.value })}
-                className="w-16 text-sm bg-transparent border-b border-line focus:outline-none focus:border-clay"
+                className="w-28 text-sm bg-transparent border-b border-line focus:outline-none focus:border-clay"
               />
               <ShapePicker value={shape} onChange={(sh) => {
                 const patch: any = { shape: sh };
@@ -1985,7 +1985,7 @@ function AreaNode({ area, bounds, canvasRef, selected, onSelect, onUpdate, onDel
               <input
                 defaultValue={area.label ?? ""}
                 onBlur={(e) => e.target.value !== area.label && onUpdate({ label: e.target.value })}
-                className="w-16 text-sm bg-transparent border-b border-line focus:outline-none focus:border-clay"
+                className="w-28 text-sm bg-transparent border-b border-line focus:outline-none focus:border-clay"
               />
               <ColorPicker value={area.color ?? AREA_COLORS[0]} presets={AREA_COLORS} onChange={(c) => onUpdate({ color: c })} />
               <button type="button" onClick={() => onUpdate({ text_rotation: ((area.text_rotation ?? 0) + 90) % 360 })} title="Turn the text a quarter turn"
@@ -2052,9 +2052,9 @@ function ArrangementPicker({ value, onChange }: { value: Arrangement; onChange: 
 function ColorPicker({ value, presets, onChange }: { value: string; presets: string[]; onChange: (c: string) => void }) {
   const [open, setOpen] = useState(false);
   return (
-    <div className="relative">
+    <div className="relative flex">
       <button onClick={(e) => { e.stopPropagation(); setOpen((o) => !o); }}
-        className="h-6 w-6 rounded-full border border-line cursor-pointer"
+        className="block h-6 w-6 rounded-full border border-line cursor-pointer"
         style={{ background: value }} title="Color" />
       {open && (
         <>
