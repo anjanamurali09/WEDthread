@@ -1,4 +1,5 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
+import { Chair } from "@/components/chair-icon";
 import { preparePhotoForUpload } from "@/lib/prepare-upload";
 import { track } from "@/lib/analytics";
 import { useRef, useState } from "react";
@@ -8,7 +9,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "@/lib/toast";
 import {
-  Plus, Trash2, X, CalendarDays, Users, Armchair, MapPin, Gift, Globe2, Handshake, ChevronRight, GripVertical, Check, Gauge, Utensils, Shirt, ImagePlus, Loader2,
+  Plus, Trash2, X, CalendarDays, Users, MapPin, Gift, Globe2, Handshake, ChevronRight, GripVertical, Check, Gauge, Utensils, Shirt, ImagePlus, Loader2,
 } from "lucide-react";
 import { DatePicker } from "@/components/ui/datepicker";
 import { TimePicker } from "@/components/ui/timepicker";
@@ -34,7 +35,7 @@ const SUGGESTIONS = [
 type CatKey = "guests" | "seating" | "venue" | "registry" | "website" | "vendors" | "menu";
 const ALL_CATEGORIES: { key: CatKey; label: string; icon: any; to: string }[] = [
   { key: "guests",   label: "Guests",   icon: Users,     to: "/guests" },
-  { key: "seating",  label: "Seating",  icon: Armchair,  to: "/seating" },
+  { key: "seating",  label: "Seating",  icon: Chair,  to: "/seating" },
   { key: "venue",    label: "Venue",    icon: MapPin,    to: "/venues" },
   { key: "menu",     label: "Menu",     icon: Utensils,  to: "/menu" },
   { key: "registry", label: "Registry", icon: Gift,      to: "/registry" },

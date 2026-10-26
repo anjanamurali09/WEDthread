@@ -1,4 +1,5 @@
 import { Link } from "@tanstack/react-router";
+import { Chair } from "@/components/chair-icon";
 import { useEffect, useRef, useState } from "react";
 import { attachSparkleTrail } from "@/lib/sparkle-trail";
 import {
@@ -7,7 +8,7 @@ import {
 import { SortableContext, arrayMove, useSortable, rectSortingStrategy } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
 import {
-  CalendarDays, Users, Grid3x3, Armchair, Globe, ArrowRight, MessageCircle, Wallet, Utensils,
+  CalendarDays, Users, Grid3x3, Globe, ArrowRight, MessageCircle, Wallet, Utensils,
   Gift, GripVertical, X, Plus, MapPin, Store,
 } from "lucide-react";
 import { formatMoney } from "@/lib/currency";
@@ -157,7 +158,7 @@ function WidgetBody({ type, ctx }: { type: WidgetType; ctx: WidgetContext }) {
     case "menu":
       return <StatBody blue icon={Utensils} label="Menu" value={formatNumber(menuItems)} sub={`across ${formatNumber(menuSections)} section${menuSections === 1 ? "" : "s"}`} />;
     case "seating":
-      return <StatBody blue icon={Armchair} label="Seating" value={formatNumber(seatingTables)} sub={`${seatingTables === 1 ? "table" : "tables"} · ${formatNumber(seatingSeated)} seated`} />;
+      return <StatBody blue icon={Chair} label="Seating" value={formatNumber(seatingTables)} sub={`${seatingTables === 1 ? "table" : "tables"} · ${formatNumber(seatingSeated)} seated`} />;
     case "registry":
       return <StatBody icon={Gift} label="Registry" value={formatNumber(registryItems)} sub={hasRegistry ? "items added" : "not set up yet"} />;
     // These three drop their description line and gain a top-right icon so

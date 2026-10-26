@@ -1,9 +1,10 @@
 import { Link, useRouter, useLocation } from "@tanstack/react-router";
+import { Chair } from "@/components/chair-icon";
 import { GuidedTour, findTourTarget } from "@/components/guided-tour";
 import { WELCOME_TOUR, PAGE_TOURS, hasSeenTour, markTourSeen, type Tour } from "@/lib/tours";
 import { useCurrentWedding, useSignOut } from "@/lib/wedding-hooks";
 import { useIntegrationAutoSync } from "@/lib/integrations";
-import { CalendarDays, LayoutDashboard, Users, Armchair, MessageCircle, Globe, LogOut, Store, MapPin, Gift, ChevronDown, Plus, Inbox, ListChecks, Utensils, Wallet, PanelLeftClose, PanelLeftOpen, Compass, Settings, NotebookPen, Star, Search, ShieldCheck } from "lucide-react";
+import { CalendarDays, LayoutDashboard, Users, MessageCircle, Globe, LogOut, Store, MapPin, Gift, ChevronDown, Plus, Inbox, ListChecks, Utensils, Wallet, PanelLeftClose, PanelLeftOpen, Compass, Settings, NotebookPen, Star, Search, ShieldCheck } from "lucide-react";
 import type { ReactNode } from "react";
 import { useEffect, useState } from "react";
 import { useActiveRole, type AppRole } from "@/hooks/use-active-role";
@@ -87,7 +88,7 @@ const NAV_BY_ROLE: Record<AppRole, ReadonlyArray<{ to: string; label: string; ic
     { to: "/events", label: "Events", icon: CalendarDays },
     { to: "/guests", label: "Guests", icon: Users },
     { to: "/rsvp-questions", label: "RSVP", icon: ListChecks },
-    { to: "/seating", label: "Seating", icon: Armchair },
+    { to: "/seating", label: "Seating", icon: Chair },
     { to: "/menu", label: "Menu", icon: Utensils },
     { to: "/registry", label: "Registry", icon: Gift },
     { to: "/budget", label: "Budget", icon: Wallet },
@@ -100,7 +101,7 @@ const NAV_BY_ROLE: Record<AppRole, ReadonlyArray<{ to: string; label: string; ic
     { to: "/events", label: "Events", icon: CalendarDays },
     { to: "/guests", label: "Guests", icon: Users },
     { to: "/rsvp-questions", label: "RSVP", icon: ListChecks },
-    { to: "/seating", label: "Seating", icon: Armchair },
+    { to: "/seating", label: "Seating", icon: Chair },
     { to: "/menu", label: "Menu", icon: Utensils },
     { to: "/budget", label: "Budget", icon: Wallet },
     { to: "/messages", label: "Messages", icon: MessageCircle },

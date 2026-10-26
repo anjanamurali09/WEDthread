@@ -1,4 +1,5 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
+import { Chair } from "@/components/chair-icon";
 import { useEffect, useLayoutEffect, useMemo, useRef, useState, useCallback } from "react";
 import { createPortal } from "react-dom";
 import { CustomColorButton } from "@/components/custom-color";
@@ -12,7 +13,7 @@ import { useCurrentWedding, useEvents, useGuests, useInvites } from "@/lib/weddi
 import { supabase } from "@/integrations/supabase/client";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "@/lib/toast";
-import { Plus, X, Trash2, Circle, Square, RectangleHorizontal, Music, GlassWater, Mic, DoorOpen, Palette, Users, Armchair, Check, CalendarDays, Download, Settings, ZoomIn, ZoomOut, ArrowRight, ArrowDown, ArrowUp, ArrowLeft, Maximize2, Minimize2, SlidersHorizontal, Search, BoxSelect, RotateCw } from "lucide-react";
+import { Plus, X, Trash2, Circle, Square, RectangleHorizontal, Music, GlassWater, Mic, DoorOpen, Palette, Users, Check, CalendarDays, Download, Settings, ZoomIn, ZoomOut, ArrowRight, ArrowDown, ArrowUp, ArrowLeft, Maximize2, Minimize2, SlidersHorizontal, Search, BoxSelect, RotateCw } from "lucide-react";
 import { OvalPhotoOrnament } from "@/components/photo-empty-state";
 import { ConfirmDialog } from "@/components/confirm-dialog";
 import { Dropdown } from "@/components/dropdown";
@@ -754,7 +755,7 @@ function SeatingSetupCard({ onStart, onSkip }: { onStart: (keys: string[]) => Pr
 
   return (
     <div className="paper-card p-8 max-w-xl mx-auto">
-      <span className="grid h-12 w-12 place-items-center rounded-full bg-ink text-paper"><Armchair className="h-5 w-5" /></span>
+      <span className="grid h-12 w-12 place-items-center rounded-full bg-ink text-paper"><Chair className="h-5 w-5" /></span>
       <h2 className="mt-4 font-serif text-2xl">Let's set up your floor plan</h2>
       <p className="mt-1 text-sm text-muted-foreground">Pick what you need. We'll drop them onto your canvas as a starting point. Add or remove anything later.</p>
 
