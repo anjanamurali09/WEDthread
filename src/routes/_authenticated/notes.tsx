@@ -195,7 +195,7 @@ function NoteRow({ note, active, onSelect, onDelete }: { note: Note; active: boo
   );
 }
 
-function ToolbarButton({ icon: Icon, label, onClick }: { icon: any; label: string; onClick: () => void }) {
+function ToolbarButton({ icon: Icon, label, onClick, active }: { icon: any; label: string; onClick: () => void; active?: boolean }) {
   return (
     <button
       type="button"
@@ -205,7 +205,8 @@ function ToolbarButton({ icon: Icon, label, onClick }: { icon: any; label: strin
       onMouseDown={(e) => e.preventDefault()}
       onClick={onClick}
       title={label}
-      className="grid h-7 w-7 place-items-center rounded-lg text-ink hover:bg-stone/60 cursor-pointer"
+      aria-pressed={active}
+      className={cn("grid h-7 w-7 place-items-center rounded-lg cursor-pointer", active ? "bg-ink text-paper" : "text-ink hover:bg-stone/60")}
     >
       <Icon className="h-4 w-4" />
     </button>
@@ -603,7 +604,17 @@ function NoteEditor({ note, onSaved }: { note: Note; onSaved: () => void }) {
       </div>
       <div className="mt-4 px-6 md:px-8 flex items-center gap-0.5 border-b border-line/60 pb-3">
         <ToolbarButton icon={Bold} label="Bold" onClick={() => exec("bold")} />
-        <ToolbarButton icon={Strikethrough} label="Strikethrough" onClick={() => exec("strikeThrough")} />
+        <ToolbarButton
+          icon={Strikethrough}
+          label={crossOutTicked ? "Strikethrough (ticked items are crossed out, click with no text selected to turn off)" : "Strikethrough (click with no text selected to cross out ticked items)"}
+          active={crossOutTicked}
+          onClick={() => {
+            const sel = window.getSelection();
+            const inEditor = !!sel && !sel.isCollapsed && !!editorRef.current && editorRef.current.contains(sel.anchorNode);
+            if (inEditor) exec("strikeThrough");
+            else setCrossOutTicked((v) => !v);
+          }}
+        />
         <div className="w-px h-5 bg-line mx-1.5" />
         <ToolbarButton icon={List} label="Bullet list" onClick={() => applyLineFormat("bullet")} />
         <ToolbarButton icon={ListOrdered} label="Numbered list" onClick={() => applyLineFormat("number")} />
@@ -611,12 +622,6 @@ function NoteEditor({ note, onSaved }: { note: Note; onSaved: () => void }) {
         <div className="w-px h-5 bg-line mx-1.5" />
         <ToolbarButton icon={ListIndentDecrease} label="Outdent" onClick={() => exec("outdent")} />
         <ToolbarButton icon={ListIndentIncrease} label="Indent" onClick={() => exec("indent")} />
-        <div className="ml-auto" />
-        <button type="button" role="switch" aria-checked={crossOutTicked} onMouseDown={(e) => e.preventDefault()} onClick={() => setCrossOutTicked((v) => !v)}
-          title="Cross out an item's text when you tick it"
-          className={cn("inline-flex items-center gap-1.5 rounded-full border px-3 py-1 text-xs cursor-pointer transition-colors", crossOutTicked ? "border-ink bg-ink text-paper" : "border-line hover:bg-stone/60")}>
-          <Strikethrough className="h-3 w-3" /> Cross out ticked
-        </button>
       </div>
       <div
         ref={editorRef}
