@@ -11,7 +11,8 @@ import { usePersistedState } from "@/hooks/use-persisted-state";
 
 export const Route = createFileRoute("/_authenticated/notes")({ component: NotesPage });
 
-const AUTOSAVE_MS = 800;
+// Saves once typing has paused this long, so the "Saving…" status does not flicker on every keystroke.
+const AUTOSAVE_MS = 3000;
 
 // note.content is stored as HTML (from the rich-text editor below) for any note saved
 // since formatting was added, but older notes were saved as plain text with literal
@@ -265,6 +266,23 @@ function NoteEditor({ note, onSaved }: { note: Note; onSaved: () => void }) {
         supabase.from("notes").update({ title: t.trim() || null, content: c }).eq("id", note.id).then();
       }
     };
+  }, []); // eslint-disable-line
+
+  // With a longer pause before autosaving, also save the moment the tab is hidden (switching tabs or
+  // apps, closing the window) so nothing typed in the last few seconds is lost.
+  useEffect(() => {
+    const onHide = () => {
+      if (document.visibilityState !== "hidden") return;
+      if (timer.current) clearTimeout(timer.current);
+      const { title: t, content: c } = latestRef.current;
+      if (t !== lastSaved.current.title || c !== lastSaved.current.content) {
+        supabase.from("notes").update({ title: t.trim() || null, content: c }).eq("id", note.id).then(() => {
+          lastSaved.current = { title: t, content: c };
+        });
+      }
+    };
+    document.addEventListener("visibilitychange", onHide);
+    return () => document.removeEventListener("visibilitychange", onHide);
   }, []); // eslint-disable-line
 
   // Seeded exactly once on mount, then never touched by React again — the editor is
