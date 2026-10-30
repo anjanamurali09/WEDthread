@@ -12,7 +12,7 @@ Live site: **https://www.wedthread.co**
 
 | What | Where | Notes |
 | --- | --- | --- |
-| Source code | GitHub, `anjanamurali09/vowzy` (private) | The `main` branch **is production**. |
+| Source code | GitHub, `anjanamurali09/wedthread` (private) | The `main` branch **is production**. |
 | Hosting and builds | Cloudflare, Workers & Pages, project `wedthread` | Builds on every push to `main` and deploys automatically. |
 | Domain and DNS | Cloudflare (`wedthread.co`) | `www` is the main address; the bare domain redirects to it. |
 | Database, logins, file storage, server functions | Supabase, project ref `pthcamxqautjjsppbfaj` | One project only. There is no separate staging project. |
@@ -31,8 +31,8 @@ Requirements: Node 20.19 or newer (or 22.12+), npm, and the [Supabase CLI](https
 (only needed for edge functions and migrations).
 
 ```bash
-git clone https://github.com/anjanamurali09/vowzy.git
-cd vowzy
+git clone https://github.com/anjanamurali09/wedthread.git
+cd wedthread
 npm install
 cp .env.example .env     # then fill in the values (ask the owner)
 npm run dev              # http://localhost:8080
