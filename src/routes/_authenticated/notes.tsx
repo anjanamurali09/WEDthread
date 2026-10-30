@@ -282,6 +282,7 @@ function NoteEditor({ note, onSaved }: { note: Note; onSaved: () => void }) {
     const html = editorRef.current?.innerHTML ?? contentRef.current;
     contentRef.current = html;
     latestRef.current = { title: latestRef.current.title, content: html };
+    syncFmt();
     if (syncTimer.current) clearTimeout(syncTimer.current);
     syncTimer.current = setTimeout(() => setContent(html), 500);
     scheduleSave(latestRef.current.title, html);
@@ -325,15 +326,15 @@ function NoteEditor({ note, onSaved }: { note: Note; onSaved: () => void }) {
     return (container.textContent ?? "").split("\n").map((l) => l.trim());
   };
 
-  // True when the line the caret is on already has a checkbox. The caret can sit right
-  // after the checkbox (directly in the editor, not inside its label), so looking only
-  // at the label under the caret misses that case and a second checkbox gets added.
-  const lineHasCheckbox = (range: Range): boolean => {
+  const isLineBreak = (n: Node) => n.nodeName === "BR" || /^(DIV|P|UL|OL|LI)$/.test(n.nodeName);
+
+  // The top-level nodes of the line the caret is on: [start, end) indexes into the
+  // editor's children. The caret can sit right after a checkbox (directly in the editor,
+  // not inside its label), so every checklist check works on the whole line rather than
+  // on whatever element happens to be under the caret.
+  const lineBounds = (range: Range) => {
     const root = editorRef.current;
-    if (!root) return false;
-    const isBreak = (n: Node) => n.nodeName === "BR" || /^(DIV|P|UL|OL|LI)$/.test(n.nodeName);
-    const isCheck = (n: Node) =>
-      n instanceof Element && (n.matches("input.note-check, .note-check-label") || !!n.querySelector("input.note-check"));
+    if (!root) return null;
     let left: number;
     let right: number;
     let own = -1;
@@ -345,18 +346,84 @@ function NoteEditor({ note, onSaved }: { note: Note; onSaved: () => void }) {
       while (top.parentNode && top.parentNode !== root) top = top.parentNode;
       left = right = own = Array.prototype.indexOf.call(root.childNodes, top);
     }
-    for (let i = left; i >= 0; i--) {
-      const n = root.childNodes[i];
-      if (isCheck(n)) return true;
-      if (isBreak(n) && i !== own) break;
-    }
-    for (let i = right; i < root.childNodes.length; i++) {
-      const n = root.childNodes[i];
-      if (isCheck(n)) return true;
-      if (isBreak(n) && i !== own) break;
+    let start = left;
+    while (start >= 0 && !(isLineBreak(root.childNodes[start]) && start !== own)) start--;
+    let end = right;
+    while (end < root.childNodes.length && !(isLineBreak(root.childNodes[end]) && end !== own)) end++;
+    return { root, start: start + 1, end };
+  };
+
+  const lineHasCheckbox = (range: Range): boolean => {
+    const bounds = lineBounds(range);
+    if (!bounds) return false;
+    for (let i = bounds.start; i < bounds.end; i++) {
+      const n = bounds.root.childNodes[i];
+      if (n instanceof Element && (n.matches("input.note-check, .note-check-label") || !!n.querySelector("input.note-check"))) return true;
     }
     return false;
   };
+
+  // Gives a checklist line exactly one checkbox followed by one label holding all of the
+  // line's text. Text typed straight after an empty label, or an extra checkbox from an
+  // earlier double click, otherwise ends up outside the label and Enter no longer knows
+  // the line is a checklist item. Returns the label, or null if the line has no checkbox.
+  const adoptChecklistLine = (range: Range): HTMLElement | null => {
+    const bounds = lineBounds(range);
+    if (!bounds) return null;
+    const { root, start, end } = bounds;
+    const nodes = Array.from(root.childNodes).slice(start, end);
+    const first = nodes.find((n) => n instanceof HTMLInputElement && n.classList.contains("note-check"));
+    if (!first) return null;
+    const keepNode = range.startContainer;
+    const keepOffset = range.startOffset;
+    let label = nodes.find((n, i) => i > nodes.indexOf(first) && n instanceof HTMLElement && n.classList.contains("note-check-label")) as HTMLElement | undefined;
+    if (!label) {
+      label = document.createElement("span");
+      label.className = "note-check-label";
+      first.after(label);
+    }
+    for (const n of nodes) {
+      if (n === first || n === label || nodes.indexOf(n) < nodes.indexOf(first)) continue;
+      if (n instanceof HTMLInputElement && n.classList.contains("note-check")) n.remove();
+      else if (n instanceof HTMLElement && n.classList.contains("note-check-label")) {
+        label.append(...Array.from(n.childNodes));
+        n.remove();
+      } else label.append(n);
+    }
+    const sel = window.getSelection();
+    const caret = document.createRange();
+    if (keepNode !== root && root.contains(keepNode)) caret.setStart(keepNode, keepOffset);
+    else {
+      caret.selectNodeContents(label);
+      caret.collapse(false);
+    }
+    caret.collapse(true);
+    sel?.removeAllRanges();
+    sel?.addRange(caret);
+    return label;
+  };
+
+  // Which toolbar buttons light up for the line the caret is on.
+  const [fmt, setFmt] = useState({ bold: false, bullet: false, number: false, check: false });
+  const syncFmt = () => {
+    const sel = window.getSelection();
+    const root = editorRef.current;
+    if (!sel || sel.rangeCount === 0 || !root || !root.contains(sel.anchorNode)) return;
+    const next = {
+      bold: document.queryCommandState("bold"),
+      bullet: document.queryCommandState("insertUnorderedList"),
+      number: document.queryCommandState("insertOrderedList"),
+      check: lineHasCheckbox(sel.getRangeAt(0)),
+    };
+    setFmt((prev) => (prev.bold === next.bold && prev.bullet === next.bullet && prev.number === next.number && prev.check === next.check ? prev : next));
+  };
+  const syncFmtRef = useRef(syncFmt);
+  syncFmtRef.current = syncFmt;
+  useEffect(() => {
+    const onChange = () => syncFmtRef.current();
+    document.addEventListener("selectionchange", onChange);
+    return () => document.removeEventListener("selectionchange", onChange);
+  }, []);
 
   // One handler for all three line-format buttons (bullet / numbered / checklist).
   // With no selection (just a blinking cursor), each format behaves as it always
@@ -378,10 +445,28 @@ function NoteEditor({ note, onSaved }: { note: Note; onSaved: () => void }) {
       const inListItem = startEl?.closest("li") as HTMLLIElement | null;
 
       if (format === "checklist") {
-        // The checklist button isn't how you add another checkbox (that's Enter) —
-        // clicking it again while already inside one previously duplicated the
-        // checkbox instead of doing nothing, which is the "glitch" this guards.
-        if (inChecklist || lineHasCheckbox(range)) return;
+        // Clicking Checklist on a line that already has a checkbox turns it off: the
+        // checkbox goes and the text stays as a plain line.
+        const existingLabel = lineHasCheckbox(range) ? adoptChecklistLine(range) : null;
+        if (existingLabel) {
+          const cur = window.getSelection()?.getRangeAt(0);
+          const keepNode = cur?.startContainer;
+          const keepOffset = cur?.startOffset ?? 0;
+          const marker = document.createRange();
+          marker.setStartBefore(existingLabel);
+          marker.collapse(true);
+          const box = existingLabel.previousElementSibling;
+          if (box?.matches("input.note-check")) box.remove();
+          existingLabel.replaceWith(...Array.from(existingLabel.childNodes));
+          const caret = document.createRange();
+          if (keepNode instanceof Text && el.contains(keepNode)) caret.setStart(keepNode, keepOffset);
+          else caret.setStart(marker.startContainer, marker.startOffset);
+          caret.collapse(true);
+          sel.removeAllRanges();
+          sel.addRange(caret);
+          readAndSave();
+          return;
+        }
         if (inListItem) {
           // Cursor is inside an existing bullet/numbered line: replace that <li> (and
           // its marker) with a checkbox rather than inserting one alongside the text,
@@ -410,19 +495,21 @@ function NoteEditor({ note, onSaved }: { note: Note; onSaved: () => void }) {
         caret.collapse(true);
         sel.removeAllRanges();
         sel.addRange(caret);
-      } else if (inChecklist) {
-        // Symmetric case: cursor is inside an existing checklist item and the couple
+      } else if (inChecklist || lineHasCheckbox(range)) {
+        // Symmetric case: cursor is on an existing checklist item and the couple
         // clicks Bullet/Numbered — replace the checkbox+label with a real <li> instead
         // of leaving the checkbox stuck next to a newly-created list.
-        const checkbox = inChecklist.previousElementSibling as HTMLInputElement | null;
-        const text = (inChecklist.textContent ?? "").trim();
+        const inChecklistLabel = inChecklist ?? adoptChecklistLine(range);
+        if (!inChecklistLabel) return;
+        const checkbox = inChecklistLabel.previousElementSibling as HTMLInputElement | null;
+        const text = (inChecklistLabel.textContent ?? "").trim();
         const listEl = document.createElement(format === "bullet" ? "ul" : "ol");
         const li = document.createElement("li");
         li.textContent = text;
         listEl.appendChild(li);
-        const next = inChecklist.nextSibling;
+        const next = inChecklistLabel.nextSibling;
         if (next && next.nodeName === "BR") next.remove();
-        inChecklist.replaceWith(listEl);
+        inChecklistLabel.replaceWith(listEl);
         checkbox?.remove();
         const caret = document.createRange();
         caret.selectNodeContents(li);
@@ -500,7 +587,7 @@ function NoteEditor({ note, onSaved }: { note: Note; onSaved: () => void }) {
   const handleKeyDown = (e: React.KeyboardEvent<HTMLDivElement>) => {
     const sel = window.getSelection();
     if (!sel || sel.rangeCount === 0) return;
-    const range = sel.getRangeAt(0);
+    let range = sel.getRangeAt(0);
 
     // Backspace at the start of a checklist item (or Delete / Backspace on an empty one)
     // removes its checkbox: an empty item disappears and its line joins the previous one,
@@ -548,8 +635,14 @@ function NoteEditor({ note, onSaved }: { note: Note; onSaved: () => void }) {
     }
 
     if (e.key !== "Enter" || e.shiftKey) return;
-    const label = (range.startContainer instanceof Element ? range.startContainer : range.startContainer.parentElement)
+    let label: Element | null | undefined = (range.startContainer instanceof Element ? range.startContainer : range.startContainer.parentElement)
       ?.closest(".note-check-label");
+    // The caret can be on a checklist line without being inside its label (right after the
+    // checkbox, or text typed outside the label): fold the line into one checkbox + label first.
+    if (!label && range.collapsed) {
+      label = adoptChecklistLine(range);
+      if (label) range = sel.getRangeAt(0);
+    }
     if (!label) return; // not inside a checklist item — let the browser handle Enter normally
     e.preventDefault();
 
@@ -636,7 +729,7 @@ function NoteEditor({ note, onSaved }: { note: Note; onSaved: () => void }) {
         />
       </div>
       <div className="mt-4 px-6 md:px-8 flex items-center gap-0.5 border-b border-line/60 pb-3">
-        <ToolbarButton icon={Bold} label="Bold" onClick={() => exec("bold")} />
+        <ToolbarButton icon={Bold} label="Bold" active={fmt.bold} onClick={() => exec("bold")} />
         <ToolbarButton
           icon={Strikethrough}
           label={crossOutTicked ? "Strikethrough (ticked items are crossed out, click with no text selected to turn off)" : "Strikethrough (click with no text selected to cross out ticked items)"}
@@ -649,9 +742,9 @@ function NoteEditor({ note, onSaved }: { note: Note; onSaved: () => void }) {
           }}
         />
         <div className="w-px h-5 bg-line mx-1.5" />
-        <ToolbarButton icon={List} label="Bullet list" onClick={() => applyLineFormat("bullet")} />
-        <ToolbarButton icon={ListOrdered} label="Numbered list" onClick={() => applyLineFormat("number")} />
-        <ToolbarButton icon={SquareCheckBig} label="Checklist" onClick={() => applyLineFormat("checklist")} />
+        <ToolbarButton icon={List} label="Bullet list" active={fmt.bullet} onClick={() => applyLineFormat("bullet")} />
+        <ToolbarButton icon={ListOrdered} label="Numbered list" active={fmt.number} onClick={() => applyLineFormat("number")} />
+        <ToolbarButton icon={SquareCheckBig} label="Checklist" active={fmt.check} onClick={() => applyLineFormat("checklist")} />
         <div className="w-px h-5 bg-line mx-1.5" />
         <ToolbarButton icon={ListIndentDecrease} label="Outdent" onClick={() => exec("outdent")} />
         <ToolbarButton icon={ListIndentIncrease} label="Indent" onClick={() => exec("indent")} />
