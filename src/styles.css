@@ -491,8 +491,9 @@ input.note-check:checked::after {
   transform: translate(-50%, -62%) rotate(45deg);
 }
 .note-check-label.is-checked {
-  color: var(--color-muted-foreground);
+  color: color-mix(in srgb, var(--color-ink) 28%, transparent);
   text-decoration: line-through;
+  text-decoration-color: color-mix(in srgb, var(--color-ink) 45%, transparent);
 }
 /* With "Cross out ticked" switched off, ticked items keep their normal look. */
 .note-keep-ticked .note-check-label.is-checked {

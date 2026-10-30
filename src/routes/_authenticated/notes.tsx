@@ -217,7 +217,8 @@ function NoteEditor({ note, onSaved }: { note: Note; onSaved: () => void }) {
   const [title, setTitle] = useState(note.title ?? "");
   const [content, setContent] = useState(note.content);
   // Ticked checklist items are crossed out unless this is switched off (remembered in this browser).
-  const [crossOutTicked, setCrossOutTicked] = usePersistedState<boolean>("wedthread.notes-cross-out", true);
+  // "-v2": an earlier version stored "off" for anyone who ever tapped the old pill; ignore that.
+  const [crossOutTicked, setCrossOutTicked] = usePersistedState<boolean>("wedthread.notes-cross-out-v2", true);
   const [saving, setSaving] = useState(false);
   const [savedAt, setSavedAt] = useState<Date | null>(null);
   const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
