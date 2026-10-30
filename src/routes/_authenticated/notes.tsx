@@ -325,6 +325,39 @@ function NoteEditor({ note, onSaved }: { note: Note; onSaved: () => void }) {
     return (container.textContent ?? "").split("\n").map((l) => l.trim());
   };
 
+  // True when the line the caret is on already has a checkbox. The caret can sit right
+  // after the checkbox (directly in the editor, not inside its label), so looking only
+  // at the label under the caret misses that case and a second checkbox gets added.
+  const lineHasCheckbox = (range: Range): boolean => {
+    const root = editorRef.current;
+    if (!root) return false;
+    const isBreak = (n: Node) => n.nodeName === "BR" || /^(DIV|P|UL|OL|LI)$/.test(n.nodeName);
+    const isCheck = (n: Node) =>
+      n instanceof Element && (n.matches("input.note-check, .note-check-label") || !!n.querySelector("input.note-check"));
+    let left: number;
+    let right: number;
+    let own = -1;
+    if (range.startContainer === root) {
+      left = range.startOffset - 1;
+      right = range.startOffset;
+    } else {
+      let top: Node = range.startContainer;
+      while (top.parentNode && top.parentNode !== root) top = top.parentNode;
+      left = right = own = Array.prototype.indexOf.call(root.childNodes, top);
+    }
+    for (let i = left; i >= 0; i--) {
+      const n = root.childNodes[i];
+      if (isCheck(n)) return true;
+      if (isBreak(n) && i !== own) break;
+    }
+    for (let i = right; i < root.childNodes.length; i++) {
+      const n = root.childNodes[i];
+      if (isCheck(n)) return true;
+      if (isBreak(n) && i !== own) break;
+    }
+    return false;
+  };
+
   // One handler for all three line-format buttons (bullet / numbered / checklist).
   // With no selection (just a blinking cursor), each format behaves as it always
   // did on its own line. With a real selection, every selected line — whatever it's
@@ -348,7 +381,7 @@ function NoteEditor({ note, onSaved }: { note: Note; onSaved: () => void }) {
         // The checklist button isn't how you add another checkbox (that's Enter) —
         // clicking it again while already inside one previously duplicated the
         // checkbox instead of doing nothing, which is the "glitch" this guards.
-        if (inChecklist) return;
+        if (inChecklist || lineHasCheckbox(range)) return;
         if (inListItem) {
           // Cursor is inside an existing bullet/numbered line: replace that <li> (and
           // its marker) with a checkbox rather than inserting one alongside the text,
