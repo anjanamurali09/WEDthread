@@ -17,7 +17,7 @@ Live site: **https://www.wedthread.co**
 | Domain and DNS | Cloudflare (`wedthread.co`) | `www` is the main address; the bare domain redirects to it. |
 | Database, logins, file storage, server functions | Supabase, project ref `pthcamxqautjjsppbfaj` | One project only. There is no separate staging project. |
 | Transactional email | Resend (domain `wedthread.co` verified) | Connected to Supabase as custom SMTP, and used directly by edge functions. |
-| Payments | Stripe | Test mode until launch. |
+| Payments | Stripe | Card-on-file for enquiries, test mode. Paid venue/vendor listings are on hold (see Known gaps). |
 
 Everything above is on the owner's accounts. To work on the project you need to be invited to GitHub,
 Cloudflare and Supabase (see [Handover checklist](#handover-checklist)). Never share passwords or keys
@@ -147,6 +147,7 @@ Because nothing records which have been applied, run the read-only check after c
 - `supabase/checks/check_migrations.sql` lists tables and columns the migrations define that are missing from the live database
 - `supabase/checks/audit_security.sql` lists what signed-out visitors can read or call, and which tables lack row-level security
 - `supabase/checks/inventory_accounts.sql` lists accounts, weddings and businesses
+- `supabase/checks/check_rsvp.sql` lists any database function or column the RSVP pages need that is missing. Run it if guests see an error when they submit an RSVP
 
 Order matters when code and schema change together. Add the database change first when the new code depends on it;
 for removals, deploy the code first and drop the old column afterwards.
@@ -161,7 +162,9 @@ runs only after the code that reads the VAT number from `business_private` is li
 | --- | --- |
 | `send-collaborator-invite` | Owner-only. Invites a collaborator: Supabase invitation for new people, a branded email for existing accounts |
 | `send-payment-reminders` | Emails couples reminders for expenses; run every 15 minutes by `pg_cron` (see `20261007110000_schedule_payment_reminders.sql`, which needs the project's public key filled in) |
-| `submit-enquiry` | Couple sends an enquiry to a vendor or venue |
+| `submit-enquiry` | Couple sends an enquiry to a vendor or venue. Also emails it to the business at its sign-up address, with hello@wedthread.co copied (needs `RESEND_API_KEY` and `RESEND_FROM_EMAIL`) |
+| `notify-team` | Emails owen@wedthread.co when a couple joins the WhatsApp waitlist or sends feedback. Signed-in only |
+| `delete-account` | Deletes the signed-in person's whole account (Settings → Delete profile). Needs the person to type their own email |
 | `notify-viewing-request`, `notify-business-submission` | Emails owners and the admin; require a signed-in owner |
 | `create-setup-intent`, `stripe-webhook` | Stripe card setup and webhooks (the webhook verifies Stripe's signature and has `verify_jwt = false` in `config.toml`) |
 | `fetch-product-metadata` | Registry: reads a pasted product link. Signed-in only; refuses private and local addresses |
@@ -198,13 +201,16 @@ runs only after the code that reads the VAT number from `business_private` is li
 
 - No staging environment: local development and production share one database.
 - Supabase's free plan has no automatic backups. Upgrade to Pro before real users rely on the data.
-- Stripe is in test mode.
+- Stripe is in test mode. Paid venue and vendor listings (USD 9.99 / 4.99 a month) were built but put on hold over card fees. The work is on a local branch called `stripe-subscriptions` that has **not** been pushed to GitHub, so it exists only on the owner's computer. Push that branch if it should be kept safe.
+- Guided tours (`src/lib/tours.ts`, `src/components/guided-tour.tsx`) are remembered per browser, not per account.
 - The Google Sheets integration needs Google credentials before it works.
 - The `Vendors/` and `Venues/` folders (raw listing photos) are kept out of git and exist only on the owner's computer.
 
 ---
 
 ## Handover checklist
+
+The owner has to do these from their own accounts (a developer cannot give themselves access):
 
 When someone new joins, invite them (do not share passwords):
 
