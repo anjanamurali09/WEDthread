@@ -1,7 +1,6 @@
 import { Link } from "@tanstack/react-router";
 import { Chair } from "@/components/chair-icon";
-import { useEffect, useRef, useState } from "react";
-import { attachSparkleTrail } from "@/lib/sparkle-trail";
+import { useState } from "react";
 import {
   DndContext, closestCenter, PointerSensor, useSensor, useSensors, type DragEndEvent,
 } from "@dnd-kit/core";
@@ -301,9 +300,6 @@ export function DashboardWidgetGrid({ layout, ctx, onLayoutChange }: {
   layout: DashboardLayoutEntry[]; ctx: WidgetContext; onLayoutChange: (next: DashboardLayoutEntry[]) => void;
 }) {
   const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 4 } }));
-  const gridRef = useRef<HTMLDivElement>(null);
-  // Hovering a workspace card leaves a trail of blue sparkles behind the pointer.
-  useEffect(() => (gridRef.current ? attachSparkleTrail(gridRef.current) : undefined), []);
   const activeIds = layout.map((e) => e.widgetId);
   const available = (Object.keys(WIDGET_META) as WidgetType[]).filter((t) => !activeIds.includes(t));
 
@@ -325,7 +321,7 @@ export function DashboardWidgetGrid({ layout, ctx, onLayoutChange }: {
     <section className="mt-8">
       <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={onDragEnd}>
         <SortableContext items={activeIds} strategy={rectSortingStrategy}>
-          <div ref={gridRef} className="grid md:grid-cols-2 xl:grid-cols-4 gap-4">
+          <div className="grid md:grid-cols-2 xl:grid-cols-4 gap-4">
             {layout.map((entry) => (
               <SortableWidgetCard
                 key={entry.widgetId}
