@@ -56,13 +56,13 @@ const CHART_THEMES: ChartTheme[] = [
   // read as WEDthread's own by default.
   { name: "Brand", colors: ["#243746", "#7FA8D6", "#D9A03D", "#6B7A8F", "#4A7CAD", "#F5DBAE"] },
   { name: "Classic", colors: ["#22c55e", "#ef4444", "#3b82f6", "#f59e0b", "#a855f7", "#14b8a6"] },
-  { name: "Ocean", colors: ["#3b82f6", "#0ea5e9", "#06b6d4", "#0284c7", "#38bdf8", "#075985"] },
-  { name: "Berry", colors: ["#a855f7", "#ec4899", "#d946ef", "#c026d3", "#f472b6", "#9333ea"] },
-  { name: "Sunset", colors: ["#f59e0b", "#fb923c", "#ef4444", "#f97316", "#facc15", "#dc2626"] },
-  { name: "Meadow", colors: ["#10b981", "#84cc16", "#22c55e", "#65a30d", "#4ade80", "#16a34a"] },
-  { name: "Slate", colors: ["#64748b", "#475569", "#94a3b8", "#334155", "#cbd5e1", "#1e293b"] },
-  { name: "Coral", colors: ["#fb923c", "#38bdf8", "#fbbf24", "#0ea5e9", "#f97316", "#0284c7"] },
-  { name: "Lilac", colors: ["#c4b5fd", "#fdba74", "#a78bfa", "#fb923c", "#8b5cf6", "#f97316"] },
+  { name: "Ocean", colors: ["#1D4ED8", "#06B6D4", "#14B8A6", "#0C4A6E", "#38BDF8", "#6366F1"] },
+  { name: "Berry", colors: ["#E11D48", "#6D28D9", "#F472B6", "#1E3A8A", "#A855F7", "#FDA4AF"] },
+  { name: "Sunset", colors: ["#F97316", "#DC2626", "#FACC15", "#C026D3", "#5B21B6", "#FB7185"] },
+  { name: "Meadow", colors: ["#16A34A", "#84CC16", "#14B8A6", "#FACC15", "#0F766E", "#F472B6"] },
+  { name: "Slate", colors: ["#0F172A", "#2563EB", "#94A3B8", "#0891B2", "#475569", "#CBD5E1"] },
+  { name: "Coral", colors: ["#FF6B6B", "#0EA5E9", "#FBBF24", "#14B8A6", "#F97316", "#6366F1"] },
+  { name: "Lilac", colors: ["#8B5CF6", "#FB923C", "#C4B5FD", "#F43F5E", "#6366F1", "#FDBA74"] },
 ];
 const CHART_THEME_KEY = "wedthread_budget_chart_theme";
 
@@ -1210,7 +1210,7 @@ function ExpenseForm({ events, categories, customColumns, currency, onCreateCate
             className="w-full rounded-xl border border-line bg-pearl px-3 py-2 pr-12 text-xs tabular-nums focus:outline-none focus:ring-2 focus:ring-clay" />
           <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-muted-foreground pointer-events-none">{currency}</span>
         </div>
-        <textarea placeholder="Description (optional)" rows={2} value={description} onChange={(e) => setDescription(e.target.value)}
+        <textarea placeholder="Description" rows={2} value={description} onChange={(e) => setDescription(e.target.value)}
           className="w-full rounded-xl border border-line bg-pearl px-3 py-2 text-xs focus:outline-none focus:ring-2 focus:ring-clay resize-none" />
         <CategoryDropdown value={category} onChange={setCategory} categories={categories} onCreate={onCreateCategory} />
         <Dropdown size="sm" value={eventId} onChange={setEventId} placeholder="No specific event"
@@ -1236,7 +1236,7 @@ function ExpenseForm({ events, categories, customColumns, currency, onCreateCate
         <div className="grid grid-cols-2 gap-1.5">
           <Dropdown size="sm" value={paymentMethod} onChange={setPaymentMethod} placeholder="Payment method" options={PAYMENT_METHOD_OPTIONS} />
           <DatePicker value={dateValue} onChange={onDueChange} placeholder={status === "pending" ? "Due by" : "Paid date"} displayFormat="MMM d"
-            className="px-3 py-2 text-xs [&_svg]:h-3.5 [&_svg]:w-3.5" />
+            className="h-auto rounded-2xl bg-pearl px-3 py-1.5 text-xs shadow-none hover:bg-pearl [&_svg]:h-3.5 [&_svg]:w-3.5" />
         </div>
 
         {reminderAvailable && (
@@ -1264,7 +1264,7 @@ function ExpenseForm({ events, categories, customColumns, currency, onCreateCate
                 <div>
                   <span className="text-[10px] uppercase tracking-widest text-muted-foreground">Send date</span>
                   <DatePicker value={effectiveReminderDate} onChange={(v) => { setReminderDate(v); setReminderTouched(true); }} placeholder="Send date" displayFormat="MMM d"
-                    className="mt-1 px-3 py-2 text-xs [&_svg]:h-3.5 [&_svg]:w-3.5" />
+                    className="mt-1 h-auto rounded-2xl bg-pearl px-3 py-1.5 text-xs shadow-none hover:bg-pearl [&_svg]:h-3.5 [&_svg]:w-3.5" />
                 </div>
                 <div>
                   <span className="text-[10px] uppercase tracking-widest text-muted-foreground">Send time</span>
@@ -1290,7 +1290,7 @@ function ExpenseForm({ events, categories, customColumns, currency, onCreateCate
               )}
               {col.type === "date" && (
                 <DatePicker value={customValues[col.id] ?? ""} onChange={(v) => setCustomValue(col.id, v)} placeholder="Pick a date" displayFormat="MMM d"
-                  className="px-3 py-2 text-xs [&_svg]:h-3.5 [&_svg]:w-3.5" />
+                  className="h-auto rounded-2xl bg-pearl px-3 py-1.5 text-xs shadow-none hover:bg-pearl [&_svg]:h-3.5 [&_svg]:w-3.5" />
               )}
               {col.type === "boolean" && (
                 <div className="flex gap-1.5">
@@ -1307,7 +1307,7 @@ function ExpenseForm({ events, categories, customColumns, currency, onCreateCate
         ))}
 
         <button onClick={submit} disabled={!name.trim() || evaluated == null}
-          className="w-full inline-flex items-center justify-center gap-2 rounded-full bg-cherry text-paper py-2 text-xs hover:bg-ink disabled:opacity-60 cursor-pointer">
+          className="w-full inline-flex items-center justify-center gap-2 rounded-full bg-ink text-paper py-2.5 text-sm font-medium shadow-sm hover:bg-cherry transition-colors disabled:opacity-45 disabled:cursor-not-allowed cursor-pointer">
           <SubmitIcon className="h-4 w-4" /> {submitLabel}
         </button>
       </div>
