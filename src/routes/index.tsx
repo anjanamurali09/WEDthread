@@ -792,7 +792,7 @@ function Landing() {
             </Link>
           </div>
           <div className="mt-10 grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-            {BLOG_POSTS.map((p) => <div key={p.slug} data-reveal className="row-span-5 grid grid-rows-subgrid gap-y-0"><BlogCard post={p} /></div>)}
+            {BLOG_POSTS.slice(0, 3).map((p) => <div key={p.slug} data-reveal className="row-span-5 grid grid-rows-subgrid gap-y-0"><BlogCard post={p} /></div>)}
           </div>
         </div>
       </section>

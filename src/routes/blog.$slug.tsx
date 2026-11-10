@@ -71,7 +71,7 @@ function Render({ b }: { b: Block }) {
     case "h2": return <h2 className="mt-12 font-serif text-3xl leading-tight text-balance">{b.text}</h2>;
     case "h3": return <h3 className="mt-8 font-serif text-xl">{b.text}</h3>;
     case "ul": return <ul className="mt-5 list-disc space-y-2 pl-6 text-[17px] leading-[1.7] marker:text-[#7FA8D6]">{b.items.map((i) => <li key={i}>{i}</li>)}</ul>;
-    case "ol": return <ol className="mt-5 list-decimal space-y-2 pl-6 text-[17px] leading-[1.7] marker:font-medium">{b.items.map((i) => <li key={i}>{i}</li>)}</ol>;
+    case "ol": return <ol start={b.start} className="mt-5 list-decimal space-y-2 pl-6 text-[17px] leading-[1.7] marker:font-medium">{b.items.map((i) => <li key={i}>{i}</li>)}</ol>;
     case "tip": return <p className="mt-8 border-l-4 border-[#FFE08A] bg-[#FFF7D6]/60 px-5 py-4 text-[16px] leading-relaxed">{b.text}</p>;
     case "img": return (
       <figure className="mt-10">
