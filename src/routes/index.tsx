@@ -631,6 +631,7 @@ function Landing() {
           <Link to="/venue" data-static className="story-link hover:text-[#7FA8D6] transition-colors">Venues</Link>
           <Link to="/v" data-static className="story-link hover:text-[#7FA8D6] transition-colors">Vendors</Link>
           <a href="#how" data-static className="story-link hover:text-[#7FA8D6] transition-colors">How it works</a>
+          <Link to="/blog" data-static className="story-link hover:text-[#7FA8D6] transition-colors">Blog</Link>
         </nav>
         <div className="flex items-center gap-3">
           <button onClick={() => setAuthOpen("signin")} className="text-sm text-[#243746] hover:text-[#7FA8D6] transition-colors hidden sm:inline">Sign in</button>
