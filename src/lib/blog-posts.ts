@@ -23,7 +23,7 @@ export type BlogPost = {
   image: string;
   imageAlt: string;
   published: string; // YYYY-MM-DD
-  /** Reading time shown on the card and page; worked out from the word count when not set. */
+  /** Reading time shown on the card and page; worked out from the word count when not set. Leave it unset unless the article has a lot of images or tables. */
   minutes?: number;
   body: Block[];
   related: string[];
@@ -40,7 +40,6 @@ export const BLOG_POSTS: BlogPost[] = [
     image: "/blog/wedding-planning-priorities.jpg",
     imageAlt: "A villa surrounded by gardens, with guests gathering at a wedding celebration on the lawn",
     published: "2026-10-01",
-    minutes: 5,
     related: ["wedding-budget-planning", "unique-wedding-ideas"],
     body: [
       { t: "p", text: "Planning a wedding feels like a hundred decisions at once. The trick is that they are not equal. A few early choices decide almost everything that follows: where you marry, how many people come, and how much you can spend. Get those right and the rest falls into place. This list puts the ten most important things in the order that usually works best." },
@@ -85,7 +84,6 @@ export const BLOG_POSTS: BlogPost[] = [
     image: "/blog/wedding-budget-planning.jpg",
     imageAlt: "A couple smiling together as they plan their wedding budget",
     published: "2026-10-08",
-    minutes: 5,
     related: ["wedding-planning-priorities", "unique-wedding-ideas"],
     body: [
       { t: "p", text: "A wedding budget is not a restriction. It is a way of deciding what matters most to you before the bills arrive. Couples who plan their money early usually spend it better, argue about it less and avoid the surprise that comes when final invoices add up to more than expected. Here is a simple way to plan yours." },
@@ -148,7 +146,6 @@ export const BLOG_POSTS: BlogPost[] = [
     image: "/blog/unique-wedding-ideas.jpg",
     imageAlt: "Orange marigold garlands and green leaves hanging from soft white drapes at a wedding venue",
     published: "2026-10-14",
-    minutes: 4,
     related: ["wedding-planning-priorities", "wedding-budget-planning"],
     body: [
       { t: "p", text: "The best weddings are not the ones that follow a formula. They are the ones where guests leave saying that it was so completely the two of you. If you are planning for 2026 or 2027 and want to do something a little different, here are ideas that give guests something to do, something to remember and something to talk about." },
@@ -748,7 +745,8 @@ export const postBySlug = (slug: string) => BLOG_POSTS.find((p) => p.slug === sl
 export const postWordCount = (p: BlogPost) =>
   p.body.reduce((n, b) => n + (b.t === "ul" || b.t === "ol" ? b.items.join(" ").split(/\s+/).length : b.t === "img" ? 0 : b.text.split(/\s+/).length), 0);
 
-export const readingMinutes = (p: BlogPost) => p.minutes ?? Math.max(1, Math.round(postWordCount(p) / 200));
+// 238 words a minute is the average adult silent reading speed for non-fiction.
+export const readingMinutes = (p: BlogPost) => p.minutes ?? Math.max(1, Math.round(postWordCount(p) / 238));
 
 export const formatPostDate = (iso: string) =>
   new Date(`${iso}T00:00:00Z`).toLocaleDateString("en-GB", { day: "numeric", month: "long", year: "numeric", timeZone: "UTC" });
