@@ -694,7 +694,7 @@ function Landing() {
       </section>
 
       {/* Culture strip */}
-      <section id="how" className="relative z-10 bg-white py-10 px-6 md:px-12" data-reveal>
+      <section className="relative z-10 bg-white py-10 px-6 md:px-12" data-reveal>
         <div className="flex flex-nowrap items-center justify-center overflow-x-auto">
           {CULTURE_ITEMS.map((t, i) => (
             <span key={t} className="flex shrink-0 items-center whitespace-nowrap">
@@ -705,8 +705,8 @@ function Landing() {
         </div>
       </section>
 
-      {/* Feature showcase */}
-      <section className="relative z-10 py-10 space-y-6">
+      {/* Feature showcase ("How it works" in the menu lands here; the homepage header is not sticky, so no scroll offset) */}
+      <section id="how" className="relative z-10 py-10 space-y-6">
         <div className="text-center max-w-2xl mx-auto px-6 md:px-12" data-reveal>
           <p className="text-sm uppercase tracking-[0.2em] text-[#7FA8D6]">Everything, in one plan</p>
           <h2 className="mt-2 font-serif text-3xl md:text-4xl leading-[0.95]">Built for the way you actually celebrate.</h2>
