@@ -1,5 +1,5 @@
 import { createFileRoute, Link, notFound } from "@tanstack/react-router";
-import { ArrowRight, ChevronRight } from "lucide-react";
+import { ArrowRight, ChevronRight, Download } from "lucide-react";
 import { PublicMarketingHeader } from "@/components/public-marketing-header";
 import { SiteFooter } from "@/components/site-footer";
 import { BlogCard } from "@/components/blog-card";
@@ -73,6 +73,12 @@ function Render({ b }: { b: Block }) {
     case "ul": return <ul className="mt-5 list-disc space-y-2 pl-6 text-[17px] leading-[1.7] marker:text-[#7FA8D6]">{b.items.map((i) => <li key={i}>{i}</li>)}</ul>;
     case "ol": return <ol start={b.start} className="mt-5 list-decimal space-y-2 pl-6 text-[17px] leading-[1.7] marker:font-medium">{b.items.map((i) => <li key={i}>{i}</li>)}</ol>;
     case "tip": return <p className="mt-8 border-l-4 border-[#FFE08A] bg-[#FFF7D6]/60 px-5 py-4 text-[16px] leading-relaxed">{b.text}</p>;
+    case "download": return (
+      <a href={b.href} download data-static className="mt-8 flex items-center gap-4 rounded-2xl border border-[#243746]/20 bg-[#FFF7D6]/60 px-5 py-4 transition-colors hover:border-[#243746] hover:bg-[#FFE08A]/40">
+        <span className="grid h-11 w-11 shrink-0 place-items-center rounded-full bg-[#243746] text-[#FFF7D6]"><Download className="h-5 w-5" /></span>
+        <span><span className="block font-medium">{b.label}</span><span className="mt-0.5 block text-sm text-muted-foreground">{b.note}</span></span>
+      </a>
+    );
     case "img": return (
       <figure className="mt-10">
         <img src={b.src} alt={b.alt} width={b.width} height={b.height} loading="lazy" decoding="async" className="w-full object-cover" />
