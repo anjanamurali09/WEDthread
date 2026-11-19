@@ -17,6 +17,7 @@ import { MarketHero, MarketTile } from "@/components/market-hero";
 import { VenueQuiz, type VenueAnswers } from "@/components/market-quiz";
 import { PlacePicker, inPlace, useMarketPlace } from "@/lib/market-place";
 import { pickDistinctPhotos } from "@/lib/distinct-photos";
+import { isVerifiedStylePhoto } from "@/lib/venue-style-photos";
 import { matchVenues, spacesForDates, spacesForSigns } from "@/lib/market-quiz-logic";
 import { useCurrentWedding } from "@/lib/wedding-hooks";
 
@@ -138,7 +139,8 @@ export function VenueDirectoryContent({ embedded = false, bare = false }: { embe
   }, [venues, place]);
 
   const styleTiles = useMemo(() => {
-    const options = TYPE_OF_SPACE_OPTIONS.map((t) => venues.filter((x) => inPlace(place, x.city, x.country) && x.type_of_space.includes(t) && x.photos.length > 0).map((x) => x.photos));
+    // Only photos checked to show that kind of space are used, so a tile never shows a photo that does not match its label.
+    const options = TYPE_OF_SPACE_OPTIONS.map((t) => venues.filter((x) => inPlace(place, x.city, x.country) && x.type_of_space.includes(t)).map((x) => x.photos.filter((u) => isVerifiedStylePhoto(t, u))).filter((p) => p.length > 0));
     const photos = pickDistinctPhotos(options);
     return TYPE_OF_SPACE_OPTIONS.flatMap((t, i) => photos[i] ? [{ type: t, photo: photos[i] as string }] : []);
   }, [venues, place]);
@@ -164,7 +166,7 @@ export function VenueDirectoryContent({ embedded = false, bare = false }: { embe
   };
 
   const spacePhotos = useMemo(() => {
-    const options = TYPE_OF_SPACE_OPTIONS.map((t) => venues.filter((x) => x.type_of_space.includes(t) && x.photos.length > 0).map((x) => x.photos));
+    const options = TYPE_OF_SPACE_OPTIONS.map((t) => venues.filter((x) => x.type_of_space.includes(t)).map((x) => x.photos.filter((u) => isVerifiedStylePhoto(t, u))).filter((p) => p.length > 0));
     const photos = pickDistinctPhotos(options);
     const out: Record<string, string> = {};
     TYPE_OF_SPACE_OPTIONS.forEach((t, i) => { if (photos[i]) out[t] = photos[i] as string; });
