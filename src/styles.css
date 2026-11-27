@@ -622,3 +622,27 @@ html { -webkit-tap-highlight-color: transparent; }
 @keyframes home-loader-out { to { opacity: 0; visibility: hidden; } }
 .home-loader { animation: home-loader-out 250ms ease-out 200ms forwards; pointer-events: none; }
 @media (prefers-reduced-motion: reduce) { .home-loader { animation-duration: 1ms; animation-delay: 150ms; } }
+
+/* A plain white tick box with a blue tick (used for "Save my answers for next time" and the like). */
+input[type="checkbox"].tick-box {
+  appearance: none;
+  -webkit-appearance: none;
+  flex: none;
+  height: 1.125rem;
+  width: 1.125rem;
+  margin: 0;
+  border: 1.5px solid #A8C6E7;
+  border-radius: 0.3rem;
+  background-color: #fff;
+  background-repeat: no-repeat;
+  background-position: center;
+  background-size: 0.8rem;
+  cursor: pointer;
+  transition: border-color 0.15s;
+}
+input[type="checkbox"].tick-box:hover { border-color: #7FA8D6; }
+input[type="checkbox"].tick-box:checked {
+  border-color: #7FA8D6;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16' fill='none' stroke='%237FA8D6' stroke-width='2.6' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M3 8.5l3.2 3.2L13 4.5'/%3E%3C/svg%3E");
+}
+input[type="checkbox"].tick-box:focus-visible { outline: 2px solid #7FA8D6; outline-offset: 2px; }

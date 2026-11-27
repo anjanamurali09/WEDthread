@@ -230,7 +230,7 @@ export function EnquireForm({ vendorServiceId, businessId, businessName, onSubmi
       {!leadFormId && (
         <label className="flex items-center gap-2 text-sm text-muted-foreground cursor-pointer">
           <input type="checkbox" checked={saveAnswers} onChange={(e) => setSaveAnswers(e.target.checked)}
-            className="h-4 w-4 rounded border-line accent-cherry cursor-pointer" />
+            className="tick-box" />
           Save my answers for next time
         </label>
       )}
