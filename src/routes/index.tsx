@@ -17,6 +17,7 @@ import { VenueCard, type VenueCardData } from "@/components/venue-card";
 import { VendorServiceCard, type VendorServiceCardData } from "@/components/vendor-service-card";
 import { useSavedListings } from "@/hooks/use-saved-listings";
 
+import { snapToSections } from "@/lib/smooth-scroll";
 import { HERO_ALT, HERO_CSS, HERO_SCRIPT, chooseHeroPhoto } from "@/lib/home-hero";
 
 import venueBaliImg from "@/assets/venue-bali-room.webp";
@@ -617,6 +618,22 @@ function Landing() {
   // "Start planning" goes to the full sign-up page; only "Sign in" uses the small popup.
   const goSignup = () => navigate({ to: "/signup" });
   useEffect(() => { chooseHeroPhoto(); }, []);
+  // On a mouse or trackpad, the page settles on the top of a section when the scrolling slows to a stop.
+  useEffect(() => {
+    const root = (rootRef as any).current as HTMLElement | null;
+    if (!root) return;
+    const collect = () => Array.from(root.querySelectorAll<HTMLElement>(":scope > section"));
+    let current = collect();
+    let undo = snapToSections(current);
+    // Sections that appear later (the venue and vendor rows, once their listings arrive) join the stops too.
+    const watcher = new MutationObserver(() => {
+      const next = collect();
+      if (next.length === current.length && next.every((el, i) => el === current[i])) return;
+      current = next; undo(); undo = snapToSections(next);
+    });
+    watcher.observe(root, { childList: true });
+    return () => { watcher.disconnect(); undo(); };
+  }, [rootRef]);
 
   return (
     <div ref={rootRef as any} className="min-h-screen bg-white text-[#243746] overflow-hidden">
