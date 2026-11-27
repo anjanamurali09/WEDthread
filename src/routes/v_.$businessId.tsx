@@ -356,7 +356,7 @@ function VendorProfilePage() {
       </section>
 
       {/* ── Sticky bottom CTA bar ─────────────────────────────────────── */}
-      <div className="sticky bottom-4 z-20 flex justify-center px-6 pointer-events-none">
+      <div className="sticky bottom-4 z-20 mt-10 flex justify-center px-6 pointer-events-none">
         <div className="pointer-events-auto inline-flex items-center gap-2 rounded-full bg-ink text-pearl pl-2 pr-2.5 py-2 shadow-lg">
           {service && (
             <VendorEnquireDialog vendorServiceId={service.id} serviceName={business.legal_business_name} businessName={business.legal_business_name} triggerLabel="Enquire"
