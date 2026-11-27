@@ -203,15 +203,15 @@ export function EnquireForm({ vendorServiceId, businessId, businessName, onSubmi
 
   return (
     <>
-      <div className="grid grid-cols-1 gap-x-4 gap-y-4 sm:grid-cols-2">
+      <div className="grid grid-cols-1 gap-x-4 gap-y-3 sm:grid-cols-2">
         {fields.map((f) => (
           <label key={f.id} className={cn("block", fieldSpan(f) === "full" && "sm:col-span-2")}>
             <span className="text-xs uppercase tracking-widest text-muted-foreground">
               {f.label}{f.required && <span className="text-cherry ml-0.5">*</span>}
             </span>
-            <div className="mt-1.5">
+            <div className="mt-1">
               {f.field_type === "textarea" ? (
-                <textarea value={values[f.label] ?? ""} onChange={(e) => setValues((v) => ({ ...v, [f.label]: e.target.value }))} rows={5}
+                <textarea value={values[f.label] ?? ""} onChange={(e) => setValues((v) => ({ ...v, [f.label]: e.target.value }))} rows={3}
                   className="w-full rounded-xl border border-line bg-white px-4 py-3 text-[15px] resize-none focus:outline-none focus:ring-2 focus:ring-clay" />
               ) : f.field_type === "date" ? (
                 <DatePicker value={values[f.label]} onChange={(v) => setValues((val) => ({ ...val, [f.label]: v }))} />
@@ -228,15 +228,15 @@ export function EnquireForm({ vendorServiceId, businessId, businessName, onSubmi
         ))}
       </div>
       {!leadFormId && (
-        <label className="mt-4 flex items-center gap-2 text-sm text-muted-foreground cursor-pointer">
+        <label className="flex items-center gap-2 text-sm text-muted-foreground cursor-pointer">
           <input type="checkbox" checked={saveAnswers} onChange={(e) => setSaveAnswers(e.target.checked)}
             className="h-4 w-4 rounded border-line accent-cherry cursor-pointer" />
           Save my answers for next time
         </label>
       )}
-      <div className="mt-5 flex justify-end">
+      <div className="flex justify-end">
         <button type="button" onClick={submit} disabled={submitting}
-          className="inline-flex items-center gap-2 rounded-full bg-ink text-paper px-8 py-3 text-sm hover:bg-clay disabled:opacity-60 cursor-pointer">
+          className="inline-flex items-center gap-2 rounded-full bg-ink text-paper px-8 py-2.5 text-sm hover:bg-clay disabled:opacity-60 cursor-pointer">
           {submitting && <Loader2 className="h-4 w-4 animate-spin" />}
           {submitting ? "Sending…" : "Send enquiry"}
         </button>
