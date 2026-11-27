@@ -42,6 +42,7 @@ import { Route as AuthenticatedMenuRouteImport } from './routes/_authenticated/m
 import { Route as AuthenticatedLeadsRouteImport } from './routes/_authenticated/leads'
 import { Route as AuthenticatedGuestsRouteImport } from './routes/_authenticated/guests'
 import { Route as AuthenticatedEventsRouteImport } from './routes/_authenticated/events'
+import { Route as AuthenticatedEnquiriesRouteImport } from './routes/_authenticated/enquiries'
 import { Route as AuthenticatedDashboardRouteImport } from './routes/_authenticated/dashboard'
 import { Route as AuthenticatedBudgetRouteImport } from './routes/_authenticated/budget'
 import { Route as WSlugRegistryRouteImport } from './routes/w.$slug_.registry'
@@ -232,6 +233,11 @@ const AuthenticatedEventsRoute = AuthenticatedEventsRouteImport.update({
   path: '/events',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
+const AuthenticatedEnquiriesRoute = AuthenticatedEnquiriesRouteImport.update({
+  id: '/enquiries',
+  path: '/enquiries',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
 const AuthenticatedDashboardRoute = AuthenticatedDashboardRouteImport.update({
   id: '/dashboard',
   path: '/dashboard',
@@ -376,6 +382,7 @@ export interface FileRoutesByFullPath {
   '/venue': typeof VenueRoute
   '/budget': typeof AuthenticatedBudgetRoute
   '/dashboard': typeof AuthenticatedDashboardRoute
+  '/enquiries': typeof AuthenticatedEnquiriesRoute
   '/events': typeof AuthenticatedEventsRoute
   '/guests': typeof AuthenticatedGuestsRoute
   '/leads': typeof AuthenticatedLeadsRoute
@@ -432,6 +439,7 @@ export interface FileRoutesByTo {
   '/venue': typeof VenueRoute
   '/budget': typeof AuthenticatedBudgetRoute
   '/dashboard': typeof AuthenticatedDashboardRoute
+  '/enquiries': typeof AuthenticatedEnquiriesRoute
   '/events': typeof AuthenticatedEventsRoute
   '/guests': typeof AuthenticatedGuestsRoute
   '/leads': typeof AuthenticatedLeadsRoute
@@ -491,6 +499,7 @@ export interface FileRoutesById {
   '/venue': typeof VenueRoute
   '/_authenticated/budget': typeof AuthenticatedBudgetRoute
   '/_authenticated/dashboard': typeof AuthenticatedDashboardRoute
+  '/_authenticated/enquiries': typeof AuthenticatedEnquiriesRoute
   '/_authenticated/events': typeof AuthenticatedEventsRoute
   '/_authenticated/guests': typeof AuthenticatedGuestsRoute
   '/_authenticated/leads': typeof AuthenticatedLeadsRoute
@@ -550,6 +559,7 @@ export interface FileRouteTypes {
     | '/venue'
     | '/budget'
     | '/dashboard'
+    | '/enquiries'
     | '/events'
     | '/guests'
     | '/leads'
@@ -606,6 +616,7 @@ export interface FileRouteTypes {
     | '/venue'
     | '/budget'
     | '/dashboard'
+    | '/enquiries'
     | '/events'
     | '/guests'
     | '/leads'
@@ -664,6 +675,7 @@ export interface FileRouteTypes {
     | '/venue'
     | '/_authenticated/budget'
     | '/_authenticated/dashboard'
+    | '/_authenticated/enquiries'
     | '/_authenticated/events'
     | '/_authenticated/guests'
     | '/_authenticated/leads'
@@ -966,6 +978,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedEventsRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/enquiries': {
+      id: '/_authenticated/enquiries'
+      path: '/enquiries'
+      fullPath: '/enquiries'
+      preLoaderRoute: typeof AuthenticatedEnquiriesRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/dashboard': {
       id: '/_authenticated/dashboard'
       path: '/dashboard'
@@ -1133,6 +1152,7 @@ declare module '@tanstack/react-router' {
 interface AuthenticatedRouteRouteChildren {
   AuthenticatedBudgetRoute: typeof AuthenticatedBudgetRoute
   AuthenticatedDashboardRoute: typeof AuthenticatedDashboardRoute
+  AuthenticatedEnquiriesRoute: typeof AuthenticatedEnquiriesRoute
   AuthenticatedEventsRoute: typeof AuthenticatedEventsRoute
   AuthenticatedGuestsRoute: typeof AuthenticatedGuestsRoute
   AuthenticatedLeadsRoute: typeof AuthenticatedLeadsRoute
@@ -1170,6 +1190,7 @@ interface AuthenticatedRouteRouteChildren {
 const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedBudgetRoute: AuthenticatedBudgetRoute,
   AuthenticatedDashboardRoute: AuthenticatedDashboardRoute,
+  AuthenticatedEnquiriesRoute: AuthenticatedEnquiriesRoute,
   AuthenticatedEventsRoute: AuthenticatedEventsRoute,
   AuthenticatedGuestsRoute: AuthenticatedGuestsRoute,
   AuthenticatedLeadsRoute: AuthenticatedLeadsRoute,

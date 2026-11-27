@@ -7,10 +7,9 @@ import { guestInvites, isGuestResponded } from "@/lib/rsvp-stats";
 import { supabase } from "@/integrations/supabase/client";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "@/lib/toast";
-import { Mail, MessageCircle, Send, Plus, Trash2, X, ExternalLink, Check, SkipForward, Smile, Store } from "lucide-react";
+import { Mail, MessageCircle, Send, Plus, Trash2, X, ExternalLink, Check, SkipForward, Smile } from "lucide-react";
 import { PhotoEmptyState } from "@/components/photo-empty-state";
 import { cn, formatNumber } from "@/lib/utils";
-import { ConversationThreadDialog } from "@/components/conversation-thread-dialog";
 
 export const Route = createFileRoute("/_authenticated/messages")({
   component: MessagesPage,
@@ -238,7 +237,7 @@ function MessagesPage() {
   return (
     <AppShell
       title="Messages"
-      subtitle="Guest email/WhatsApp templates below, vendor enquiry conversations above."
+      subtitle="Email and WhatsApp templates for your guests. Replies from venues and vendors are under Enquiries."
       actions={
         <div className="flex gap-2">
           {!templatesLoading && templates.length === 0 && <button onClick={seedDefaults} className="rounded-full border border-line px-4 py-2 text-sm hover:bg-stone">Load starter templates</button>}
@@ -246,8 +245,6 @@ function MessagesPage() {
         </div>
       }
     >
-      <VendorConversationsSection weddingId={wedding.id} />
-
       {templatesLoading ? (
         <p className="text-sm text-muted-foreground">Loading…</p>
       ) : templates.length === 0 ? (
@@ -303,65 +300,6 @@ function MessagesPage() {
           onClose={() => setSending(null)} />
       )}
     </AppShell>
-  );
-}
-
-type ConversationRow = { id: string; businessId: string; businessName: string; preview: string; updatedAt: string };
-
-// Where a couple's vendor enquiries land, per Phase 4: submit-enquiry
-// creates/reuses one conversation per vendor and posts the lead form answers
-// as its first message — this list is that inbox, separate from the
-// guest-broadcast templates below (a different audience, a different kind
-// of "message" entirely).
-function VendorConversationsSection({ weddingId }: { weddingId: string }) {
-  const { data: conversations = [], isLoading } = useQuery({
-    queryKey: ["couple-conversations", weddingId],
-    queryFn: async (): Promise<ConversationRow[]> => {
-      const { data: convos } = await supabase.from("conversations").select("id,business_id,updated_at").eq("wedding_id", weddingId).order("updated_at", { ascending: false });
-      if (!convos || convos.length === 0) return [];
-      const [{ data: businesses }, { data: msgs }] = await Promise.all([
-        supabase.from("businesses").select("id,legal_business_name").in("id", convos.map((c) => c.business_id)),
-        supabase.from("conversation_messages").select("conversation_id,body,created_at").in("conversation_id", convos.map((c) => c.id)).order("created_at", { ascending: false }),
-      ]);
-      const nameById = new Map((businesses ?? []).map((b) => [b.id, b.legal_business_name]));
-      const previewByConvo = new Map<string, string>();
-      for (const m of msgs ?? []) if (!previewByConvo.has(m.conversation_id)) previewByConvo.set(m.conversation_id, m.body);
-      return convos.map((c) => ({
-        id: c.id, businessId: c.business_id, businessName: nameById.get(c.business_id) ?? "Vendor",
-        preview: previewByConvo.get(c.id) ?? "", updatedAt: c.updated_at,
-      }));
-    },
-  });
-  const [openThread, setOpenThread] = useState<ConversationRow | null>(null);
-
-  if (isLoading || conversations.length === 0) return null;
-
-  return (
-    <div className="mb-10">
-      <h3 className="font-serif text-2xl mb-4 inline-flex items-center gap-2"><Store className="h-5 w-5" /> Vendor enquiries</h3>
-      <div className="grid gap-2">
-        {conversations.map((c) => (
-          <button key={c.id} type="button" onClick={() => setOpenThread(c)}
-            className="text-left rounded-2xl border border-line px-5 py-3.5 hover:bg-stone/50 cursor-pointer flex items-center justify-between gap-3">
-            <div className="min-w-0">
-              <p className="font-medium text-sm">{c.businessName}</p>
-              <p className="text-sm text-muted-foreground truncate">{c.preview}</p>
-            </div>
-            <span className="text-sm text-muted-foreground shrink-0">{new Date(c.updatedAt).toLocaleDateString()}</span>
-          </button>
-        ))}
-      </div>
-      {openThread && (
-        <ConversationThreadDialog
-          conversationId={openThread.id}
-          title={openThread.businessName}
-          senderRole="couple"
-          open={!!openThread}
-          onOpenChange={(o) => !o && setOpenThread(null)}
-          reviewBusiness={{ id: openThread.businessId, name: openThread.businessName }}
-        />
-      )}
-    </div>
   );
 }
 

@@ -192,10 +192,10 @@ export function EnquireForm({ vendorServiceId, businessId, businessName, onSubmi
         <p className="mt-3 text-sm font-medium">Enquiry sent</p>
         <p className="mt-1 text-sm text-muted-foreground">
           {delivery === "vendor"
-            ? <>We've emailed {businessName ?? "them"} your enquiry. Their reply will appear in your Messages.</>
+            ? <>We've emailed {businessName ?? "them"} your enquiry. Their reply will appear under Enquiries.</>
             : delivery === "team"
-              ? <>Your enquiry is with the WEDthread team, who will pass it on to {businessName ?? "them"}. Replies will appear in your Messages.</>
-              : <>{businessName ?? "The vendor"} will see it in their WEDthread messages and reply in your Messages.</>}
+              ? <>Your enquiry is with the WEDthread team, who will pass it on to {businessName ?? "them"}. Replies will appear under Enquiries.</>
+              : <>{businessName ?? "The vendor"} will see it in their WEDthread messages and reply under Enquiries.</>}
         </p>
       </div>
     );
