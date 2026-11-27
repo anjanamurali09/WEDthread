@@ -28,9 +28,9 @@ export function VendorEnquireDialog({ vendorServiceId, businessId, serviceName, 
         </button>
       )}
       <Dialog open={open} onOpenChange={setOpen}>
-        <DialogContent className="max-w-sm gap-2.5 p-4">
+        <DialogContent className="max-w-xl gap-5 p-6 sm:p-8">
           <DialogHeader>
-            <DialogTitle className="font-serif text-base font-normal tracking-normal leading-snug">{triggerLabel} about {serviceName}</DialogTitle>
+            <DialogTitle className="font-serif text-2xl font-normal tracking-normal leading-snug">{triggerLabel} about {serviceName}</DialogTitle>
           </DialogHeader>
           <EnquireForm vendorServiceId={vendorServiceId} businessId={businessId} businessName={businessName} />
         </DialogContent>

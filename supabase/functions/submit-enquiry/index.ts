@@ -139,11 +139,11 @@ Deno.serve(async (req: Request) => {
 
     // Emails the enquiry to the business at the address it signed up with (or its listed contact address),
     // copying hello@wedthread.co. Replies go straight to the couple. Any failure is logged and ignored.
-    const emailBusiness = async () => {
+    const emailBusiness = async (): Promise<boolean> => {
       try {
         const resendKey = Deno.env.get("RESEND_API_KEY");
         const fromEmail = Deno.env.get("RESEND_FROM_EMAIL");
-        if (!resendKey || !fromEmail) { console.error("Enquiry email skipped: RESEND_API_KEY / RESEND_FROM_EMAIL not configured"); return; }
+        if (!resendKey || !fromEmail) { console.error("Enquiry email skipped: RESEND_API_KEY / RESEND_FROM_EMAIL not configured"); return false; }
         const [{ data: business }, { data: weddingRow }] = await Promise.all([
           service.from("businesses").select("legal_business_name,user_id,contact_email").eq("id", businessId).maybeSingle(),
           service.from("weddings").select("partner_a,partner_b").eq("id", submission.wedding_id).maybeSingle(),
@@ -173,9 +173,12 @@ Deno.serve(async (req: Request) => {
             html,
           }),
         });
-        if (!res.ok) console.error("Enquiry email failed:", await res.text());
+        if (!res.ok) { console.error("Enquiry email failed:", await res.text()); return false; }
+        // True only when it went to the business itself (not just the WEDthread team because no address was on file).
+        return !!to;
       } catch (err) {
         console.error("Enquiry email failed:", err);
+        return false;
       }
     };
 
@@ -222,8 +225,8 @@ Deno.serve(async (req: Request) => {
         body: `New enquiry: ${listingName}\n\n${messageBody}`,
       });
 
-      await emailBusiness();
-      return { enquiryId: enquiry.id, conversationId };
+      const emailed = await emailBusiness();
+      return { enquiryId: enquiry.id, conversationId, emailed };
     };
 
     if (!chargingEnabled) {

@@ -57,6 +57,8 @@ export function EnquireForm({ vendorServiceId, businessId, businessName, onSubmi
   const [saveAnswers, setSaveAnswers] = useState(true);
   const [submitting, setSubmitting] = useState(false);
   const [submitted, setSubmitted] = useState(false);
+  // Whether the email to the business went out. Unknown (null) if the server did not say.
+  const [emailed, setEmailed] = useState<boolean | null>(null);
 
   useEffect(() => {
     setLoading(true);
@@ -147,7 +149,7 @@ export function EnquireForm({ vendorServiceId, businessId, businessName, onSubmi
     // answers as the thread's first message. Charging (currently off) is
     // handled entirely inside the function — this call never surfaces a
     // payment prompt while it's off.
-    const { data: result, error: fnError } = await supabase.functions.invoke<{ success?: boolean; error?: string }>("submit-enquiry", {
+    const { data: result, error: fnError } = await supabase.functions.invoke<{ success?: boolean; error?: string; emailed?: boolean }>("submit-enquiry", {
       body: { lead_form_submission_id: submission.id },
     });
     setSubmitting(false);
@@ -166,6 +168,7 @@ export function EnquireForm({ vendorServiceId, businessId, businessName, onSubmi
       });
     }
     track("enquiry_sent");
+    setEmailed(typeof result.emailed === "boolean" ? result.emailed : null);
     setSubmitted(true);
     onSubmitted?.();
   };
@@ -186,23 +189,27 @@ export function EnquireForm({ vendorServiceId, businessId, businessName, onSubmi
       <div className="py-6 text-center">
         <CheckCircle2 className="h-8 w-8 mx-auto text-sage-deep" />
         <p className="mt-3 text-sm font-medium">Enquiry sent</p>
-        <p className="mt-1 text-sm text-muted-foreground">{businessName ?? "The vendor"} will reply in your Messages.</p>
+        <p className="mt-1 text-sm text-muted-foreground">
+          {emailed
+            ? <>We've emailed {businessName ?? "them"} your enquiry. Their reply will appear in your Messages.</>
+            : <>{businessName ?? "The vendor"} will see it in their WEDthread messages and reply in your Messages.</>}
+        </p>
       </div>
     );
   }
 
   return (
     <>
-      <div className="grid grid-cols-2 gap-x-2.5 gap-y-2.5 max-[380px]:grid-cols-1">
+      <div className="grid grid-cols-1 gap-x-4 gap-y-4 sm:grid-cols-2">
         {fields.map((f) => (
-          <label key={f.id} className={cn("block", fieldSpan(f) === "full" && "col-span-2 max-[380px]:col-span-1")}>
-            <span className="text-[11px] uppercase tracking-widest text-muted-foreground">
+          <label key={f.id} className={cn("block", fieldSpan(f) === "full" && "sm:col-span-2")}>
+            <span className="text-xs uppercase tracking-widest text-muted-foreground">
               {f.label}{f.required && <span className="text-cherry ml-0.5">*</span>}
             </span>
-            <div className="mt-1">
+            <div className="mt-1.5">
               {f.field_type === "textarea" ? (
-                <textarea value={values[f.label] ?? ""} onChange={(e) => setValues((v) => ({ ...v, [f.label]: e.target.value }))} rows={2}
-                  className="w-full rounded-xl border border-line bg-paper px-3 py-1.5 text-sm resize-none focus:outline-none focus:ring-2 focus:ring-clay" />
+                <textarea value={values[f.label] ?? ""} onChange={(e) => setValues((v) => ({ ...v, [f.label]: e.target.value }))} rows={5}
+                  className="w-full rounded-xl border border-line bg-white px-4 py-3 text-[15px] resize-none focus:outline-none focus:ring-2 focus:ring-clay" />
               ) : f.field_type === "date" ? (
                 <DatePicker value={values[f.label]} onChange={(v) => setValues((val) => ({ ...val, [f.label]: v }))} />
               ) : f.field_type === "select" ? (
@@ -211,22 +218,22 @@ export function EnquireForm({ vendorServiceId, businessId, businessName, onSubmi
               ) : (
                 <input type="text" inputMode={f.field_type === "number" ? "numeric" : "text"} value={values[f.label] ?? ""}
                   onChange={(e) => setValues((v) => ({ ...v, [f.label]: e.target.value }))}
-                  className="w-full rounded-xl border border-line bg-paper px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-clay" />
+                  className="w-full rounded-xl border border-line bg-white px-4 py-3 text-[15px] focus:outline-none focus:ring-2 focus:ring-clay" />
               )}
             </div>
           </label>
         ))}
       </div>
       {!leadFormId && (
-        <label className="mt-2.5 flex items-center gap-2 text-xs text-muted-foreground cursor-pointer">
+        <label className="mt-4 flex items-center gap-2 text-sm text-muted-foreground cursor-pointer">
           <input type="checkbox" checked={saveAnswers} onChange={(e) => setSaveAnswers(e.target.checked)}
-            className="h-3.5 w-3.5 rounded border-line accent-cherry cursor-pointer" />
+            className="h-4 w-4 rounded border-line accent-cherry cursor-pointer" />
           Save my answers for next time
         </label>
       )}
-      <div className="mt-3 flex justify-end">
+      <div className="mt-5 flex justify-end">
         <button type="button" onClick={submit} disabled={submitting}
-          className="inline-flex items-center gap-2 rounded-full bg-ink text-paper px-6 py-2.5 text-sm hover:bg-clay disabled:opacity-60 cursor-pointer">
+          className="inline-flex items-center gap-2 rounded-full bg-ink text-paper px-8 py-3 text-sm hover:bg-clay disabled:opacity-60 cursor-pointer">
           {submitting && <Loader2 className="h-4 w-4 animate-spin" />}
           {submitting ? "Sending…" : "Send enquiry"}
         </button>
