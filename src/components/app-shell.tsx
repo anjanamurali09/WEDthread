@@ -231,7 +231,7 @@ export function AppShell({ children, title, subtitle, actions, decor }: { childr
         </div>
         {/* Same px-3 indent as <nav> below, so the Workspace label/pill align flush with Menu/Overview. */}
         {!collapsed && <div className="px-3"><WorkspaceSwitcher /></div>}
-        <nav className="px-3 flex-1 overflow-y-auto scroll-fade-b pb-4">
+        <nav className="px-3 flex-1 overflow-y-auto pb-4">
           {!collapsed && <p className="mt-6 px-3 pb-2 text-sm uppercase tracking-widest text-cherry">Menu</p>}
           {nav.map(({ to, label, icon: Icon }) => {
             const isActive = pathname === to || pathname.startsWith(to + "/");
