@@ -18,7 +18,7 @@ function Chip({ on, onClick, children }: { on: boolean; onClick: () => void; chi
   return (
     <button type="button" role="checkbox" aria-checked={on} onClick={onClick} data-static
       className={cn("rounded-full border px-4 py-2 text-sm transition-colors",
-        on ? "border-[#243746] bg-[#FFF7D6] font-medium" : "border-line bg-paper hover:border-[#243746]")}>
+        on ? "border-[#243746] bg-[#FFF7D6] font-medium" : "border-line bg-white hover:border-[#243746]")}>
       {children}
     </button>
   );
@@ -97,7 +97,7 @@ function SignSelect({ label, value, onChange }: { label: string; value: string |
   return (
     <label className="block text-sm font-medium text-[#243746]">{label}
       <select value={value ?? ""} onChange={(e) => onChange(e.target.value || null)}
-        className="mt-2 w-full rounded-xl border border-line bg-paper px-4 py-3 text-sm font-normal focus:outline-none focus:ring-2 focus:ring-[#FFE08A]">
+        className="mt-2 w-full rounded-xl border border-line bg-white px-4 py-3 text-sm font-normal focus:outline-none focus:ring-2 focus:ring-[#FFE08A]">
         <option value="">Skip</option>
         {SIGNS.map((x) => <option key={x.name} value={x.name}>{x.name} ({x.dates})</option>)}
       </select>
@@ -179,7 +179,7 @@ export function VenueQuiz({ open, onOpenChange, photo, initialGuests, venues, pl
           <label className="block text-sm font-medium text-[#243746]">Or enter a number
             <input type="number" min={1} inputMode="numeric" value={guests} disabled={deciding}
               onChange={(e) => { setGuests(e.target.value); setError(null); }}
-              className="mt-2 w-full rounded-xl border border-line bg-paper px-4 py-3 text-sm font-normal focus:outline-none focus:ring-2 focus:ring-[#FFE08A] disabled:opacity-50" />
+              className="mt-2 w-full rounded-xl border border-line bg-white px-4 py-3 text-sm font-normal focus:outline-none focus:ring-2 focus:ring-[#FFE08A] disabled:opacity-50" />
           </label>
           <label className="flex items-center gap-3 text-sm text-[#243746]">
             <input type="checkbox" checked={deciding} onChange={(e) => { setDeciding(e.target.checked); setError(null); }} className="h-4 w-4 accent-[#243746]" />

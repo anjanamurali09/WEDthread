@@ -11,7 +11,7 @@ type StripItem = { key: string; label: string; icon: Icon; to?: string; search?:
 // the brand yellow.
 function Strip({ items, active, label }: { items: StripItem[]; active: string[]; label: string }) {
   const bubble = (key: string) => cn("grid h-14 w-14 place-items-center rounded-full border transition-colors",
-    active.includes(key) ? "border-[#FFE08A] bg-[#FFE08A] text-[#243746]" : "border-line bg-paper text-[#243746] group-hover:bg-[#FFF7D6]");
+    active.includes(key) ? "border-[#FFE08A] bg-[#FFE08A] text-[#243746]" : "border-line bg-white text-[#243746] group-hover:bg-[#FFF7D6]");
   const text = (key: string) => cn("text-balance px-1 text-[13px] leading-tight text-[#243746]", active.includes(key) && "font-medium");
   const cell = "group flex w-[7.25rem] shrink-0 cursor-pointer flex-col items-center gap-2 text-center";
   return (
