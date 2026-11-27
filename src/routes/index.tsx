@@ -643,12 +643,12 @@ function Landing() {
       </header>
 
       {/* Hero */}
-      <section className="relative z-10 px-6 md:px-12 pt-8 md:pt-16 pb-10 lg:min-h-[calc(100svh-9.5rem)] grid lg:grid-cols-12 gap-10 items-center">
+      <section className="relative z-10 px-6 md:px-12 pt-8 md:pt-16 pb-10 lg:pt-[clamp(1.5rem,7svh,4rem)] lg:pb-[clamp(1rem,3svh,2.5rem)] lg:min-h-[calc(100svh-10.75rem)] grid lg:grid-cols-12 gap-10 items-center">
         <div className="lg:col-span-6 lg:translate-y-5">
           <p className="text-sm uppercase tracking-[0.2em] text-[#7FA8D6]">
             For every wedding, anywhere
           </p>
-          <h1 className="mt-6 font-serif text-6xl md:text-[3.75rem] lg:text-[4.5rem] leading-[0.9] tracking-tight">
+          <h1 className="mt-6 font-serif text-6xl md:text-[3.75rem] lg:text-[length:clamp(3rem,10svh,4.5rem)] leading-[0.9] tracking-tight">
             One place for every <span className="italic text-[#7FA8D6]">event</span> your wedding needs.
           </h1>
           <p className="mt-6 text-lg text-[#243746] max-w-xl leading-relaxed">
@@ -670,7 +670,7 @@ function Landing() {
           <div className="relative overflow-hidden shadow-2xl blob-2 group [mask-image:linear-gradient(to_top,black_90%,rgb(0_0_0/0.45)_100%)] [-webkit-mask-image:linear-gradient(to_top,black_90%,rgb(0_0_0/0.45)_100%)]">
             <style dangerouslySetInnerHTML={{ __html: HERO_CSS }} />
             <div role="img" aria-label={HERO_ALT}
-              className="hero-photo h-[420px] w-full bg-cover transition-transform duration-[1200ms] group-hover:scale-105" />
+              className="hero-photo h-[420px] lg:h-[clamp(240px,46svh,420px)] w-full bg-cover transition-transform duration-[1200ms] group-hover:scale-105" />
             <div className="absolute inset-0 bg-gradient-to-t from-[#243746]/30 via-transparent to-transparent" />
           </div>
           <div className="hidden md:block absolute -bottom-6 -left-6 paper-card p-5 rotate-[-2deg] max-w-[260px] bg-paper transition-transform hover:rotate-0 hover:-translate-y-1">
@@ -694,7 +694,7 @@ function Landing() {
       </section>
 
       {/* Culture strip */}
-      <section className="relative z-10 bg-white py-10 px-6 md:px-12" data-reveal>
+      <section className="relative z-10 bg-white py-10 lg:pt-5 lg:pb-12 px-6 md:px-12" data-reveal>
         <div className="flex flex-nowrap items-center justify-center overflow-x-auto">
           {CULTURE_ITEMS.map((t, i) => (
             <span key={t} className="flex shrink-0 items-center whitespace-nowrap">
