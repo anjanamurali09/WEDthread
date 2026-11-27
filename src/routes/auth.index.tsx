@@ -317,7 +317,7 @@ function AuthPage() {
                 <button type="button" onClick={() => setMode("forgot")} className="text-sm text-cherry underline underline-offset-4">Forgot password?</button>
               </div>
             )}
-            <button disabled={loading || !!sentTo || (mode === "signup" && !role)} className="w-full rounded-full bg-cherry text-pearl py-2.5 text-sm font-medium hover:bg-wine disabled:opacity-60 transition-colors">
+            <button disabled={loading || !!sentTo} className="w-full rounded-full bg-cherry text-pearl py-2.5 text-sm font-medium hover:bg-wine disabled:opacity-60 transition-colors">
               {loading ? "Please wait…" : sentTo ? "Verify your email" : mode === "signup" ? "Create account" : "Sign in"}
             </button>
             {mode === "signup" && sentTo && (
