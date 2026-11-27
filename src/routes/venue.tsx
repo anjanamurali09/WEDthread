@@ -208,10 +208,10 @@ export function VenueDirectoryContent({ embedded = false, bare = false }: { embe
   }, [venues, typeFilter, guestMin, guestMax, priceTiers, city, country, search]);
 
   return (
-    <div className={embedded || bare ? undefined : "px-6 md:px-12 py-8"}>
+    <div className={embedded ? undefined : bare ? "pt-6" : "px-6 md:px-12 py-8"}>
       {!embedded && (
         <>
-          <VenueSpaceStrip spaces={TYPE_OF_SPACE_OPTIONS} selected={typeFilter}
+          <VenueSpaceStrip compact={bare} spaces={TYPE_OF_SPACE_OPTIONS} selected={typeFilter}
             onToggle={(t) => showResults(() => { setTypeFilter(typeFilter.includes(t) ? typeFilter.filter((x) => x !== t) : [...typeFilter, t]); setPriceTiers([]); setGuestMin(""); setGuestMax(""); })} />
           <MarketHero
             title={<>Find the perfect venue in <br />{placePicker}</>}

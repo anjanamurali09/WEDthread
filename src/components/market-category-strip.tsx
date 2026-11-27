@@ -9,17 +9,17 @@ type StripItem = { key: string; label: string; icon: Icon; to?: string; search?:
 // The row of round icons under the header. On the vendor page it is the vendor groups (photographers, florists...),
 // on the venue page it is the kinds of space (indoor, outdoor, poolside...). The one that is selected is filled in
 // the brand yellow.
-function Strip({ items, active, label }: { items: StripItem[]; active: string[]; label: string }) {
-  const bubble = (key: string) => cn("grid h-14 w-14 place-items-center rounded-full border transition-colors",
+function Strip({ items, active, label, compact = false }: { items: StripItem[]; active: string[]; label: string; compact?: boolean }) {
+  const bubble = (key: string) => cn("grid place-items-center rounded-full border transition-colors", compact ? "h-11 w-11" : "h-14 w-14",
     active.includes(key) ? "border-[#FFE08A] bg-[#FFE08A] text-[#243746]" : "border-line bg-white text-[#243746] group-hover:bg-[#FFF7D6]");
-  const text = (key: string) => cn("text-balance px-1 text-[13px] leading-tight text-[#243746]", active.includes(key) && "font-medium");
-  const cell = "group flex w-[7.25rem] shrink-0 cursor-pointer flex-col items-center gap-2 text-center";
+  const text = (key: string) => cn("text-balance px-1 leading-tight text-[#243746]", compact ? "text-xs" : "text-[13px]", active.includes(key) && "font-medium");
+  const cell = cn("group flex shrink-0 cursor-pointer flex-col items-center text-center", compact ? "w-[6rem] gap-1.5" : "w-[7.25rem] gap-2");
   return (
     <nav aria-label={label} className="no-scrollbar -mx-6 flex gap-1 overflow-x-auto px-6 pb-2 md:-mx-12 md:px-12">
       {items.map(({ key, label: name, icon: Icon, to, search, onClick }) => {
         const inner = (
           <>
-            <span className={bubble(key)}><Icon className="h-6 w-6" strokeWidth={1.6} /></span>
+            <span className={bubble(key)}><Icon className={compact ? "h-5 w-5" : "h-6 w-6"} strokeWidth={1.6} /></span>
             <span className={text(key)}>{name}</span>
           </>
         );
@@ -33,9 +33,9 @@ function Strip({ items, active, label }: { items: StripItem[]; active: string[];
   );
 }
 
-export function VendorCategoryStrip({ active, to = "/v" }: { active: string | null; to?: string }) {
+export function VendorCategoryStrip({ active, to = "/v", compact = false }: { active: string | null; to?: string; compact?: boolean }) {
   const items = VENDOR_GROUPS.map((g) => ({ key: g.key, label: g.label, icon: g.icon, to, search: { group: g.key } }));
-  return <Strip items={items} active={active ? [active] : []} label="Browse vendors by type" />;
+  return <Strip items={items} active={active ? [active] : []} label="Browse vendors by type" compact={compact} />;
 }
 
 // One icon for each kind of space a venue can list. Choosing one shows only venues of that kind; choosing it
@@ -44,7 +44,7 @@ const SPACE_ICONS: Record<string, Icon> = {
   Indoor: Sofa, Outdoor: Trees, Poolside: Waves, "Banquet hall": UtensilsCrossed, Rooftop: Building, Farmhouse: Tractor, Beach: Umbrella,
 };
 
-export function VenueSpaceStrip({ spaces, selected, onToggle }: { spaces: string[]; selected: string[]; onToggle: (space: string) => void }) {
+export function VenueSpaceStrip({ spaces, selected, onToggle, compact = false }: { spaces: string[]; selected: string[]; onToggle: (space: string) => void; compact?: boolean }) {
   const items = spaces.map((s) => ({ key: s, label: s, icon: SPACE_ICONS[s] ?? Building, onClick: () => onToggle(s) }));
-  return <Strip items={items} active={selected} label="Browse venues by type of space" />;
+  return <Strip items={items} active={selected} label="Browse venues by type of space" compact={compact} />;
 }

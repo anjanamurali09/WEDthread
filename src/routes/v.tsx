@@ -207,10 +207,10 @@ export function VendorDirectoryContent({ embedded = false, bare = false }: { emb
   }, [services, categoryIds, categories, priceTiers, country, city, search]);
 
   return (
-    <div className={embedded || bare ? undefined : "px-6 md:px-12 py-8"}>
+    <div className={embedded ? undefined : bare ? "pt-6" : "px-6 md:px-12 py-8"}>
       {!embedded && (
         <>
-          <VendorCategoryStrip active={group ?? null} to={bare ? "/business/browse-vendors" : "/v"} />
+          <VendorCategoryStrip active={group ?? null} to={bare ? "/business/browse-vendors" : "/v"} compact={bare} />
           <MarketHero
             title={<>Find the perfect vendor in <br />{placePicker}</>}
             photo={heroPhoto}
