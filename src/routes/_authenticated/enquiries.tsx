@@ -89,7 +89,8 @@ function EnquiriesPage() {
       {isLoading || !wedding ? (
         <p className="text-sm text-muted-foreground">Loading…</p>
       ) : rows.length === 0 ? (
-        <div className="max-w-xl rounded-3xl border border-line bg-white px-8 py-10 text-center">
+        <div className="grid min-h-[60vh] place-items-center">
+        <div className="w-full max-w-xl rounded-3xl border border-line bg-white px-8 py-10 text-center">
           <Inbox className="mx-auto h-8 w-8 text-[#7FA8D6]" strokeWidth={1.5} />
           <h3 className="mt-3 font-serif text-2xl">No enquiries yet</h3>
           <p className="mt-2 text-sm text-muted-foreground">
@@ -104,8 +105,9 @@ function EnquiriesPage() {
             </Link>
           </div>
         </div>
+        </div>
       ) : (
-        <div className="max-w-3xl">
+        <div className="mx-auto max-w-3xl">
           <p className="mb-4 text-sm text-muted-foreground">
             {rows.length} {rows.length === 1 ? "enquiry" : "enquiries"} sent
             {waiting > 0 ? ` · ${waiting} waiting for a reply` : " · all replied to"}
