@@ -139,13 +139,13 @@ Deno.serve(async (req: Request) => {
 
     // Emails the enquiry to the business at the address it signed up with (or its listed contact address),
     // copying hello@wedthread.co. Replies go straight to the couple. Any failure is logged and ignored.
-    const emailBusiness = async (): Promise<boolean> => {
+    const emailBusiness = async (): Promise<"vendor" | "team" | "none"> => {
       try {
         const resendKey = Deno.env.get("RESEND_API_KEY");
         const fromEmail = Deno.env.get("RESEND_FROM_EMAIL");
-        if (!resendKey || !fromEmail) { console.error("Enquiry email skipped: RESEND_API_KEY / RESEND_FROM_EMAIL not configured"); return false; }
+        if (!resendKey || !fromEmail) { console.error("Enquiry email skipped: RESEND_API_KEY / RESEND_FROM_EMAIL not configured"); return "none"; }
         const [{ data: business }, { data: weddingRow }] = await Promise.all([
-          service.from("businesses").select("legal_business_name,user_id,contact_email").eq("id", businessId).maybeSingle(),
+          service.from("businesses").select("legal_business_name,user_id,contact_email,contact_phone,website_url").eq("id", businessId).maybeSingle(),
           service.from("weddings").select("partner_a,partner_b").eq("id", submission.wedding_id).maybeSingle(),
         ]);
         let to: string | null = null;
@@ -159,7 +159,9 @@ Deno.serve(async (req: Request) => {
           <p><strong>${escapeHtml(couple)}</strong> sent an enquiry about <strong>${escapeHtml(listingName)}</strong>.</p>
           <p style="white-space:pre-line">${escapeHtml(messageBody)}</p>
           <p>Reply to this email to answer them directly, or <a href="${APP_URL}/business/messages">reply on WEDthread</a>.</p>
-          ${to ? "" : "<p><em>No email address is on file for this business, so only the WEDthread team received this.</em></p>"}
+          ${to ? "" : `<p><strong>No email address is on file for this business, so only the WEDthread team received this. Please pass it on.</strong><br/>
+            ${business?.contact_phone ? `Phone: ${escapeHtml(business.contact_phone)}<br/>` : ""}${business?.website_url ? `Website: ${escapeHtml(business.website_url)}<br/>` : ""}
+            Couple's email: ${escapeHtml(user.email ?? "unknown")}</p>`}
         `;
         const res = await fetch("https://api.resend.com/emails", {
           method: "POST",
@@ -169,16 +171,16 @@ Deno.serve(async (req: Request) => {
             to: [to ?? TEAM_EMAIL],
             ...(to && to.toLowerCase() !== TEAM_EMAIL ? { cc: [TEAM_EMAIL] } : {}),
             ...(user.email ? { reply_to: user.email } : {}),
-            subject: `New enquiry: ${listingName}`,
+            subject: to ? `New enquiry: ${listingName}` : `[Pass on to vendor] New enquiry: ${listingName}`,
             html,
           }),
         });
-        if (!res.ok) { console.error("Enquiry email failed:", await res.text()); return false; }
-        // True only when it went to the business itself (not just the WEDthread team because no address was on file).
-        return !!to;
+        if (!res.ok) { console.error("Enquiry email failed:", await res.text()); return "none"; }
+        // "vendor" when it went to the business itself; "team" when only the WEDthread team got it (no address on file).
+        return to ? "vendor" : "team";
       } catch (err) {
         console.error("Enquiry email failed:", err);
-        return false;
+        return "none";
       }
     };
 
@@ -225,8 +227,8 @@ Deno.serve(async (req: Request) => {
         body: `New enquiry: ${listingName}\n\n${messageBody}`,
       });
 
-      const emailed = await emailBusiness();
-      return { enquiryId: enquiry.id, conversationId, emailed };
+      const delivery = await emailBusiness();
+      return { enquiryId: enquiry.id, conversationId, delivery };
     };
 
     if (!chargingEnabled) {

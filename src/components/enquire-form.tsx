@@ -57,8 +57,9 @@ export function EnquireForm({ vendorServiceId, businessId, businessName, onSubmi
   const [saveAnswers, setSaveAnswers] = useState(true);
   const [submitting, setSubmitting] = useState(false);
   const [submitted, setSubmitted] = useState(false);
-  // Whether the email to the business went out. Unknown (null) if the server did not say.
-  const [emailed, setEmailed] = useState<boolean | null>(null);
+  // Who got the email: the business itself, only the WEDthread team (no address on file for the business), or
+  // nobody / unknown (an older server that does not say).
+  const [delivery, setDelivery] = useState<"vendor" | "team" | "none">("none");
 
   useEffect(() => {
     setLoading(true);
@@ -149,7 +150,7 @@ export function EnquireForm({ vendorServiceId, businessId, businessName, onSubmi
     // answers as the thread's first message. Charging (currently off) is
     // handled entirely inside the function — this call never surfaces a
     // payment prompt while it's off.
-    const { data: result, error: fnError } = await supabase.functions.invoke<{ success?: boolean; error?: string; emailed?: boolean }>("submit-enquiry", {
+    const { data: result, error: fnError } = await supabase.functions.invoke<{ success?: boolean; error?: string; delivery?: "vendor" | "team" | "none" }>("submit-enquiry", {
       body: { lead_form_submission_id: submission.id },
     });
     setSubmitting(false);
@@ -168,7 +169,7 @@ export function EnquireForm({ vendorServiceId, businessId, businessName, onSubmi
       });
     }
     track("enquiry_sent");
-    setEmailed(typeof result.emailed === "boolean" ? result.emailed : null);
+    setDelivery(result.delivery ?? "none");
     setSubmitted(true);
     onSubmitted?.();
   };
@@ -190,9 +191,11 @@ export function EnquireForm({ vendorServiceId, businessId, businessName, onSubmi
         <CheckCircle2 className="h-8 w-8 mx-auto text-sage-deep" />
         <p className="mt-3 text-sm font-medium">Enquiry sent</p>
         <p className="mt-1 text-sm text-muted-foreground">
-          {emailed
+          {delivery === "vendor"
             ? <>We've emailed {businessName ?? "them"} your enquiry. Their reply will appear in your Messages.</>
-            : <>{businessName ?? "The vendor"} will see it in their WEDthread messages and reply in your Messages.</>}
+            : delivery === "team"
+              ? <>Your enquiry is with the WEDthread team, who will pass it on to {businessName ?? "them"}. Replies will appear in your Messages.</>
+              : <>{businessName ?? "The vendor"} will see it in their WEDthread messages and reply in your Messages.</>}
         </p>
       </div>
     );
