@@ -478,14 +478,14 @@ export function FeatureVisual({ kind }: { kind: (typeof SHOWCASE_FEATURES)[numbe
 function FeatureCard({ feature, index }: { feature: (typeof SHOWCASE_FEATURES)[number]; index: number }) {
   return (
     <Link to="/features/$slug" params={{ slug: feature.slug }} data-reveal style={{ transitionDelay: `${(index % 4) * 60}ms` }}
-      className="group border-b border-r border-line/60 p-6 sm:p-8 flex flex-col h-full">
+      className="group border-b border-r border-white/15 p-6 sm:p-8 flex flex-col h-full">
       <h3 className="font-serif text-2xl leading-tight inline-flex items-center gap-1.5">
         {feature.title}
-        <ArrowRight className="h-4 w-4 text-[#7FA8D6] transition-transform group-hover:translate-x-1" />
+        <ArrowRight className="h-4 w-4 text-[#FFE08A] transition-transform group-hover:translate-x-1" />
       </h3>
-      <p className="mt-2 text-sm text-[#243746] leading-relaxed">{feature.body}</p>
+      <p className="mt-2 text-sm text-[#FFF7D6]/80 leading-relaxed">{feature.body}</p>
       <div className="mt-auto pt-6">
-        <div className="relative overflow-hidden h-56 rounded-2xl">
+        <div className="relative overflow-hidden h-56 rounded-2xl text-[#243746]">
           <FeatureVisual kind={feature.visual} />
         </div>
       </div>
@@ -706,14 +706,14 @@ function Landing() {
       </section>
 
       {/* Feature showcase ("How it works" in the menu lands here; the homepage header is not sticky, so no scroll offset) */}
-      <section id="how" className="relative z-10 py-10 space-y-6">
+      <section id="how" className="relative z-10 space-y-6 bg-[#243746] py-16 text-[#FFF7D6]">
         <div className="text-center max-w-2xl mx-auto px-6 md:px-12" data-reveal>
-          <p className="text-sm uppercase tracking-[0.2em] text-[#7FA8D6]">Everything, in one plan</p>
+          <p className="text-sm uppercase tracking-[0.2em] text-[#FFE08A]">Everything, in one plan</p>
           <h2 className="mt-2 font-serif text-3xl md:text-4xl leading-[0.95]">Built for the way you actually celebrate.</h2>
         </div>
 
         <div className="px-6 md:px-12">
-          <div className="overflow-hidden rounded-3xl border border-line/60">
+          <div className="overflow-hidden rounded-3xl border border-white/15">
             <div className="-mb-px -mr-px grid sm:grid-cols-2 lg:grid-cols-4">
               {SHOWCASE_FEATURES.map((f, i) => <FeatureCard key={f.eyebrow} feature={f} index={i} />)}
             </div>

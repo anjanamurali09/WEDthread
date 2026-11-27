@@ -17,6 +17,7 @@ import {
   Scripts,
 } from "@tanstack/react-router";
 import { useEffect, type ReactNode } from "react";
+import { startSmoothScroll } from "@/lib/smooth-scroll";
 import { ErrorBar } from "@/components/error-bar";
 import { CookieBanner } from "@/components/cookie-banner";
 
@@ -164,6 +165,8 @@ function RootComponent() {
     window.addEventListener("keydown", keyboard, true);
     return () => { window.removeEventListener("pointerdown", pointer, true); window.removeEventListener("keydown", keyboard, true); };
   }, []);
+
+  useEffect(() => startSmoothScroll(), []);
 
   useEffect(() => {
     const { data: sub } = supabase.auth.onAuthStateChange((event) => {
