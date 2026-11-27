@@ -52,12 +52,14 @@ export function LoginDialog({
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
   const [sentTo, setSentTo] = useState<string | null>(null);
+  const [formNote, setFormNote] = useState<string | null>(null);
 
   const reset = () => { setEmail(""); setPassword(""); setLoading(false); setSentTo(null); };
   const close = (v: boolean) => { if (!v) reset(); onOpenChange(v); };
 
   const submit = async (e: React.FormEvent) => {
     e.preventDefault();
+    setFormNote(null);
     setLoading(true);
     try {
       if (mode === "signup") {
@@ -68,7 +70,7 @@ export function LoginDialog({
         if (error) throw error;
         // An address that already has an account does not come back as an error; Supabase returns a user with no
         // identities instead (so it cannot be used to probe for accounts). Say so rather than "check your email".
-        if (data.user && (data.user.identities ?? []).length === 0) throw new Error("This email is already registered. Sign in instead, or use \"Forgot password\" if you can't remember it.");
+        if (data.user && (data.user.identities ?? []).length === 0) { setFormNote("This email is already registered."); return; }
         if (!data.session) { setSentTo(email.trim()); return; }
         close(false);
         await routeAfterSignUp(navigate);
@@ -117,6 +119,14 @@ export function LoginDialog({
               className="w-full rounded-full bg-cherry text-pearl py-2.5 text-sm font-medium hover:bg-wine disabled:opacity-60 transition-colors">
               {loading ? "Please wait…" : sentTo ? "Verify your email" : mode === "signup" ? "Create account" : "Sign in"}
             </button>
+            {formNote && (
+              <p role="alert" className="rounded-2xl bg-red-50 px-4 py-3 text-sm text-red-700">
+                {formNote}{" "}
+                <button type="button" onClick={() => { setFormNote(null); setMode("signin"); }} className="font-medium underline underline-offset-4">Sign in</button>
+                {" or "}
+                <button type="button" onClick={() => { setFormNote(null); setMode("forgot"); }} className="font-medium underline underline-offset-4">reset your password</button>.
+              </p>
+            )}
             {mode === "signup" && sentTo && (
               <p className="rounded-2xl bg-[#FFF7D6] px-4 py-3 text-sm text-[#243746]">
                 Check your email (and spam) for the verification link.

@@ -174,6 +174,9 @@ function AuthPage() {
   const [role, setRole] = useState<AppRole | null>(null);
   const [sentTo, setSentTo] = useState<string | null>(null);
   const [resendNote, setResendNote] = useState<string | null>(null);
+  // Problems with the form itself are shown next to what needs fixing, not in the bar at the top of the page.
+  const [roleMissing, setRoleMissing] = useState(false);
+  const [formNote, setFormNote] = useState<string | null>(null);
 
 
   // Arriving from the verification email: the link signs the browser in, but the person should land on
@@ -200,10 +203,11 @@ function AuthPage() {
 
   const onEmail = async (e: React.FormEvent) => {
     e.preventDefault();
+    setFormNote(null);
     setLoading(true);
     try {
       if (mode === "signup") {
-        if (!role) throw new Error("Choose how you'll use WEDthread first.");
+        if (!role) { setRoleMissing(true); return; }
         const first = firstName.trim(), last = lastName.trim();
         const { data, error } = await supabase.auth.signUp({
           email: email.trim(), password,
@@ -218,7 +222,7 @@ function AuthPage() {
         if (error) throw error;
         // An address that already has an account does not come back as an error; Supabase returns a user with no
         // identities instead (so it cannot be used to probe for accounts). Say so rather than "check your email".
-        if (data.user && (data.user.identities ?? []).length === 0) throw new Error("This email is already registered. Sign in instead, or use \"Forgot password\" if you can't remember it.");
+        if (data.user && (data.user.identities ?? []).length === 0) { setFormNote("This email is already registered."); return; }
         track("sign_up", { method: "email", account_type: role });
         if (!data.session) { setSentTo(email.trim()); setResendNote(null); return; }
         await routeAfterSignIn(navigate);
@@ -260,15 +264,15 @@ function AuthPage() {
           <form onSubmit={onEmail} className="mt-4 space-y-2.5">
             {mode === "signup" && (
               <div className="mb-8">
-                <label className="text-xs uppercase tracking-widest text-muted-foreground">I'm signing up as</label>
+                <label className={cn("text-xs uppercase tracking-widest", roleMissing ? "text-red-600" : "text-muted-foreground")}>I'm signing up as{roleMissing && " (choose one)"}</label>
                 <div className="mt-1 grid grid-cols-[minmax(0,1fr)_minmax(0,1.3fr)] gap-2" role="radiogroup" aria-label="Account type">
                   {/* Ways to sign up today on the left; the ones still to come on the right, with room for "Coming soon". */}
                   {[ROLE_OPTIONS.filter((o) => !o.comingSoon), ROLE_OPTIONS.filter((o) => o.comingSoon)].map((group, g) => (
                     <div key={g} className="space-y-2">
                       {group.map(({ role: r, label, icon: Icon, comingSoon }) => (
-                    <button key={r} type="button" role="radio" aria-checked={role === r} disabled={!!sentTo || comingSoon} onClick={() => setRole(r)} data-static
+                    <button key={r} type="button" role="radio" aria-checked={role === r} disabled={!!sentTo || comingSoon} onClick={() => { setRole(r); setRoleMissing(false); }} data-static
                       className={cn("flex w-full items-center gap-2 rounded-2xl border px-2.5 py-2 text-left transition-colors",
-                        comingSoon ? "border-line bg-pearl opacity-60 cursor-not-allowed" : role === r ? "border-[#243746] bg-[#FFF7D6]" : "border-line bg-pearl hover:border-cherry")}>
+                        comingSoon ? "border-line bg-pearl opacity-60 cursor-not-allowed" : role === r ? "border-[#243746] bg-[#FFF7D6]" : roleMissing ? "border-red-500 bg-pearl" : "border-line bg-pearl hover:border-cherry")}>
                       <span className="grid h-7 w-7 shrink-0 place-items-center rounded-lg bg-[#FFE08A] text-[#243746]"><Icon className="h-3.5 w-3.5" /></span>
                       <span className="min-w-0 flex-1 text-[13px] font-medium leading-tight">{label}</span>
                       {comingSoon && <span className="shrink-0 rounded-full bg-[#FFE08A] px-1.5 py-px text-[10px] font-medium text-[#243746]">Coming soon</span>}
@@ -296,7 +300,7 @@ function AuthPage() {
             <div className={mode === "signup" ? "grid grid-cols-2 gap-3" : undefined}>
               <div>
                 <label className="text-xs uppercase tracking-widest text-muted-foreground">Email</label>
-                <input required type="email" autoComplete="email" value={email} onChange={(e) => setEmail(e.target.value)} readOnly={!!sentTo}
+                <input required type="email" autoComplete="email" value={email} onChange={(e) => { setEmail(e.target.value); setFormNote(null); }} readOnly={!!sentTo}
                   className="mt-0.5 w-full rounded-xl border border-line bg-pearl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-cherry" />
               </div>
               {mode === "signup" && (
@@ -320,6 +324,14 @@ function AuthPage() {
             <button disabled={loading || !!sentTo} className="w-full rounded-full bg-cherry text-pearl py-2.5 text-sm font-medium hover:bg-wine disabled:opacity-60 transition-colors">
               {loading ? "Please wait…" : sentTo ? "Verify your email" : mode === "signup" ? "Create account" : "Sign in"}
             </button>
+            {formNote && (
+              <p role="alert" className="rounded-2xl bg-red-50 px-4 py-3 text-sm text-red-700">
+                {formNote}{" "}
+                <button type="button" onClick={() => { setFormNote(null); setMode("signin"); }} className="font-medium underline underline-offset-4">Sign in</button>
+                {" or "}
+                <button type="button" onClick={() => { setFormNote(null); setMode("forgot"); }} className="font-medium underline underline-offset-4">reset your password</button>.
+              </p>
+            )}
             {mode === "signup" && sentTo && (
               <div className="rounded-2xl bg-[#FFF7D6] px-4 py-3 text-sm text-[#243746]">
                 <p>Check your email (and spam) for the verification link.</p>
@@ -335,7 +347,7 @@ function AuthPage() {
 
           <p className="mt-4 text-sm text-center text-muted-foreground">
             {mode === "signup" ? "Already have an account?" : "New here?"}{" "}
-            <button onClick={() => setMode(mode === "signup" ? "signin" : "signup")} className="text-cherry underline underline-offset-4">
+            <button onClick={() => { setFormNote(null); setRoleMissing(false); setMode(mode === "signup" ? "signin" : "signup"); }} className="text-cherry underline underline-offset-4">
               {mode === "signup" ? "Sign in" : "Create an account"}
             </button>
           </p>
