@@ -643,7 +643,7 @@ function Landing() {
       </header>
 
       {/* Hero */}
-      <section className="relative z-10 px-6 md:px-12 pt-8 md:pt-16 pb-10 grid lg:grid-cols-12 gap-10 items-center">
+      <section className="relative z-10 px-6 md:px-12 pt-8 md:pt-16 pb-10 lg:min-h-[calc(100svh-9.5rem)] grid lg:grid-cols-12 gap-10 items-center">
         <div className="lg:col-span-6 lg:translate-y-5">
           <p className="text-sm uppercase tracking-[0.2em] text-[#7FA8D6]">
             For every wedding, anywhere
