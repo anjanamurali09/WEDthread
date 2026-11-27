@@ -216,6 +216,9 @@ function AuthPage() {
           },
         });
         if (error) throw error;
+        // An address that already has an account does not come back as an error; Supabase returns a user with no
+        // identities instead (so it cannot be used to probe for accounts). Say so rather than "check your email".
+        if (data.user && (data.user.identities ?? []).length === 0) throw new Error("This email is already registered. Sign in instead, or use \"Forgot password\" if you can't remember it.");
         track("sign_up", { method: "email", account_type: role });
         if (!data.session) { setSentTo(email.trim()); setResendNote(null); return; }
         await routeAfterSignIn(navigate);
